@@ -32,7 +32,7 @@ Log Events tries to make concrete improvements compared to Logback:
 ## Architecture
 
 
-![Architecture Overview](https://www.plantuml.com/plantuml/proxy?src=https://raw.github.com/jhannes/logevents/doc/classes.puml)
+![Architecture Overview](http://www.plantuml.com/plantuml/proxy?src=https://raw.github.com/jhannes/logevents/master/doc/classes.puml)
 
 
 ## Logging with SLF4J
@@ -301,4 +301,14 @@ public class LogEventRuleTest {
 ## Questions and answers
 
 ### Why not logback
+
+
+### TODO
+
+* Implement emergency logging if something fails in logevents
+* Implement default configuration and configuration service loading
+* Implement stack traces
+* Implement servlets
+* Implement SlackLogEventsObserver
+* Implement BatchingSlackLogEventsObserver
 
