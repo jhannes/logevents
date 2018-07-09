@@ -1,0 +1,97 @@
+@startuml
+
+package "slf4j" {
+  interface Logger
+  interface ILoggerFactory
+}
+
+package "javax.servlet" {
+  class HttpServlet
+}
+
+
+package "org.logevents" {
+
+	class LoggerDelegator implements Logger {
+	  levelThreshold : Level|"Inherit"
+	  ownObserver : LogEventObserver
+	  inheritParentObserver : boolean
+	}
+	
+	class LoggerDelegatorFactory implements ILoggerFactory {
+	  #getChildLoggers(logger)
+	  #getParentLogChain(logger)
+	  #getDescentLoggers(logger)
+	  setLogLevel(logger, level)
+	  setLogEventObserver(logger, observer, inheritParent)
+	  createObserver(properties)
+	  getObserverProxy(name)
+	}
+	
+	interface LogEventGenerator
+	LoggerDelegator ..> LogEventGenerator
+	
+	class NullLogEventGenerator implements LogEventGenerator
+	class LevelLogEventDelegator implements LogEventGenerator
+	
+	interface LogEventObserver {
+	  name
+	  configure(Properties)
+	  logEvent(e)
+	}
+	LevelLogEventDelegator ..> LogEventObserver
+	
+	class CompositeLogEventObserver implements LogEventObserver
+	class ConditionalLogEventObserver implements LogEventObserver
+	class RoutingLogEventObserver implements LogEventObserver
+	class BatchingLogEventObserver implements LogEventObserver {
+	  idleTime
+	  batchStartTime
+	  eventCount
+	  deduplicatedEventBuffer
+	}
+	class TextLogEventObserver implements LogEventObserver
+	
+	CompositeLogEventObserver ..> "*" LogEventObserver
+	ConditionalLogEventObserver ..> "1" LogEventObserver
+	
+	
+	package "destinations" {
+		interface LogEventFormatter
+		TextLogEventObserver ..> LogEventFormatter
+		class PatternFormatter implements LogEventFormatter
+		
+		interface LogEventDestination
+		TextLogEventObserver ..> LogEventDestination
+
+		class ConsoleLogEventDestination implements LogEventDestination
+		class FileLogEventDestination implements LogEventDestination
+		class RollingFileEventDestination extends FileLogEventDestination
+		class CircularBufferLogEventDestination implements LogEventDestination
+		class SlackLogEventDestination implements LogEventDestination
+	}
+	
+	class BatchLogEventExecutor
+	BatchLogEventExecutor ..> BatchingLogEventObserver
+
+	package "extend" {	
+		package "Servlets" {
+			class LogEventsServlet extends HttpServlet
+			LogEventsServlet ..> CircularBufferLogEventDestination
+			class LogEventConfigurationGeneratorServlet extends HttpServlet
+		}
+		
+		package "JUnit" {
+			class LogEventRule <<JUnit rule>>
+			LogEventRule ..> CircularBufferLogEventDestination
+		}
+		
+		package "JMX" {
+			class LogEventsMBean
+			LogEventsMBean ..> CircularBufferLogEventDestination
+			class LogEventConfigurationMBean
+		}
+	}
+}
+	
+@enduml
