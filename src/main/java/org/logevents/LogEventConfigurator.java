@@ -22,7 +22,7 @@ public class LogEventConfigurator implements Configurator {
     @Override
     public void configure(LogEventFactory factory) {
         factory.setLevel(factory.getRootLogger(), Level.WARN);
-        factory.setObserver(factory.getRootLogger(), consoleObserver(), false);
+        factory.setObserver(factory.getRootLogger(), consoleObserver(LogEventFormatter.withDefaultFormat()), false);
     }
 
     public void setObserver(LogEventObserver observer) {
@@ -54,7 +54,11 @@ public class LogEventConfigurator implements Configurator {
     }
 
     public static LogEventObserver consoleObserver() {
-        return new TextLogEventObserver(new ConsoleLogEventDestination(), LogEventFormatter.withDefaultFormat());
+        return consoleObserver(LogEventFormatter.withDefaultFormat());
+    }
+
+    public static LogEventObserver consoleObserver(LogEventFormatter formatter) {
+        return new TextLogEventObserver(new ConsoleLogEventDestination(), formatter);
     }
 
     public LogEventObserver dateRollingAppender(String logName) throws IOException {
