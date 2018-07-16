@@ -1,12 +1,18 @@
 package org.logevents;
 
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.logevents.destinations.ConsoleLogEventDestination;
 import org.logevents.destinations.DateRollingFileDestination;
 import org.logevents.destinations.LogEventFormatter;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.TextLogEventObserver;
+import org.logevents.observers.batch.BatchingLogEventObserver;
+import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
 import org.slf4j.impl.StaticLoggerBinder;
@@ -14,6 +20,18 @@ import org.slf4j.impl.StaticLoggerBinder;
 public class LogEventConfigurator implements Configurator {
 
     private LogEventFactory factory = StaticLoggerBinder.getSingleton().getLoggerFactory();
+    private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
+            new ThreadFactory() {
+                private final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
+                private final AtomicInteger threadNumber = new AtomicInteger(1);
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread thread = defaultFactory.newThread(r);
+                    thread.setName("LogEvent$ScheduleExecutor-" + threadNumber.getAndIncrement());
+                    thread.setDaemon(true);
+                    return thread;
+                }
+            });
 
     public void configure() {
         configure(factory);
@@ -67,6 +85,18 @@ public class LogEventConfigurator implements Configurator {
 
     public LogEventObserver combine(LogEventObserver... observers) {
         return CompositeLogEventObserver.combine(observers);
+    }
+
+    public BatchingLogEventObserver batchEventObserver(LogEventBatchProcessor batchProcessor) {
+        return new BatchingLogEventObserver(batchProcessor, scheduledExecutorService);
+    }
+
+    public static LogEventObserver levelThresholdObserver(Level threshold, LogEventObserver logEventObserver) {
+        return event -> {
+            if (threshold.toInt() <= event.getLevel().toInt()) {
+                logEventObserver.logEvent(event);
+            }
+        };
     }
 
 

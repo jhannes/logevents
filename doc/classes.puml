@@ -46,12 +46,10 @@ package "org.logevents" {
 	class RoutingLogEventObserver implements LogEventObserver
 	class BatchingLogEventObserver implements LogEventObserver {
 	  idleTime
-	  batchStartTime
-	  eventCount
-	  deduplicatedEventBuffer
+	  cooldownTime
+	  maximumWaitTime
 	}
 	class TextLogEventObserver implements LogEventObserver
-	
 	CompositeLogEventObserver ..> "*" LogEventObserver
 	ConditionalLogEventObserver ..> "1" LogEventObserver
 	
@@ -68,7 +66,6 @@ package "org.logevents" {
 		class FileLogEventDestination implements LogEventDestination
 		class RollingFileEventDestination extends FileLogEventDestination
 		class CircularBufferLogEventDestination implements LogEventDestination
-		class SlackLogEventDestination implements LogEventDestination
 	}
 	
 	class BatchLogEventExecutor

@@ -8,16 +8,16 @@ SLF4J - the logging lingua franka for Java.
 
 Set up your logging configuration programatically:
 
-```
-    LogEventConfigurator configurator = new LogEventConfigurator();
-    configurator.setLevel(Level.WARN);
-    configurator.setObserver(configurator.combine(
-            configurator.consoleObserver(),
-            configurator.dateRollingAppender("logs/application.log")
-            ));
-    configurator.setLevel("org.myapp", Level.INFO);
-    configurator.setObserver("org.myapp",
-            configurator.dateRollingAppender("log/info.log"), true);
+```java
+LogEventConfigurator configurator = new LogEventConfigurator();
+configurator.setLevel(Level.WARN);
+configurator.setObserver(configurator.combine(
+        configurator.consoleObserver(),
+        configurator.dateRollingAppender("logs/application.log")
+        ));
+configurator.setLevel("org.myapp", Level.INFO);
+configurator.setObserver("org.myapp",
+        configurator.dateRollingAppender("log/info.log"), true);
 ```
 
 Log Events tries to make concrete improvements compared to Logback:
@@ -27,6 +27,7 @@ Log Events tries to make concrete improvements compared to Logback:
 * Fewer architectural concepts: Log Events is build almost exclusively
   around an observer pattern.
 * More concise documentation
+* No dependencies
 
 
 ## Architecture
@@ -50,7 +51,7 @@ slf4j-jul to capture the logs.
 
 In order to log to SLF4J, include the `slf4j-api` dependency with Maven (or gradle):
 
-```
+```xml
 <dependency>
     <groupId>org.slf4j</groupId>
     <artifactId>slf4j-api</artifactId>
@@ -62,7 +63,7 @@ In order to log to SLF4J, include the `slf4j-api` dependency with Maven (or grad
 
 You can log from your own code by getting a `Logger`:
 
-```
+```java
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +83,7 @@ You can include data in your logging statement - if the event is never printed
 (for example if `debug` level is not active), `toString()` is never called
 on the message arguments:
 
-```
+```java
 logger.debug("Response from {}: {}", url, responseCode);
 ```
 
@@ -90,7 +91,7 @@ logger.debug("Response from {}: {}", url, responseCode);
 You can include an exception. A logging implementation will generally print the
 whole stack trace of the exception:
 
-```
+```java
 try {
     ...
 } catch (IOException e) {
@@ -102,7 +103,7 @@ If you want to avoid a costly operation when the event is suppressed, you can
 use `isDebugEnabled`, `isWarnEnabled` etc. In this example, if the logging
 level is warn or error, `parsePayload` is never called.
 
-```
+```java
 if (logger.isInfoEnabled()) {
 	logger.info("Message payload: {}", parsePayload());
 }
@@ -120,7 +121,7 @@ It's important to clean up the MDC after use.
 
 Example of usage:
 
-```
+```java
 public LoggingFilter implements javax.servlet.Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse resp, FilterChain chain)
@@ -143,7 +144,7 @@ public LoggingFilter implements javax.servlet.Filter {
 You can configure the logging implementation to use the MDC, or you
 can even use it from your own code:
 
-```
+```java
 HttpURLConnection connection = (HttpURLConnection) serviceUrl.openConnection();
 connection.setRequestProperty("X-Request-Context", MDC.get("RequestContext"));
 
@@ -154,11 +155,19 @@ connection.setRequestProperty("X-Request-Context", MDC.get("RequestContext"));
 
 ### General SLF4J configuration
 
+1. Include the org.logevents:logevents maven dependency
+2. Setup log configuration
+   a. If nothing is set up, WARN and higher are logged to console
+   b. You can get the `LogEventConfiguration.instance()` directory and set up everything programmatically
+   c. If you don't, Logevents will use the Java Service Loader framework to locate an instance of `org.logevents.LogEventConfigurator` interface
+   d. The default `LogEventConfiguration` will try to determine the current profile and load `logevents-<profile>.properties` and `logfile.properties`
+
+
 ### Configuring SLF4J with Logevents
 
 Include Logevents maven dependency:
 
-```
+```xml
 <dependency>
     <groupId>org.logevents</groupId>
     <artifactId>logevents</artifactId>
@@ -172,7 +181,7 @@ Use `LogEventConfigurator` to set up the configuration from your
 main method before calling any logging code:
 
 
-```
+```java
 LogEventConfigurator configurator = new LogEventConfigurator();
 configurator.setLevel(Level.WARN);
 configurator.setObserver(configurator.combine(
@@ -199,7 +208,7 @@ else happens, you can use the Java Service Loader framework.
 
 For example:
 
-```
+```java
 package com.example.myapp;
 
 import org.logevents.Configurator;
@@ -222,9 +231,13 @@ com.example.myapp.MyAppConfigurator
 
 ### Configuring Log Events with a properties file (TODO)
 
+The default `LogEventConfiguration` will try to determine the current profile, using the system properties `profiles`, `profile`, `spring.profiles.active` or the environment variables `PROFILES`, `PROFILE` or `SPRING_PROFILES_ACTIVE`. If running in JUnit, the profile `test` will be active by default.
+
 Use `LogEventsConfigurator.load(filename)` to read the configuration from a
 properties file. By using ... you can convert a YAML file to `Properties` and
 use that instead.
+
+
 
 (TODO: `configurator.load(YamlProperties.load("logging.yml")`)
 
@@ -251,6 +264,41 @@ can be omitted - so `TextLogEventObserver` and be used instead of
 
 ## Advanced usage patterns
 
+### Batching
+
+For some observers, it makes more sense to not send messages at once, but rather
+wait until we know there aren't more messages coming. This is useful for example
+when sending email (where you would often rather wait a minute and get a full list
+of log messages in one email) or Slack (where you may want to have a cool down
+period before sending more messages). Here is an example of how you can set up
+a batching log event observer:
+
+```java
+SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor();
+
+BatchingLogEventObserver batchEventObserver = configurator.batchEventObserver(slackLogEventBatchProcessor);
+batchEventObserver.setCooldownTime(Duration.ofSeconds(5));
+batchEventObserver.setMaximumWaitTime(Duration.ofMinutes(3));
+batchEventObserver.setIdleThreshold(Duration.ofSeconds(3));
+
+configurator.setObserver(configurator.combine(
+        LogEventConfigurator.levelThresholdObserver(Level.WARN, batchEventObserver),
+        LogEventConfigurator.consoleObserver(new AnsiLogEventFormatter())));
+```
+
+Or with properties files:
+
+```
+observer.slack=BatchingLogEventObserver
+observer.slack.cooldownTime=PT30S
+observer.slack.maximumWaitTimm=PT5M
+observer.slack.idleThreshold=PT10S
+observer.slack.batchProcessor=org.logevents.observers.batch.SlackLogEventBatchProcessor
+observer.slack.batchProcessor.channel=Servers
+observer.slack.batchProcessor.slackUrl=...
+```
+
+
 ### Servlets (TODO)
 
 Logevents comes with two servlets that you can add to your servlet container.
@@ -274,7 +322,7 @@ you can use the included `org.logevents.extend.junit.LogEventRule`.
 
 For example:
 
-```
+```java
 public class LogEventRuleTest {
 
     private Logger logger = LoggerFactory.getLogger("com.example.application.Service");
@@ -293,8 +341,6 @@ public class LogEventRuleTest {
 ```
 
 
-
-
 ### JMX
 
 
@@ -305,10 +351,7 @@ public class LogEventRuleTest {
 
 ### TODO
 
+* Implement servlets
 * Implement emergency logging if something fails in logevents
 * Implement default configuration and configuration service loading
-* Implement stack traces
-* Implement servlets
-* Implement SlackLogEventsObserver
-* Implement BatchingSlackLogEventsObserver
-
+* Profiles
