@@ -3,7 +3,9 @@ package org.logevents;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Map;
 
+import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 import org.slf4j.event.LoggingEvent;
@@ -19,6 +21,7 @@ public class LogEvent implements LoggingEvent {
     private String threadName = Thread.currentThread().getName();
     private long timestamp = System.currentTimeMillis();
     private Throwable throwable;
+    private Map<String, String> mdcProperties;
 
     public LogEvent(String loggerName, Level level, Marker marker, String format, Object[] args) {
         this.loggerName = loggerName;
@@ -33,6 +36,12 @@ public class LogEvent implements LoggingEvent {
         } else {
             this.args = args;
         }
+
+        this.mdcProperties = MDC.getCopyOfContextMap();
+    }
+
+    public Map<String, String> getMdcProperties() {
+        return mdcProperties;
     }
 
     @Override
@@ -81,6 +90,16 @@ public class LogEvent implements LoggingEvent {
 
     public ZonedDateTime getZonedDateTime() {
         return Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault());
+    }
+
+    public Throwable getRootThrowable() {
+        Throwable throwable = this.throwable;
+        if (throwable != null) {
+            while (throwable.getCause() != null && throwable.getCause() != throwable) {
+                throwable = throwable.getCause();
+            }
+        }
+        return throwable;
     }
 
 }
