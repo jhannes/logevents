@@ -17,14 +17,15 @@ public class AnsiLogEventFormatter implements LogEventFormatter {
                 e.getThreadName(),
                 green(LogEventFormatter.leftPad(e.getLevel(), 5, ' ')),
                 bold(e.getLoggerName()),
-                e.formatMessage());
+                e.formatMessage())
+                + LogEventFormatter.stackTrace(e);
     }
 
-    private String bold(String s) {
+    protected String bold(String s) {
         return String.format("\033[1;m%s\033[m", s);
     }
 
-    private String green(String s) {
+    protected String green(String s) {
         return String.format("\033[32m%s\033[m", s);
     }
 
