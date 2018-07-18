@@ -18,17 +18,19 @@ public class LogEvent implements LoggingEvent {
     private Marker marker;
     private String format;
     private Object[] args;
+    private long threadId = Thread.currentThread().getId();
     private String threadName = Thread.currentThread().getName();
     private long timestamp = System.currentTimeMillis();
     private Throwable throwable;
     private Map<String, String> mdcProperties;
+
+    private StackTraceElement callerLocation;
 
     public LogEvent(String loggerName, Level level, Marker marker, String format, Object[] args) {
         this.loggerName = loggerName;
         this.level = level;
         this.marker = marker;
         this.format = format;
-
         if (args.length > 0 && args[args.length-1] instanceof Throwable) {
             this.args = new Object[args.length-1];
             System.arraycopy(args, 0, this.args, 0, this.args.length);
@@ -100,6 +102,26 @@ public class LogEvent implements LoggingEvent {
             }
         }
         return throwable;
+    }
+
+    public StackTraceElement getCallerLocation() {
+        if (callerLocation != null) {
+            return callerLocation;
+        }
+        if (this.threadId != Thread.currentThread().getId()) {
+            throw new IllegalStateException("Can't find called from different thread");
+        }
+        StackTraceElement[] stackTrace = new Throwable().getStackTrace();
+        for (int i = 0; i < stackTrace.length-1; i++) {
+            StackTraceElement stackTraceElement = stackTrace[i];
+            if (stackTraceElement.getClassName().equals(LoggerDelegator.class.getName())) {
+                assert !stackTrace[i-1].getClassName().startsWith("org.logevents.");
+                assert !stackTrace[i-1].getClassName().startsWith("org.slf4j.");
+                this.callerLocation = stackTrace[i-1];
+                return callerLocation;
+            }
+        }
+        throw new RuntimeException("Could not find calling stack trace element!");
     }
 
 }
