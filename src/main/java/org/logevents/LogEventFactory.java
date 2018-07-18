@@ -3,6 +3,7 @@ package org.logevents;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,11 +120,11 @@ public class LogEventFactory implements ILoggerFactory {
     }
 
     @Override
-    public LoggerDelegator getLogger(String name) {
+    public LoggerConfiguration getLogger(String name) {
         if (!loggerCache.containsKey(name)) {
             int lastPeriodPos = name.lastIndexOf('.');
-            LoggerDelegator parent = lastPeriodPos < 0 ? rootLogger : getLogger(name.substring(0, lastPeriodPos));
-            LoggerDelegator newLogger = new CategoryLoggerDelegator(name, parent);
+            LoggerConfiguration parent = (lastPeriodPos < 0 ? rootLogger : getLogger(name.substring(0, lastPeriodPos)));
+            LoggerDelegator newLogger = new CategoryLoggerDelegator(name, (LoggerDelegator) parent);
             newLogger.refresh();
 
             loggerCache.put(name, newLogger);
@@ -132,7 +133,11 @@ public class LogEventFactory implements ILoggerFactory {
         return loggerCache.get(name);
     }
 
-    public Logger getRootLogger() {
+    public Map<String, LoggerConfiguration> getLoggers() {
+        return Collections.unmodifiableMap(loggerCache);
+    }
+
+    public LoggerConfiguration getRootLogger() {
         return rootLogger;
     }
 
@@ -159,6 +164,15 @@ public class LogEventFactory implements ILoggerFactory {
         refreshLoggers((LoggerDelegator)logger);
         return oldObserver;
     }
+
+    public void addObserver(Logger logger, LogEventObserver observer) {
+        LogEventObserver oldObserver = ((LoggerDelegator)logger).ownObserver;
+        ((LoggerDelegator)logger).setOwnObserver(
+                CompositeLogEventObserver.combine(observer, oldObserver),
+                ((LoggerDelegator)logger).inheritParentObserver);
+        refreshLoggers((LoggerDelegator)logger);
+    }
+
 
     public void reset() {
         rootLogger.setOwnObserver(LogEventConfiguration.consoleObserver(), false);
@@ -243,5 +257,6 @@ public class LogEventFactory implements ILoggerFactory {
             e.printStackTrace();
         }
     }
+
 
 }

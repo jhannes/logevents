@@ -2,11 +2,10 @@ package org.logevents;
 
 import org.logevents.impl.LogEventGenerator;
 import org.logevents.observers.NullLogEventObserver;
-import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
-abstract class LoggerDelegator implements Logger {
+abstract class LoggerDelegator implements LoggerConfiguration {
 
     private final String name;
 
@@ -332,8 +331,17 @@ abstract class LoggerDelegator implements Logger {
         errorEventGenerator.log(marker, msg, t);
     }
 
+    @Override
     public Level getLevelThreshold() {
         return levelThreshold;
+    }
+
+    @Override
+    public String getObserver() {
+        if (ownObserver instanceof NullLogEventObserver) {
+            return inheritParentObserver ? "<inherit>" : "<none>";
+        }
+        return ownObserver.toString();
     }
 
     public void setLevelThreshold(Level levelThreshold) {

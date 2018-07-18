@@ -18,15 +18,15 @@ import java.util.Map;
  */
 public class JsonUtil {
 
-    private String indentSetting = "  ";
+    private static String indentSetting = "  ";
 
-    public String toJson(Map<String, Object> jsonObject) {
+    public static String toJson(Map<String, ? extends Object> jsonObject) {
         StringBuilder result = new StringBuilder();
         objectToJson(jsonObject, result, "");
         return result.toString();
     }
 
-    private void toJson(Map<String, Object> json, StringBuilder result, String indent) {
+    private static void toJson(Map<String, Object> json, StringBuilder result, String indent) {
         result.append("{\n");
         boolean first = true;
         for (Map.Entry<String, Object> entry : json.entrySet()) {
@@ -38,7 +38,7 @@ public class JsonUtil {
         result.append("\n").append(indent).append("}");
     }
 
-    private void toJson(Iterable<? extends Object> value, StringBuilder result, String indent) {
+    private static void toJson(Iterable<? extends Object> value, StringBuilder result, String indent) {
         result.append("[\n");
         boolean first = true;
         for (Object entry : value) {
@@ -51,13 +51,13 @@ public class JsonUtil {
     }
 
     @SuppressWarnings("unchecked")
-    private void objectToJson(Object value, StringBuilder result, String indent) {
+    private static void objectToJson(Object value, StringBuilder result, String indent) {
         if (value instanceof Map) {
             toJson((Map<String,Object>)value, result, indent);
         } else if (value instanceof List) {
             toJson((Iterable<? extends Object>)value, result, indent);
-        } else if (value instanceof String) {
-            toJson((String)value, result);
+        } else if (value instanceof CharSequence) {
+            toJson((CharSequence)value, result);
         } else if (value instanceof Number) {
             result.append(value.toString());
         } else if (value instanceof Boolean) {
@@ -69,14 +69,14 @@ public class JsonUtil {
         }
     }
 
-    private void toJson(String value, StringBuilder result) {
+    private static void toJson(CharSequence value, StringBuilder result) {
         result.append("\"").append(jsonEscape(value)).append("\"");
     }
 
-    private String jsonEscape(String key) {
+    private static String jsonEscape(CharSequence key) {
         StringBuilder result = new StringBuilder();
-        for (char c : key.toCharArray()) {
-            switch (c) {
+        for (int i = 0; i < key.length(); i++) {
+            switch (key.charAt(i)) {
             case '\\':
                 result.append("\\");
                 break;
@@ -92,8 +92,11 @@ public class JsonUtil {
             case '\b':
                 result.append("\\b");
                 break;
+            case '\"':
+                result.append("\\\"");
+                break;
             default:
-                result.append(c);
+                result.append(key.charAt(i));
                 break;
             }
         }

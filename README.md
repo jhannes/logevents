@@ -299,18 +299,18 @@ observer.slack.batchProcessor.slackUrl=...
 ```
 
 
-### Servlets (TODO)
+### Servlets
 
 Logevents comes with two servlets that you can add to your servlet container.
 
 `org.logevents.extend.servlets.LogEventsServlet.doGet` can list up
 log events as JSON (to be formatted by your own JavaScript). It supports
 four optional query parameters: `level` (default INFO), `category`, `offset`
-and `count`. 
+and `count`.  (TODO)
 
 `org.logevents.extend.servlets.LogEventConfigurationServlet`:
 `doGet` lists up all active loggers and observers as JSON.
-`doPost` allows to change the level and observer for a single logger.
+`doPost` allows to change the level and observer (TODO) for a single logger.
 
 
 ### JUnit
@@ -351,7 +351,6 @@ public class LogEventRuleTest {
 
 ### TODO
 
-* Implement default configuration and configuration service loading
-* Profiles
-* Implement servlets
+* Implement proper ANSI logging for console
+* Move LogEventConfiguration and LogEventFactory around to my satisfaction
 * Implement emergency logging if something fails in logevents

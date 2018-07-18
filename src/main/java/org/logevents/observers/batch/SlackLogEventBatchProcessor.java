@@ -43,8 +43,7 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
 
     private void sendSingleMessage(LogEvent event) throws IOException {
         Map<String, Object> slackMessage = createSlackMessage(event);
-        System.out.println(new JsonUtil().toJson(slackMessage));
-        NetUtils.postJson(slackUrl, new JsonUtil().toJson(slackMessage));
+        NetUtils.postJson(slackUrl, JsonUtil.toJson(slackMessage));
     }
 
     protected Map<String, Object> createSlackMessage(LogEvent event) {

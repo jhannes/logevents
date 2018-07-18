@@ -34,4 +34,11 @@ public class TextLogEventObserver implements LogEventObserver {
         }
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName()
+                + "{eventDestination=" + eventDestination
+                + ",logEventFormatter=" + logEventFormatter + "}";
+    }
+
 }

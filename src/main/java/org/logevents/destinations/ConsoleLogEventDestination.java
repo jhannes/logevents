@@ -8,4 +8,9 @@ public class ConsoleLogEventDestination implements LogEventDestination {
         System.out.flush();
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
+    }
+
 }

@@ -9,4 +9,9 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
                 e.getZonedDateTime().toLocalTime(), e.getThreadName(), LogEventFormatter.leftPad(e.getLevel(), 5, ' '), e.getLoggerName(), e.formatMessage())
                 + LogEventFormatter.stackTrace(e);
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
+    }
 }
