@@ -1,16 +1,23 @@
 package org.logevents.observers;
 
 import java.io.IOException;
+import java.util.Properties;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.destinations.LogEventDestination;
 import org.logevents.destinations.LogEventFormatter;
+import org.logevents.util.ConfigUtil;
 
 public class TextLogEventObserver implements LogEventObserver {
 
-    private LogEventDestination eventDestination;
-    private LogEventFormatter logEventFormatter;
+    private final LogEventDestination eventDestination;
+    private final LogEventFormatter logEventFormatter;
+
+    public TextLogEventObserver(Properties configuration, String prefix) {
+        eventDestination = ConfigUtil.create(prefix + ".eventDestination", "org.logevents.destinations", configuration);
+        logEventFormatter = ConfigUtil.create(prefix + ".logEventFormatter", "org.logevents.destinations", configuration);
+    }
 
     public TextLogEventObserver(LogEventDestination eventDestination, LogEventFormatter logEventFormatter) {
         this.eventDestination = eventDestination;

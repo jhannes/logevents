@@ -1,6 +1,7 @@
 package org.logevents.observers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.logevents.LogEvent;
@@ -25,6 +26,10 @@ public class CompositeLogEventObserver implements LogEventObserver {
     }
 
     public static LogEventObserver combine(LogEventObserver... args) {
+        return combineList(Arrays.asList(args));
+    }
+
+    public static LogEventObserver combineList(List<LogEventObserver> args) {
         List<LogEventObserver> observers = new ArrayList<>();
         for (LogEventObserver o : args) {
             if (o == null || o instanceof NullLogEventObserver) {

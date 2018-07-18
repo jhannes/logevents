@@ -32,14 +32,7 @@ public interface LogEventFormatter {
     }
 
     static LogEventFormatter withDefaultFormat() {
-        return new LogEventFormatter() {
-            @Override
-            public String format(LogEvent e) {
-                return String.format("%s [%s] [%s] [%s]: %s\n",
-                        e.getZonedDateTime().toLocalTime(), e.getThreadName(), LogEventFormatter.leftPad(e.getLevel(), 5, ' '), e.getLoggerName(), e.formatMessage())
-                        + LogEventFormatter.stackTrace(e);
-            }
-        };
+        return new TTLLEventLogFormatter();
     }
 
 }
