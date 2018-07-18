@@ -5,7 +5,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 
-import org.logevents.LogEventConfigurator;
+import org.logevents.LogEventConfiguration;
 import org.logevents.extend.ansi.AnsiLogEventFormatter;
 import org.logevents.observers.batch.BatchingLogEventObserver;
 import org.logevents.observers.batch.SlackLogEventBatchProcessor;
@@ -17,7 +17,7 @@ import org.slf4j.event.Level;
 public class DemoSlack {
 
     public static void main(String[] args) throws InterruptedException, MalformedURLException {
-        LogEventConfigurator configurator = new LogEventConfigurator();
+        LogEventConfiguration configurator = new LogEventConfiguration();
         configurator.setLevel(Level.INFO);
 
         SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor();
@@ -32,8 +32,8 @@ public class DemoSlack {
         batchEventObserver.setIdleThreshold(Duration.ofSeconds(3));
 
         configurator.setObserver(configurator.combine(
-                LogEventConfigurator.levelThresholdObserver(Level.WARN, batchEventObserver),
-                LogEventConfigurator.consoleObserver(new AnsiLogEventFormatter())));
+                LogEventConfiguration.levelThresholdObserver(Level.WARN, batchEventObserver),
+                LogEventConfiguration.consoleObserver(new AnsiLogEventFormatter())));
 
 
         MDC.put("User", System.getProperty("user.name"));

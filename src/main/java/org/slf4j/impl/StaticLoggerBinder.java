@@ -11,16 +11,14 @@ public class StaticLoggerBinder implements LoggerFactoryBinder {
         return instance;
     }
 
-    private LogEventFactory loggerFactory = new LogEventFactory();
-
     @Override
     public LogEventFactory getLoggerFactory() {
-        return loggerFactory;
+        return LogEventFactory.getInstance();
     }
 
     @Override
     public String getLoggerFactoryClassStr() {
-        return loggerFactory.getClass().getName();
+        return LogEventFactory.class.getName();
     }
 
 }

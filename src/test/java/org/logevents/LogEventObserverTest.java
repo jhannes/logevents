@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
 public class LogEventObserverTest {
-    private LogEventConfigurator configurator = new LogEventConfigurator();
+    private LogEventConfiguration configurator = new LogEventConfiguration();
 
     private Logger childLogger = LoggerFactory.getLogger("org.logevents.testing.parent.Child");
 

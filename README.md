@@ -141,7 +141,7 @@ public LoggingFilter implements javax.servlet.Filter {
 }
 ```
 
-You can configure the logging implementation to use the MDC, or you
+You can configure the logging implementation (logevents or logback) to use the MDC, or you
 can even use it from your own code:
 
 ```java
@@ -351,7 +351,7 @@ public class LogEventRuleTest {
 
 ### TODO
 
-* Implement servlets
-* Implement emergency logging if something fails in logevents
 * Implement default configuration and configuration service loading
 * Profiles
+* Implement servlets
+* Implement emergency logging if something fails in logevents
