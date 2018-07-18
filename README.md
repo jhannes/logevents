@@ -352,5 +352,8 @@ public class LogEventRuleTest {
 ### TODO
 
 * Implement proper ANSI logging for console
+* JUL-to-SLF4j
+* Extract proper default configuration
 * Move LogEventConfiguration and LogEventFactory around to my satisfaction
 * Implement emergency logging if something fails in logevents
+

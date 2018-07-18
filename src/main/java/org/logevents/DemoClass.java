@@ -4,10 +4,13 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 public class DemoClass {
 
     public static void main(String[] args) throws IOException {
+        new LogEventConfiguration().setLevel(Level.INFO);
+
         Logger logger = LoggerFactory.getLogger(DemoClass.class);
         logger.warn("Hello to child {}: {}", "world", 123122);
 
@@ -15,7 +18,9 @@ public class DemoClass {
         parentLogger.warn("Hello to parent {}: {}", "world", 123122);
 
         Logger rootLogger = LoggerFactory.getLogger("");
-        rootLogger.warn("Hello to root {}: {}", "world", 123122);
+        rootLogger.info("Hello to root {}: {}", "world", 123122);
+
+        rootLogger.error("Here is an error");
     }
 
 }

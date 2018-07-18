@@ -1,5 +1,7 @@
 package org.logevents;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -122,6 +124,15 @@ public class LogEvent implements LoggingEvent {
             }
         }
         throw new RuntimeException("Could not find calling stack trace element!");
+    }
+
+    public String formatStackTrace() {
+        if (getThrowable() != null) {
+            StringWriter s = new StringWriter();
+            getThrowable().printStackTrace(new PrintWriter(s));
+            return s.toString();
+        }
+        return "";
     }
 
 }

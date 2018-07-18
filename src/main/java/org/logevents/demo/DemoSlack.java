@@ -6,7 +6,6 @@ import java.net.URL;
 import java.time.Duration;
 
 import org.logevents.LogEventConfiguration;
-import org.logevents.extend.ansi.AnsiLogEventFormatter;
 import org.logevents.observers.batch.BatchingLogEventObserver;
 import org.logevents.observers.batch.SlackLogEventBatchProcessor;
 import org.slf4j.Logger;
@@ -23,7 +22,7 @@ public class DemoSlack {
         SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor();
         slackLogEventBatchProcessor.setUsername("Loge Vents");
         slackLogEventBatchProcessor.setChannel("test");
-        slackLogEventBatchProcessor.setSlackUrl(new URL("https://tet"));
+        slackLogEventBatchProcessor.setSlackUrl(new URL("https://example.com"));
 
 
         BatchingLogEventObserver batchEventObserver = configurator.batchEventObserver(slackLogEventBatchProcessor);
@@ -33,7 +32,7 @@ public class DemoSlack {
 
         configurator.setObserver(configurator.combine(
                 LogEventConfiguration.levelThresholdObserver(Level.WARN, batchEventObserver),
-                LogEventConfiguration.consoleObserver(new AnsiLogEventFormatter())));
+                LogEventConfiguration.consoleObserver()));
 
 
         MDC.put("User", System.getProperty("user.name"));

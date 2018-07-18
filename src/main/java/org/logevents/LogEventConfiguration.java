@@ -7,6 +7,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.logevents.destinations.ConsoleLogEventDestination;
+import org.logevents.destinations.ConsoleLogEventFormatter;
 import org.logevents.destinations.DateRollingFileDestination;
 import org.logevents.destinations.LogEventFormatter;
 import org.logevents.observers.CompositeLogEventObserver;
@@ -67,7 +68,7 @@ public class LogEventConfiguration {
     }
 
     public static LogEventObserver consoleObserver() {
-        return consoleObserver(LogEventFormatter.withDefaultFormat());
+        return consoleObserver(new ConsoleLogEventFormatter());
     }
 
     public static LogEventObserver consoleObserver(LogEventFormatter formatter) {
