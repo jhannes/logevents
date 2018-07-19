@@ -20,7 +20,7 @@ configurator.setObserver("org.myapp",
         configurator.dateRollingAppender("log/info.log"), true);
 ```
 
-Log Events tries to make concrete improvements compared to Logback:
+Logevents tries to make concrete improvements compared to Logback:
 
 * Simpler programmatic configuration by dropping the `LifeCycle` concept
 * More navigable code base with less indirection
@@ -38,12 +38,13 @@ Log Events tries to make concrete improvements compared to Logback:
 
 ## Logging with SLF4J
 
-The SLF4J documentation is a bit extensive and not to-the-point. This section is
-about SLF4J and not Logevents. It can be useful even if you are not using Logevents.
+This section is about SLF4J and not Logevents. It can be useful even if you
+are not using Logevents. The [SLF4J documentation](https://www.slf4j.org/manual.html)
+is a bit extensive and not to-the-point. 
 
 SLF4J (Simple Logging Facade for Java) is the most used framework by libraries
 and applications for logging. It contains only interfaces and an application is
-required to include an implementation such as Logback, Logevents, slf4j-Log4j or
+required to include an implementation such as Logback, Logevents, slf4j-log4j or
 slf4j-jul to capture the logs.
 
 
@@ -260,7 +261,40 @@ can be omitted - so `TextLogEventObserver` and be used instead of
 
 ### Intercepting log4j and JUL logging
 
+SLF4J comes out of the box with a bridge from java.util.logging
+(jul-to-slf4j) and log4j (log4j-to-slf4j). This is very useful if
+you are using a third party library which uses one of these
+logging implementations (for example Tomcat). For log4j, you
+simply need to include a dependency in your `pom.xml`:
+
+**For log4j:**
+
+```xml
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>log4j-to-slf4j</artifactId>
+    <version>1.7.25</version>
+</dependency>
+```
+
+**For java.util.logging**
+
+```xml
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>jul-to-slf4j</artifactId>
+    <version>1.7.25</version>
+</dependency>
+```
+
+java.util.logging is slightly more involved: In addition, you have
+to call `SLF4JBridgeHandler.install()` from your own code. However,
+with Logevents, this step isn't needed as Logevents will call this
+for you at the earliest possibility (usually at the moment when you
+first call `LoggerFactory.getLogger`). 
  
+
+
 
 ## Advanced usage patterns
 
@@ -297,6 +331,12 @@ observer.slack.batchProcessor=org.logevents.observers.batch.SlackLogEventBatchPr
 observer.slack.batchProcessor.channel=Servers
 observer.slack.batchProcessor.slackUrl=...
 ```
+
+### Slack
+
+Logevents comes with an example implementation of logging to Slack in
+the form of `SlackLogEventBatchProcessor`. You can subclass this to customize
+your Slack messages.
 
 
 ### Servlets
@@ -341,7 +381,7 @@ public class LogEventRuleTest {
 ```
 
 
-### JMX
+### JMX (TODO)
 
 
 ## Questions and answers
@@ -351,9 +391,9 @@ public class LogEventRuleTest {
 
 ### TODO
 
-* Implement proper ANSI logging for console
 * JUL-to-SLF4j
 * Extract proper default configuration
+* Slack configuration
 * Move LogEventConfiguration and LogEventFactory around to my satisfaction
 * Implement emergency logging if something fails in logevents
 

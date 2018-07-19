@@ -16,7 +16,6 @@ import org.logevents.extend.servlets.LogEventsConfigurationServlet;
 import org.logevents.extend.servlets.LogEventsServlets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.event.Level;
 
 public class Main {
@@ -34,9 +33,6 @@ public class Main {
     }
 
     public static void main(String[] args) throws LifecycleException {
-        SLF4JBridgeHandler.removeHandlersForRootLogger();
-        SLF4JBridgeHandler.install();
-
         LogEventFactory factory = LogEventFactory.getInstance();
         factory.setLevel(factory.getLogger("org.logeventsdemo"), Level.DEBUG);
         factory.setLevel(factory.getRootLogger(), Level.INFO);

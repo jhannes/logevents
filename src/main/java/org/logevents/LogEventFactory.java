@@ -19,6 +19,7 @@ import org.logevents.observers.NullLogEventObserver;
 import org.logevents.util.ConfigUtil;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.event.Level;
 
 public class LogEventFactory implements ILoggerFactory {
@@ -178,6 +179,14 @@ public class LogEventFactory implements ILoggerFactory {
         rootLogger.setOwnObserver(LogEventConfiguration.consoleObserver(), false);
         loggerCache.values().forEach(logger -> logger.reset());
         refreshLoggers(rootLogger);
+
+        try {
+            Class.forName("org.slf4j.bridge.SLF4JBridgeHandler");
+            SLF4JBridgeHandler.removeHandlersForRootLogger();
+            SLF4JBridgeHandler.install();
+        } catch (ClassNotFoundException ignored) {
+
+        }
 
         configure(loadConfiguration(getProfiles()));
     }
