@@ -7,6 +7,19 @@
     <version>0.1-SNAPSHOT</version>
     <name>logevents for Java</name>
     <description>Simple implementation of slf4j</description>
+    <licenses>
+        <license>
+            <name>The Apache Licence, version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Johannes Brodwall</name>
+            <email>jhannes@gmail.com</email>
+            <organizationUrl>https://github.com/jhannes</organizationUrl>
+        </developer>
+    </developers>
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -45,8 +58,62 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+    <scm>
+        <connection>scm:git:https://github.com/jhannes/logevents.git</connection>
+        <developerConnection>scm:git:https://github.com/jhannes/logevents.git</developerConnection>
+        <url>https://github.com/jhannes/logevents.git</url>
+        <tag>HEAD</tag>
+    </scm>
+    <distributionManagement>
+        <repository>
+            <id>bintray-repo-maven</id>
+            <url>https://api.bintray.com/maven/jhannes/org.logevents/logevents/;publish=1</url>
+        </repository>
+    </distributionManagement>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

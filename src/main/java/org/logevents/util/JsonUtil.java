@@ -5,7 +5,7 @@ import java.util.Map;
 
 /**
  * A utility class for minimal JSON functionality. Prints a
- * Map<String, Object> as JSON, supporting Map, Iterable, String,
+ * Map&lt;String, Object&gt; as JSON, supporting Map, Iterable, String,
  * Number and Boolean.
  *
  * This class is standalone and only depends on Java. It can be copied-and-
@@ -13,7 +13,7 @@ import java.util.Map;
  *
  * This class is independently shared under the BSD license 2.0.
  *
- * @author Johannes Brodwall <johannes@brodwall.com>
+ * @author johannes@brodwall.com (Johannes Brodwall)
  *
  */
 public class JsonUtil {
