@@ -1,29 +1,42 @@
 package org.logevents.observers.batch;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 
 import org.logevents.LogEvent;
-import org.logevents.util.NetUtils;
 import org.logevents.util.JsonUtil;
+import org.logevents.util.NetUtils;
 
 public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
 
-    private String username;
-    private String channel;
+    private Optional<String> username = Optional.empty();
+    private Optional<String> channel = Optional.empty();
     private URL slackUrl;
 
+    public SlackLogEventBatchProcessor(URL url) {
+        this.slackUrl = url;
+    }
+
+    public SlackLogEventBatchProcessor(Properties properties, String prefix) throws MalformedURLException {
+        setUsername(properties.getProperty(prefix + ".username"));
+        setChannel(properties.getProperty(prefix + ".channel"));
+        this.slackUrl = new URL(properties.getProperty(prefix + ".slackUrl"));
+    }
+
     public void setUsername(String username) {
-        this.username = username;
+        this.username = Optional.ofNullable(username);
     }
 
     public void setChannel(String channel) {
-        this.channel = channel;
+        this.channel = Optional.ofNullable(channel);
     }
 
     public void setSlackUrl(URL slackUrl) {
@@ -36,6 +49,8 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
             sendSlackMessage(batch);
         } catch (IOException e) {
             // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -59,8 +74,8 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
         LogEventGroup mainGroup = firstHighestLevelLogEventGroup(batch);
 
         Map<String, Object> message = new HashMap<>();
-        message.put("username", this.username);
-        message.put("channel", this.channel);
+        username.ifPresent(u -> message.put("username", u));
+        channel.ifPresent(c -> message.put("channel", c));
         message.put("attachments", createAttachments(mainGroup, batch));
         message.put("text", createText(mainGroup));
         return message;
@@ -68,7 +83,6 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
 
     protected String createText(LogEventGroup mainGroup) {
         LogEvent event = mainGroup.headMessage();
-        String loggerName = event.getLoggerName();
         Throwable throwable = event.getRootThrowable();
         String exceptionInfo = "";
         if (throwable != null) {
@@ -77,7 +91,7 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
         return event.getLevel().toString().substring(0, 1) + " "
             + exceptionInfo
             + event.formatMessage()
-            + " [" + loggerName.substring(loggerName.lastIndexOf(".")+1, loggerName.length()) + "]"
+            + " [" + event.getLoggerName(10) + "]"
             + (mainGroup.size() > 1 ? " (" + mainGroup.size() + " repetitions)" : "");
     }
 

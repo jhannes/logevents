@@ -10,6 +10,9 @@ public class ConfigUtil {
     @SuppressWarnings("unchecked")
     public static <T> T create(String prefix, String defaultPackage, Properties configuration) {
         String className = configuration.getProperty(prefix);
+        if (className == null) {
+            throw new IllegalArgumentException("Missing configuration for class in " + prefix);
+        }
         if (!className.contains(".")) {
             className = defaultPackage + "." + className;
         }

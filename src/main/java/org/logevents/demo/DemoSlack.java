@@ -6,7 +6,7 @@ import java.net.URL;
 import java.time.Duration;
 
 import org.logevents.LogEventConfiguration;
-import org.logevents.observers.batch.BatchingLogEventObserver;
+import org.logevents.observers.BatchingLogEventObserver;
 import org.logevents.observers.batch.SlackLogEventBatchProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +19,11 @@ public class DemoSlack {
         LogEventConfiguration configurator = new LogEventConfiguration();
         configurator.setLevel(Level.INFO);
 
-        SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor();
+        // Get yours at https://www.slack.com/apps/manage/custom-integrations
+        URL slackUrl = new URL("https://hooks.slack.com/services/....");
+        SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor(slackUrl);
         slackLogEventBatchProcessor.setUsername("Loge Vents");
         slackLogEventBatchProcessor.setChannel("test");
-        // Get yours at https://api.slack.com/apps
-        slackLogEventBatchProcessor.setSlackUrl(new URL("https://hooks.slack.com/services/...."));
 
         BatchingLogEventObserver batchEventObserver = configurator.batchEventObserver(slackLogEventBatchProcessor);
         batchEventObserver.setCooldownTime(Duration.ofSeconds(5));

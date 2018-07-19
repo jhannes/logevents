@@ -3,7 +3,7 @@ package org.logevents;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
-import org.logevents.observers.CyclicBufferLogEventObserver;
+import org.logevents.observers.CircularBufferLogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -23,7 +23,7 @@ public class LogEventObserverTest {
         configurator.reset();
         configurator.setLevel(Level.WARN);
 
-        CyclicBufferLogEventObserver observer = new CyclicBufferLogEventObserver();
+        CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
         configurator.setObserver(childLogger, observer, false);
 
         childLogger.warn("Some Message");
@@ -35,7 +35,7 @@ public class LogEventObserverTest {
         configurator.reset();
         configurator.setLevel(Level.WARN);
 
-        CyclicBufferLogEventObserver observer = new CyclicBufferLogEventObserver();
+        CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
         configurator.setObserver(parentLogger, observer, false);
         childLogger.warn("Some Message");
 
@@ -48,7 +48,7 @@ public class LogEventObserverTest {
         configurator.reset();
         configurator.setLevel(Level.WARN);
 
-        CyclicBufferLogEventObserver observer = new CyclicBufferLogEventObserver();
+        CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
         configurator.setObserver(grandParentLogger, observer, false);
         childLogger.error("Some Message");
 
@@ -61,10 +61,10 @@ public class LogEventObserverTest {
         configurator.reset();
         configurator.setLevel(Level.WARN);
 
-        CyclicBufferLogEventObserver parentObserver = new CyclicBufferLogEventObserver();
+        CircularBufferLogEventObserver parentObserver = new CircularBufferLogEventObserver();
         configurator.setObserver(parentLogger, parentObserver, true);
 
-        CyclicBufferLogEventObserver childObserver = new CyclicBufferLogEventObserver();
+        CircularBufferLogEventObserver childObserver = new CircularBufferLogEventObserver();
         configurator.setObserver(childLogger, childObserver, true);
 
         childLogger.warn("Some Message");

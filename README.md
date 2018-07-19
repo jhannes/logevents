@@ -323,13 +323,14 @@ configurator.setObserver(configurator.combine(
 Or with properties files:
 
 ```
-observer.slack=BatchingLogEventObserver
-observer.slack.cooldownTime=PT30S
-observer.slack.maximumWaitTimm=PT5M
-observer.slack.idleThreshold=PT10S
-observer.slack.batchProcessor=org.logevents.observers.batch.SlackLogEventBatchProcessor
-observer.slack.batchProcessor.channel=Servers
-observer.slack.batchProcessor.slackUrl=...
+observer.slack=LevelThresholdConditionalObserver
+observer.slack.threshold=WARN
+observer.slack.delegate=BatchingLogEventObserver
+observer.slack.delegate.cooldownTime=PT30S
+observer.slack.delegate.maximumWaitTime=PT5M
+observer.slack.delegate.idleThreshold=PT10S
+observer.slack.delegate.batchProcessor=org.logevents.observers.batch.SlackLogEventBatchProcessor
+observer.slack.delegate.batchProcessor.slackUrl=https://hooks.slack.com/services/...
 ```
 
 ### Slack

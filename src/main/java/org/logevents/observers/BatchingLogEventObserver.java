@@ -1,17 +1,37 @@
-package org.logevents.observers.batch;
+package org.logevents.observers;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.observers.batch.LogEventBatchProcessor;
+import org.logevents.observers.batch.LogEventGroup;
+import org.logevents.util.ConfigUtil;
 
 public class BatchingLogEventObserver implements LogEventObserver {
+
+    private static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
+            new ThreadFactory() {
+                private final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
+                private final AtomicInteger threadNumber = new AtomicInteger(1);
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread thread = defaultFactory.newThread(r);
+                    thread.setName("LogEvent$ScheduleExecutor-" + threadNumber.getAndIncrement());
+                    thread.setDaemon(true);
+                    return thread;
+                }
+            });
 
     private final LogEventBatchProcessor batchProcessor;
     private final ScheduledExecutorService executor;
@@ -26,9 +46,19 @@ public class BatchingLogEventObserver implements LogEventObserver {
     private LogEventGroup currentMessage;
     private ScheduledFuture<?> scheduledTask;
 
-    public BatchingLogEventObserver(LogEventBatchProcessor batchProcessor, ScheduledExecutorService executor) {
+    public BatchingLogEventObserver(Properties configuration, String prefix) {
+        idleThreshold = Duration.parse(configuration.getProperty(prefix + ".idleThreshold"));
+        cooldownTime = Duration.parse(configuration.getProperty(prefix + ".cooldownTime"));
+        maximumWaitTime = Duration.parse(configuration.getProperty(prefix + ".maximumWaitTime"));
+
+        this.batchProcessor = ConfigUtil.create(prefix + ".batchProcessor", "org.logevents.observers.batch", configuration);
+
+        executor = scheduledExecutorService;
+    }
+
+    public BatchingLogEventObserver(LogEventBatchProcessor batchProcessor) {
         this.batchProcessor = batchProcessor;
-        this.executor = executor;
+        executor = scheduledExecutorService;
     }
 
     @Override

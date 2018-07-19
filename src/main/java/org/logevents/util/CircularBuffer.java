@@ -119,4 +119,9 @@ public class CircularBuffer<T> implements Collection<T> {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{size=" + size + ",capacity=" + capacity + "}";
+    }
+
 }

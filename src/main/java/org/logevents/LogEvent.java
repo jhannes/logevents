@@ -5,7 +5,9 @@ import java.io.StringWriter;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.MDC;
 import org.slf4j.Marker;
@@ -41,7 +43,7 @@ public class LogEvent implements LoggingEvent {
             this.args = args;
         }
 
-        this.mdcProperties = MDC.getCopyOfContextMap();
+        this.mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
     }
 
     public Map<String, String> getMdcProperties() {
@@ -62,6 +64,26 @@ public class LogEvent implements LoggingEvent {
     public String getLoggerName() {
         return loggerName;
     }
+
+    public String getLoggerName(int maxLength) {
+        String[] parts = loggerName.split("\\.");
+        String lastPartName = parts[parts.length-1];
+        int remainder = maxLength - lastPartName.length() - ((parts.length-1) * 2);
+
+        StringBuilder result = new StringBuilder();
+        for (int i=0; i<parts.length-1; i++) {
+            if (parts[i].length() > remainder) {
+                remainder = 0;
+                result.append(parts[i].charAt(0)).append(".");
+            } else {
+                remainder -= parts[i].length()+1;
+                result.append(parts[i]).append(".");
+            }
+        }
+        result.append(lastPartName);
+        return result.toString();
+    }
+
 
     @Override
     public String getMessage() {
@@ -139,5 +161,6 @@ public class LogEvent implements LoggingEvent {
     public String toString() {
         return getClass().getSimpleName() + "{" + level + "," + format + "}";
     }
+
 
 }

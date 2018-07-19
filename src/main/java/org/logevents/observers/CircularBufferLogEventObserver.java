@@ -23,4 +23,11 @@ public class CircularBufferLogEventObserver implements LogEventObserver {
     public String toString() {
         return getClass().getSimpleName() + "{size=" + circularBuffer.size() + "}";
     }
+
+    public String singleMessage() {
+        if (circularBuffer.size() != 1) {
+            throw new IllegalStateException("Expected 1 message, but was " + circularBuffer.size());
+        }
+        return circularBuffer.get(0).getMessage();
+    }
 }

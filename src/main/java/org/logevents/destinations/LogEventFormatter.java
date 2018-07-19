@@ -1,7 +1,6 @@
 package org.logevents.destinations;
 
 import org.logevents.LogEvent;
-import org.slf4j.event.Level;
 
 public interface LogEventFormatter {
 
