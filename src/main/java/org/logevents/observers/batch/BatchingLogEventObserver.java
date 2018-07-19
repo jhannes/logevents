@@ -26,7 +26,6 @@ public class BatchingLogEventObserver implements LogEventObserver {
     private LogEventGroup currentMessage;
     private ScheduledFuture<?> scheduledTask;
 
-
     public BatchingLogEventObserver(LogEventBatchProcessor batchProcessor, ScheduledExecutorService executor) {
         this.batchProcessor = batchProcessor;
         this.executor = executor;

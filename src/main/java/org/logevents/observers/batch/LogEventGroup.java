@@ -21,7 +21,7 @@ public class LogEventGroup {
     public boolean isMatching(LogEvent logEvent) {
         return headMessage().getLevel().equals(logEvent.getLevel())
                 && headMessage().getLoggerName().equals(logEvent.getLoggerName())
-                && headMessage().getMessage().equals(logEvent.getLoggerName());
+                && headMessage().getMessage().equals(logEvent.getMessage());
     }
 
     LogEvent headMessage() {

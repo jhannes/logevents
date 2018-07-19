@@ -30,32 +30,44 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
         this.slackUrl = slackUrl;
     }
 
-
     @Override
     public void processBatch(List<LogEventGroup> batch) {
         try {
-            sendSingleMessage(batch.get(0).headMessage());
+            sendSlackMessage(batch);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
 
-    private void sendSingleMessage(LogEvent event) throws IOException {
-        Map<String, Object> slackMessage = createSlackMessage(event);
+    protected void sendSlackMessage(List<LogEventGroup> batch) throws IOException {
+        Map<String, Object> slackMessage = createSlackMessage(batch);
         NetUtils.postJson(slackUrl, JsonUtil.toJson(slackMessage));
     }
 
-    protected Map<String, Object> createSlackMessage(LogEvent event) {
+    protected LogEventGroup firstHighestLevelLogEventGroup(List<LogEventGroup> batch) {
+        LogEventGroup result = batch.get(0);
+        for (LogEventGroup group : batch) {
+            if (group.headMessage().getLevel().toInt() > result.headMessage().getLevel().toInt()) {
+                result = group;
+            }
+        }
+        return result;
+    }
+
+    protected Map<String, Object> createSlackMessage(List<LogEventGroup> batch) {
+        LogEventGroup mainGroup = firstHighestLevelLogEventGroup(batch);
+
         Map<String, Object> message = new HashMap<>();
         message.put("username", this.username);
         message.put("channel", this.channel);
-        message.put("attachments", createAttachments(event));
-        message.put("text", createText(event));
+        message.put("attachments", createAttachments(mainGroup, batch));
+        message.put("text", createText(mainGroup));
         return message;
     }
 
-    protected Object createText(LogEvent event) {
+    protected String createText(LogEventGroup mainGroup) {
+        LogEvent event = mainGroup.headMessage();
         String loggerName = event.getLoggerName();
         Throwable throwable = event.getRootThrowable();
         String exceptionInfo = "";
@@ -65,25 +77,53 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
         return event.getLevel().toString().substring(0, 1) + " "
             + exceptionInfo
             + event.formatMessage()
-            + " [" + loggerName.substring(loggerName.lastIndexOf(".")+1, loggerName.length()) + "]";
+            + " [" + loggerName.substring(loggerName.lastIndexOf(".")+1, loggerName.length()) + "]"
+            + (mainGroup.size() > 1 ? " (" + mainGroup.size() + " repetitions)" : "");
     }
 
-    protected List<Map<String, Object>> createAttachments(LogEvent event) {
+    protected List<Map<String, Object>> createAttachments(LogEventGroup mainGroup, List<LogEventGroup> batch) {
+        LogEvent event = mainGroup.headMessage();
         ArrayList<Map<String, Object>> result = new ArrayList<>();
+        result.add(createDetailsAttachment(event));
         if (event.getThrowable() != null) {
             result.add(createStackTraceAttachment(event));
         }
-        if (!event.getMdcProperties().isEmpty()) {
-            result.add(createMdcAttachment(event));
+        if (batch.size() > 1) {
+            result.add(createSupressedEventsAttachment(mainGroup, batch));
         }
         return result;
     }
 
-    private Map<String, Object> createMdcAttachment(LogEvent event) {
+    protected Map<String, Object> createSupressedEventsAttachment(LogEventGroup mainGroup, List<LogEventGroup> batch) {
+        Map<String, Object> attachment = new HashMap<>();
+        attachment.put("title", "Suppressed log events");
+        attachment.put("color", "danger");
+        attachment.put("mrkdwn_in", Arrays.asList("text"));
+
+        StringBuilder text = new StringBuilder();
+        for (LogEventGroup group : batch) {
+            String message = group.headMessage().formatMessage();
+            if (group == mainGroup) {
+                message = bold(message);
+            }
+            if (group.size() > 1) {
+                message += " (" + group.size() + " repetitions)";
+            }
+            text.append("*")
+                .append(" _" + group.headMessage().getZonedDateTime().toLocalTime() + "_: ")
+                .append(message)
+                .append("\n");
+        }
+        attachment.put("text", text);
+        return attachment;
+    }
+
+    protected Map<String, Object> createDetailsAttachment(LogEvent event) {
         Map<String, Object> attachment = new HashMap<>();
         attachment.put("title", "Details");
         attachment.put("color", "danger");
         List<Map<String, Object>> fields = new ArrayList<>();
+        fields.add(slackMessageField("Level", event.getLevel().toString(), false));
         for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
             fields.add(slackMessageField(entry.getKey(), entry.getValue(), false));
         }
@@ -134,7 +174,7 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
 
     protected String getSourceLink(StackTraceElement stackTraceElement) {
         if (stackTraceElement.getClassName().startsWith("org.logevents")) {
-            return "https://github.com/jhannes/logevents/master/src/main/java/"
+            return "https://github.com/jhannes/logevents/tree/master/src/main/java/"
                     + stackTraceElement.getClassName().replaceAll("\\.", "/") + ".java#L" + stackTraceElement.getLineNumber();
         }
         return null;

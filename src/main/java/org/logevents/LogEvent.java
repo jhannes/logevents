@@ -135,4 +135,9 @@ public class LogEvent implements LoggingEvent {
         return "";
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" + level + "," + format + "}";
+    }
+
 }

@@ -22,8 +22,8 @@ public class DemoSlack {
         SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor();
         slackLogEventBatchProcessor.setUsername("Loge Vents");
         slackLogEventBatchProcessor.setChannel("test");
-        slackLogEventBatchProcessor.setSlackUrl(new URL("https://example.com"));
-
+        // Get yours at https://api.slack.com/apps
+        slackLogEventBatchProcessor.setSlackUrl(new URL("https://hooks.slack.com/services/...."));
 
         BatchingLogEventObserver batchEventObserver = configurator.batchEventObserver(slackLogEventBatchProcessor);
         batchEventObserver.setCooldownTime(Duration.ofSeconds(5));
@@ -33,7 +33,6 @@ public class DemoSlack {
         configurator.setObserver(configurator.combine(
                 LogEventConfiguration.levelThresholdObserver(Level.WARN, batchEventObserver),
                 LogEventConfiguration.consoleObserver()));
-
 
         MDC.put("User", System.getProperty("user.name"));
 
@@ -46,14 +45,11 @@ public class DemoSlack {
         logger.warn("This message about {} should be collected together", "one thing");
         logger.warn("This message about {} should be collected together", "another thing");
         logger.warn("This message about {} should be collected together", "something else");
-        logger.warn("Wait, what?", new IOException());
+        logger.error("Wait, what?", new IOException("Something went wrong"));
         Thread.sleep(5500); // Cooldown time from previous batch
 
-        logger.error("Here is a message with an exception", new RuntimeException());
+        logger.error("Here is a message with an exception", new RuntimeException("Uh oh!"));
         Thread.sleep(5500); // Cooldown time from previous batch
-
-
-        Thread.sleep(3600000);
     }
 
 
