@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.util.ConfigUtil;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.event.Level;
@@ -47,7 +48,7 @@ public class DefaultLogEventsConfigurator implements LogEventConfigurator {
     private void setDefaultLogging(LogEventFactory factory) {
         factory.setLevel(factory.getRootLogger(), Level.INFO);
         factory.setObserver(factory.getRootLogger(),
-                LogEventConfiguration.consoleObserver(),
+                new ConsoleLogEventObserver(),
                 false);
     }
 

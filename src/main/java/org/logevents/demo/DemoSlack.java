@@ -5,8 +5,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 
-import org.logevents.LogEventConfiguration;
+import org.logevents.LogEventFactory;
 import org.logevents.observers.BatchingLogEventObserver;
+import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.observers.ConsoleLogEventObserver;
+import org.logevents.observers.LevelThresholdConditionalObserver;
 import org.logevents.observers.batch.SlackLogEventBatchProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +19,9 @@ import org.slf4j.event.Level;
 public class DemoSlack {
 
     public static void main(String[] args) throws InterruptedException, MalformedURLException {
-        LogEventConfiguration configurator = new LogEventConfiguration();
-        configurator.setLevel(Level.INFO);
+        LogEventFactory factory = LogEventFactory.getInstance();
+
+        factory.setLevel(Level.INFO);
 
         // Get yours at https://www.slack.com/apps/manage/custom-integrations
         URL slackUrl = new URL("https://hooks.slack.com/services/....");
@@ -25,14 +29,13 @@ public class DemoSlack {
         slackLogEventBatchProcessor.setUsername("Loge Vents");
         slackLogEventBatchProcessor.setChannel("test");
 
-        BatchingLogEventObserver batchEventObserver = configurator.batchEventObserver(slackLogEventBatchProcessor);
+        BatchingLogEventObserver batchEventObserver = new BatchingLogEventObserver(slackLogEventBatchProcessor);
         batchEventObserver.setCooldownTime(Duration.ofSeconds(5));
         batchEventObserver.setMaximumWaitTime(Duration.ofMinutes(3));
         batchEventObserver.setIdleThreshold(Duration.ofSeconds(3));
-
-        configurator.setObserver(configurator.combine(
-                LogEventConfiguration.levelThresholdObserver(Level.WARN, batchEventObserver),
-                LogEventConfiguration.consoleObserver()));
+        factory.setObserver(CompositeLogEventObserver.combine(
+                new LevelThresholdConditionalObserver(Level.WARN, batchEventObserver),
+                new ConsoleLogEventObserver()));
 
         MDC.put("User", System.getProperty("user.name"));
 

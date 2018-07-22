@@ -393,5 +393,4 @@ public class LogEventRuleTest {
 ### TODO
 
 * Implement emergency logging if something fails in logevents
-* Move LogEventConfiguration and LogEventFactory around to my satisfaction
 

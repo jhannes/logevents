@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 
 import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
@@ -127,6 +128,10 @@ public class LogEventFactory implements ILoggerFactory {
         return rootLogger;
     }
 
+    public void setLevel(Level level) {
+        setLevel(getRootLogger(), level);
+    }
+
     public Level setLevel(Logger logger, Level level) {
         Level oldLevel = ((LoggerDelegator)logger).getLevelThreshold();
         ((LoggerDelegator)logger).setLevelThreshold(level);
@@ -142,6 +147,10 @@ public class LogEventFactory implements ILoggerFactory {
 
     private boolean isParent(LoggerDelegator parent, LoggerDelegator logger) {
         return logger.getParentLogger() == parent;
+    }
+
+    public void setObserver(LogEventObserver observer) {
+        setObserver(getRootLogger(), observer, true);
     }
 
     public LogEventObserver setObserver(Logger logger, LogEventObserver observer, boolean inheritParentObserver) {
@@ -161,7 +170,7 @@ public class LogEventFactory implements ILoggerFactory {
 
 
     public void reset() {
-        rootLogger.setOwnObserver(LogEventConfiguration.consoleObserver(), false);
+        rootLogger.setOwnObserver(new ConsoleLogEventObserver(), false);
         loggerCache.values().forEach(logger -> logger.reset());
         ServiceLoader<LogEventConfigurator> serviceLoader = ServiceLoader.load(LogEventConfigurator.class);
         if (!serviceLoader.iterator().hasNext()) {
@@ -170,5 +179,7 @@ public class LogEventFactory implements ILoggerFactory {
             serviceLoader.forEach(c -> c.configure(this));
         }
     }
+
+
 
 }

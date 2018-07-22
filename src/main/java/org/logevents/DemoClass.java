@@ -9,7 +9,7 @@ import org.slf4j.event.Level;
 public class DemoClass {
 
     public static void main(String[] args) throws IOException {
-        new LogEventConfiguration().setLevel(Level.INFO);
+        LogEventFactory.getInstance().setLevel(Level.INFO);
 
         Logger logger = LoggerFactory.getLogger(DemoClass.class);
         logger.warn("Hello to child {}: {}", "world", 123122);

@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
 public class LogEventObserverTest {
-    private LogEventConfiguration configurator = new LogEventConfiguration();
 
     private Logger childLogger = LoggerFactory.getLogger("org.logevents.testing.parent.Child");
 
@@ -17,14 +16,16 @@ public class LogEventObserverTest {
 
     private Logger grandParentLogger = LoggerFactory.getLogger("org.logevents.testing");
 
+    private LogEventFactory factory = LogEventFactory.getInstance();
+
 
     @Test
     public void shouldSendEventToObserver() {
-        configurator.reset();
-        configurator.setLevel(Level.WARN);
+        factory.reset();
+        factory.setLevel(Level.WARN);
 
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
-        configurator.setObserver(childLogger, observer, false);
+        factory.setObserver(childLogger, observer, false);
 
         childLogger.warn("Some Message");
         assertEquals("Some Message", observer.singleMessage());
@@ -32,11 +33,11 @@ public class LogEventObserverTest {
 
     @Test
     public void shouldSendEventToParent() {
-        configurator.reset();
-        configurator.setLevel(Level.WARN);
+        factory.reset();
+        factory.setLevel(Level.WARN);
 
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
-        configurator.setObserver(parentLogger, observer, false);
+        factory.setObserver(parentLogger, observer, false);
         childLogger.warn("Some Message");
 
         assertEquals("Some Message", observer.singleMessage());
@@ -45,11 +46,11 @@ public class LogEventObserverTest {
 
     @Test
     public void shouldSendEventToGrandParent() {
-        configurator.reset();
-        configurator.setLevel(Level.WARN);
+        factory.reset();
+        factory.setLevel(Level.WARN);
 
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
-        configurator.setObserver(grandParentLogger, observer, false);
+        factory.setObserver(grandParentLogger, observer, false);
         childLogger.error("Some Message");
 
         assertEquals("Some Message", observer.singleMessage());
@@ -58,14 +59,14 @@ public class LogEventObserverTest {
 
     @Test
     public void shouldSendEventToMultipleObservers() {
-        configurator.reset();
-        configurator.setLevel(Level.WARN);
+        factory.reset();
+        factory.setLevel(Level.WARN);
 
         CircularBufferLogEventObserver parentObserver = new CircularBufferLogEventObserver();
-        configurator.setObserver(parentLogger, parentObserver, true);
+        factory.setObserver(parentLogger, parentObserver, true);
 
         CircularBufferLogEventObserver childObserver = new CircularBufferLogEventObserver();
-        configurator.setObserver(childLogger, childObserver, true);
+        factory.setObserver(childLogger, childObserver, true);
 
         childLogger.warn("Some Message");
 
