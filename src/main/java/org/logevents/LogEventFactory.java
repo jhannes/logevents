@@ -1,25 +1,15 @@
 package org.logevents;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.ServiceLoader;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
-import org.logevents.util.ConfigUtil;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.event.Level;
 
 public class LogEventFactory implements ILoggerFactory {
@@ -112,12 +102,7 @@ public class LogEventFactory implements ILoggerFactory {
     private Map<String, LoggerDelegator> loggerCache = new HashMap<String, LoggerDelegator>();
 
     LogEventFactory() {
-        ServiceLoader<LogEventConfigurator> serviceLoader = ServiceLoader.load(LogEventConfigurator.class);
-        if (!serviceLoader.iterator().hasNext()) {
-            reset();
-        } else {
-            serviceLoader.forEach(c -> c.configure(this));
-        }
+        reset();
     }
 
     @Override
@@ -178,94 +163,12 @@ public class LogEventFactory implements ILoggerFactory {
     public void reset() {
         rootLogger.setOwnObserver(LogEventConfiguration.consoleObserver(), false);
         loggerCache.values().forEach(logger -> logger.reset());
-        refreshLoggers(rootLogger);
-
-        try {
-            Class.forName("org.slf4j.bridge.SLF4JBridgeHandler");
-            SLF4JBridgeHandler.removeHandlersForRootLogger();
-            SLF4JBridgeHandler.install();
-        } catch (ClassNotFoundException ignored) {
-
-        }
-
-        configure(loadConfiguration(getProfiles()));
-    }
-
-    private List<String> getProfiles() {
-        String profilesString = System.getProperty("profiles", System.getProperty("profile", System.getProperty("spring.profiles.active", "")));
-        return Arrays.asList(profilesString.split(","));
-    }
-
-    private void configure(Properties configuration) {
-        Map<String, LogEventObserver> observers = new HashMap<>();
-        for (Object key : configuration.keySet()) {
-            if (key.toString().startsWith("observer.")) {
-                configureObserver(key.toString(), configuration, observers);
-            }
-        }
-
-        configureLogger(getRootLogger(), configuration.getProperty("root"), observers);
-
-        for (Object key : configuration.keySet()) {
-            if (key.toString().startsWith("logger.")) {
-                String loggerName = key.toString().substring("logger.".length());
-                configureLogger(getLogger(loggerName), configuration.getProperty(key.toString()), observers);
-            }
+        ServiceLoader<LogEventConfigurator> serviceLoader = ServiceLoader.load(LogEventConfigurator.class);
+        if (!serviceLoader.iterator().hasNext()) {
+            new DefaultLogEventsConfigurator().configure(this);
+        } else {
+            serviceLoader.forEach(c -> c.configure(this));
         }
     }
-
-    private void configureLogger(Logger logger, String configuration, Map<String, LogEventObserver> observerMap) {
-        if (configuration != null) {
-            int spacePos = configuration.indexOf(' ');
-            Level level = Level.valueOf(spacePos < 0 ? configuration : configuration.substring(0, spacePos).trim());
-            setLevel(logger, level);
-
-            if (spacePos > 0) {
-                List<LogEventObserver> observers = Stream.of(configuration.substring(spacePos+1).trim().split(","))
-                        .map(getObserver(observerMap))
-                        .collect(Collectors.toList());
-                LogEventObserver observer = CompositeLogEventObserver.combineList(observers);
-                setObserver(logger, observer, true);
-            }
-        }
-    }
-
-    private static Function<? super String, LogEventObserver> getObserver(Map<String, LogEventObserver> observers) {
-        return observerName -> observers.computeIfAbsent(observerName, k -> {
-            throw new IllegalArgumentException("Unknown observer " + k + " in " + observers.keySet());
-        });
-    }
-
-    private void configureObserver(String key, Properties configuration, Map<String, LogEventObserver> observers) {
-        String name = key.split("\\.")[1];
-        String prefix = "observer." + name;
-        if (!observers.containsKey(name)) {
-            observers.put(name, ConfigUtil.create(prefix, "org.logevents.observers", configuration));
-        }
-    }
-
-    private Properties loadConfiguration(List<String> profiles) {
-        Properties properties = new Properties();
-        loadConfig(properties, "/logevents.properties");
-        for (String profile : profiles) {
-            if (!profile.isEmpty()) {
-                loadConfig(properties, "/logevents-" + profile + ".properties");
-            }
-        }
-
-        return properties;
-    }
-
-    private void loadConfig(Properties properties, String filename) {
-        try (InputStream defaultPropertiesFile = getClass().getResourceAsStream(filename)) {
-            if (defaultPropertiesFile != null) {
-                properties.load(defaultPropertiesFile);
-            }
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
 
 }

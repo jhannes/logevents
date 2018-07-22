@@ -19,17 +19,8 @@ public class LogEventConfiguration {
 
     private LogEventFactory factory = StaticLoggerBinder.getSingleton().getLoggerFactory();
 
-    public void configure() {
-        factory.setLevel(factory.getRootLogger(), Level.WARN);
-        factory.setObserver(factory.getRootLogger(), consoleObserver(LogEventFormatter.withDefaultFormat()), false);
-    }
-
     public void setObserver(LogEventObserver observer) {
         setObserver(factory.getRootLogger(), observer, false);
-    }
-
-    public void setObserver(String logName, LogEventObserver observer, boolean inheritParentObserver) {
-        setObserver(factory.getLogger(logName), observer, inheritParentObserver);
     }
 
     public void setObserver(Logger logger, LogEventObserver observer, boolean inheritParentObserver) {

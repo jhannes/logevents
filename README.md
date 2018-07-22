@@ -392,9 +392,6 @@ public class LogEventRuleTest {
 
 ### TODO
 
-* JUL-to-SLF4j
-* Extract proper default configuration
-* Slack configuration
-* Move LogEventConfiguration and LogEventFactory around to my satisfaction
 * Implement emergency logging if something fails in logevents
+* Move LogEventConfiguration and LogEventFactory around to my satisfaction
 
