@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.logevents</groupId>
     <artifactId>logevents</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2-SNAPSHOT</version>
     <name>logevents for Java</name>
     <description>Simple implementation of slf4j</description>
 
