@@ -159,9 +159,9 @@ connection.setRequestProperty("X-Request-Context", MDC.get("RequestContext"));
 1. Include the org.logevents:logevents maven dependency
 2. Setup log configuration
    a. If nothing is set up, WARN and higher are logged to console
-   b. You can get the `LogEventConfiguration.instance()` directory and set up everything programmatically
+   b. You can get the `LogEventFactory.getInstance()` directly and set up everything programmatically
    c. If you don't, Logevents will use the Java Service Loader framework to locate an instance of `org.logevents.LogEventConfigurator` interface
-   d. The default `LogEventConfiguration` will try to determine the current profile and load `logevents-<profile>.properties` and `logfile.properties`
+   d. The default `LogEventConfiguration` will attempt to determine the current profile and load `logevents-<profile>.properties` and `logfile.properties`
 
 
 ### Configuring SLF4J with Logevents
@@ -178,22 +178,22 @@ Include Logevents maven dependency:
 
 ### Configuring Log Events programmatically
 
-Use `LogEventConfigurator` to set up the configuration from your
+Use `LogEventFactory` to set up the configuration from your
 main method before calling any logging code:
 
 
 ```java
-LogEventConfigurator configurator = new LogEventConfigurator();
-configurator.setLevel(Level.WARN);
-configurator.setObserver(configurator.combine(
-        configurator.consoleObserver(),
-        configurator.dateRollingAppender("logs/application.log")
+LogEventFactory factory = LogEventFactory.getInstance();
+factory.setLevel(Level.WARN);
+factory.setObserver(CompositeLogEventObserver.combine(
+        new ConsoleLogEventObserver(),
+        new DateRollingLogEventObserver("logs/application.log")
         ));
-configurator.setLevel("org.myapp", Level.INFO);
-configurator.setObserver("org.myapp",
-        configurator.dateRollingAppender("log/info.log"), true);
+factory.setLevel("org.myapp", Level.INFO);
+factory.setObserver("org.myapp",
+        new DateRollingLogEventObserver("log/info.log"), true);
 
-configurator.setObserver("org.logevents",
+factory.setObserver("org.logevents",
         new MyCustomSlackLogEventObserver(),
         true);
 ```
@@ -230,17 +230,19 @@ com.example.myapp.MyAppConfigurator
 ```
 
 
-### Configuring Log Events with a properties file (TODO)
+### Configuring Log Events with a properties file
 
-The default `LogEventConfiguration` will try to determine the current profile, using the system properties `profiles`, `profile`, `spring.profiles.active` or the environment variables `PROFILES`, `PROFILE` or `SPRING_PROFILES_ACTIVE`. If running in JUnit, the profile `test` will be active by default.
+The default `LogEventConfigurator` will try to determine the current profile,
+using the system properties `profiles`, `profile`, `spring.profiles.active` or
+the environment variables `PROFILES`, `PROFILE` or `SPRING_PROFILES_ACTIVE`.
+If running in JUnit, the profile `test` will be active by default (TODO).
 
-Use `LogEventsConfigurator.load(filename)` to read the configuration from a
-properties file. By using ... you can convert a YAML file to `Properties` and
-use that instead.
+`DefaultLogEventConfiguration` will try to load `logevents.properties` and
+`logevents-<profile>.properties` for any properties set in one of the profile
+environment variables or system properties.
 
-
-
-(TODO: `configurator.load(YamlProperties.load("logging.yml")`)
+You can use `LogEventsConfigurator.load(filename)` to read the configuration from a
+properties file explicitly.
 
 The properties-file is on the following format:
 
@@ -389,8 +391,22 @@ public class LogEventRuleTest {
 
 ### Why not logback
 
+When designed, logback was created with a lot of flexibilty for mind for
+possible future requirements. As it has become in wider use, much of this
+flexibility has remained untapped, while the architecture is paying the cost in
+increased indirection.
+
+Based on the experience from using Logback, Logevents is trying to only support
+the flexibility that used in the most common scenarios for Logback. This means
+there are probably things Logback can do that Logevents will be unable to handle.
+On the other hand, most of the common extension scenarios will probably require
+less code to implement with Logevents.
+
 
 ### TODO
 
-* Implement emergency logging if something fails in logevents
-
+* Get some decent test coverage
+* Verify useful usage scenarios
+* JMX
+* YAML?
+* Configuration on disk and reload
