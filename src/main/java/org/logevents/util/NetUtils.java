@@ -20,7 +20,10 @@ public class NetUtils {
         connection.getOutputStream().write(json.getBytes());
         connection.getOutputStream().flush();
 
-        connection.getResponseCode();
+        int statusCode = connection.getResponseCode();
+        if (statusCode >= 400) {
+            throw new IOException("Failed to POST to " + url + ", status code: " + statusCode);
+        }
         // TODO Deal with errors in Observers
         //System.out.println("Response code " + responseCode);
         //System.out.println(readAsString(connection.getInputStream()));

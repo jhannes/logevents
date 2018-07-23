@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 import org.logevents.LogEvent;
+import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.NetUtils;
 
@@ -29,6 +30,7 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
         setUsername(properties.getProperty(prefix + ".username"));
         setChannel(properties.getProperty(prefix + ".channel"));
         this.slackUrl = new URL(properties.getProperty(prefix + ".slackUrl"));
+        LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
     }
 
     public void setUsername(String username) {
@@ -45,19 +47,19 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
 
     @Override
     public void processBatch(List<LogEventGroup> batch) {
+        Map<String, Object> slackMessage;
         try {
-            sendSlackMessage(batch);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            slackMessage = createSlackMessage(batch);
         } catch (Exception e) {
-            e.printStackTrace();
+            LogEventStatus.getInstance().addFatal(this, "Runtime error generating slack message", e);
+            return;
         }
-    }
-
-    protected void sendSlackMessage(List<LogEventGroup> batch) throws IOException {
-        Map<String, Object> slackMessage = createSlackMessage(batch);
-        NetUtils.postJson(slackUrl, JsonUtil.toJson(slackMessage));
+        try {
+            NetUtils.postJson(slackUrl, JsonUtil.toJson(slackMessage));
+        } catch (IOException e) {
+            LogEventStatus.getInstance().addError(this, "Failed to send slack message", e);
+            return;
+        }
     }
 
     protected LogEventGroup firstHighestLevelLogEventGroup(List<LogEventGroup> batch) {

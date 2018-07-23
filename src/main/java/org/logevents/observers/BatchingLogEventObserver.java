@@ -16,6 +16,7 @@ import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.batch.LogEventGroup;
+import org.logevents.status.LogEventStatus;
 import org.logevents.util.ConfigUtil;
 
 public class BatchingLogEventObserver implements LogEventObserver {
@@ -54,6 +55,7 @@ public class BatchingLogEventObserver implements LogEventObserver {
         this.batchProcessor = ConfigUtil.create(prefix + ".batchProcessor", "org.logevents.observers.batch", configuration);
 
         executor = scheduledExecutorService;
+        LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
     }
 
     public BatchingLogEventObserver(LogEventBatchProcessor batchProcessor) {

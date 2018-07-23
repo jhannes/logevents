@@ -5,6 +5,7 @@ import java.util.Properties;
 import org.logevents.destinations.ConsoleLogEventDestination;
 import org.logevents.destinations.ConsoleLogEventFormatter;
 import org.logevents.destinations.LogEventFormatter;
+import org.logevents.status.LogEventStatus;
 import org.logevents.util.ConfigUtil;
 
 public class ConsoleLogEventObserver extends TextLogEventObserver {
@@ -19,6 +20,7 @@ public class ConsoleLogEventObserver extends TextLogEventObserver {
 
     public ConsoleLogEventObserver(Properties configuration, String prefix) {
         this(ConfigUtil.create(prefix + ".logEventFormatter", "org.logevents.destinations", configuration));
+        LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
     }
 
 }

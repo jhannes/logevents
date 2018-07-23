@@ -7,6 +7,7 @@ import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.destinations.LogEventDestination;
 import org.logevents.destinations.LogEventFormatter;
+import org.logevents.status.LogEventStatus;
 import org.logevents.util.ConfigUtil;
 
 public class TextLogEventObserver implements LogEventObserver {
@@ -17,6 +18,7 @@ public class TextLogEventObserver implements LogEventObserver {
     public TextLogEventObserver(Properties configuration, String prefix) {
         eventDestination = ConfigUtil.create(prefix + ".eventDestination", "org.logevents.destinations", configuration);
         logEventFormatter = ConfigUtil.create(prefix + ".logEventFormatter", "org.logevents.destinations", configuration);
+        LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
     }
 
     public TextLogEventObserver(LogEventDestination eventDestination, LogEventFormatter logEventFormatter) {

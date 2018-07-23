@@ -9,6 +9,7 @@ import java.util.ServiceLoader;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
+import org.logevents.status.LogEventStatus;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
@@ -174,9 +175,13 @@ public class LogEventFactory implements ILoggerFactory {
         loggerCache.values().forEach(logger -> logger.reset());
         ServiceLoader<LogEventConfigurator> serviceLoader = ServiceLoader.load(LogEventConfigurator.class);
         if (!serviceLoader.iterator().hasNext()) {
-            new DefaultLogEventsConfigurator().configure(this);
+            LogEventStatus.getInstance().addInfo(this, "No configuration found - using default");
+            new DefaultLogEventConfigurator().configure(this);
         } else {
-            serviceLoader.forEach(c -> c.configure(this));
+            serviceLoader.forEach(c -> {
+                LogEventStatus.getInstance().addInfo(this, "Loading service loader " + c);
+                c.configure(this);
+            });
         }
     }
 

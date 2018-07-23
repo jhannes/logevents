@@ -1,7 +1,8 @@
-package org.logevents;
+package org.logevents.demo;
 
 import java.io.IOException;
 
+import org.logevents.LogEventFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;

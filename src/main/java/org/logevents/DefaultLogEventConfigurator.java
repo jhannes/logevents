@@ -17,7 +17,7 @@ import org.logevents.util.ConfigUtil;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.event.Level;
 
-public class DefaultLogEventsConfigurator implements LogEventConfigurator {
+public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
     @Override
     public void configure(LogEventFactory factory) {

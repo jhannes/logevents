@@ -5,6 +5,7 @@ import java.util.Properties;
 
 import org.logevents.destinations.DateRollingFileDestination;
 import org.logevents.destinations.LogEventFormatter;
+import org.logevents.status.LogEventStatus;
 import org.logevents.util.ConfigUtil;
 
 public class DateRollingLogEventObserver extends TextLogEventObserver {
@@ -20,6 +21,7 @@ public class DateRollingLogEventObserver extends TextLogEventObserver {
     public DateRollingLogEventObserver(Properties configuration, String prefix) throws IOException {
         super(new DateRollingFileDestination(configuration, prefix),
                 ConfigUtil.create(prefix + ".logEventFormatter", "org.logevents.destinations", configuration));
+        LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
     }
 
 
