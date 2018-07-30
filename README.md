@@ -6,18 +6,20 @@ Setting up and configuring logging should be *easy*, whether you want to do it w
 configuration files or in code. Log Events is a tiny logging framework built on top of
 SLF4J - the logging lingua franka for Java.
 
+Logevents supports setting up your logging with a `logevents-<profile>.properties` files,
+with a custom `LogeventsConfigurator` loaded with Java's service loader framework or
+programmatically.
+
 Set up your logging configuration programatically:
 
 ```java
-LogEventConfigurator configurator = new LogEventConfigurator();
-configurator.setLevel(Level.WARN);
-configurator.setObserver(configurator.combine(
-        configurator.consoleObserver(),
-        configurator.dateRollingAppender("logs/application.log")
-        ));
-configurator.setLevel("org.myapp", Level.INFO);
-configurator.setObserver("org.myapp",
-        configurator.dateRollingAppender("log/info.log"), true);
+LogEventFactory logEventFactory = LogEventFactory.getInstance();
+
+logEventFactory.setLevel(Level.ERROR);
+logEventFactory.addObserver(new DateRollingLogEventObserver("target/logs/application.log"));
+
+logEventFactory.setLevel("org.logevents", Level.INFO);
+logEventFactory.addObserver("org.logevents", new DateRollingLogEventObserver("target/logs/info.log"));
 ```
 
 Logevents tries to make concrete improvements compared to Logback:
@@ -38,9 +40,9 @@ Logevents tries to make concrete improvements compared to Logback:
 
 ## Logging with SLF4J
 
-This section is about SLF4J and not Logevents. It can be useful even if you
+This section is about SLF4J more than just about Logevents. It can be useful even if you
 are not using Logevents. The [SLF4J documentation](https://www.slf4j.org/manual.html)
-is a bit extensive and not to-the-point. 
+is a bit exhaustive and not to-the-point.
 
 SLF4J (Simple Logging Facade for Java) is the most used framework by libraries
 and applications for logging. It contains only interfaces and an application is
@@ -73,8 +75,8 @@ public class DemoClass {
     private static Logger logger = LoggerFactory.getLogger(DemoClass.class);
 
     public static void main(String[] args) throws IOException {
-    	logger.warn("Something went wrong");
-	}
+        logger.warn("Something went wrong");
+    }
 }
 ```
 
@@ -118,7 +120,8 @@ current thread. This information can be used by the log implementation to
 filter messages, redirect messages to different destinations or include in
 the output.
 
-It's important to clean up the MDC after use.
+It's important to clean up the MDC after use, or MDC values can show up for
+another request.
 
 Example of usage:
 
@@ -191,14 +194,13 @@ factory.setObserver(CompositeLogEventObserver.combine(
         ));
 factory.setLevel("org.myapp", Level.INFO);
 factory.setObserver("org.myapp",
-        new DateRollingLogEventObserver("log/info.log"), true);
+        new DateRollingLogEventObserver("log/info.log"));
 
 factory.setObserver("org.logevents",
-        new MyCustomSlackLogEventObserver(),
-        true);
+        new MyCustomSlackLogEventObserver());
 ```
 
-### Configuring Log Events with Service Loader (TODO)
+### Configuring Log Events with Service Loader
 
 If you want to ensure that your configuration is loaded before anything
 else happens, you can use the Java Service Loader framework.
@@ -251,7 +253,6 @@ observer.<observerName>=<observerClassName or alias>
 observer.<observerName>.<propertyKey>=<property value>
 
 logger.<category>=[<LEVEL> ]<observerName>
-logger.<category>.includeParentObserver=(true|false)
 
 root=[<LEVEL> ]<observerName>
 ```
@@ -409,4 +410,4 @@ less code to implement with Logevents.
 * Verify useful usage scenarios
 * JMX
 * YAML?
-* Configuration on disk and reload
+* Configuration on local directory with reload

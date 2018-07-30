@@ -5,11 +5,6 @@ package "slf4j" {
   interface ILoggerFactory
 }
 
-package "javax.servlet" {
-  class HttpServlet
-}
-
-
 package "org.logevents" {
 
 	class LoggerDelegator implements Logger {
@@ -18,14 +13,10 @@ package "org.logevents" {
 	  inheritParentObserver : boolean
 	}
 	
-	class LoggerDelegatorFactory implements ILoggerFactory {
-	  #getChildLoggers(logger)
-	  #getParentLogChain(logger)
-	  #getDescentLoggers(logger)
+	class LogEventFactory implements ILoggerFactory {
 	  setLogLevel(logger, level)
 	  setLogEventObserver(logger, observer, inheritParent)
-	  createObserver(properties)
-	  getObserverProxy(name)
+	  addObserver(logger, observer)
 	}
 	
 	interface LogEventGenerator
@@ -43,7 +34,6 @@ package "org.logevents" {
 	
 	class CompositeLogEventObserver implements LogEventObserver
 	class ConditionalLogEventObserver implements LogEventObserver
-	class RoutingLogEventObserver implements LogEventObserver
 	class BatchingLogEventObserver implements LogEventObserver {
 	  idleTime
 	  cooldownTime
@@ -68,27 +58,9 @@ package "org.logevents" {
 		class RollingFileEventDestination extends FileLogEventDestination
 	}
 	
-	class BatchLogEventExecutor
-	BatchLogEventExecutor ..> BatchingLogEventObserver
+	class LogEventBatchProcessor
+	BatchingLogEventObserver ..> LogEventBatchProcessor
 
-	package "extend" {	
-		package "Servlets" {
-			class LogEventsServlet extends HttpServlet
-			LogEventsServlet ..> CircularBufferLogEventDestination
-			class LogEventConfigurationGeneratorServlet extends HttpServlet
-		}
-		
-		package "JUnit" {
-			class LogEventRule <<JUnit rule>>
-			LogEventRule ..> CircularBufferLogEventDestination
-		}
-		
-		package "JMX" {
-			class LogEventsMBean
-			LogEventsMBean ..> CircularBufferLogEventDestination
-			class LogEventConfigurationMBean
-		}
-	}
 }
 	
 @enduml

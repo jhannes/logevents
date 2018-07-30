@@ -3,6 +3,7 @@ package org.logevents.demo;
 import java.io.IOException;
 
 import org.logevents.LogEventFactory;
+import org.logevents.observers.DateRollingLogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -10,9 +11,16 @@ import org.slf4j.event.Level;
 public class DemoClass {
 
     public static void main(String[] args) throws IOException {
-        LogEventFactory.getInstance().setLevel(Level.INFO);
+        LogEventFactory logEventFactory = LogEventFactory.getInstance();
 
-        Logger logger = LoggerFactory.getLogger(DemoClass.class);
+        logEventFactory.setLevel(Level.ERROR);
+        logEventFactory.addObserver(new DateRollingLogEventObserver("target/logs/application.log"));
+
+        logEventFactory.setLevel("org.logevents", Level.INFO);
+        logEventFactory.addObserver("org.logevents", new DateRollingLogEventObserver("target/logs/info.log"));
+
+
+        Logger logger = LoggerFactory.getLogger("org.logevents.DemoClass");
         logger.warn("Hello to child {}: {}", "world", 123122);
 
         Logger parentLogger = LoggerFactory.getLogger("org.logevents");

@@ -8,6 +8,7 @@ import java.util.ServiceLoader;
 
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
+import org.logevents.observers.DateRollingLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.ILoggerFactory;
@@ -133,6 +134,10 @@ public class LogEventFactory implements ILoggerFactory {
         setLevel(getRootLogger(), level);
     }
 
+    public void setLevel(String loggerName, Level level) {
+        setLevel(getLogger(loggerName), level);
+    }
+
     public Level setLevel(Logger logger, Level level) {
         Level oldLevel = ((LoggerDelegator)logger).getLevelThreshold();
         ((LoggerDelegator)logger).setLevelThreshold(level);
@@ -154,11 +159,23 @@ public class LogEventFactory implements ILoggerFactory {
         setObserver(getRootLogger(), observer, true);
     }
 
+    public void setObserver(String loggerName, LogEventObserver observer) {
+        setObserver(getLogger(loggerName), observer, true);
+    }
+
     public LogEventObserver setObserver(Logger logger, LogEventObserver observer, boolean inheritParentObserver) {
         LogEventObserver oldObserver = ((LoggerDelegator)logger).ownObserver;
         ((LoggerDelegator)logger).setOwnObserver(observer, inheritParentObserver);
         refreshLoggers((LoggerDelegator)logger);
         return oldObserver;
+    }
+
+    public void addObserver(LogEventObserver observer) {
+        addObserver(getRootLogger(), observer);
+    }
+
+    public void addObserver(String loggerName, LogEventObserver observer) {
+        addObserver(getLogger(loggerName), observer);
     }
 
     public void addObserver(Logger logger, LogEventObserver observer) {
@@ -184,7 +201,6 @@ public class LogEventFactory implements ILoggerFactory {
             });
         }
     }
-
 
 
 }
