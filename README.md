@@ -15,8 +15,8 @@ Set up your logging configuration programatically:
 ```java
 LogEventFactory logEventFactory = LogEventFactory.getInstance();
 
-logEventFactory.setLevel(Level.ERROR);
-logEventFactory.addObserver(new DateRollingLogEventObserver("target/logs/application.log"));
+logEventFactory.setRootLevel(Level.ERROR);
+logEventFactory.addRootObserver(new DateRollingLogEventObserver("target/logs/application.log"));
 
 logEventFactory.setLevel("org.logevents", Level.INFO);
 logEventFactory.addObserver("org.logevents", new DateRollingLogEventObserver("target/logs/info.log"));
@@ -187,8 +187,8 @@ main method before calling any logging code:
 
 ```java
 LogEventFactory factory = LogEventFactory.getInstance();
-factory.setLevel(Level.WARN);
-factory.setObserver(CompositeLogEventObserver.combine(
+factory.setRootLevel(Level.WARN);
+factory.setRootObserver(CompositeLogEventObserver.combine(
         new ConsoleLogEventObserver(),
         new DateRollingLogEventObserver("logs/application.log")
         ));
@@ -219,8 +219,8 @@ import org.logevents.Configurator;
 public class MyAppConfigurator implements Configurator {
     @Override
     public void configure(LogEventFactory factory) {
-        factory.setLevel(factory.getRootLogger(), Level.WARN);
-        factory.setObserver(factory.getRootLogger(), consoleObserver(), false);
+        factory.setRootLevel(Level.WARN);
+        factory.setRootObserver(new ConsoleLogEventObserver(), false);
     }
 }
 ```
@@ -311,16 +311,22 @@ period before sending more messages). Here is an example of how you can set up
 a batching log event observer:
 
 ```java
-SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor();
+LogEventFactory factory = LogEventFactory.getInstance();
+factory.setRootLevel(Level.INFO);
 
-BatchingLogEventObserver batchEventObserver = configurator.batchEventObserver(slackLogEventBatchProcessor);
+// Get yours at https://www.slack.com/apps/manage/custom-integrations
+URL slackUrl = new URL("https://hooks.slack.com/services/....");
+SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor(slackUrl);
+slackLogEventBatchProcessor.setUsername("Loge Vents");
+slackLogEventBatchProcessor.setChannel("test");
+
+BatchingLogEventObserver batchEventObserver = new BatchingLogEventObserver(slackLogEventBatchProcessor);
 batchEventObserver.setCooldownTime(Duration.ofSeconds(5));
 batchEventObserver.setMaximumWaitTime(Duration.ofMinutes(3));
 batchEventObserver.setIdleThreshold(Duration.ofSeconds(3));
-
-configurator.setObserver(configurator.combine(
-        LogEventConfigurator.levelThresholdObserver(Level.WARN, batchEventObserver),
-        LogEventConfigurator.consoleObserver(new AnsiLogEventFormatter())));
+factory.setRootObserver(CompositeLogEventObserver.combine(
+        new LevelThresholdConditionalObserver(Level.WARN, batchEventObserver),
+        new ConsoleLogEventObserver()));
 ```
 
 Or with properties files:
@@ -328,12 +334,17 @@ Or with properties files:
 ```
 observer.slack=LevelThresholdConditionalObserver
 observer.slack.threshold=WARN
+
 observer.slack.delegate=BatchingLogEventObserver
-observer.slack.delegate.cooldownTime=PT30S
-observer.slack.delegate.maximumWaitTime=PT5M
-observer.slack.delegate.idleThreshold=PT10S
+observer.slack.delegate.cooldownTime=PT10S
+observer.slack.delegate.maximumWaitTime=PT1M
+observer.slack.delegate.idleThreshold=PT5S
+
 observer.slack.delegate.batchProcessor=org.logevents.observers.batch.SlackLogEventBatchProcessor
-observer.slack.delegate.batchProcessor.slackUrl=https://hooks.slack.com/services/...
+observer.slack.delegate.batchProcessor.slackUrl=https://hooks.slack.com/services/xxxx/xxxxx
+
+logger.org.logeventsdemo.Main=DEBUG slack
+
 ```
 
 ### Slack
