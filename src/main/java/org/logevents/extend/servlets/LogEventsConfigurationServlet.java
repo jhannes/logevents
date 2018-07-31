@@ -49,7 +49,7 @@ public class LogEventsConfigurationServlet extends HttpServlet {
         configuration.put("observers", observers);
 
         resp.setContentType("application/json");
-        resp.getWriter().println(JsonUtil.toJson(configuration));
+        resp.getWriter().println(JsonUtil.toIndentedJson(configuration));
     }
 
     @Override

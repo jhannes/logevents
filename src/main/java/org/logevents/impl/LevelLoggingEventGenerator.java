@@ -49,7 +49,7 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
 
     @Override
     public void log(String format, Object... arg) {
-        log(new LogEvent(this.loggerName, this.level, null, format, new Object[] { arg }));
+        log(new LogEvent(this.loggerName, this.level, null, format, arg));
     }
 
     @Override

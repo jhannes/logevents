@@ -15,13 +15,28 @@ public class LogEventRuleTest {
     public LogEventRule logEventRule = new LogEventRule("com.example", Level.DEBUG);
 
     @Test
-    public void shouldCaptureLogEvent() {
+    public void shouldCaptureSingleLogEvent() {
         logger.debug("Hello world");
         logEventRule.assertSingleMessage("Hello world", Level.DEBUG);
     }
 
     @Test
+    public void shouldCaptureMultipleLogEvent() {
+        logger.debug("Not this one");
+        logger.debug("Hello world");
+        logger.info("Hello world");
+        logEventRule.assertContainsMessage("Hello world", Level.DEBUG);
+    }
+
+    @Test
     public void shouldSuppressLogEvent() {
         logger.error("Even though this is an error event, it is not displayed");
+    }
+
+    @Test
+    public void shouldNotCollectEventsBelowThreshold() {
+        logger.trace("Even though this is an error event, it is not displayed");
+        logEventRule.assertNoMessages();
+        logEventRule.assertDoesNotContainMessage("Even though this is an error event, it is not displayed");
     }
 }
