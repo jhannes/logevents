@@ -37,7 +37,7 @@ public class LogEventStatus {
             tailMessages.add(statusEvent);
         }
 
-        if (statusEvent.getLevel().toInt() <= this.threshold.toInt()) {
+        if (this.threshold.toInt() <= statusEvent.getLevel().toInt()) {
             System.err.println(statusEvent.formatMessage());
         }
 

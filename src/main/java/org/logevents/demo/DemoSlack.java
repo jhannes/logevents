@@ -21,7 +21,7 @@ public class DemoSlack {
     public static void main(String[] args) throws InterruptedException, MalformedURLException {
         LogEventFactory factory = LogEventFactory.getInstance();
 
-        factory.setLevel(Level.INFO);
+        factory.setRootLevel(Level.INFO);
 
         // Get yours at https://www.slack.com/apps/manage/custom-integrations
         URL slackUrl = new URL("https://hooks.slack.com/services/....");
@@ -33,7 +33,7 @@ public class DemoSlack {
         batchEventObserver.setCooldownTime(Duration.ofSeconds(5));
         batchEventObserver.setMaximumWaitTime(Duration.ofMinutes(3));
         batchEventObserver.setIdleThreshold(Duration.ofSeconds(3));
-        factory.setObserver(CompositeLogEventObserver.combine(
+        factory.setRootObserver(CompositeLogEventObserver.combine(
                 new LevelThresholdConditionalObserver(Level.WARN, batchEventObserver),
                 new ConsoleLogEventObserver()));
 

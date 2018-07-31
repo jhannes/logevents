@@ -129,7 +129,7 @@ public class LogEventFactory implements ILoggerFactory {
         return rootLogger;
     }
 
-    public void setLevel(Level level) {
+    public void setRootLevel(Level level) {
         setLevel(getRootLogger(), level);
     }
 
@@ -154,7 +154,7 @@ public class LogEventFactory implements ILoggerFactory {
         return logger.getParentLogger() == parent;
     }
 
-    public void setObserver(LogEventObserver observer) {
+    public void setRootObserver(LogEventObserver observer) {
         setObserver(getRootLogger(), observer, true);
     }
 
@@ -169,7 +169,7 @@ public class LogEventFactory implements ILoggerFactory {
         return oldObserver;
     }
 
-    public void addObserver(LogEventObserver observer) {
+    public void addRootObserver(LogEventObserver observer) {
         addObserver(getRootLogger(), observer);
     }
 

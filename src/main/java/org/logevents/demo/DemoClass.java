@@ -13,8 +13,8 @@ public class DemoClass {
     public static void main(String[] args) throws IOException {
         LogEventFactory logEventFactory = LogEventFactory.getInstance();
 
-        logEventFactory.setLevel(Level.ERROR);
-        logEventFactory.addObserver(new DateRollingLogEventObserver("target/logs/application.log"));
+        logEventFactory.setRootLevel(Level.ERROR);
+        logEventFactory.addRootObserver(new DateRollingLogEventObserver("target/logs/application.log"));
 
         logEventFactory.setLevel("org.logevents", Level.INFO);
         logEventFactory.addObserver("org.logevents", new DateRollingLogEventObserver("target/logs/info.log"));

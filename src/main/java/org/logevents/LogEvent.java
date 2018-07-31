@@ -139,9 +139,9 @@ public class LogEvent implements LoggingEvent {
         for (int i = 0; i < stackTrace.length-1; i++) {
             StackTraceElement stackTraceElement = stackTrace[i];
             if (stackTraceElement.getClassName().equals(LoggerDelegator.class.getName())) {
-                assert !stackTrace[i-1].getClassName().startsWith("org.logevents.");
-                assert !stackTrace[i-1].getClassName().startsWith("org.slf4j.");
-                this.callerLocation = stackTrace[i-1];
+                assert !stackTrace[i+1].getClassName().startsWith("org.logevents.");
+                assert !stackTrace[i+1].getClassName().startsWith("org.slf4j.");
+                this.callerLocation = stackTrace[i+1];
                 return callerLocation;
             }
         }
