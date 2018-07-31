@@ -21,7 +21,7 @@ public class LogEventObserverTest {
 
     @Test
     public void shouldSendEventToObserver() {
-        factory.reset();
+        factory.configure();
         factory.setLevel(Level.WARN);
 
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
@@ -33,7 +33,7 @@ public class LogEventObserverTest {
 
     @Test
     public void shouldSendEventToParent() {
-        factory.reset();
+        factory.configure();
         factory.setLevel(Level.WARN);
 
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
@@ -46,7 +46,7 @@ public class LogEventObserverTest {
 
     @Test
     public void shouldSendEventToGrandParent() {
-        factory.reset();
+        factory.configure();
         factory.setLevel(Level.WARN);
 
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
@@ -59,7 +59,7 @@ public class LogEventObserverTest {
 
     @Test
     public void shouldSendEventToMultipleObservers() {
-        factory.reset();
+        factory.configure();
         factory.setLevel(Level.WARN);
 
         CircularBufferLogEventObserver parentObserver = new CircularBufferLogEventObserver();

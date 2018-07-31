@@ -26,16 +26,16 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         loadConfigurationFiles(factory);
     }
 
-    private void loadConfigurationFiles(LogEventFactory factory) {
+    protected void loadConfigurationFiles(LogEventFactory factory) {
         configure(factory, loadConfiguration(getProfiles()));
     }
 
-    private List<String> getProfiles() {
+    protected List<String> getProfiles() {
         String profilesString = System.getProperty("profiles", System.getProperty("profile", System.getProperty("spring.profiles.active", "")));
         return Arrays.asList(profilesString.split(","));
     }
 
-    private void installJavaUtilLoggingBridge() {
+    protected void installJavaUtilLoggingBridge() {
         try {
             Class.forName("org.slf4j.bridge.SLF4JBridgeHandler");
             SLF4JBridgeHandler.removeHandlersForRootLogger();
@@ -46,13 +46,26 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     }
 
     private void setDefaultLogging(LogEventFactory factory) {
-        factory.setLevel(factory.getRootLogger(), Level.INFO);
+        if (isRunningInsideJunit()) {
+            factory.setLevel(factory.getRootLogger(), Level.WARN);
+        } else {
+            factory.setLevel(factory.getRootLogger(), Level.INFO);
+        }
         factory.setObserver(factory.getRootLogger(),
                 new ConsoleLogEventObserver(),
                 false);
     }
 
-    private void configure(LogEventFactory factory, Properties configuration) {
+    protected boolean isRunningInsideJunit() {
+        for (StackTraceElement stackTraceElement : new Throwable().getStackTrace()) {
+            if (stackTraceElement.getClassName().startsWith("org.junit.runners")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected void configure(LogEventFactory factory, Properties configuration) {
         Map<String, LogEventObserver> observers = new HashMap<>();
         for (Object key : configuration.keySet()) {
             if (key.toString().startsWith("observer.")) {

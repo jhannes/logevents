@@ -8,7 +8,6 @@ import java.util.ServiceLoader;
 
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
-import org.logevents.observers.DateRollingLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.ILoggerFactory;
@@ -105,7 +104,7 @@ public class LogEventFactory implements ILoggerFactory {
     private Map<String, LoggerDelegator> loggerCache = new HashMap<String, LoggerDelegator>();
 
     LogEventFactory() {
-        reset();
+        configure();
     }
 
     @Override
@@ -187,10 +186,11 @@ public class LogEventFactory implements ILoggerFactory {
     }
 
 
-    public void reset() {
+    public void configure() {
         rootLogger.setOwnObserver(new ConsoleLogEventObserver(), false);
         loggerCache.values().forEach(logger -> logger.reset());
         ServiceLoader<LogEventConfigurator> serviceLoader = ServiceLoader.load(LogEventConfigurator.class);
+
         if (!serviceLoader.iterator().hasNext()) {
             LogEventStatus.getInstance().addInfo(this, "No configuration found - using default");
             new DefaultLogEventConfigurator().configure(this);

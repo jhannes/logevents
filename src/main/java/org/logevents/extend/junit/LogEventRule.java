@@ -18,6 +18,7 @@ import static org.junit.Assert.*;
 public class LogEventRule implements TestRule, LogEventObserver {
 
     private String logName;
+    private Logger logger;
     private Level level;
     private List<LogEvent> events = new ArrayList<>();
 
@@ -26,20 +27,54 @@ public class LogEventRule implements TestRule, LogEventObserver {
         this.level = level;
     }
 
+    public void setLevel(Level level) {
+        this.level = level;
+        if (logger != null) {
+            LogEventFactory.getInstance().setLevel(logger, level);
+        }
+    }
+
+    public void assertNoMessages() {
+        assertTrue("Expected no log messages to " + logName + " was " + events,
+                events.isEmpty());
+    }
+
     public void assertSingleMessage(String message, Level level) {
-        assertEquals(1, events.size());
-        assertEquals(message, events.get(0).getMessage());
+        assertTrue("Expected only one logged message, but was " + events,
+                events.size() == 1);
+        assertEquals(message, events.get(0).formatMessage());
         assertEquals(level, events.get(0).getLevel());
+    }
+
+    public void assertContainsMessage(String message, Level level) {
+        assertFalse("Expected <" + message + "> but no messages were logged",
+                events.isEmpty());
+        for (LogEvent event : events) {
+            if (event.formatMessage().equals(message)) {
+                assertEquals("Log level for " + message, level, event.getLevel());
+                return;
+            }
+        }
+        fail("Could not find <" + message + "> in logged messages: " + events);
+    }
+
+    public void assertDoesNotContainMessage(String message) {
+        for (LogEvent event : events) {
+            if (event.formatMessage().equals(message)) {
+                fail("Did not expect to find find <" + message + "> in logged messages, but was " + event);
+            }
+        }
     }
 
     @Override
     public Statement apply(Statement base, Description description) {
         return new Statement() {
 
+
             @Override
             public void evaluate() throws Throwable {
                 LogEventFactory loggerFactory = StaticLoggerBinder.getSingleton().getLoggerFactory();
-                Logger logger = loggerFactory.getLogger(logName);
+                logger = loggerFactory.getLogger(logName);
 
                 Level oldLevel = loggerFactory.setLevel(logger, level);
                 LogEventObserver oldObserver = loggerFactory.setObserver(logger, LogEventRule.this, false);

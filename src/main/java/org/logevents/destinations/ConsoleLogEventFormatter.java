@@ -5,7 +5,7 @@ import org.slf4j.event.Level;
 
 public class ConsoleLogEventFormatter implements LogEventFormatter {
 
-    private ConsoleFormatting format = ConsoleFormatting.getInstance();
+    protected final ConsoleFormatting format = ConsoleFormatting.getInstance();
 
     @Override
     public String format(LogEvent e) {
@@ -18,7 +18,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 + e.formatStackTrace();
     }
 
-    private String colorizedLevel(LogEvent e) {
+    protected String colorizedLevel(LogEvent e) {
         String levelString = LogEventFormatter.rightPad(e.getLevel(), 5, ' ');
         if (e.getLevel() == Level.ERROR) {
             return format.red(levelString);
