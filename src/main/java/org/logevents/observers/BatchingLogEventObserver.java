@@ -37,9 +37,9 @@ public class BatchingLogEventObserver implements LogEventObserver {
     private final LogEventBatchProcessor batchProcessor;
     private final ScheduledExecutorService executor;
 
-    private Duration cooldownTime;
-    private Duration maximumWaitTime;
-    private Duration idleThreshold;
+    private Duration cooldownTime = Duration.ofSeconds(15);
+    private Duration maximumWaitTime = Duration.ofMinutes(1);
+    private Duration idleThreshold = Duration.ofSeconds(5);
 
     private Instant lastSendTime = Instant.ofEpochMilli(0);
 
@@ -68,18 +68,18 @@ public class BatchingLogEventObserver implements LogEventObserver {
         if (scheduledTask != null) {
             scheduledTask.cancel(false);
         }
-        addToBatch(logEvent);
-        Duration sendDelay = nextSendDelay();
+        Duration sendDelay = addToBatch(logEvent);
         scheduledTask = executor.schedule(this::execute, sendDelay.toMillis(), TimeUnit.MILLISECONDS);
     }
 
-    private void addToBatch(LogEvent logEvent) {
+    Duration addToBatch(LogEvent logEvent) {
         if (currentMessage != null && currentMessage.isMatching(logEvent)) {
             currentMessage.add(logEvent);
         } else {
             currentMessage = new LogEventGroup(logEvent);
             currentBatch.add(currentMessage);
         }
+        return nextSendDelay();
     }
 
     private void execute() {
@@ -89,7 +89,7 @@ public class BatchingLogEventObserver implements LogEventObserver {
         }
     }
 
-    private synchronized List<LogEventGroup> takeCurrentBatch() {
+    public synchronized List<LogEventGroup> takeCurrentBatch() {
         List<LogEventGroup> batch = new ArrayList<>();
         batch.addAll(currentBatch);
         currentBatch.clear();
@@ -99,9 +99,7 @@ public class BatchingLogEventObserver implements LogEventObserver {
     }
 
     private Duration nextSendDelay() {
-        if (currentBatch.isEmpty()) {
-            return Duration.ofHours(1);
-        } else if (firstEventInBatchTime().plus(maximumWaitTime).isBefore(Instant.now())) {
+        if (firstEventInBatchTime().plus(maximumWaitTime).isBefore(Instant.now())) {
             // We have waited long enough - send it now!
             return Duration.ZERO;
         } else {

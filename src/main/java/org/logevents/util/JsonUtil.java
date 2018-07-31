@@ -8,8 +8,8 @@ import java.util.Map;
  * Map&lt;String, Object&gt; as JSON, supporting Map, Iterable, String,
  * Number and Boolean.
  *
- * This class is standalone and only depends on Java. It can be copied-and-
- * pasted into exising project.
+ * This class is stand alone and only depends on Java. It can be copied-and-
+ * pasted into existing project.
  *
  * This class is independently shared under the BSD license 2.0.
  *
@@ -18,44 +18,54 @@ import java.util.Map;
  */
 public class JsonUtil {
 
-    private static String indentSetting = "  ";
+    private final String newline;
+    private final String indent;
 
-    public static String toJson(Map<String, ? extends Object> jsonObject) {
+    public JsonUtil(String indent, String newline) {
+        this.newline = newline;
+        this.indent = indent;
+    }
+
+    public static String toIndentedJson(Map<String, ? extends Object> jsonObject) {
+        return new JsonUtil("  ", "\n").toJson(jsonObject);
+    }
+
+    public String toJson(Map<String, ? extends Object> jsonObject) {
         StringBuilder result = new StringBuilder();
         objectToJson(jsonObject, result, "");
         return result.toString();
     }
 
-    private static void toJson(Map<String, Object> json, StringBuilder result, String indent) {
-        result.append("{\n");
+    private void toJson(Map<String, Object> json, StringBuilder result, String currentIndent) {
+        result.append("{").append(newline);
         boolean first = true;
         for (Map.Entry<String, Object> entry : json.entrySet()) {
-            if (!first) result.append(",\n");
-            result.append(indent + indentSetting + "\"").append(jsonEscape(entry.getKey())).append("\": ");
-            objectToJson(entry.getValue(), result, indent + indentSetting);
+            if (!first) result.append(",").append(newline);
+            result.append(currentIndent + indent + "\"").append(jsonEscape(entry.getKey())).append("\": ");
+            objectToJson(entry.getValue(), result, currentIndent + indent);
             first = false;
         }
-        result.append("\n").append(indent).append("}");
+        result.append(newline).append(currentIndent).append("}");
     }
 
-    private static void toJson(Iterable<? extends Object> value, StringBuilder result, String indent) {
-        result.append("[\n");
+    private void toJson(Iterable<? extends Object> value, StringBuilder result, String currentIndent) {
+        result.append("[").append(newline);
         boolean first = true;
         for (Object entry : value) {
-            if (!first) result.append(",\n");
-            result.append(indent + indentSetting);
-            objectToJson(entry, result, indent + indentSetting);
+            if (!first) result.append(",").append(newline);
+            result.append(currentIndent + indent);
+            objectToJson(entry, result, currentIndent + indent);
             first = false;
         }
-        result.append("\n").append(indent).append("]");
+        result.append(newline).append(currentIndent).append("]");
     }
 
     @SuppressWarnings("unchecked")
-    private static void objectToJson(Object value, StringBuilder result, String indent) {
+    private void objectToJson(Object value, StringBuilder result, String currentIndent) {
         if (value instanceof Map) {
-            toJson((Map<String,Object>)value, result, indent);
+            toJson((Map<String,Object>)value, result, currentIndent);
         } else if (value instanceof List) {
-            toJson((Iterable<? extends Object>)value, result, indent);
+            toJson((Iterable<? extends Object>)value, result, currentIndent);
         } else if (value instanceof CharSequence) {
             toJson((CharSequence)value, result);
         } else if (value instanceof Number) {

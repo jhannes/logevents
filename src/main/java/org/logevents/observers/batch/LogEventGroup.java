@@ -24,7 +24,7 @@ public class LogEventGroup {
                 && headMessage().getMessage().equals(logEvent.getMessage());
     }
 
-    LogEvent headMessage() {
+    public LogEvent headMessage() {
         return logEvents.get(0);
     }
 

@@ -64,7 +64,7 @@ public class LogEventsServlets extends HttpServlet {
         result.put("error", convert(errorObserver.getEvents()));
 
         resp.setContentType("application/json");
-        resp.getWriter().write(JsonUtil.toJson(result));
+        resp.getWriter().write(JsonUtil.toIndentedJson(result));
     }
 
     private List<String> convert(Collection<LogEvent> events) {
