@@ -5,14 +5,22 @@ import java.util.Iterator;
 
 public class CircularBuffer<T> implements Collection<T> {
 
-    private int capacity = 200;
+    private final int capacity;
 
-    @SuppressWarnings("unchecked")
-    private T[] buffer = (T[]) new Object[capacity];
+    private T[] buffer;
 
     private int size = 0;
     private int start = 0;
-    private int end = 0;
+
+    @SuppressWarnings("unchecked")
+    public CircularBuffer(int capacity) {
+        this.capacity = capacity;
+        this.buffer = (T[]) new Object[capacity];
+    }
+
+    public CircularBuffer() {
+        this(200);
+    }
 
     public T get(int index) {
         return buffer[(start + index) % capacity];
@@ -20,12 +28,11 @@ public class CircularBuffer<T> implements Collection<T> {
 
     @Override
     public boolean add(T e) {
-        buffer[end++] = e;
-        end %= capacity;
-        if (size == capacity) {
-            start = (end + 1)%capacity;
+        if (size < capacity) {
+            buffer[size++] = e;
         } else {
-            size++;
+            buffer[start++] = e;
+            start %= capacity;
         }
         return true;
     }
@@ -121,7 +128,7 @@ public class CircularBuffer<T> implements Collection<T> {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{size=" + size + ",capacity=" + capacity + "}";
+        return getClass().getSimpleName() + "{size=" + size + ",capacity=" + capacity + ",start=" + start + "}";
     }
 
 }

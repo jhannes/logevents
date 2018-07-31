@@ -1,7 +1,5 @@
 package org.logevents.observers;
 
-import java.util.Collection;
-
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.util.CircularBuffer;
@@ -12,10 +10,11 @@ public class CircularBufferLogEventObserver implements LogEventObserver {
 
     @Override
     public void logEvent(LogEvent logEvent) {
+        logEvent.getCallerLocation();
         this.circularBuffer.add(logEvent);
     }
 
-    public Collection<LogEvent> getEvents() {
+    public CircularBuffer<LogEvent> getEvents() {
         return circularBuffer;
     }
 
