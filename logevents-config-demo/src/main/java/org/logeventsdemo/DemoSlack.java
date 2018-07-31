@@ -1,4 +1,4 @@
-package org.logevents.demo;
+package org.logeventsdemo;
 
 import java.io.IOException;
 import java.net.MalformedURLException;

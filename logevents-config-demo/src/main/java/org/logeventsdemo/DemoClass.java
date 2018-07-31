@@ -1,4 +1,4 @@
-package org.logevents.demo;
+package org.logeventsdemo;
 
 import java.io.IOException;
 
@@ -18,7 +18,6 @@ public class DemoClass {
 
         logEventFactory.setLevel("org.logevents", Level.INFO);
         logEventFactory.addObserver("org.logevents", new DateRollingLogEventObserver("target/logs/info.log"));
-
 
         Logger logger = LoggerFactory.getLogger("org.logevents.DemoClass");
         logger.warn("Hello to child {}: {}", "world", 123122);
