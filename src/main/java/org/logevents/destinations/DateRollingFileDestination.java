@@ -34,4 +34,8 @@ public class DateRollingFileDestination implements LogEventDestination {
         }
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" + fileName + "}";
+    }
 }

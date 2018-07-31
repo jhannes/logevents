@@ -25,10 +25,10 @@ public class LogEventFactory implements ILoggerFactory {
         return instance;
     }
 
-    private static class RootLoggerDelegator extends LoggerDelegator {
+    static class RootLoggerDelegator extends LoggerDelegator {
 
-        public RootLoggerDelegator(String name) {
-            super(name);
+        public RootLoggerDelegator() {
+            super("ROOT");
             ownObserver = new NullLogEventObserver();
             levelThreshold = Level.WARN;
             refresh();
@@ -51,12 +51,6 @@ public class LogEventFactory implements ILoggerFactory {
         public LoggerDelegator getParentLogger() {
             return null;
         }
-
-        @Override
-        public String inspect() {
-            return toString() + "(effectiveThreshold=" + effectiveThreshold + ",observer=" + observer + ")";
-        }
-
     }
 
     private static class CategoryLoggerDelegator extends LoggerDelegator {
@@ -91,15 +85,9 @@ public class LogEventFactory implements ILoggerFactory {
         LoggerDelegator getParentLogger() {
             return parentLogger;
         }
-
-        @Override
-        public String inspect() {
-            return toString() + "(effectiveThreshold=" + effectiveThreshold + ",observer=" + observer + ") -> "
-                    + (parentLogger != null ? parentLogger.inspect() : "");
-        }
     }
 
-    private LoggerDelegator rootLogger = new RootLoggerDelegator("ROOT");
+    private LoggerDelegator rootLogger = new RootLoggerDelegator();
 
     private Map<String, LoggerDelegator> loggerCache = new HashMap<String, LoggerDelegator>();
 

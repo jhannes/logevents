@@ -378,5 +378,4 @@ abstract class LoggerDelegator implements LoggerConfiguration {
         return getClass().getSimpleName() + "{" + name + ",level=" + levelThreshold + "}";
     }
 
-    public abstract String inspect();
 }

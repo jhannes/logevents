@@ -20,8 +20,16 @@ public class DateRollingLogEventObserver extends TextLogEventObserver {
 
     public DateRollingLogEventObserver(Properties configuration, String prefix) throws IOException {
         super(new DateRollingFileDestination(configuration, prefix),
-                ConfigUtil.create(prefix + ".logEventFormatter", "org.logevents.destinations", configuration));
+                createFormatter(configuration, prefix));
         LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
+    }
+
+    private static LogEventFormatter createFormatter(Properties configuration, String prefix) {
+        if (configuration.containsKey(prefix + ".logEventFormatter")) {
+            return ConfigUtil.create(prefix + ".logEventFormatter", "org.logevents.destinations", configuration);
+        } else {
+            return LogEventFormatter.withDefaultFormat();
+        }
     }
 
 
