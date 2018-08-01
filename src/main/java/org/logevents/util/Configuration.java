@@ -1,5 +1,7 @@
 package org.logevents.util;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
@@ -15,6 +17,14 @@ public class Configuration {
         this.prefix = prefix;
     }
 
+    public URL getUrl(String key) {
+        try {
+            return new URL(getString(key));
+        } catch (MalformedURLException e) {
+            throw new IllegalStateException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
+        }
+    }
+
     public Duration getDuration(String key) {
         try {
             return Duration.parse(getString(key));
@@ -28,7 +38,7 @@ public class Configuration {
                 .orElseThrow(() -> new IllegalStateException("Missing required key <" + fullKey(key) + "> in <" + properties.keySet() + ">"));
     }
 
-    private Optional<String> optionalString(String key) {
+    public Optional<String> optionalString(String key) {
         return Optional.ofNullable(properties.getProperty(fullKey(key)));
     }
 
@@ -36,9 +46,15 @@ public class Configuration {
         return prefix + "." + key;
     }
 
+    public <T> T createInstanceWithDefault(String key, Class<T> clazz) {
+        return ConfigUtil.create(fullKey(key), clazz.getPackage().getName(), properties);
+    }
+
     public <T> T createInstance(String key, Class<T> clazz) {
         optionalString(key)
             .orElseThrow(() -> new IllegalStateException("Missing configuration for " + clazz.getSimpleName() + " in " + fullKey(key)));
         return ConfigUtil.create(fullKey(key), clazz.getPackage().getName(), properties);
     }
+
+
 }

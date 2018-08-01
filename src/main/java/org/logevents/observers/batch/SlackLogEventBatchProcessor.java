@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 import org.logevents.status.LogEventStatus;
+import org.logevents.util.Configuration;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.NetUtils;
 
@@ -25,11 +26,14 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
     }
 
     public SlackLogEventBatchProcessor(Properties properties, String prefix) throws MalformedURLException {
-        setUsername(properties.getProperty(prefix + ".username"));
-        setChannel(properties.getProperty(prefix + ".channel"));
-        this.slackUrl = new URL(properties.getProperty(prefix + ".slackUrl"));
+        Configuration configuration = new Configuration(properties, prefix);
+        username = configuration.optionalString("username");
+        channel = configuration.optionalString("channel");
+        slackUrl = configuration.getUrl("slackUrl");
+        slackLogMessageFactory = configuration.createInstanceWithDefault("slackLogMessageFactory",
+                SlackLogMessageFactory.class);
+
         LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
-        slackLogMessageFactory = new SlackLogMessageFactory();
     }
 
     public void setUsername(String username) {
