@@ -22,7 +22,7 @@ import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
-public class LogEventsServlets extends HttpServlet {
+public class LogEventsServlet extends HttpServlet {
 
     private LogEventFormatter formatter = new TTLLEventLogFormatter();
 
@@ -33,7 +33,10 @@ public class LogEventsServlets extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        LogEventFactory factory = LogEventFactory.getInstance();
+        attachLogEventObservers(LogEventFactory.getInstance());
+    }
+
+    void attachLogEventObservers(LogEventFactory factory) {
         factory.addObserver(factory.getRootLogger(), levelObserver(debugObserver, Level.DEBUG));
         factory.addObserver(factory.getRootLogger(), levelObserver(infoObserver, Level.INFO));
         factory.addObserver(factory.getRootLogger(), levelObserver(warnObserver, Level.WARN));
@@ -57,14 +60,18 @@ public class LogEventsServlets extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Map<String, Object> result = getLogEvents();
+        resp.setContentType("application/json");
+        resp.getWriter().write(JsonUtil.toIndentedJson(result));
+    }
+
+    Map<String, Object> getLogEvents() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("debug", convert(debugObserver.getEvents()));
         result.put("info", convert(infoObserver.getEvents()));
         result.put("warn", convert(warnObserver.getEvents()));
         result.put("error", convert(errorObserver.getEvents()));
-
-        resp.setContentType("application/json");
-        resp.getWriter().write(JsonUtil.toIndentedJson(result));
+        return result;
     }
 
     private List<String> convert(Collection<LogEvent> events) {
