@@ -2,6 +2,7 @@ package org.logevents.extend.junit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -40,7 +41,10 @@ public class LogEventRule implements TestRule, LogEventObserver {
     }
 
     public void assertSingleMessage(String message, Level level) {
-        assertTrue("Expected only one logged message, but was " + events,
+        List<LogEvent> events = this.events.stream()
+            .filter(m -> m.getLevel().equals(level))
+            .collect(Collectors.toList());
+        assertTrue("Expected only one logged message at level " + level + ", but was " + events,
                 events.size() == 1);
         assertEquals(message, events.get(0).formatMessage());
         assertEquals(level, events.get(0).getLevel());

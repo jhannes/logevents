@@ -25,7 +25,12 @@ public class LogEventsConfigurationServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        LogEventFactory logEventFactory = logEventFactory();
+        Map<String, Object> configuration = logConfigurationToJson(LogEventFactory.getInstance());
+        resp.setContentType("application/json");
+        resp.getWriter().println(JsonUtil.toIndentedJson(configuration));
+    }
+
+    Map<String, Object> logConfigurationToJson(LogEventFactory logEventFactory) {
         Map<String, LoggerConfiguration> loggers = logEventFactory.getLoggers();
 
         List<String> loggerNames = new ArrayList<>(loggers.keySet());
@@ -47,28 +52,21 @@ public class LogEventsConfigurationServlet extends HttpServlet {
         Map<String, Object> configuration = new LinkedHashMap<>();
         configuration.put("logLevels", logLevels);
         configuration.put("observers", observers);
-
-        resp.setContentType("application/json");
-        resp.getWriter().println(JsonUtil.toIndentedJson(configuration));
+        return configuration;
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
         String loggerName = req.getParameter("loggerName");
         String levelName = req.getParameter("level");
         Level level = levelName.equals("null") ? null : Level.valueOf(levelName);
         logger.info("Changing log level for {} to {}", loggerName, level);
 
-        LoggerConfiguration loggerConfiguration = logEventFactory().getLogger(loggerName);
-        logEventFactory().setLevel(loggerConfiguration,
+        LoggerConfiguration loggerConfiguration = LogEventFactory.getInstance().getLogger(loggerName);
+        LogEventFactory.getInstance().setLevel(loggerConfiguration,
                 level);
 
         resp.sendRedirect(req.getContextPath() + req.getServletPath() + req.getPathInfo());
-    }
-
-    private LogEventFactory logEventFactory() {
-        return LogEventFactory.getInstance();
     }
 
 }

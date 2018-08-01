@@ -10,6 +10,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.logevents.LogEvent;
@@ -17,7 +18,7 @@ import org.logevents.LogEventObserver;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.batch.LogEventGroup;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.ConfigUtil;
+import org.logevents.util.Configuration;
 
 public class BatchingLogEventObserver implements LogEventObserver {
 
@@ -47,12 +48,12 @@ public class BatchingLogEventObserver implements LogEventObserver {
     private LogEventGroup currentMessage;
     private ScheduledFuture<?> scheduledTask;
 
-    public BatchingLogEventObserver(Properties configuration, String prefix) {
-        idleThreshold = Duration.parse(configuration.getProperty(prefix + ".idleThreshold"));
-        cooldownTime = Duration.parse(configuration.getProperty(prefix + ".cooldownTime"));
-        maximumWaitTime = Duration.parse(configuration.getProperty(prefix + ".maximumWaitTime"));
-
-        this.batchProcessor = ConfigUtil.create(prefix + ".batchProcessor", "org.logevents.observers.batch", configuration);
+    public BatchingLogEventObserver(Properties properties, String prefix) {
+        Configuration configuration = new Configuration(properties, prefix);
+        idleThreshold = configuration.getDuration("idleThreshold");
+        cooldownTime = configuration.getDuration("cooldownTime");
+        maximumWaitTime = configuration.getDuration("maximumWaitTime");
+        batchProcessor = configuration.createInstance("batchProcessor", LogEventBatchProcessor.class);
 
         executor = scheduledExecutorService;
         LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
@@ -63,23 +64,33 @@ public class BatchingLogEventObserver implements LogEventObserver {
         executor = scheduledExecutorService;
     }
 
+    public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+        scheduledExecutorService.awaitTermination(timeout, unit);
+    }
+
     @Override
     public synchronized void logEvent(LogEvent logEvent) {
+        logEvent(logEvent, Instant.now());
+    }
+
+    Instant logEvent(LogEvent logEvent, Instant now) {
         if (scheduledTask != null) {
             scheduledTask.cancel(false);
         }
-        Duration sendDelay = addToBatch(logEvent);
-        scheduledTask = executor.schedule(this::execute, sendDelay.toMillis(), TimeUnit.MILLISECONDS);
+        Instant sendTime = addToBatch(logEvent, now);
+        Duration duration = Duration.between(now, sendTime);
+        scheduledTask = executor.schedule(this::execute, duration.toMillis(), TimeUnit.MILLISECONDS);
+        return sendTime;
     }
 
-    Duration addToBatch(LogEvent logEvent) {
+    Instant addToBatch(LogEvent logEvent, Instant now) {
         if (currentMessage != null && currentMessage.isMatching(logEvent)) {
             currentMessage.add(logEvent);
         } else {
             currentMessage = new LogEventGroup(logEvent);
             currentBatch.add(currentMessage);
         }
-        return nextSendDelay();
+        return nextSendDelay(now);
     }
 
     private void execute() {
@@ -98,13 +109,13 @@ public class BatchingLogEventObserver implements LogEventObserver {
         return batch;
     }
 
-    private Duration nextSendDelay() {
-        if (firstEventInBatchTime().plus(maximumWaitTime).isBefore(Instant.now())) {
+    private Instant nextSendDelay(Instant now) {
+        if (firstEventInBatchTime().plus(maximumWaitTime).isBefore(now)) {
             // We have waited long enough - send it now!
-            return Duration.ZERO;
+            return now;
         } else {
             // Wait the necessary time before sending - may be in the past
-            return Duration.between(Instant.now(), earliestSendTime());
+            return earliestSendTime();
         }
     }
 

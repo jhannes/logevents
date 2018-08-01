@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 import org.logevents.observers.CircularBufferLogEventObserver;
+import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -27,8 +28,8 @@ public class LogEventObserverTest {
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
         factory.setObserver(childLogger, observer, false);
 
-        childLogger.warn("Some Message");
-        assertEquals("Some Message", observer.singleMessage());
+        childLogger.warn("Message sent to observer");
+        assertEquals("Message sent to observer", observer.singleMessage());
     }
 
     @Test
@@ -38,9 +39,9 @@ public class LogEventObserverTest {
 
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
         factory.setObserver(parentLogger, observer, false);
-        childLogger.warn("Some Message");
+        childLogger.warn("Message sent to parent");
 
-        assertEquals("Some Message", observer.singleMessage());
+        assertEquals("Message sent to parent", observer.singleMessage());
     }
 
 
@@ -51,9 +52,9 @@ public class LogEventObserverTest {
 
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
         factory.setObserver(grandParentLogger, observer, false);
-        childLogger.error("Some Message");
+        childLogger.error("Message sent to grandparent");
 
-        assertEquals("Some Message", observer.singleMessage());
+        assertEquals("Message sent to grandparent", observer.singleMessage());
     }
 
 
@@ -61,17 +62,21 @@ public class LogEventObserverTest {
     public void shouldSendEventToMultipleObservers() {
         factory.configure();
         factory.setRootLevel(Level.WARN);
+        factory.setRootObserver(new NullLogEventObserver());
 
         CircularBufferLogEventObserver parentObserver = new CircularBufferLogEventObserver();
         factory.setObserver(parentLogger, parentObserver, true);
 
         CircularBufferLogEventObserver childObserver = new CircularBufferLogEventObserver();
         factory.setObserver(childLogger, childObserver, true);
+        CircularBufferLogEventObserver childSecondaryObserver = new CircularBufferLogEventObserver();
+        factory.addObserver(childLogger, childSecondaryObserver);
 
-        childLogger.warn("Some Message");
+        childLogger.warn("Message sent to multiple");
 
-        assertEquals("Some Message", childObserver.singleMessage());
-        assertEquals("Some Message", parentObserver.singleMessage());
+        assertEquals("Message sent to multiple", childObserver.singleMessage());
+        assertEquals("Message sent to multiple", childSecondaryObserver.singleMessage());
+        assertEquals("Message sent to multiple", parentObserver.singleMessage());
     }
 
 }

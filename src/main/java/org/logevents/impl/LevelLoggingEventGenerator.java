@@ -29,47 +29,55 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
 
     @Override
     public void log(String msg) {
-        log(new LogEvent(this.loggerName, this.level, null, msg, new Object[0]));
+        log(createEvent(msg, new Object[0]));
     }
 
     @Override
     public void log(String format, Object arg) {
-        log(new LogEvent(this.loggerName, this.level, null, format, new Object[] { arg }));
+        log(createEvent(format, new Object[] { arg }));
     }
 
     @Override
     public void log(String format, Throwable t) {
-        log(new LogEvent(this.loggerName, this.level, null, format, new Object[] { t }));
+        log(createEvent(format, new Object[] { t }));
     }
 
     @Override
     public void log(String format, Object arg1, Object arg2) {
-        log(new LogEvent(this.loggerName, this.level, null, format, new Object[] { arg1, arg2 }));
+        log(createEvent(format, new Object[] { arg1, arg2 }));
     }
 
     @Override
     public void log(String format, Object... arg) {
-        log(new LogEvent(this.loggerName, this.level, null, format, arg));
+        log(createEvent(format, arg));
+    }
+
+    LogEvent createEvent(String format, Object[] arg) {
+        return new LogEvent(this.loggerName, this.level, format, arg);
     }
 
     @Override
     public void log(Marker marker, String msg) {
-        log(new LogEvent(this.loggerName, this.level, marker, msg, new Object[0]));
+        log(createEvent(msg, marker, new Object[0]));
     }
 
     @Override
     public void log(Marker marker, String format, Object arg) {
-        log(new LogEvent(this.loggerName, this.level, marker, format, new Object[] { arg }));
+        log(createEvent(format, marker, new Object[] { arg }));
     }
 
     @Override
     public void log(Marker marker, String format, Object arg1, Object arg2) {
-        log(new LogEvent(this.loggerName, this.level, marker, format, new Object[] { arg1, arg2 }));
+        log(createEvent(format, marker, new Object[] { arg1, arg2 }));
     }
 
     @Override
     public void log(Marker marker, String format, Object... args) {
-        log(new LogEvent(this.loggerName, this.level, marker, format, args));
+        log(createEvent(format, marker, args));
+    }
+
+    private LogEvent createEvent(String format, Marker marker, Object[] args) {
+        return new LogEvent(this.loggerName, this.level, marker, format, args);
     }
 
     private void log(LogEvent logEvent) {

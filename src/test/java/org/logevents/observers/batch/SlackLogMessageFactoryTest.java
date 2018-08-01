@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
 public class SlackLogMessageFactoryTest {
@@ -29,60 +30,46 @@ public class SlackLogMessageFactoryTest {
         String format = UUID.randomUUID().toString();
 
         List<LogEventGroup> batch = new ArrayList<>();
-        batch.add(new LogEventGroup(new LogEvent(loggerName, level, null, format, new Object[0])));
+        batch.add(new LogEventGroup(new LogEvent(loggerName, level, format)));
 
         Map<String, Object> slackMessage = new SlackLogMessageFactory().createSlackMessage(batch, Optional.of(userName), Optional.of(channelName));
-        assertEquals(channelName, getField(slackMessage, "channel"));
-        assertContains(format, getField(slackMessage, "text").toString());
+        assertEquals(channelName, JsonUtil.getField(slackMessage, "channel"));
+        assertContains(format, JsonUtil.getField(slackMessage, "text").toString());
 
-        List<Object> fields = getList(getObject(getList(slackMessage, "attachments"), 0), "fields");
-        assertEquals(level.toString(), getField(getObject(fields, 0), "value"));
+        List<Object> fields = JsonUtil.getList(JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 0), "fields");
+        assertEquals(level.toString(), JsonUtil.getField(JsonUtil.getObject(fields, 0), "value"));
     }
 
     @Test
     public void shouldCollectMessagesInBatch() {
         List<LogEventGroup> batch = new ArrayList<>();
-        batch.add(new LogEventGroup(new LogEvent(loggerName, Level.WARN, null, "A lesser important message", new Object[0])));
+        batch.add(new LogEventGroup(new LogEvent(loggerName, Level.WARN, "A lesser important message")));
         LogEventGroup logEventGroup = new LogEventGroup(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
         logEventGroup.add(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
         batch.add(logEventGroup);
-        batch.add(new LogEventGroup(new LogEvent(loggerName, Level.ERROR, null, "Yet another message", new Object[0])));
+        batch.add(new LogEventGroup(new LogEvent(loggerName, Level.ERROR, "Yet another message")));
 
         Map<String, Object> slackMessage = new SlackLogMessageFactory().createSlackMessage(batch, Optional.empty(), Optional.empty());
 
-        Map<String, Object> suppressedEventsAttachment = getObject(getList(slackMessage, "attachments"), 1);
-        assertEquals("Suppressed log events", getField(suppressedEventsAttachment, "title"));
+        Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);
+        assertEquals("Suppressed log events", JsonUtil.getField(suppressedEventsAttachment, "title"));
         assertContains(": A lesser important message",
-                getField(suppressedEventsAttachment, "text").toString());
+                JsonUtil.getField(suppressedEventsAttachment, "text").toString());
         assertContains(": *A more important message* (2 repetitions)",
-                getField(suppressedEventsAttachment, "text").toString());
+                JsonUtil.getField(suppressedEventsAttachment, "text").toString());
     }
 
     @Test
     public void shouldOutputStackTrace() {
         Exception exception = new IOException("Something went wrong with " + UUID.randomUUID());
         List<LogEventGroup> batch = new ArrayList<>();
-        batch.add(new LogEventGroup(new LogEvent(loggerName, Level.WARN, null, "A lesser important message", new Object[] { exception })));
+        batch.add(new LogEventGroup(new LogEvent(loggerName, Level.WARN, "A lesser important message", exception)));
         Map<String, Object> slackMessage = new SlackLogMessageFactory().createSlackMessage(batch, Optional.empty(), Optional.empty());
 
-        Map<String, Object> suppressedEventsAttachment = getObject(getList(slackMessage, "attachments"), 1);
-        assertEquals("Stack Trace", getField(suppressedEventsAttachment, "title"));
+        Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);
+        assertEquals("Stack Trace", JsonUtil.getField(suppressedEventsAttachment, "title"));
         assertContains("org.logevents.observers.batch.SlackLogMessageFactoryTest",
-                getField(suppressedEventsAttachment, "text").toString());
-    }
-
-    private Object getField(Map<String, Object> object, String fieldName) {
-        return object.get(fieldName);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> getObject(List<?> list, int index) {
-        return (Map<String, Object>) list.get(index);
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<Object> getList(Map<String, Object> object, String fieldName) {
-        return (List<Object>) object.get(fieldName);
+                JsonUtil.getField(suppressedEventsAttachment, "text").toString());
     }
 
     private void assertContains(String expected, String actual) {

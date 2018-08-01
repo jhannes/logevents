@@ -17,20 +17,20 @@ import org.slf4j.helpers.MessageFormatter;
 
 public class LogEvent implements LoggingEvent {
 
-    private String loggerName;
-    private Level level;
-    private Marker marker;
-    private String format;
-    private Object[] args;
-    private long threadId = Thread.currentThread().getId();
-    private String threadName = Thread.currentThread().getName();
-    private long timestamp = System.currentTimeMillis();
+    private final String loggerName;
+    private final Level level;
+    private final Marker marker;
+    private final String format;
+    private final Object[] args;
     private Throwable throwable;
-    private Map<String, String> mdcProperties;
+    private final long threadId = Thread.currentThread().getId();
+    private final String threadName = Thread.currentThread().getName();
+    private final long timestamp;
+    private final Map<String, String> mdcProperties;
 
     private StackTraceElement callerLocation;
 
-    public LogEvent(String loggerName, Level level, Marker marker, String format, Object[] args) {
+    public LogEvent(String loggerName, Level level, Marker marker, String format, Object[] args, Instant timestamp) {
         this.loggerName = loggerName;
         this.level = level;
         this.marker = marker;
@@ -42,8 +42,17 @@ public class LogEvent implements LoggingEvent {
         } else {
             this.args = args;
         }
+        this.timestamp = timestamp.toEpochMilli();
 
         this.mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
+    }
+
+    public LogEvent(String loggerName, Level level, Marker marker, String format, Object... args) {
+        this(loggerName, level, marker, format, args, Instant.now());
+    }
+
+    public LogEvent(String loggerName, Level level, String format, Object... args) {
+        this(loggerName, level, null, format, args, Instant.now());
     }
 
     public Map<String, String> getMdcProperties() {
@@ -115,7 +124,11 @@ public class LogEvent implements LoggingEvent {
     }
 
     public ZonedDateTime getZonedDateTime() {
-        return Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault());
+        return getInstant().atZone(ZoneId.systemDefault());
+    }
+
+    public Instant getInstant() {
+        return Instant.ofEpochMilli(timestamp);
     }
 
     public Throwable getRootThrowable() {

@@ -29,11 +29,11 @@ public class LogEventGroup {
     }
 
     public Instant latestEventTime() {
-        return logEvents.get(logEvents.size()-1).getZonedDateTime().toInstant();
+        return logEvents.get(logEvents.size()-1).getInstant();
     }
 
     public Instant firstEventTime() {
-        return logEvents.get(0).getZonedDateTime().toInstant();
+        return logEvents.get(0).getInstant();
     }
 
     public int size() {

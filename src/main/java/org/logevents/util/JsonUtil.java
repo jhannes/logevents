@@ -79,6 +79,28 @@ public class JsonUtil {
         }
     }
 
+    public static Object getField(Map<String, Object> object, String fieldName) {
+        if (!object.containsKey(fieldName)) {
+            throw new IllegalArgumentException("Unknown field <" + fieldName + "> in " + object.keySet());
+        }
+        return object.get(fieldName);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> getObject(List<?> list, int index) {
+        return (Map<String, Object>) list.get(index);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> getObject(Map<String, Object> object, String fieldName) {
+        return (Map<String, Object>) getField(object, fieldName);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<Object> getList(Map<String, Object> object, String fieldName) {
+        return (List<Object>) getField(object, fieldName);
+    }
+
     private static void toJson(CharSequence value, StringBuilder result) {
         result.append("\"").append(jsonEscape(value)).append("\"");
     }
@@ -112,4 +134,5 @@ public class JsonUtil {
         }
         return result.toString();
     }
+
 }

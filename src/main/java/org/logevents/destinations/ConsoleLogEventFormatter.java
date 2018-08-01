@@ -19,12 +19,16 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     }
 
     protected String colorizedLevel(LogEvent e) {
-        String levelString = LogEventFormatter.rightPad(e.getLevel(), 5, ' ');
-        if (e.getLevel() == Level.ERROR) {
+        return colorizedLevel(e.getLevel());
+    }
+
+    protected String colorizedLevel(Level level) {
+        String levelString = LogEventFormatter.rightPad(level, 5, ' ');
+        if (level == Level.ERROR) {
             return format.red(levelString);
-        } else if (e.getLevel() == Level.WARN) {
+        } else if (level == Level.WARN) {
             return format.yellow(levelString);
-        } else if (e.getLevel() == Level.INFO) {
+        } else if (level == Level.INFO) {
             return format.green(levelString);
         }
         return format.green(levelString);
