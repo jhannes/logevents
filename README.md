@@ -2,7 +2,7 @@
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents)
 [![Build Status](https://travis-ci.org/jhannes/logevents.png)](https://travis-ci.org/jhannes/logevents)
-[![Coverage Status](https://coveralls.io/repos/jhannes/logevents/badge.svg?branch=master&service=github)](https://coveralls.io/github/jhannes/logevents?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/jhannes/logevents/badge.svg?branch=master)](https://coveralls.io/github/jhannes/logevents?branch=master)
 
 
 **Status: Concept implementation. I'm not sure if this is something worth doing or not!**
