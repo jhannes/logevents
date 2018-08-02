@@ -5,7 +5,7 @@ import java.util.Properties;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.ConfigUtil;
+import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
 public class LevelThresholdConditionalObserver implements LogEventObserver {
@@ -13,15 +13,19 @@ public class LevelThresholdConditionalObserver implements LogEventObserver {
     private Level threshold;
     private LogEventObserver delegate;
 
-    public LevelThresholdConditionalObserver(Properties configuration, String prefix) {
-        threshold = Level.valueOf(configuration.getProperty(prefix + ".threshold"));
-        delegate = ConfigUtil.create(prefix + ".delegate", "org.logevents.observers", configuration);
-        LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
-    }
-
     public LevelThresholdConditionalObserver(Level threshold, LogEventObserver delegate) {
         this.threshold = threshold;
         this.delegate = delegate;
+    }
+
+    public LevelThresholdConditionalObserver(Configuration configuration) {
+        threshold = Level.valueOf(configuration.getString("threshold"));
+        delegate = configuration.createInstance("delegate", LogEventObserver.class, "org.logevents.observers");
+        LogEventStatus.getInstance().addInfo(this, "Configured " + configuration.getPrefix());
+    }
+
+    public LevelThresholdConditionalObserver(Properties configuration, String prefix) {
+        this(new Configuration(configuration, prefix));
     }
 
     @Override

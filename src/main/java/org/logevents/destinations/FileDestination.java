@@ -8,20 +8,26 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
+import org.logevents.util.Configuration;
+
 public class FileDestination implements LogEventDestination {
 
     private Path logDirectory;
     private Path fileName;
 
-    public FileDestination(Properties configuration, String prefix) throws IOException {
-        this(configuration.getProperty(prefix + ".filename"));
-    }
-
-    public FileDestination(String fileName) throws IOException {
-        Path path = Paths.get(fileName);
+    public FileDestination(String filename) throws IOException {
+        Path path = Paths.get(filename);
         logDirectory = path.getParent();
         Files.createDirectories(logDirectory);
         this.fileName = path.getFileName();
+    }
+
+    public FileDestination(Configuration configuration) throws IOException {
+        this(configuration.getString("filename"));
+    }
+
+    public FileDestination(Properties configuration, String prefix) throws IOException {
+        this(new Configuration(configuration, prefix));
     }
 
     @Override

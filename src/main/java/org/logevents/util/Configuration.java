@@ -33,7 +33,7 @@ public class Configuration {
         }
     }
 
-    private String getString(String key) {
+    public String getString(String key) {
         return optionalString(key)
                 .orElseThrow(() -> new IllegalStateException("Missing required key <" + fullKey(key) + "> in <" + properties.keySet() + ">"));
     }
@@ -54,6 +54,16 @@ public class Configuration {
         optionalString(key)
             .orElseThrow(() -> new IllegalStateException("Missing configuration for " + clazz.getSimpleName() + " in " + fullKey(key)));
         return ConfigUtil.create(fullKey(key), clazz.getPackage().getName(), properties);
+    }
+
+    public <T> T createInstance(String key, Class<T> clazz, String defaultPackage) {
+        optionalString(key)
+            .orElseThrow(() -> new IllegalStateException("Missing configuration for " + clazz.getSimpleName() + " in " + fullKey(key)));
+        return ConfigUtil.create(fullKey(key), defaultPackage, properties);
+    }
+
+    public String getPrefix() {
+        return prefix;
     }
 
 

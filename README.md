@@ -1,5 +1,6 @@
 # Logevents - a simple SLF4J implementation
 
+[![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents)
 [![Build Status](https://travis-ci.org/jhannes/logevents.png)](https://travis-ci.org/jhannes/logevents)
 [![Coverage Status](https://coveralls.io/repos/github/jhannes/logevents/badge.svg?branch=master)](https://coveralls.io/github/jhannes/logevents?branch=master)
@@ -40,7 +41,7 @@ Logevents tries to make concrete improvements compared to Logback:
 ## Architecture
 
 
-![Architecture Overview](http://www.plantuml.com/plantuml/proxy?src=https://raw.github.com/jhannes/logevents/master/doc/classes.puml)
+![Architecture Overview](doc/classes.png)
 
 
 ## Logging with SLF4J
@@ -422,8 +423,7 @@ less code to implement with Logevents.
 
 ### TODO
 
-* Get some decent test coverage
-* Verify useful usage scenarios
+* MDC-based batching
 * JMX
 * YAML?
 * Configuration on local directory with reload
