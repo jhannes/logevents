@@ -43,7 +43,7 @@ public class SlackLogMessageFactory {
         return event.getLevel().toString().substring(0, 1) + " "
             + exceptionInfo
             + event.formatMessage()
-            + " [" + event.getLoggerName(10) + "]"
+            + " [" + event.getAbbreviatedLoggerName(10) + "]"
             + (mainGroup.size() > 1 ? " (" + mainGroup.size() + " repetitions)" : "");
     }
 

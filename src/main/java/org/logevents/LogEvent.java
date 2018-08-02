@@ -9,12 +9,27 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 import org.slf4j.event.LoggingEvent;
 import org.slf4j.helpers.MessageFormatter;
 
+/**
+ * The representation of a log event. This class is passed to all
+ * {@link LogEventObserver} instances and used internally. The most the most
+ * used method is {@link #formatMessage()}, which formats {@link #getMessage()}
+ * with {@link #getArgumentArray()}.
+ * <p>
+ * When using LogEvent, be aware that {@link #getCallerLocation()} is initialized lazily.
+ * This will fail it's not accessed the first time inside a call to {@link LogEventObserver}
+ * (for example, if accessed in another thread or after {@link LogEventObserver#logEvent(LogEvent)}
+ * returned.
+ *
+ * @author Johannes Brodwall
+ *
+ */
 public class LogEvent implements LoggingEvent {
 
     private final String loggerName;
@@ -55,6 +70,11 @@ public class LogEvent implements LoggingEvent {
         this(loggerName, level, null, format, args, Instant.now());
     }
 
+    /**
+     * Message Diagnostics Context set with {@link MDC}. Copied when
+     * {@link LogEvent} is created and can be safely used after {@link LogEventObserver#logEvent(LogEvent)}
+     * returns.
+     */
     public Map<String, String> getMdcProperties() {
         return mdcProperties;
     }
@@ -74,7 +94,12 @@ public class LogEvent implements LoggingEvent {
         return loggerName;
     }
 
-    public String getLoggerName(int maxLength) {
+    /**
+     * Returns the logger name restricted as much as possible to fit maxLength characters.
+     * The final component of the name is prioritized, then each part from the beginning.
+     * For example "org.example.Logger" will be abbreviated to "o.e.Logger" or "org.e.Logger".
+     */
+    public String getAbbreviatedLoggerName(int maxLength) {
         String[] parts = loggerName.split("\\.");
         String lastPartName = parts[parts.length-1];
         int remainder = maxLength - lastPartName.length() - ((parts.length-1) * 2);
@@ -141,6 +166,11 @@ public class LogEvent implements LoggingEvent {
         return throwable;
     }
 
+    /**
+     * The StackTraceElement from which a method on {@link Logger} was first called
+     * to cause this logging event. Is initialized lazily and must be called first time
+     * during the log observation.
+     */
     public StackTraceElement getCallerLocation() {
         if (callerLocation != null) {
             return callerLocation;

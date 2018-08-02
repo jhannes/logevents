@@ -2,18 +2,47 @@ package org.logevents;
 
 import org.logevents.impl.LogEventGenerator;
 import org.logevents.observers.NullLogEventObserver;
+import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
+/**
+ * Internal implementation of SLF4J {@link Logger}. Uses
+ * {@link #levelThreshold}, {@link #ownObserver} and {@link #inheritParentObserver}
+ * as configuration state and calculates {@link #observer} and {@link #effectiveThreshold}
+ * based on these. Uses {@link LogEventGenerator} internal class as strategy
+ * pattern to either ignore everything at a given level or create a {@link LogEvent}.
+ *
+ * @author Johannes Brodwall
+ *
+ */
 abstract class LoggerDelegator implements LoggerConfiguration {
 
     private final String name;
 
+    /**
+     * Configuration value. Set from {@link LogEventFactory}
+     */
     protected Level levelThreshold;
+    /**
+     * Configuration value. Set from {@link LogEventFactory}
+     */
     protected LogEventObserver ownObserver = new NullLogEventObserver();
+    /**
+     * Configuration value. Set from {@link LogEventFactory}
+     */
     protected boolean inheritParentObserver = true;
 
+    /**
+     * Calculated value. If {@link #inheritParentObserver} is true,
+     * combines {@link #ownObserver} with parent {@link #observer},
+     * otherwise set to {@link #ownObserver}.
+     */
     protected LogEventObserver observer;
+    /**
+     * Calculated value. If {@link #levelThreshold} is set, uses this
+     * otherwise uses parent's {@link #effectiveThreshold}.
+     */
     protected Level effectiveThreshold;
 
     private LogEventGenerator traceEventGenerator;

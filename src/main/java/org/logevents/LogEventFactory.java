@@ -14,10 +14,34 @@ import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
+/**
+ * LogEventFactory holds all active loggers and lets you set the
+ * level and observers for these. It implements {@link ILoggerFactory}
+ * and is the entry point of Log Events as an SLF4J implementation.
+ * <p>
+ * At startup time, this class will use a {@link LogEventConfigurator}
+ * specified with {@link ServiceLoader} to set up the log configuration.
+ * If none is available, {@link DefaultLogEventConfigurator} will be used.
+ * <p>
+ * Use {@link #setRootLevel(Level)} and {@link #setLevel(Logger, Level)}
+ * to configure the threshold for logging at one level. If null is specified,
+ * the parent log chain will be searched for a log level threshold.
+ * <p>
+ * Use {@link #addObserver}, {@link #addRootObserver}, {@link #setObserver}
+ * and {@link #setRootObserver} to configure the observers for logging.
+ * Observers are inherited from parents, unless inherit is set to false
+ * for {@link #setObserver(Logger, LogEventObserver, boolean)}.
+ *
+ * @author Johannes Brodwall
+ *
+ */
 public class LogEventFactory implements ILoggerFactory {
 
     private static LogEventFactory instance;
 
+    /**
+     * Retrieve the singleton instance for the JVM.
+     */
     public synchronized static LogEventFactory getInstance() {
         if (instance == null) {
             instance = new LogEventFactory();
@@ -109,6 +133,9 @@ public class LogEventFactory implements ILoggerFactory {
         return loggerCache.get(name);
     }
 
+    /**
+     * Used to report the log configuration.
+     */
     public Map<String, LoggerConfiguration> getLoggers() {
         return Collections.unmodifiableMap(loggerCache);
     }
@@ -121,10 +148,22 @@ public class LogEventFactory implements ILoggerFactory {
         setLevel(getRootLogger(), level);
     }
 
+    /**
+     * Sets the threshold to log at. All messages lower than the threshold will be ignored.
+     *
+     * @param loggerName The non-nullable name of the logger as per {@link #getLogger}
+     * @param level The nullable name of the threshold. If null, inherit from parent
+     */
     public void setLevel(String loggerName, Level level) {
         setLevel(getLogger(loggerName), level);
     }
 
+    /**
+     * Sets the threshold to log at. All messages lower than the threshold will be ignored.
+     *
+     * @param logger The non-nullable logger
+     * @param level The nullable name of the threshold. If null, inherit from parent
+     */
     public Level setLevel(Logger logger, Level level) {
         Level oldLevel = ((LoggerDelegator)logger).getLevelThreshold();
         ((LoggerDelegator)logger).setLevelThreshold(level);
@@ -150,6 +189,15 @@ public class LogEventFactory implements ILoggerFactory {
         setObserver(getLogger(loggerName), observer, true);
     }
 
+    /**
+     * Sets the observer that should be used to receive LogEvents for this logger
+     * and children.
+     *
+     * @param logger The logger to set
+     * @param observer The nullable observer. Use {@link CompositeLogEventObserver} to register more than one observer
+     * @param inheritParentObserver If true, observers set on the observers will also receive log events
+     * @return The previous observer. Useful if you want to temporarily set the observer
+     */
     public LogEventObserver setObserver(Logger logger, LogEventObserver observer, boolean inheritParentObserver) {
         LogEventObserver oldObserver = ((LoggerDelegator)logger).ownObserver;
         ((LoggerDelegator)logger).setOwnObserver(observer, inheritParentObserver);
@@ -157,14 +205,23 @@ public class LogEventFactory implements ILoggerFactory {
         return oldObserver;
     }
 
+    /**
+     * Adds a new nullable observer to the current observers for the root logger
+     */
     public void addRootObserver(LogEventObserver observer) {
         addObserver(getRootLogger(), observer);
     }
 
+    /**
+     * Adds a new observer to the current observers for the specified logger
+     */
     public void addObserver(String loggerName, LogEventObserver observer) {
         addObserver(getLogger(loggerName), observer);
     }
 
+    /**
+     * Adds a new nullable observer to the current observers for the specified logger
+     */
     public void addObserver(Logger logger, LogEventObserver observer) {
         LogEventObserver oldObserver = ((LoggerDelegator)logger).ownObserver;
         ((LoggerDelegator)logger).setOwnObserver(
@@ -173,7 +230,11 @@ public class LogEventFactory implements ILoggerFactory {
         refreshLoggers((LoggerDelegator)logger);
     }
 
-
+    /**
+     * Reads logging configuration from {@link LogEventConfigurator} configured
+     * with {@link ServiceLoader}. If none exists, uses {@link DefaultLogEventConfigurator}.
+     * This method is called the first time {@link #getInstance()} is called.
+     */
     public void configure() {
         rootLogger.setOwnObserver(new ConsoleLogEventObserver(), false);
         loggerCache.values().forEach(logger -> logger.reset());
@@ -189,6 +250,4 @@ public class LogEventFactory implements ILoggerFactory {
             });
         }
     }
-
-
 }
