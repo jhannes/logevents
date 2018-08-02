@@ -16,7 +16,7 @@ public class FileDestinationTest {
     @Test
     public void shouldOutputToFile() throws IOException {
         Path path = Paths.get("target", "logs", "file-test.log");
-        Files.delete(path);
+        Files.deleteIfExists(path);
         Properties properties = new Properties();
         properties.setProperty("observer.file.destination.filename", path.toString());
         FileDestination file = new FileDestination(properties, "observer.file.destination");
