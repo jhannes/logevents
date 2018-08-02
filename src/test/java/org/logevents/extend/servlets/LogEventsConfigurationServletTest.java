@@ -1,6 +1,8 @@
 package org.logevents.extend.servlets;
 
 import static org.junit.Assert.assertEquals;
+import static org.logevents.util.JsonUtil.getField;
+import static org.logevents.util.JsonUtil.getObject;
 
 import java.util.Map;
 
@@ -17,15 +19,28 @@ public class LogEventsConfigurationServletTest {
 
     @Test
     public void shouldTranslateLogLevelsToJson() {
-        factory.setLevel("org.example", Level.TRACE);
-        Map<String, Object> json = servlet.logConfigurationToJson(factory);
+        servlet.setLogLevel("org.example", "TRACE");
 
+        Map<String, Object> json = servlet.logConfigurationToJson(factory);
         Map<String, Object> levels = JsonUtil.getObject(json, "logLevels");
 
         assertEquals(factory.getRootLogger().getLevelThreshold().toString(),
                 JsonUtil.getField(levels, "/"));
         assertEquals("TRACE", JsonUtil.getField(levels, "org.example"));
         assertEquals("<inherited>", JsonUtil.getField(levels, "org"));
+    }
+
+    @Test
+    public void shouldResetLogLevel() {
+        servlet.setLogLevel("org.example", "TRACE");
+
+        assertEquals("TRACE",
+                getField(getObject(servlet.logConfigurationToJson(factory), "logLevels"), "org.example"));
+
+        servlet.setLogLevel("org.example", "null");
+        assertEquals("<inherited>",
+                getField(getObject(servlet.logConfigurationToJson(factory), "logLevels"), "org.example"));
+
     }
 
     @Test
@@ -42,4 +57,5 @@ public class LogEventsConfigurationServletTest {
         assertEquals("<inherit>",
                 JsonUtil.getField(observers, "org"));
     }
+
 }

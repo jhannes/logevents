@@ -3,8 +3,6 @@ package org.logevents.util;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Properties;
 
-import org.logevents.Configurable;
-
 public class ConfigUtil {
 
     @SuppressWarnings("unchecked")
@@ -30,23 +28,12 @@ public class ConfigUtil {
             }
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException("Can't create " + prefix + ": " + e);
-        } catch (InstantiationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return null;
-        } catch (SecurityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return null;
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException|SecurityException|IllegalAccessException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
             return null;
         }
 
-        if (o instanceof Configurable) {
-            ((Configurable)o).configure(configuration, prefix);
-        }
         return o;
     }
 

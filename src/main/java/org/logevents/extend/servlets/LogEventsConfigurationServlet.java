@@ -57,16 +57,17 @@ public class LogEventsConfigurationServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String loggerName = req.getParameter("loggerName");
-        String levelName = req.getParameter("level");
-        Level level = levelName.equals("null") ? null : Level.valueOf(levelName);
+        setLogLevel(req.getParameter("loggerName"), req.getParameter("level"));
+        resp.sendRedirect(req.getContextPath() + req.getServletPath() + req.getPathInfo());
+    }
+
+    void setLogLevel(String loggerName, String levelName) {
+        Level level = levelName == null || levelName.equals("null") ? null : Level.valueOf(levelName);
         logger.info("Changing log level for {} to {}", loggerName, level);
 
         LoggerConfiguration loggerConfiguration = LogEventFactory.getInstance().getLogger(loggerName);
         LogEventFactory.getInstance().setLevel(loggerConfiguration,
                 level);
-
-        resp.sendRedirect(req.getContextPath() + req.getServletPath() + req.getPathInfo());
     }
 
 }

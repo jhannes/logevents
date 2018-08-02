@@ -13,7 +13,7 @@ import org.apache.catalina.Wrapper;
 import org.apache.catalina.startup.Tomcat;
 import org.logevents.LogEventFactory;
 import org.logevents.extend.servlets.LogEventsConfigurationServlet;
-import org.logevents.extend.servlets.LogEventsServlets;
+import org.logevents.extend.servlets.LogEventsServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -45,7 +45,7 @@ public class Main {
         Tomcat.addServlet(context, "rootServlet", new RootServlet());
         context.addServletMappingDecoded("/*", "rootServlet");
 
-        Wrapper logServlet = Tomcat.addServlet(context, "logsServlet", new LogEventsServlets());
+        Wrapper logServlet = Tomcat.addServlet(context, "logsServlet", new LogEventsServlet());
         logServlet.setLoadOnStartup(1);
         logServlet.addMapping("/logs");
 

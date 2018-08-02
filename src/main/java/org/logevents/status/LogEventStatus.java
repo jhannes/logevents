@@ -1,9 +1,12 @@
 package org.logevents.status;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.logevents.status.StatusEvent.Level;
+import org.logevents.observers.batch.SlackLogEventBatchProcessor;
+import org.logevents.status.StatusEvent.StatusLevel;
 import org.logevents.util.CircularBuffer;
 
 public class LogEventStatus {
@@ -16,18 +19,26 @@ public class LogEventStatus {
 
     private List<StatusEvent> headMessages = new ArrayList<>();
     private CircularBuffer<StatusEvent> tailMessages = new CircularBuffer<>();
-    private StatusEvent.Level threshold = Level.valueOf(System.getProperty("logevents.status", Level.ERROR.toString()));
+
+    public StatusEvent.StatusLevel getThreshold() {
+        return StatusLevel.valueOf(System.getProperty("logevents.status", StatusLevel.ERROR.toString()));
+    }
+
+    public void setThreshold(StatusLevel threshold) {
+        System.setProperty("logevents.status", threshold.toString());
+    }
+
 
     public void addFatal(Object location, String message, Throwable throwable) {
-        add(new StatusEvent(location, message, StatusEvent.Level.FATAL, throwable));
+        add(new StatusEvent(location, message, StatusEvent.StatusLevel.FATAL, throwable));
     }
 
     public void addError(Object location, String message, Throwable throwable) {
-        add(new StatusEvent(location, message, StatusEvent.Level.ERROR, throwable));
+        add(new StatusEvent(location, message, StatusEvent.StatusLevel.ERROR, throwable));
     }
 
     public void addInfo(Object location, String message) {
-        add(new StatusEvent(location, message, StatusEvent.Level.INFO, null));
+        add(new StatusEvent(location, message, StatusEvent.StatusLevel.INFO, null));
     }
 
     void add(StatusEvent statusEvent) {
@@ -37,10 +48,16 @@ public class LogEventStatus {
             tailMessages.add(statusEvent);
         }
 
-        if (this.threshold.toInt() <= statusEvent.getLevel().toInt()) {
+        if (this.getThreshold().toInt() <= statusEvent.getLevel().toInt()) {
             System.err.println(statusEvent.formatMessage());
         }
-
     }
+
+    public List<StatusEvent> getHeadMessages(Object target, StatusLevel threshold) {
+        return headMessages.stream()
+                .filter(event -> event.getLocation() == target && threshold.toInt() <= event.getLevel().toInt())
+                .collect(Collectors.toList());
+    }
+
 
 }

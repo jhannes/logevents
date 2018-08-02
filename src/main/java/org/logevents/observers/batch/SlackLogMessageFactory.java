@@ -3,6 +3,7 @@ package org.logevents.observers.batch;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,7 +15,7 @@ public class SlackLogMessageFactory {
     public Map<String, Object> createSlackMessage(List<LogEventGroup> batch, Optional<String> username, Optional<String> channel) {
         LogEventGroup mainGroup = firstHighestLevelLogEventGroup(batch);
 
-        Map<String, Object> message = new HashMap<>();
+        Map<String, Object> message = new LinkedHashMap<>();
         username.ifPresent(u -> message.put("username", u));
         channel.ifPresent(c -> message.put("channel", c));
         message.put("attachments", createAttachments(mainGroup, batch));

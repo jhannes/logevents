@@ -6,11 +6,11 @@ public class StatusEvent {
 
     private Object location;
     private String message;
-    private Level level;
+    private StatusLevel level;
     private Throwable throwable;
     private Instant time;
 
-    public StatusEvent(Object location, String message, Level level, Throwable throwable) {
+    public StatusEvent(Object location, String message, StatusLevel level, Throwable throwable) {
         this.location = location;
         this.message = message;
         this.level = level;
@@ -22,43 +22,32 @@ public class StatusEvent {
         return location;
     }
 
-
-
-
     public String getMessage() {
         return message;
     }
 
-
-
-
-    public Level getLevel() {
+    public StatusLevel getLevel() {
         return level;
     }
-
-
-
 
     public Throwable getThrowable() {
         return throwable;
     }
 
-
-
-
     public Instant getTime() {
         return time;
     }
 
+    public String formatMessage() {
+        return location + ": " + message + (throwable != null ? throwable.toString() : "");
+    }
 
-
-
-    public static enum Level {
-        INFO(20), ERROR(40), FATAL(50);
+    public static enum StatusLevel {
+        INFO(20), ERROR(40), FATAL(50), NONE(100);
 
         private int levelInt;
 
-        Level(int levelInt) {
+        StatusLevel(int levelInt) {
             this.levelInt = levelInt;
         }
 
@@ -67,8 +56,5 @@ public class StatusEvent {
         }
     }
 
-    public String formatMessage() {
-        return location + ": " + message + (throwable != null ? throwable.toString() : "");
-    }
 
 }

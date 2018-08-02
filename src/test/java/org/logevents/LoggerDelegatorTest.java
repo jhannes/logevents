@@ -2,6 +2,8 @@ package org.logevents;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -31,10 +33,28 @@ public class LoggerDelegatorTest {
     public void shouldRecordEventLocation() {
         loggerDelegator.error("Some message");
         LogEvent event = observer.getEvents().get(0);
-        assertEquals(32, event.getCallerLocation().getLineNumber());
+        assertEquals(34, event.getCallerLocation().getLineNumber());
         assertEquals("LoggerDelegatorTest.java", event.getCallerLocation().getFileName());
         assertEquals(getClass().getName(), event.getCallerLocation().getClassName());
         assertEquals("shouldRecordEventLocation", event.getCallerLocation().getMethodName());
+    }
+
+    @Test
+    public void shouldShowLogLevel() {
+        loggerDelegator.setLevelThreshold(Level.INFO);
+        loggerDelegator.refresh();
+
+        assertTrue(loggerDelegator.isErrorEnabled());
+        assertTrue(loggerDelegator.isWarnEnabled());
+        assertTrue(loggerDelegator.isInfoEnabled());
+        assertFalse(loggerDelegator.isDebugEnabled());
+        assertFalse(loggerDelegator.isTraceEnabled());
+
+        assertTrue(loggerDelegator.isErrorEnabled(null));
+        assertTrue(loggerDelegator.isWarnEnabled(null));
+        assertTrue(loggerDelegator.isInfoEnabled(null));
+        assertFalse(loggerDelegator.isDebugEnabled(null));
+        assertFalse(loggerDelegator.isTraceEnabled(null));
     }
 
     @Test
