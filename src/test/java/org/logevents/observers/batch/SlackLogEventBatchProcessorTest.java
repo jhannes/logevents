@@ -72,17 +72,22 @@ public class SlackLogEventBatchProcessorTest {
         LogEventStatus.getInstance().setThreshold(StatusLevel.FATAL);
         HttpServer server = startServer(t -> {
             t.sendResponseHeaders(400, 0);
+            t.getResponseBody().write("A detailed error message".getBytes());
+            t.getResponseBody().flush();
             t.close();
         });
         int port = server.getAddress().getPort();
 
-        SlackLogEventBatchProcessor processor = new SlackLogEventBatchProcessor(new URL("http://localhost:" + port));
+        URL url = new URL("http://localhost:" + port);
+        SlackLogEventBatchProcessor processor = new SlackLogEventBatchProcessor(url);
         LogEvent logEvent = new LogEvent("org.example", Level.WARN, "Nothing");
         processor.processBatch(Arrays.asList(new LogEventGroup(logEvent)));
 
         List<StatusEvent> events = LogEventStatus.getInstance().getHeadMessages(processor, StatusLevel.ERROR);
         assertTrue("Expected 1 event, was " + events, events.size() == 1);
         assertEquals("Failed to send slack message", events.get(0).getMessage());
+        assertEquals("Failed to POST to " + url + ", status code: 400: A detailed error message",
+                events.get(0).getThrowable().getMessage());
     }
 
     private HttpServer startServer(HttpHandler httpHandler) throws IOException {

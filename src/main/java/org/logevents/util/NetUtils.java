@@ -22,11 +22,9 @@ public class NetUtils {
 
         int statusCode = connection.getResponseCode();
         if (statusCode >= 400) {
-            throw new IOException("Failed to POST to " + url + ", status code: " + statusCode);
+            throw new IOException("Failed to POST to " + url + ", status code: " + statusCode
+                    + ": " + readAsString(connection.getErrorStream()));
         }
-        // TODO Deal with errors in Observers
-        //System.out.println("Response code " + responseCode);
-        //System.out.println(readAsString(connection.getInputStream()));
     }
 
     private static String readAsString(InputStream inputStream) throws IOException {
