@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
+import org.junit.internal.builders.NullBuilder;
 import org.logevents.LogEventFactory;
+import org.logevents.observers.NullLogEventObserver;
 import org.logevents.util.JsonUtil;
 import org.slf4j.Logger;
 
@@ -19,6 +21,7 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     @Test
     public void shouldShowLogEvents() {
+        LogEventFactory.getInstance().setRootObserver(new NullLogEventObserver());
         servlet.attachLogEventObservers(LogEventFactory.getInstance());
 
         String errorMessage = "An error message";
