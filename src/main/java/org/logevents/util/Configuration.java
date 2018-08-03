@@ -21,7 +21,7 @@ public class Configuration {
         try {
             return new URL(getString(key));
         } catch (MalformedURLException e) {
-            throw new IllegalStateException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
+            throw new IllegalArgumentException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
         }
     }
 
@@ -29,13 +29,13 @@ public class Configuration {
         try {
             return Duration.parse(getString(key));
         } catch (DateTimeParseException e) {
-            throw new IllegalStateException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
+            throw new IllegalArgumentException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
         }
     }
 
     public String getString(String key) {
         return optionalString(key)
-                .orElseThrow(() -> new IllegalStateException("Missing required key <" + fullKey(key) + "> in <" + properties.keySet() + ">"));
+                .orElseThrow(() -> new IllegalArgumentException("Missing required key <" + fullKey(key) + "> in <" + properties.keySet() + ">"));
     }
 
     public Optional<String> optionalString(String key) {
@@ -46,19 +46,15 @@ public class Configuration {
         return prefix + "." + key;
     }
 
-    public <T> T createInstanceWithDefault(String key, Class<T> clazz) {
-        return ConfigUtil.create(fullKey(key), clazz.getPackage().getName(), properties);
-    }
-
     public <T> T createInstance(String key, Class<T> clazz) {
         optionalString(key)
-            .orElseThrow(() -> new IllegalStateException("Missing configuration for " + clazz.getSimpleName() + " in " + fullKey(key)));
+            .orElseThrow(() -> new IllegalArgumentException("Missing configuration for " + clazz.getSimpleName() + " in " + fullKey(key)));
         return ConfigUtil.create(fullKey(key), clazz.getPackage().getName(), properties);
     }
 
     public <T> T createInstance(String key, Class<T> clazz, String defaultPackage) {
         optionalString(key)
-            .orElseThrow(() -> new IllegalStateException("Missing configuration for " + clazz.getSimpleName() + " in " + fullKey(key)));
+            .orElseThrow(() -> new IllegalArgumentException("Missing configuration for " + clazz.getSimpleName() + " in " + fullKey(key)));
         return ConfigUtil.create(fullKey(key), defaultPackage, properties);
     }
 

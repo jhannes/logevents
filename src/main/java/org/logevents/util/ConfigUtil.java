@@ -21,20 +21,18 @@ public class ConfigUtil {
                 o = (T) clazz.getConstructor(Properties.class, String.class).newInstance(configuration, prefix);
             } catch (NoSuchMethodException e) {
                 o = (T) clazz.newInstance();
-            } catch (InvocationTargetException e) {
-                if (e.getTargetException() instanceof RuntimeException) {
-                    throw (RuntimeException)e.getTargetException();
-                }
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                return null;
             }
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Exception when creating " + prefix + "=" + className + ": " + e);
+        } catch (InvocationTargetException e) {
+            if (e.getTargetException() instanceof RuntimeException) {
+                throw new IllegalArgumentException("Exception when creating " + prefix + "=" + className + ": " + e);
+            }
+            throw new IllegalArgumentException("Exception when creating " + prefix + e);
         } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Can't create " + prefix + ": " + e);
-        } catch (InstantiationException|SecurityException|IllegalAccessException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return null;
+            throw new IllegalArgumentException("Can't create " + prefix + "=" + className + ": " + e);
+        } catch (InstantiationException|IllegalAccessException e) {
+            throw new IllegalArgumentException("Can't create " + prefix + "=" + className + ": " + e);
         }
 
         return o;
