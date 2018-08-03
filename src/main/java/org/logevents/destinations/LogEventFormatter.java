@@ -4,6 +4,12 @@ import java.util.Optional;
 
 import org.logevents.LogEvent;
 
+/**
+ * Represents a strategy for converting a LogEvent to a string.
+ *
+ * @author Johannes Brodwall
+ *
+ */
 public interface LogEventFormatter {
 
     String format(LogEvent logEvent);

@@ -10,6 +10,12 @@ import java.util.Properties;
 
 import org.logevents.util.Configuration;
 
+/**
+ * Output to a given file.
+ *
+ * @author Johannes Brodwall
+ *
+ */
 public class FileDestination implements LogEventDestination {
 
     private Path logDirectory;

@@ -9,6 +9,12 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Properties;
 
+/**
+ * Outputs to files with a file name that gets current date appended.
+ *
+ * @author Johannes Brodwall
+ *
+ */
 public class DateRollingFileDestination implements LogEventDestination {
 
     private Path logDirectory;

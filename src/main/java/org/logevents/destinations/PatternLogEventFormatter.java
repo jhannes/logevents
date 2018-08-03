@@ -16,6 +16,17 @@ import java.util.stream.Collectors;
 import org.logevents.LogEvent;
 import org.logevents.util.Configuration;
 
+/**
+ * This class represents a {@link LogEventFormatter} which outputs the
+ * {@link LogEvent} based on a configured pattern. The pattern consists of
+ * constant parts and conversion parts, which starts with %-signs. Conversion
+ * parts are handled with {@link PatternConverterBuilder}. A conversion
+ * is specified with a conversion word, and you can extend {@link PatternLogEventFormatter}
+ * with your own conversion words by ....
+ *
+ * @author Johannes Brodwall
+ *
+ */
 public class PatternLogEventFormatter implements LogEventFormatter {
 
     @FunctionalInterface

@@ -2,6 +2,12 @@ package org.logevents.destinations;
 
 import org.logevents.LogEvent;
 
+/**
+ * A simple and convenient {@link LogEventFormatter} which outputs
+ * Time, Thread, Level, Logger as well as the log message and stack trace.
+ *
+ * @author Johannes Brodwall
+ */
 public final class TTLLEventLogFormatter implements LogEventFormatter {
     @Override
     public String format(LogEvent e) {

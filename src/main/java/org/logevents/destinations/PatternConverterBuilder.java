@@ -8,9 +8,17 @@ import java.util.Optional;
 
 import org.logevents.destinations.PatternLogEventFormatter.FormattingFunction;
 
+/**
+ * Used to parse a single conversion for {@link PatternLogEventFormatter}. A
+ * conversion is on the format
+ * "%[&lt;minlength&gt;][.&lt;maxlength&gt;]&lt;conversion word&gt;[(&lt;conversion subpattern&gt;)][{&lt;parameter&gt;,&lt;parameter&gt;}]".
+ *
+ * @author Johannes Brodwall
+ *
+ */
 class PatternConverterBuilder {
 
-    private Optional<Integer> padding;
+    private Optional<Integer> minLength;
     private Optional<Integer> maxLength;
     private String conversionWord;
     private List<String> parameters = new ArrayList<>();
@@ -57,7 +65,7 @@ class PatternConverterBuilder {
     }
 
     private void readMinLength() {
-        this.padding = scanner.readInteger();
+        this.minLength = scanner.readInteger();
     }
 
     private void readConversionWord() {
@@ -109,11 +117,11 @@ class PatternConverterBuilder {
     }
 
     private Optional<LogEventFormatter> getFormattingFunction(String pattern) {
-        return PatternLogEventFormatter.getFormattingFunction(pattern).map(f -> curry(f, padding, maxLength, subpattern, parameters));
+        return PatternLogEventFormatter.getFormattingFunction(pattern).map(f -> curry(f, minLength, maxLength, subpattern, parameters));
     }
 
     private Optional<LogEventFormatter> getSimpleFunction(String pattern) {
-        return PatternLogEventFormatter.getSimpleFunction(pattern).map(f -> decorate(f, padding, maxLength));
+        return PatternLogEventFormatter.getSimpleFunction(pattern).map(f -> decorate(f, minLength, maxLength));
     }
 
     private static LogEventFormatter decorate(LogEventFormatter formatter, Optional<Integer> padding, Optional<Integer> maxLength) {

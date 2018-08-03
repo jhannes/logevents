@@ -1,5 +1,8 @@
 package org.logevents.destinations;
 
+/**
+ * Writes output to standard out. A convenience class for configuration purposes.
+ */
 public class ConsoleLogEventDestination implements LogEventDestination {
 
     @Override

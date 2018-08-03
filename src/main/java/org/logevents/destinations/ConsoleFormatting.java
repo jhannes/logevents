@@ -4,6 +4,15 @@ import java.util.Locale;
 
 import org.fusesource.jansi.AnsiConsole;
 
+/**
+ * Returns ANSI colored strings unless unsupported. This
+ * class will check if the JANSI project is loaded and if so,
+ * use ANSI colors also on Windows. If loaded on Windows without
+ * JANSI, the ANSI escape codes will be omitted.
+ *
+ * @author Johannes Brodwall
+ *
+ */
 public class ConsoleFormatting {
 
     private static ConsoleFormatting instance;
@@ -63,5 +72,9 @@ public class ConsoleFormatting {
 
     protected String ansi(String s, String code) {
         return String.format("\033[%sm%s\033[m", code, s);
+    }
+
+    public String boldRed(String s) {
+        return String.format("\033[%sm%s\033[m", "31", s);
     }
 }
