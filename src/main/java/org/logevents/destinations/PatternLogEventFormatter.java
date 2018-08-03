@@ -27,10 +27,16 @@ public class PatternLogEventFormatter implements LogEventFormatter {
     static {
         simpleConverters.put("logger", e -> e.getLoggerName());
         simpleConverters.put("level", e -> e.getLevel().toString());
+        functionalConverters.put("replace",
+                (event, minLen, maxLen, subpatter, parameters) -> {
+                    String msg = subpatter.map(m -> m.format(event)).orElse("");
+                    msg = msg.replaceAll(parameters.get(0), parameters.get(1));
+                    return restrictLength(msg, minLen, maxLen);
+                });
         functionalConverters.put("message",
-                (event, padding, maxLen, subpattern, parameters) -> restrictLength(event.formatMessage(), padding, maxLen));
+                (event, minLen, maxLen, subpattern, parameters) -> restrictLength(event.formatMessage(), minLen, maxLen));
         functionalConverters.put("date",
-                (event, padding, maxLen, subpattern, parameters) -> {
+                (event, minLen, maxLen, subpattern, parameters) -> {
                     DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
                     if (!parameters.isEmpty()) {
                         formatter = DateTimeFormatter.ofPattern(parameters.get(0));
@@ -40,13 +46,19 @@ public class PatternLogEventFormatter implements LogEventFormatter {
                         zone = ZoneId.of(parameters.get(1));
                     }
                     ZonedDateTime time = event.getInstant().atZone(zone);
-                    return restrictLength(formatter.format(time), padding, maxLen);
+                    return restrictLength(formatter.format(time), minLen, maxLen);
                 });
         functionalConverters.put("cyan",
-                (event, padding, maxLen, subpattern, parameters) -> {
+                (event, minLen, maxLen, subpattern, parameters) -> {
                     return restrictLength(
                             "\033[36m" + subpattern.map(p -> p.format(event)).orElse("") + "\033[m",
-                            padding, maxLen);
+                            minLen, maxLen);
+                });
+        functionalConverters.put("red",
+                (event, minLen, maxLen, subpattern, parameters) -> {
+                    return restrictLength(
+                            "\033[41m" + subpattern.map(p -> p.format(event)).orElse("") + "\033[m",
+                            minLen, maxLen);
                 });
 
     }
@@ -79,20 +91,29 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         this.converter = readConverter(scanner, '\0');
     }
 
-    private LogEventFormatter readConverter(StringScanner scanner, char terminator) {
+    LogEventFormatter readConverter(StringScanner scanner, char terminator) {
         List<LogEventFormatter> converters = new ArrayList<>();
-        while (scanner.hasMoreCharacters()) {
-            readConstant(scanner, converters);
-            readConverter(scanner, converters);
+        while (scanner.hasMoreCharacters() && scanner.current() != terminator) {
+            readConstant(scanner, converters, terminator);
+            if (scanner.current() != terminator) {
+                readConverter(scanner, converters);
+            }
         }
         return event -> converters.stream()
                 .map(converter -> converter.format(event))
                 .collect(Collectors.joining(""));
     }
 
-    private void readConstant(StringScanner scanner, List<LogEventFormatter> converters) {
+    private void readConstant(StringScanner scanner, List<LogEventFormatter> converters, char terminator) {
         if (scanner.hasMoreCharacters()) {
-            converters.add(getConstant(scanner.readUntil('%')));
+            StringBuilder text = new StringBuilder();
+            while (scanner.hasMoreCharacters()) {
+                if (scanner.current() == terminator || scanner.current() == '%') {
+                    break;
+                }
+                text.append(scanner.advance());
+            }
+            converters.add(getConstant(text.toString()));
         }
     }
 

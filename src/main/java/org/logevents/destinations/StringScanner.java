@@ -1,5 +1,7 @@
 package org.logevents.destinations;
 
+import java.util.Optional;
+
 public class StringScanner {
 
     private String string;
@@ -22,8 +24,10 @@ public class StringScanner {
         return hasMoreCharacters() ? string.charAt(position) : '\0';
     }
 
-    public int getPosition() {
-        return position;
+    public void skipWhitespace() {
+        while (Character.isWhitespace(current())) {
+            advance();
+        }
     }
 
     public String readUntil(char terminator) {
@@ -36,5 +40,21 @@ public class StringScanner {
         }
         return parameter.toString();
     }
+
+    public Optional<Integer> readInteger() {
+        StringBuilder number = new StringBuilder();
+        if (current() == '-') {
+            number.append(advance());
+        }
+        while (hasMoreCharacters()) {
+            if (!Character.isDigit(current())) break;
+            number.append(advance());
+        }
+        if (number.length() > 0) {
+            return Optional.of(Integer.parseInt(number.toString()));
+        }
+        return Optional.empty();
+    }
+
 
 }

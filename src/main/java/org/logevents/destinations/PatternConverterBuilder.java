@@ -11,7 +11,7 @@ import org.logevents.destinations.PatternLogEventFormatter.FormattingFunction;
 class PatternConverterBuilder {
 
     private Optional<Integer> padding;
-    private Optional<Integer> maxLength = Optional.empty();
+    private Optional<Integer> maxLength;
     private String conversionWord;
     private List<String> parameters = new ArrayList<>();
     private Optional<LogEventFormatter> subpattern = Optional.empty();
@@ -43,26 +43,21 @@ class PatternConverterBuilder {
     private void readSubpattern(PatternLogEventFormatter formatter) {
         if (scanner.current() == '(')  {
             scanner.advance();
-            this.subpattern = Optional.of(readPattern(formatter, ')'));
+            this.subpattern = Optional.of(formatter.readConverter(scanner, ')'));
+            scanner.advance();
         }
-    }
-
-    private LogEventFormatter readPattern(PatternLogEventFormatter formatter, char terminator) {
-        String string = readUntil(terminator);
-        scanner.advance();
-        return event -> string;
     }
 
     private void readMaxLength() {
         this.maxLength = Optional.empty();
         if (scanner.current() == '.') {
             scanner.advance();
-            maxLength = readInteger();
+            maxLength = scanner.readInteger();
         }
     }
 
     private void readMinLength() {
-        this.padding = readInteger();
+        this.padding = scanner.readInteger();
     }
 
     private void readConversionWord() {
@@ -82,7 +77,7 @@ class PatternConverterBuilder {
     }
 
     private boolean readSingleParameter() {
-        skipWhitespace();
+        scanner.skipWhitespace();
         if (scanner.current() == '\'') {
             return readQuotedParameter();
         }
@@ -100,48 +95,10 @@ class PatternConverterBuilder {
 
     private boolean readQuotedParameter() {
         char quote = scanner.advance();
-        parameters.add(readUntil(quote));
+        parameters.add(scanner.readUntil(quote));
         scanner.advance();
-        skipWhitespace();
+        scanner.skipWhitespace();
         return scanner.advance() == ',';
-    }
-
-
-    private String readUntil(char terminator) {
-        StringBuilder parameter = new StringBuilder();
-        while (scanner.hasMoreCharacters()) {
-            if (scanner.current() == terminator) {
-                break;
-            }
-            parameter.append(scanner.advance());
-        }
-        return parameter.toString();
-    }
-
-
-    private void skipWhitespace() {
-        while (Character.isWhitespace(scanner.current())) {
-            scanner.advance();
-        }
-    }
-
-    private Optional<Integer> readInteger() {
-        StringBuilder number = new StringBuilder();
-        if (scanner.current() == '-') {
-            number.append(scanner.advance());
-        }
-        while (scanner.hasMoreCharacters()) {
-            if (!Character.isDigit(scanner.current())) break;
-            number.append(scanner.advance());
-        }
-        if (number.length() > 0) {
-            return Optional.of(Integer.parseInt(number.toString()));
-        }
-        return Optional.empty();
-    }
-
-    public int getEndIndex() {
-        return scanner.getPosition();
     }
 
     private LogEventFormatter createConverter() {

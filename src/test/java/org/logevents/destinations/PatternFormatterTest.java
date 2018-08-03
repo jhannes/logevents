@@ -4,10 +4,8 @@ import static org.junit.Assert.assertEquals;
 
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.slf4j.event.Level;
@@ -57,8 +55,15 @@ public class PatternFormatterTest {
 
     @Test
     public void shouldOutputColors() {
-        formatter.setPattern("%cyan( [level=INFO] ) %logger");
+        formatter.setPattern("%cyan( [level=%level] ) %logger");
         assertEquals("\033[36m [level=INFO] \033[m some.logger.name",
+                formatter.format(event));
+    }
+
+    @Test
+    public void shouldReplaceSubstring() {
+        formatter.setPattern("%red(%replace(..%logger..){'\\.', '/'})");
+        assertEquals("\033[41m//some/logger/name//\033[m",
                 formatter.format(event));
     }
 
