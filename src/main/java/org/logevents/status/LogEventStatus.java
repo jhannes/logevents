@@ -1,11 +1,9 @@
 package org.logevents.status;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.logevents.observers.batch.SlackLogEventBatchProcessor;
 import org.logevents.status.StatusEvent.StatusLevel;
 import org.logevents.util.CircularBuffer;
 

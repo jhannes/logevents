@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.logevents.LogEventFactory;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.util.JsonUtil;
-import org.slf4j.event.Level;
 
 public class LogEventsConfigurationServletTest {
 
