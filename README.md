@@ -6,8 +6,6 @@
 [![Coverage Status](https://coveralls.io/repos/github/jhannes/logevents/badge.svg?branch=master)](https://coveralls.io/github/jhannes/logevents?branch=master)
 [![Vulnerability scan](https://snyk.io/test/github/jhannes/logevents/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/jhannes/logevents?targetFile=pom.xml)
 
-**Status: Concept implementation. I'm not sure if this is something worth doing or not!**
-
 Setting up and configuring logging should be *easy*, whether you want to do it with
 configuration files or in code. Log Events is a tiny logging framework built on top of
 SLF4J - the logging lingua franka for Java.
@@ -119,9 +117,9 @@ if (logger.isInfoEnabled()) {
 ```
 
 
-### MDC (Diagnostic Context)
+### MDC (Mapped Diagnostic Context)
 
-Message (?) Diagnostic Context, or MDC, can associate information with the
+Mapped Diagnostic Context, or MDC, can associate information with the
 current thread. This information can be used by the log implementation to
 filter messages, redirect messages to different destinations or include in
 the output.
@@ -423,7 +421,7 @@ less code to implement with Logevents.
 
 ### TODO
 
+* PatternFormatter
 * MDC-based batching
 * JMX
-* YAML?
 * Configuration on local directory with reload
