@@ -2,6 +2,9 @@ package org.logevents.destinations;
 
 import static org.logevents.destinations.LogEventFormatter.restrictLength;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +18,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
     @FunctionalInterface
     public static interface FormattingFunction {
-        String format(LogEvent event, Optional<Integer> padding, Optional<Integer> maxLength);
+        String format(LogEvent event, Optional<Integer> padding, Optional<Integer> maxLength, Optional<LogEventFormatter> subpattern, List<String> parameters);
     }
 
     private static Map<String, LogEventFormatter> simpleConverters = new HashMap<>();
@@ -24,20 +27,38 @@ public class PatternLogEventFormatter implements LogEventFormatter {
     static {
         simpleConverters.put("logger", e -> e.getLoggerName());
         simpleConverters.put("level", e -> e.getLevel().toString());
-
         functionalConverters.put("message",
-                (event, padding, maxLen) -> restrictLength(event.formatMessage(), padding, maxLen));
+                (event, padding, maxLen, subpattern, parameters) -> restrictLength(event.formatMessage(), padding, maxLen));
+        functionalConverters.put("date",
+                (event, padding, maxLen, subpattern, parameters) -> {
+                    DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+                    if (!parameters.isEmpty()) {
+                        formatter = DateTimeFormatter.ofPattern(parameters.get(0));
+                    }
+                    ZoneId zone = ZoneId.systemDefault();
+                    if (parameters.size() >= 2) {
+                        zone = ZoneId.of(parameters.get(1));
+                    }
+                    ZonedDateTime time = event.getInstant().atZone(zone);
+                    return restrictLength(formatter.format(time), padding, maxLen);
+                });
+        functionalConverters.put("cyan",
+                (event, padding, maxLen, subpattern, parameters) -> {
+                    return restrictLength(
+                            "\033[36m" + subpattern.map(p -> p.format(event)).orElse("") + "\033[m",
+                            padding, maxLen);
+                });
+
     }
 
 
     private String pattern;
-    private List<LogEventFormatter> converters;
+    private LogEventFormatter converter;
+    private StringScanner scanner;
 
     @Override
     public String format(LogEvent event) {
-        return converters.stream()
-            .map(converter -> converter.format(event))
-            .collect(Collectors.joining(""));
+        return converter.format(event);
     }
 
     static Optional<FormattingFunction> getFormattingFunction(String pattern) {
@@ -54,28 +75,25 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
     public void setPattern(String pattern) {
         this.pattern = pattern;
-
-        List<LogEventFormatter> converters = new ArrayList<>();
-        int endIndex = 0;
-        while (endIndex < pattern.length()) {
-            endIndex = readConstant(pattern, converters, endIndex);
-            endIndex = readConverter(pattern, endIndex, converters);
-        }
-        this.converters = converters;
+        this.scanner = new StringScanner(pattern, 0);
+        this.converter = readConverter(scanner, '\0');
     }
 
-    private int readConstant(String pattern, List<LogEventFormatter> converters, int startIndex) {
-        int endIndex = startIndex;
-        if (endIndex < pattern.length()) {
-            while (endIndex < pattern.length()) {
-                if (pattern.charAt(endIndex) == '%') {
-                    break;
-                }
-                endIndex++;
-            }
-            converters.add(getConstant(pattern.substring(startIndex, endIndex)));
+    private LogEventFormatter readConverter(StringScanner scanner, char terminator) {
+        List<LogEventFormatter> converters = new ArrayList<>();
+        while (scanner.hasMoreCharacters()) {
+            readConstant(scanner, converters);
+            readConverter(scanner, converters);
         }
-        return endIndex;
+        return event -> converters.stream()
+                .map(converter -> converter.format(event))
+                .collect(Collectors.joining(""));
+    }
+
+    private void readConstant(StringScanner scanner, List<LogEventFormatter> converters) {
+        if (scanner.hasMoreCharacters()) {
+            converters.add(getConstant(scanner.readUntil('%')));
+        }
     }
 
     /**
@@ -88,10 +106,9 @@ public class PatternLogEventFormatter implements LogEventFormatter {
      * @param converters The list to insert the new converter into
      * @return position in the pattern to continue reading from
      */
-    private int readConverter(String pattern, int startIndex, List<LogEventFormatter> converters) {
-        PatternConverterBuilder builder = new PatternConverterBuilder(pattern, startIndex);
-        builder.getConverter().ifPresent(c -> converters.add(c));
-        return builder.getEndIndex();
+    private void readConverter(StringScanner scanner, List<LogEventFormatter> converters) {
+        PatternConverterBuilder builder = new PatternConverterBuilder(scanner);
+        builder.readConversion(this).ifPresent(c -> converters.add(c));
     }
 
     @Override
