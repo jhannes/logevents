@@ -94,6 +94,14 @@ public class LogEvent implements LoggingEvent {
         return loggerName;
     }
 
+    public String getLoggerName(Optional<Integer> length) {
+        if (length.isPresent()) {
+            return getAbbreviatedLoggerName(length.get());
+        }
+        return getLoggerName();
+    }
+
+
     /**
      * Returns the logger name restricted as much as possible to fit maxLength characters.
      * The final component of the name is prioritized, then each part from the beginning.
@@ -190,6 +198,15 @@ public class LogEvent implements LoggingEvent {
         throw new RuntimeException("Could not find calling stack trace element!");
     }
 
+    public String getCallerClassName() {
+        return getCallerLocation().getClassName();
+    }
+
+    public String getCallerFileName() {
+        // TODO Better implementation
+        return getCallerLocation().getFileName();
+    }
+
     public String formatStackTrace() {
         if (getThrowable() != null) {
             StringWriter s = new StringWriter();
@@ -203,6 +220,8 @@ public class LogEvent implements LoggingEvent {
     public String toString() {
         return getClass().getSimpleName() + "{" + level + "," + format + "}";
     }
+
+
 
 
 }

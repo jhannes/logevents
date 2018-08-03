@@ -1,6 +1,7 @@
 package org.logevents.destinations;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -63,7 +64,7 @@ public class PatternFormatterTest {
     @Test
     public void shouldReplaceSubstring() {
         formatter.setPattern("%red(%replace(..%logger..){'\\.', '/'})");
-        assertEquals("\033[41m//some/logger/name//\033[m",
+        assertEquals("\033[31m//some/logger/name//\033[m",
                 formatter.format(event));
     }
 
@@ -71,6 +72,34 @@ public class PatternFormatterTest {
     public void shouldOutputMessageWithConstant() {
         formatter.setPattern("level: [%6level] logger: (%-20logger) shortLogger: (%-8.10logger)");
         assertEquals("level: [  INFO] logger: (some.logger.name    ) shortLogger: (some.logge)", formatter.format(event));
+    }
+
+    @Test
+    public void shouldReturnUsableErrorMessageForIncompleteFormats() {
+        String pattern = "level: [%red(%6level)] logger: (%.-20logger{132}) shortLogger: (%-8.10logger)";
+
+        for (int i=0; i<pattern.length(); i++) {
+            try {
+                formatter.setPattern(pattern.substring(0, i));
+            } catch (IllegalArgumentException e) {
+                assertTrue("Expected message of " + e + " to start with <Unknown conversion word> or <End of string>",
+                        e.getMessage().startsWith("Unknown conversion word") || e.getMessage().startsWith("End of string while reading <%"));
+                continue;
+            }
+            formatter.format(event);
+        }
+    }
+
+    @Test
+    public void shouldReturnUsableErrorMessageForNestedExceptions() {
+        try {
+            formatter.setPattern("%date{foobar}");
+        } catch (IllegalArgumentException e) {
+            assertTrue("Expected message of " + e + " to contain <date>",
+                    e.getMessage().contains("date"));
+            assertTrue("Expected message of " + e + " to contain <foobar>",
+                    e.getMessage().contains("foobar"));
+        }
     }
 
 }

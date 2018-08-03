@@ -5,6 +5,7 @@ import static org.logevents.destinations.LogEventFormatter.restrictLength;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,7 @@ import org.logevents.util.Configuration;
  * constant parts and conversion parts, which starts with %-signs. Conversion
  * parts are handled with {@link PatternConverterSpec}. A conversion
  * is specified with a conversion word, and you can extend {@link PatternLogEventFormatter}
- * with your own conversion words by ....
+ * with your own conversion words by adding them to the ConverterBuilderFactory.
  *
  * @author Johannes Brodwall
  *
@@ -36,8 +37,14 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             converterBuilders.put(conversionWord, converterBuilder);
         }
 
+        public void putAliases(String conversionWord, String[] aliases) {
+            for (String alias : aliases) {
+                converterBuilders.put(alias, converterBuilders.get(conversionWord));
+            }
+        }
+
         public void put(String conversionWord, Function<PatternConverterSpec, LogEventFormatter> converterBuilder) {
-            converterBuilders.put(conversionWord,
+            putWithoutLengthRestriction(conversionWord,
                     spec -> {
                         LogEventFormatter f = converterBuilder.apply(spec);
                         Optional<Integer> minLength = spec.getMinLength(),
@@ -46,17 +53,52 @@ public class PatternLogEventFormatter implements LogEventFormatter {
                     });
         }
 
+        public void putTransformer(String conversionWord, Function<PatternConverterSpec, Function<String, String>> transformerBuilder) {
+            put(conversionWord, spec -> {
+               LogEventFormatter nestedFormatter = spec.getSubpattern().orElse(e -> "");
+               Function<String, String> transformer = transformerBuilder.apply(spec);
+               return e -> transformer.apply(nestedFormatter.format(e));
+            });
+        }
+
         public Function<PatternConverterSpec, LogEventFormatter> get(String conversionWord) {
             return converterBuilders.get(conversionWord);
         }
+
+        public LogEventFormatter create(PatternConverterSpec spec) {
+            String conversionWord = spec.getConversionWord();
+            Function<PatternConverterSpec, LogEventFormatter> function = converterBuilders.get(conversionWord);
+            if (function == null) {
+                throw new IllegalArgumentException("Unknown conversion word " + conversionWord + " not in " + getConversionWords());
+            }
+
+            try {
+                return function.apply(spec);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("While building <%" + conversionWord + "> with parameters " + spec.getParameters(), e);
+            }
+        }
+
+        public Collection<String> getConversionWords() {
+            return converterBuilders.keySet();
+        }
+
+
     }
 
     private static ConverterBuilderFactory factory = new ConverterBuilderFactory();
 
+    private static ConsoleFormatting ansiFormat = ConsoleFormatting.getInstance();
+
     static {
-        factory.put("logger",spec -> e -> e.getLoggerName());
-        factory.put("level", spec -> e -> e.getLevel().toString());
-        factory.put("message", spec -> e -> e.formatMessage());
+        factory.put("logger", spec -> {
+            Optional<Integer> length = spec.getIntParameter(0);
+            return e -> e.getLoggerName(length);
+        });
+        factory.putAliases("logger", new String[] { "c", "lo" });
+
+        factory.put("class", spec -> e -> e.getCallerClassName());
+        factory.putAliases("class", new String[] { "C" });
 
         factory.put("date", spec -> {
             DateTimeFormatter formatter = spec.getParameter(0)
@@ -67,29 +109,68 @@ public class PatternLogEventFormatter implements LogEventFormatter {
                     .orElse(ZoneId.systemDefault());
             return e -> formatter.format(e.getInstant().atZone(zone));
         });
+        factory.putAliases("date", new String[] { "d" });
 
-        factory.put("replace", spec -> {
-            Optional<LogEventFormatter> subpattern = spec.getSubpattern();
+        factory.put("file", spec -> e -> e.getCallerFileName());
+        factory.putAliases("file", new String[] { "F" });
+
+        factory.put("level", spec -> e -> e.getLevel().toString());
+        factory.put("message", spec -> e -> e.formatMessage());
+
+
+        factory.putTransformer("replace", spec -> {
             String regex = spec.getParameters().get(0);
             String replacement = spec.getParameters().get(1);
-            return e -> subpattern.map(p -> p.format(e)).orElse("").replaceAll(regex, replacement);
+            return s -> s.replaceAll(regex, replacement);
         });
 
-        factory.put("cyan", spec -> e -> "\033[36m" + spec.getSubpattern().map(p -> p.format(e)).orElse("") + "\033[m");
-        factory.put("red", spec -> e -> "\033[41m" + spec.getSubpattern().map(p -> p.format(e)).orElse("") + "\033[m");
+        // TODO
+        //  line / L
+        //  method / M
+        //  n - newline
+        //  relative / r - Outputs the number of milliseconds elapsed since the start of the application until the creation of the logging event.
+        //  thread / t
+        //  mdc X
+
+        //  exception / throwable / ex {depth, evaluators... }
+
+        //  marker
+        //  caller
+        //  xException / xThrowble / xEx {depth, evaluators... } - with packaging information
+        //  nopexception - The %nopex conversion word allows the user to override PatternLayout's internal safety mechanism which silently adds the %xThrowable conversion keyword in the absence of another conversion word handling exceptions.
+        //  ?? property
+        //  rException / rThrowable / rEx {depth, evaluators... } - Outputs the stack trace of the exception associated with the logging event, if any. The root cause will be output first instead of the standard "root cause last". Here is a sample output (edited for space):
+
+
+        factory.putTransformer("cyan", spec -> s -> ansiFormat.cyan(s));
+        factory.putTransformer("red", spec -> s -> ansiFormat.red(s));
+
+        // TODO
+        //  %black
+        //  %red
+        //  %green
+        //  %yellow
+        //  %blue
+        //  %magenta
+        //  %cyan
+        //  %white
+        //  %gray
+        //  %boldRed
+        //  %boldGreen
+        //  %boldYellow
+        //  %boldBlue
+        //  %boldMagenta
+        //  %boldCyan
+        //  %boldWhite
+        //  %highlight
     }
 
 
     private String pattern;
     private LogEventFormatter converter;
-    private StringScanner scanner;
 
-    private LogEventFormatter createConverter(PatternConverterSpec builder) {
-        Function<PatternConverterSpec, LogEventFormatter> function = factory.get(builder.getConversionWord());
-        if (function != null) {
-            return function.apply(builder);
-        }
-        throw new IllegalArgumentException("Unknown conversion " + builder.getConversionWord());
+    public Collection<String> getConversionWords() {
+        return factory.getConversionWords();
     }
 
     public PatternLogEventFormatter(String pattern) {
@@ -100,36 +181,32 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         this(new Configuration(properties, prefix).getString("pattern"));
     }
 
+    public void setPattern(String pattern) {
+        this.pattern = pattern;
+        this.converter = readConverter(new StringScanner(pattern), '\0');
+    }
+
     LogEventFormatter readConverter(StringScanner scanner, char terminator) {
         List<LogEventFormatter> converters = new ArrayList<>();
         while (scanner.hasMoreCharacters() && scanner.current() != terminator) {
-            readConstant(scanner, converters, terminator);
+            // TODO: Escaped %
+            String text = scanner.readUntil(terminator, '%');
+            if (text.length() > 0) {
+                converters.add(getConstant(text.toString()));
+            }
             if (scanner.hasMoreCharacters() && scanner.current() != terminator) {
-                readConverter(scanner, converters);
+                PatternConverterSpec builder = new PatternConverterSpec(scanner);
+                builder.readConversion(this);
+                converters.add(factory.create(builder));
             }
         }
+        return compositeFormatter(converters);
+    }
+
+    private static LogEventFormatter compositeFormatter(List<LogEventFormatter> converters) {
         return event -> converters.stream()
                 .map(converter -> converter.format(event))
                 .collect(Collectors.joining(""));
-    }
-
-    private void readConstant(StringScanner scanner, List<LogEventFormatter> converters, char terminator) {
-        StringBuilder text = new StringBuilder();
-        while (scanner.hasMoreCharacters()) {
-            if (scanner.current() == terminator || scanner.current() == '%') {
-                break;
-            }
-            text.append(scanner.advance());
-        }
-        if (text.length() > 0) {
-            converters.add(getConstant(text.toString()));
-        }
-    }
-
-    private void readConverter(StringScanner scanner, List<LogEventFormatter> converters) {
-        PatternConverterSpec builder = new PatternConverterSpec(scanner);
-        builder.readConversion(this);
-        converters.add(createConverter(builder));
     }
 
     @Override
@@ -139,12 +216,6 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
     private static LogEventFormatter getConstant(String string) {
         return e -> string;
-    }
-
-    public void setPattern(String pattern) {
-        this.pattern = pattern;
-        this.scanner = new StringScanner(pattern, 0);
-        this.converter = readConverter(scanner, '\0');
     }
 
     @Override

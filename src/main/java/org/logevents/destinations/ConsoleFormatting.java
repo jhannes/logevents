@@ -54,6 +54,10 @@ public class ConsoleFormatting {
         return ansi(s, "1;");
     }
 
+    public String cyan(String s) {
+        return ansi(s, "36");
+    }
+
     public String red(String s) {
         return ansi(s, "31");
     }
@@ -77,4 +81,5 @@ public class ConsoleFormatting {
     public String boldRed(String s) {
         return String.format("\033[%sm%s\033[m", "31", s);
     }
+
 }

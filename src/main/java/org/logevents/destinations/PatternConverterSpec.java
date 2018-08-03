@@ -21,10 +21,6 @@ class PatternConverterSpec {
     private Optional<LogEventFormatter> subpattern = Optional.empty();
     private StringScanner scanner;
 
-    public PatternConverterSpec(String pattern, int startIndex) {
-        this.scanner = new StringScanner(pattern, startIndex);
-    }
-
     public PatternConverterSpec(StringScanner scanner) {
         this.scanner = scanner;
     }
@@ -39,8 +35,12 @@ class PatternConverterSpec {
         readMinLength();
         readMaxLength();
         readConversionWord();
-        readSubpattern(formatter);
-        readParameters();
+        try {
+            readSubpattern(formatter);
+            readParameters();
+        } catch (StringIndexOutOfBoundsException e) {
+            throw new IllegalArgumentException("End of string while reading <%" + getConversionWord() + "> from " + scanner);
+        }
     }
 
     /**
@@ -91,6 +91,9 @@ class PatternConverterSpec {
         return i < parameters.size() ? Optional.of(parameters.get(i)) : Optional.empty();
     }
 
+    public Optional<Integer> getIntParameter(int i) {
+        return getParameter(i).map(Integer::parseInt);
+    }
 
     private void readSubpattern(PatternLogEventFormatter formatter) {
         if (scanner.current() == '(')  {
@@ -114,8 +117,7 @@ class PatternConverterSpec {
 
     private void readConversionWord() {
         StringBuilder result = new StringBuilder();
-        while (scanner.hasMoreCharacters() ) {
-            if (!Character.isAlphabetic(scanner.current())) break;
+        while (Character.isAlphabetic(scanner.current())) {
             result.append(scanner.advance());
         }
         this.conversionWord = result.toString();
@@ -133,19 +135,14 @@ class PatternConverterSpec {
         if (scanner.current() == '\'') {
             return readQuotedParameter();
         }
-        StringBuilder parameter = new StringBuilder();
-        while (scanner.hasMoreCharacters()) {
-            if (scanner.current() == ',' || scanner.current() == '}') {
-                parameters.add(parameter.toString());
-                return scanner.advance() == ',';
-            } else {
-                parameter.append(scanner.advance());
-            }
-        }
-        return false;
+
+        String param = scanner.readUntil(',', '}');
+        parameters.add(param);
+        return scanner.advance() == ',';
     }
 
     private boolean readQuotedParameter() {
+        // TODO: Escaped quotes
         char quote = scanner.advance();
         parameters.add(scanner.readUntil(quote));
         scanner.advance();

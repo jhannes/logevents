@@ -16,9 +16,9 @@ class StringScanner {
     private String string;
     private int position;
 
-    public StringScanner(String string, int startPosition) {
+    public StringScanner(String string) {
         this.string = string;
-        this.position = startPosition;
+        this.position = 0;
     }
 
     /**
@@ -62,15 +62,22 @@ class StringScanner {
      * @param terminator The character to scan for
      * @return The substring until the terminator, not including terminator
      */
-    public String readUntil(char terminator) {
+    public String readUntil(char... terminatorsArray) {
         StringBuilder parameter = new StringBuilder();
         while (hasMoreCharacters()) {
-            if (current() == terminator) {
+            if (contains(terminatorsArray, current())) {
                 break;
             }
             parameter.append(advance());
         }
         return parameter.toString();
+    }
+
+    private boolean contains(char[] array, char c) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] == c) return true;
+        }
+        return false;
     }
 
     /**
@@ -82,14 +89,21 @@ class StringScanner {
         if (current() == '-') {
             number.append(advance());
         }
-        while (hasMoreCharacters()) {
-            if (!Character.isDigit(current())) break;
+        if (!hasMoreCharacters()) {
+            return Optional.empty();
+        }
+        while (Character.isDigit(current())) {
             number.append(advance());
         }
         if (number.length() > 0) {
             return Optional.of(Integer.parseInt(number.toString()));
         }
         return Optional.empty();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" + string + "}";
     }
 
 }
