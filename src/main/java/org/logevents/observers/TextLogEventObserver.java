@@ -8,28 +8,29 @@ import org.logevents.LogEventObserver;
 import org.logevents.destinations.LogEventDestination;
 import org.logevents.destinations.LogEventFormatter;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.ConfigUtil;
+import org.logevents.util.Configuration;
 
 public class TextLogEventObserver implements LogEventObserver {
 
-    private final LogEventDestination eventDestination;
-    private final LogEventFormatter logEventFormatter;
+    private final LogEventDestination destination;
+    private final LogEventFormatter formatter;
 
-    public TextLogEventObserver(Properties configuration, String prefix) {
-        eventDestination = ConfigUtil.create(prefix + ".eventDestination", "org.logevents.destinations", configuration);
-        logEventFormatter = ConfigUtil.create(prefix + ".logEventFormatter", "org.logevents.destinations", configuration);
+    public TextLogEventObserver(Properties properties, String prefix) {
+        Configuration configuration = new Configuration(properties, prefix);
+        destination = configuration.createInstance("destination", LogEventDestination.class);
+        formatter = configuration.createInstance("formatter", LogEventFormatter.class);
         LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
     }
 
     public TextLogEventObserver(LogEventDestination eventDestination, LogEventFormatter logEventFormatter) {
-        this.eventDestination = eventDestination;
-        this.logEventFormatter = logEventFormatter;
+        this.destination = eventDestination;
+        this.formatter = logEventFormatter;
     }
 
     @Override
     public void logEvent(LogEvent logEvent) {
         try {
-            eventDestination.writeEvent(logEventFormatter.format(logEvent));
+            destination.writeEvent(formatter.format(logEvent));
         } catch (IOException e) {
             // PANICK!
             e.printStackTrace();
@@ -39,8 +40,8 @@ public class TextLogEventObserver implements LogEventObserver {
     @Override
     public String toString() {
         return getClass().getSimpleName()
-                + "{eventDestination=" + eventDestination
-                + ",logEventFormatter=" + logEventFormatter + "}";
+                + "{eventDestination=" + destination
+                + ",logEventFormatter=" + formatter + "}";
     }
 
 }

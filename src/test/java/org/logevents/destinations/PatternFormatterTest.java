@@ -13,7 +13,7 @@ import org.slf4j.event.Level;
 public class PatternFormatterTest {
 
     private Instant time = Instant.now();
-    private PatternLogEventFormatter formatter = new PatternLogEventFormatter();
+    private PatternLogEventFormatter formatter = new PatternLogEventFormatter("No patter");
     private LogEvent event = new LogEvent("some.logger.name", Level.INFO, "A message from {} to {}",
             new Object[] { "A", "B" }, time);
 

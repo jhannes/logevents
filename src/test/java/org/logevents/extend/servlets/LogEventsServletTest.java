@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
-import org.junit.internal.builders.NullBuilder;
 import org.logevents.LogEventFactory;
 import org.logevents.observers.NullLogEventObserver;
 import org.logevents.util.JsonUtil;

@@ -22,6 +22,9 @@ public class ConfigUtil {
             } catch (NoSuchMethodException e) {
                 o = (T) clazz.newInstance();
             } catch (InvocationTargetException e) {
+                if (e.getTargetException() instanceof RuntimeException) {
+                    throw (RuntimeException)e.getTargetException();
+                }
                 // TODO Auto-generated catch block
                 e.printStackTrace();
                 return null;

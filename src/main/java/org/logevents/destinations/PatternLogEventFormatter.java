@@ -10,9 +10,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.logevents.LogEvent;
+import org.logevents.util.Configuration;
 
 public class PatternLogEventFormatter implements LogEventFormatter {
 
@@ -67,6 +69,14 @@ public class PatternLogEventFormatter implements LogEventFormatter {
     private String pattern;
     private LogEventFormatter converter;
     private StringScanner scanner;
+
+    public PatternLogEventFormatter(String pattern) {
+        setPattern(pattern);
+    }
+
+    public PatternLogEventFormatter(Properties properties, String prefix) {
+        this(new Configuration(properties, prefix).getString("pattern"));
+    }
 
     @Override
     public String format(LogEvent event) {
