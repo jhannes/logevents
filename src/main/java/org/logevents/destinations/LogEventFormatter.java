@@ -18,8 +18,8 @@ public interface LogEventFormatter {
         return new TTLLEventLogFormatter();
     }
 
-    static String restrictLength(String s, Optional<Integer> minimumLength, Optional<Integer> maximumLength) {
-        return truncate(pad(s, minimumLength), maximumLength);
+    static String restrictLength(String s, Optional<Integer> minLength, Optional<Integer> maxLength) {
+        return truncate(pad(s, minLength), maxLength);
     }
 
     static String truncate(String s, Optional<Integer> maxLengthOpt) {

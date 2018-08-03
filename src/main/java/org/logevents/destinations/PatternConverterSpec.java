@@ -1,12 +1,8 @@
 package org.logevents.destinations;
 
-import static org.logevents.destinations.LogEventFormatter.restrictLength;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import org.logevents.destinations.PatternLogEventFormatter.FormattingFunction;
 
 /**
  * Used to parse a single conversion for {@link PatternLogEventFormatter}. A
@@ -16,7 +12,7 @@ import org.logevents.destinations.PatternLogEventFormatter.FormattingFunction;
  * @author Johannes Brodwall
  *
  */
-class PatternConverterBuilder {
+class PatternConverterSpec {
 
     private Optional<Integer> minLength;
     private Optional<Integer> maxLength;
@@ -25,28 +21,76 @@ class PatternConverterBuilder {
     private Optional<LogEventFormatter> subpattern = Optional.empty();
     private StringScanner scanner;
 
-    public PatternConverterBuilder(String pattern, int startIndex) {
+    public PatternConverterSpec(String pattern, int startIndex) {
         this.scanner = new StringScanner(pattern, startIndex);
     }
 
-    public PatternConverterBuilder(StringScanner scanner) {
+    public PatternConverterSpec(StringScanner scanner) {
         this.scanner = scanner;
     }
 
-    Optional<LogEventFormatter> readConversion(PatternLogEventFormatter formatter) {
-        if (scanner.hasMoreCharacters()) {
-            scanner.advance();
-            readMinLength();
-            readMaxLength();
-            readConversionWord();
-            readSubpattern(formatter);
-            readParameters();
-
-            return Optional.of(createConverter());
-        } else {
-            return Optional.empty();
-        }
+    /**
+     * Reads all the internal state from the scanner. Can only be called
+     * once as it doesn't rewind the scanner.
+     * @param formatter Used for sub-patterns
+     */
+    public void readConversion(PatternLogEventFormatter formatter) {
+        scanner.advance();
+        readMinLength();
+        readMaxLength();
+        readConversionWord();
+        readSubpattern(formatter);
+        readParameters();
     }
+
+    /**
+     * If the resulting string is shorter than abs(min)-length, it should be padded.
+     * If minLength is negative, the string should be right-padded, otherwise, it
+     * should be left padded. If minLength is {@link Optional#empty()}, output will not be padded.
+     */
+    public Optional<Integer> getMinLength() {
+        return minLength;
+    }
+
+    /**
+     * If the resulting string is longer than abs(min)-length, it should be truncated.
+     * If maxLength is negative, the string should be truncated on the right, otherwise, it
+     * should be truncated on the left. If maxLength is {@link Optional#empty()}, output will not be truncated.
+     */
+    public Optional<Integer> getMaxLength() {
+        return maxLength;
+    }
+
+    /**
+     * The function represented is represented by the conversion word. The full list
+     * of conversion words are given in {@link PatternLogEventFormatter#getConversionWords}
+     */
+    public String getConversionWord() {
+        return conversionWord;
+    }
+
+    /**
+     * A fully parsed sub pattern specified in parenthesis () after the conversion word.
+     * The string used in the subpattern can contain further conversions of its own.
+     */
+    public Optional<LogEventFormatter> getSubpattern() {
+        return subpattern;
+    }
+
+    /**
+     * A list of parameters specified in curly brackets after the conversion word.
+     * The parameters are separated by , and can optionally by quoted with single quotes (').
+     * For example %date{ 'HH:mm:ss,SSS', Europe/Oslo} has the parameters "HH:mm:ss,SSS" and
+     * "Europe/Oslo"
+     */
+    public List<String> getParameters() {
+        return parameters;
+    }
+
+    public Optional<String> getParameter(int i) {
+        return i < parameters.size() ? Optional.of(parameters.get(i)) : Optional.empty();
+    }
+
 
     private void readSubpattern(PatternLogEventFormatter formatter) {
         if (scanner.current() == '(')  {
@@ -107,29 +151,6 @@ class PatternConverterBuilder {
         scanner.advance();
         scanner.skipWhitespace();
         return scanner.advance() == ',';
-    }
-
-    private LogEventFormatter createConverter() {
-        return getFormattingFunction(conversionWord)
-                .orElseGet(() ->
-                    getSimpleFunction(conversionWord)
-                    .orElseThrow(() -> new IllegalArgumentException("Unknown conversion " + conversionWord)));
-    }
-
-    private Optional<LogEventFormatter> getFormattingFunction(String pattern) {
-        return PatternLogEventFormatter.getFormattingFunction(pattern).map(f -> curry(f, minLength, maxLength, subpattern, parameters));
-    }
-
-    private Optional<LogEventFormatter> getSimpleFunction(String pattern) {
-        return PatternLogEventFormatter.getSimpleFunction(pattern).map(f -> decorate(f, minLength, maxLength));
-    }
-
-    private static LogEventFormatter decorate(LogEventFormatter formatter, Optional<Integer> padding, Optional<Integer> maxLength) {
-        return event -> restrictLength(formatter.format(event), padding, maxLength);
-    }
-
-    private static LogEventFormatter curry(FormattingFunction f, Optional<Integer> padding, Optional<Integer> maxLength, Optional<LogEventFormatter> subpattern, List<String> parameters) {
-        return event -> f.format(event, padding, maxLength, subpattern, parameters);
     }
 
 }
