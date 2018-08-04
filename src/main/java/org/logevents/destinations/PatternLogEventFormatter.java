@@ -132,6 +132,16 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.put("thread", spec -> e -> e.getThreadName());
         factory.putAliases("thread", new String[] { "t" });
 
+        factory.put("mdc", spec -> {
+            if (spec.getParameters().isEmpty()) {
+                return e -> e.getMdc();
+            } else {
+                String[] parts = spec.getParameters().get(0).split(":-");
+                String key = parts[0];
+                String defaultValue = parts.length > 1 ? parts[1] : "";
+                return e -> e.getMdc(key, defaultValue);
+            }
+        });
 
         factory.putTransformer("replace", spec -> {
             String regex = spec.getParameters().get(0);
@@ -139,9 +149,9 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             return s -> s.replaceAll(regex, replacement);
         });
 
+
         // TODO
         //  relative / r - Outputs the number of milliseconds elapsed since the start of the application until the creation of the logging event.
-        //  mdc X
 
         //  exception / throwable / ex {depth, evaluators... }
 
@@ -161,24 +171,25 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
         factory.putTransformer("cyan", spec -> s -> ansiFormat.cyan(s));
         factory.putTransformer("red", spec -> s -> ansiFormat.red(s));
+        factory.putTransformer("black", spec -> s -> ansiFormat.black(s));
+        factory.putTransformer("red", spec -> s -> ansiFormat.red(s));
+        factory.putTransformer("green", spec -> s -> ansiFormat.green(s));
+        factory.putTransformer("yellow", spec -> s -> ansiFormat.yellow(s));
+        factory.putTransformer("blue", spec -> s -> ansiFormat.blue(s));
+        factory.putTransformer("magenta", spec -> s -> ansiFormat.magenta(s));
+        factory.putTransformer("cyan", spec -> s -> ansiFormat.cyan(s));
+        factory.putTransformer("white", spec -> s -> ansiFormat.white(s));
 
-        // TODO
-        //  %black
-        //  %red
-        //  %green
-        //  %yellow
-        //  %blue
-        //  %magenta
-        //  %cyan
-        //  %white
-        //  %gray
-        //  %boldRed
-        //  %boldGreen
-        //  %boldYellow
-        //  %boldBlue
-        //  %boldMagenta
-        //  %boldCyan
-        //  %boldWhite
+        factory.putTransformer("boldGreen", spec -> s -> ansiFormat.boldGreen(s));
+
+        factory.putTransformer("boldBlack", spec -> s -> ansiFormat.boldBlack(s));
+        factory.putTransformer("boldRed", spec -> s -> ansiFormat.boldRed(s));
+        factory.putTransformer("boldGreen", spec -> s -> ansiFormat.boldGreen(s));
+        factory.putTransformer("boldYellow", spec -> s -> ansiFormat.boldYellow(s));
+        factory.putTransformer("boldBlue", spec -> s -> ansiFormat.boldBlue(s));
+        factory.putTransformer("boldMagenta", spec -> s -> ansiFormat.boldMagenta(s));
+        factory.putTransformer("boldCyan", spec -> s -> ansiFormat.boldCyan(s));
+        factory.putTransformer("boldWhite", spec -> s -> ansiFormat.boldWhite(s));
     }
 
 

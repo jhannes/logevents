@@ -8,6 +8,7 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.MDC;
@@ -229,8 +230,15 @@ public class LogEvent implements LoggingEvent {
         return getClass().getSimpleName() + "{" + level + "," + format + "}";
     }
 
+    public String getMdc() {
+        return this.getMdcProperties()
+            .entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
+            .collect(Collectors.joining(", "));
+    }
 
-
+    public String getMdc(String key, String defaultValue) {
+        return this.getMdcProperties().getOrDefault(key, defaultValue);
+    }
 
 
 }

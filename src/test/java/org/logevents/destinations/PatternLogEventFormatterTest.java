@@ -6,12 +6,20 @@ import static org.junit.Assert.assertTrue;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.slf4j.Logger;
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 public class PatternLogEventFormatterTest {
@@ -20,6 +28,7 @@ public class PatternLogEventFormatterTest {
     private PatternLogEventFormatter formatter = new PatternLogEventFormatter("No pattern");
     private LogEvent event = new LogEvent("some.logger.name", Level.INFO, "A message from {} to {}",
             new Object[] { "A", "B" }, time);
+    private ConsoleFormatting formatting = ConsoleFormatting.getInstance();
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldRejectIllegalConvertion() {
@@ -87,7 +96,7 @@ public class PatternLogEventFormatterTest {
         LogEvent event = buffer.getEvents().get(0);
 
         formatter.setPattern("%file:%line%n%class#%method");
-        assertEquals("PatternLogEventFormatterTest.java:86" + System.getProperty("line.separator")
+        assertEquals("PatternLogEventFormatterTest.java:95" + System.getProperty("line.separator")
                  + "org.logevents.destinations.PatternLogEventFormatterTest#shouldOutputLocation",
                 formatter.format(event));
     }
@@ -100,13 +109,30 @@ public class PatternLogEventFormatterTest {
         LogEvent debugEvent = new LogEvent("some.logger.name", Level.DEBUG, "Debug message");
 
         formatter.setPattern("%highlight(%thread)");
-        ConsoleFormatting formatting = ConsoleFormatting.getInstance();
         String s = Thread.currentThread().getName();
         assertEquals(formatting.boldRed(s), formatter.format(errorEvent));
         assertEquals(formatting.red(s), formatter.format(warnEvent));
         assertEquals(formatting.blue(s), formatter.format(infoEvent));
         assertEquals(s, formatter.format(debugEvent));
+    }
 
+    @Test
+    public void shouldOutputMdc() {
+        MDC.put("user", "Super User");
+        MDC.put("role", "admin");
+        LogEvent event = new LogEvent("some.logger.name", Level.WARN, "Warning message");
+
+        formatter.setPattern("%boldGreen(role=%mdc{role})");
+        assertEquals(formatting.boldGreen("role=admin"), formatter.format(event));
+
+        formatter.setPattern("[%mdc{userid}]");
+        assertEquals("[]", formatter.format(event));
+
+        formatter.setPattern("[%mdc{userid:-no user given}]");
+        assertEquals("[no user given]", formatter.format(event));
+
+        formatter.setPattern("%mdc");
+        assertEquals("user=Super User, role=admin", formatter.format(event));
     }
 
     @Test
@@ -136,5 +162,47 @@ public class PatternLogEventFormatterTest {
                     e.getMessage().contains("foobar"));
         }
     }
+
+    @Test
+    public void shouldOutputColorsReasonably() {
+        List<String> colors = Arrays.asList(
+                "%black", "%red", "%green", "%yellow", "%blue", "%magenta", "%cyan", "%white",
+                "%boldBlack", "%boldRed", "%boldGreen", "%boldYellow", "%boldBlue", "%boldMagenta", "%boldCyan", "%boldWhite");
+
+        for (String color : colors) {
+            formatter.setPattern(color + "(%level)");
+            assertTrue("Strange color output " + formatter.format(event),
+                    formatter.format(event).matches("\033\\[(\\d+;)?\\d+mINFO\033\\[m"));
+
+        }
+    }
+
+    @Test
+    public void shouldColorOutputsShouldBeUnique() {
+        List<String> colors = Arrays.asList(
+                "%black", "%red", "%green", "%yellow", "%blue", "%magenta", "%cyan", "%white",
+                "%boldBlack", "%boldRed", "%boldGreen", "%boldYellow", "%boldBlue", "%boldMagenta", "%boldCyan", "%boldWhite");
+
+        List<String> resultingStrings = colors.stream()
+            .map(c -> {
+                formatter.setPattern(c + "(%level)");
+                return formatter.format(event);
+            })
+            .collect(Collectors.toList());
+
+        assertEquals(Collections.emptyList(), findDuplicates(resultingStrings));
+    }
+
+    private List<String> findDuplicates(List<String> resultingStrings) {
+        Set<String> uniqueResults = new HashSet<>();
+        Set<String> duplicatedResults = new HashSet<>();
+        for (String result : resultingStrings) {
+            if (!uniqueResults.add(result)) {
+                duplicatedResults.add(result);
+            }
+        }
+        return new ArrayList<>(duplicatedResults);
+    }
+
 
 }
