@@ -9,12 +9,15 @@ import java.time.format.DateTimeFormatter;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.LogEventFactory;
+import org.logevents.observers.CircularBufferLogEventObserver;
+import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
 public class PatternLogEventFormatterTest {
 
     private Instant time = Instant.now();
-    private PatternLogEventFormatter formatter = new PatternLogEventFormatter("No patter");
+    private PatternLogEventFormatter formatter = new PatternLogEventFormatter("No pattern");
     private LogEvent event = new LogEvent("some.logger.name", Level.INFO, "A message from {} to {}",
             new Object[] { "A", "B" }, time);
 
@@ -72,6 +75,38 @@ public class PatternLogEventFormatterTest {
     public void shouldOutputMessageWithConstant() {
         formatter.setPattern("level: [%6level] logger: (%-20logger) shortLogger: (%-8.10logger)");
         assertEquals("level: [  INFO] logger: (some.logger.name    ) shortLogger: (some.logge)", formatter.format(event));
+    }
+
+    @Test
+    public void shouldOutputLocation() {
+        Logger logger = LogEventFactory.getInstance().getLogger(getClass().getName());
+        CircularBufferLogEventObserver buffer = new CircularBufferLogEventObserver();
+        LogEventFactory.getInstance().setObserver(logger, buffer, false);
+
+        logger.warn("Test message");
+        LogEvent event = buffer.getEvents().get(0);
+
+        formatter.setPattern("%file:%line%n%class#%method");
+        assertEquals("PatternLogEventFormatterTest.java:86" + System.getProperty("line.separator")
+                 + "org.logevents.destinations.PatternLogEventFormatterTest#shouldOutputLocation",
+                formatter.format(event));
+    }
+
+    @Test
+    public void shouldHighlightMessage() {
+        LogEvent errorEvent = new LogEvent("some.logger.name", Level.ERROR, "Error message");
+        LogEvent warnEvent = new LogEvent("some.logger.name", Level.WARN, "Warning message");
+        LogEvent infoEvent = new LogEvent("some.logger.name", Level.INFO, "Info message");
+        LogEvent debugEvent = new LogEvent("some.logger.name", Level.DEBUG, "Debug message");
+
+        formatter.setPattern("%highlight(%thread)");
+        ConsoleFormatting formatting = ConsoleFormatting.getInstance();
+        String s = Thread.currentThread().getName();
+        assertEquals(formatting.boldRed(s), formatter.format(errorEvent));
+        assertEquals(formatting.red(s), formatter.format(warnEvent));
+        assertEquals(formatting.blue(s), formatter.format(infoEvent));
+        assertEquals(s, formatter.format(debugEvent));
+
     }
 
     @Test

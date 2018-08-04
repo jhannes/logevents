@@ -69,7 +69,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             String conversionWord = spec.getConversionWord();
             Function<PatternConverterSpec, LogEventFormatter> function = converterBuilders.get(conversionWord);
             if (function == null) {
-                throw new IllegalArgumentException("Unknown conversion word " + conversionWord + " not in " + getConversionWords());
+                throw new IllegalArgumentException("Unknown conversion word <%" + conversionWord + "> not in " + getConversionWords());
             }
 
             try {
@@ -97,8 +97,22 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         });
         factory.putAliases("logger", new String[] { "c", "lo" });
 
-        factory.put("class", spec -> e -> e.getCallerClassName());
+        factory.put("class", spec -> e -> e.getCallerClassName()); // TODO: int parameter
         factory.putAliases("class", new String[] { "C" });
+
+        factory.put("method", spec -> e -> e.getCallerMethodName());
+        factory.putAliases("method", new String[] { "M" });
+
+        factory.put("file", spec -> e -> e.getCallerFileName());
+        factory.putAliases("file", new String[] { "F" });
+
+        factory.put("line", spec -> e -> String.valueOf(e.getCallerLine()));
+        factory.putAliases("line", new String[] { "L" });
+
+        factory.put("n", spec -> {
+            String newline = System.getProperty("line.separator");
+            return e -> newline;
+        });
 
         factory.put("date", spec -> {
             DateTimeFormatter formatter = spec.getParameter(0)
@@ -111,11 +125,12 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         });
         factory.putAliases("date", new String[] { "d" });
 
-        factory.put("file", spec -> e -> e.getCallerFileName());
-        factory.putAliases("file", new String[] { "F" });
 
         factory.put("level", spec -> e -> e.getLevel().toString());
         factory.put("message", spec -> e -> e.formatMessage());
+        factory.putAliases("message", new String[] { "m", "msg" });
+        factory.put("thread", spec -> e -> e.getThreadName());
+        factory.putAliases("thread", new String[] { "t" });
 
 
         factory.putTransformer("replace", spec -> {
@@ -125,11 +140,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         });
 
         // TODO
-        //  line / L
-        //  method / M
-        //  n - newline
         //  relative / r - Outputs the number of milliseconds elapsed since the start of the application until the creation of the logging event.
-        //  thread / t
         //  mdc X
 
         //  exception / throwable / ex {depth, evaluators... }
@@ -141,6 +152,12 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         //  ?? property
         //  rException / rThrowable / rEx {depth, evaluators... } - Outputs the stack trace of the exception associated with the logging event, if any. The root cause will be output first instead of the standard "root cause last". Here is a sample output (edited for space):
 
+        factory.put("highlight", spec -> {
+            LogEventFormatter nestedFormatter = spec.getSubpattern().orElse(e -> "");
+            return e -> {
+                return ansiFormat.highlight(e.getLevel(), nestedFormatter.format(e));
+            };
+        });
 
         factory.putTransformer("cyan", spec -> s -> ansiFormat.cyan(s));
         factory.putTransformer("red", spec -> s -> ansiFormat.red(s));
@@ -162,7 +179,6 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         //  %boldMagenta
         //  %boldCyan
         //  %boldWhite
-        //  %highlight
     }
 
 
