@@ -24,7 +24,11 @@ public class FileDestination implements LogEventDestination {
     public FileDestination(String filename) throws IOException {
         Path path = Paths.get(filename);
         logDirectory = path.getParent();
-        Files.createDirectories(logDirectory);
+        if (logDirectory == null) {
+            logDirectory = Paths.get(".");
+        } else {
+            Files.createDirectories(logDirectory);
+        }
         this.fileName = path.getFileName();
     }
 
@@ -44,4 +48,8 @@ public class FileDestination implements LogEventDestination {
         }
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" + fileName + "}";
+    }
 }

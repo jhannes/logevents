@@ -7,7 +7,6 @@ import static org.junit.Assert.fail;
 import java.util.Properties;
 
 import org.junit.Test;
-import org.logevents.observers.batch.SlackLogMessageFactory;
 
 public class ConfigurationTest {
     private Properties properties = new Properties();

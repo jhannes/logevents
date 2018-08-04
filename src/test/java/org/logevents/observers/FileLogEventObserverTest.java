@@ -18,6 +18,21 @@ import org.logevents.destinations.PatternLogEventFormatter;
 public class FileLogEventObserverTest {
 
     @Test
+    public void shouldCreateFileDestinationWithoutDirectory() throws IOException {
+        Path path = Paths.get("test-log-file.log");
+        Files.deleteIfExists(path);
+
+        Properties properties = new Properties();
+        properties.setProperty("observer.file.destination", FileDestination.class.getSimpleName());
+        properties.setProperty("observer.file.destination.filename", path.toString());
+        properties.setProperty("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
+        properties.setProperty("observer.file.formatter.pattern", "%message");
+        TextLogEventObserver observer = new TextLogEventObserver(properties, "observer.file");
+
+        assertEquals("TextLogEventObserver{destination=FileDestination{test-log-file.log},formatter=PatternLogEventFormatter{%message}}", observer.toString());
+    }
+
+    @Test
     public void shouldLogToFile() throws IOException {
         Path path = Paths.get("target", "test", "log", getClass().getSimpleName() + ".log");
         Files.deleteIfExists(path);

@@ -26,7 +26,7 @@ public class ConfigUtil {
             throw new IllegalArgumentException("Exception when creating " + prefix + "=" + className + ": " + e);
         } catch (InvocationTargetException e) {
             if (e.getTargetException() instanceof RuntimeException) {
-                throw new IllegalArgumentException("Exception when creating " + prefix + "=" + className + ": " + e);
+                throw new IllegalArgumentException("Exception when creating " + prefix + "=" + className + ": " + e.getTargetException());
             }
             throw new IllegalArgumentException("Exception when creating " + prefix + e);
         } catch (ClassNotFoundException e) {

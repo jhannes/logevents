@@ -43,10 +43,6 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
         this.channel = Optional.ofNullable(channel);
     }
 
-    public void setSlackUrl(URL slackUrl) {
-        this.slackUrl = slackUrl;
-    }
-
     @Override
     public void processBatch(List<LogEventGroup> batch) {
         Map<String, Object> slackMessage;

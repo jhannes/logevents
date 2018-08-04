@@ -184,7 +184,7 @@ public class LogEvent implements LoggingEvent {
             return callerLocation;
         }
         if (this.threadId != Thread.currentThread().getId()) {
-            throw new IllegalStateException("Can't find called from different thread");
+            throw new IllegalStateException("Can't find caller location from different thread");
         }
         StackTraceElement[] stackTrace = new Throwable().getStackTrace();
         for (int i = 0; i < stackTrace.length-1; i++) {

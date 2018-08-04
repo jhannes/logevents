@@ -36,8 +36,8 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(Level.DEBUG, factory.getRootLogger().getLevelThreshold());
         assertEquals(
                 "DateRollingLogEventObserver{"
-                + "eventDestination=DateRollingFileDestination{application.log},"
-                + "logEventFormatter=TTLLEventLogFormatter}",
+                + "destination=DateRollingFileDestination{application.log},"
+                + "formatter=TTLLEventLogFormatter}",
                 factory.getRootLogger().getObserver());
     }
 
@@ -55,7 +55,6 @@ public class DefaultLogEventConfiguratorTest {
                 factory.getLogger("org.example").getObserver());
     }
 
-    // TODO: Test that missing logfile name is handled okay
     // TODO: Test that file without directory is handled okay
 
 

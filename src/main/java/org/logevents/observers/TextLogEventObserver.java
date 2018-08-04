@@ -40,8 +40,8 @@ public class TextLogEventObserver implements LogEventObserver {
     @Override
     public String toString() {
         return getClass().getSimpleName()
-                + "{eventDestination=" + destination
-                + ",logEventFormatter=" + formatter + "}";
+                + "{destination=" + destination
+                + ",formatter=" + formatter + "}";
     }
 
 }
