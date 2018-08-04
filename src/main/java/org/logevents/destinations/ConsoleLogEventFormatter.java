@@ -38,15 +38,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
      * red, INFO is blue and other levels are default color.
      */
     protected String colorizedLevel(Level level) {
-        String levelString = LogEventFormatter.rightPad(level, 5, ' ');
-        if (level == Level.ERROR) {
-            return format.boldRed(levelString);
-        } else if (level == Level.WARN) {
-            return format.red(levelString);
-        } else if (level == Level.INFO) {
-            return format.blue(levelString);
-        }
-        return levelString;
+        return format.highlight(level, LogEventFormatter.rightPad(level, 5, ' '));
     }
 
     @Override

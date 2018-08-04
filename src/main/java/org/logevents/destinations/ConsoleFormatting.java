@@ -3,6 +3,7 @@ package org.logevents.destinations;
 import java.util.Locale;
 
 import org.fusesource.jansi.AnsiConsole;
+import org.slf4j.event.Level;
 
 /**
  * Returns ANSI colored strings unless unsupported. This
@@ -80,6 +81,21 @@ public class ConsoleFormatting {
 
     public String boldRed(String s) {
         return String.format("\033[%sm%s\033[m", "31", s);
+    }
+
+    /**
+     * Output ANSI color coded string, where ERROR is bold red, WARN is
+     * red, INFO is blue and other levels are default color.
+     */
+    public String highlight(Level level, String s) {
+        if (level == Level.ERROR) {
+            return boldRed(s);
+        } else if (level == Level.WARN) {
+            return red(s);
+        } else if (level == Level.INFO) {
+            return blue(s);
+        }
+        return s;
     }
 
 }

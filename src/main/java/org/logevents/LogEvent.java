@@ -198,6 +198,14 @@ public class LogEvent implements LoggingEvent {
         throw new RuntimeException("Could not find calling stack trace element!");
     }
 
+    public int getCallerLine() {
+        return getCallerLocation().getLineNumber();
+    }
+
+    public String getCallerMethodName() {
+        return getCallerLocation().getMethodName();
+    }
+
     public String getCallerClassName() {
         return getCallerLocation().getClassName();
     }
@@ -220,6 +228,7 @@ public class LogEvent implements LoggingEvent {
     public String toString() {
         return getClass().getSimpleName() + "{" + level + "," + format + "}";
     }
+
 
 
 
