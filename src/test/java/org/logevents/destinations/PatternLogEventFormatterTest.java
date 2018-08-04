@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.logevents.LogEvent;
 import org.slf4j.event.Level;
 
-public class PatternFormatterTest {
+public class PatternLogEventFormatterTest {
 
     private Instant time = Instant.now();
     private PatternLogEventFormatter formatter = new PatternLogEventFormatter("No patter");
