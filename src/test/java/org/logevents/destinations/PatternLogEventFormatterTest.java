@@ -173,7 +173,6 @@ public class PatternLogEventFormatterTest {
             formatter.setPattern(color + "(%level)");
             assertTrue("Strange color output " + formatter.format(event),
                     formatter.format(event).matches("\033\\[(\\d+;)?\\d+mINFO\033\\[m"));
-
         }
     }
 
@@ -203,6 +202,4 @@ public class PatternLogEventFormatterTest {
         }
         return new ArrayList<>(duplicatedResults);
     }
-
-
 }

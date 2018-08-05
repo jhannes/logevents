@@ -8,6 +8,12 @@ import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
+/**
+ * A {@link LogEventObserver} that forwards all log events to a delegate observer
+ * if they have a log level equal to or more severe than the {@link #threshold}.
+ *
+ * @author Johannes Brodwall
+ */
 public class LevelThresholdConditionalObserver implements LogEventObserver {
 
     private Level threshold;

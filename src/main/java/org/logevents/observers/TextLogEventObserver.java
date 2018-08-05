@@ -10,6 +10,13 @@ import org.logevents.destinations.LogEventFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 
+/**
+ * Formats each {@link LogEvent} with the specified {@link LogEventFormatter}
+ * and forwards them to the specified {@link LogEventDestination}. Most common
+ * usage is to output to a file or system out.
+ *
+ * @author Johannes Brodwall
+ */
 public class TextLogEventObserver implements LogEventObserver {
 
     private final LogEventDestination destination;
@@ -32,8 +39,7 @@ public class TextLogEventObserver implements LogEventObserver {
         try {
             destination.writeEvent(formatter.format(logEvent));
         } catch (IOException e) {
-            // PANICK!
-            e.printStackTrace();
+            LogEventStatus.getInstance().addError(this, "Failed to write log event", e);
         }
     }
 

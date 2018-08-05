@@ -151,9 +151,9 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
 
         // TODO
-        //  relative / r - Outputs the number of milliseconds elapsed since the start of the application until the creation of the logging event.
-
         //  exception / throwable / ex {depth, evaluators... }
+
+        //  relative / r - Outputs the number of milliseconds elapsed since the start of the application until the creation of the logging event.
 
         //  marker
         //  caller
@@ -169,8 +169,6 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             };
         });
 
-        factory.putTransformer("cyan", spec -> s -> ansiFormat.cyan(s));
-        factory.putTransformer("red", spec -> s -> ansiFormat.red(s));
         factory.putTransformer("black", spec -> s -> ansiFormat.black(s));
         factory.putTransformer("red", spec -> s -> ansiFormat.red(s));
         factory.putTransformer("green", spec -> s -> ansiFormat.green(s));
@@ -179,8 +177,6 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.putTransformer("magenta", spec -> s -> ansiFormat.magenta(s));
         factory.putTransformer("cyan", spec -> s -> ansiFormat.cyan(s));
         factory.putTransformer("white", spec -> s -> ansiFormat.white(s));
-
-        factory.putTransformer("boldGreen", spec -> s -> ansiFormat.boldGreen(s));
 
         factory.putTransformer("boldBlack", spec -> s -> ansiFormat.boldBlack(s));
         factory.putTransformer("boldRed", spec -> s -> ansiFormat.boldRed(s));

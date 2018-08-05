@@ -20,6 +20,23 @@ import org.logevents.observers.batch.LogEventGroup;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 
+/**
+ * Used to gather up a number of log event to process as a batch. This is useful
+ * when using logging destinations where high frequency of messages would be
+ * inefficient or noisy, such as email or Slack.
+ * <p>
+ * The batch observers decides when to process a batch based on
+ * {@link #cooldownTime} (minimum time since last processed batch),
+ * {@link #idleThreshold} (minimum time between log events in the batch)
+ * and {@link #maximumWaitTime} (maximum time from the first message in a batch
+ * was generated until the batch is processed). When processing, the
+ * {@link BatchingLogEventObserver} sends the whole batch to a
+ * {@link LogEventBatchProcessor} for processing. Consecutive Log events with
+ * the same message pattern and log level are grouped together so the processor
+ * can easily ignore duplicate messages.
+ *
+ * @author Johannes Brodwall
+ */
 public class BatchingLogEventObserver implements LogEventObserver {
 
     private static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
@@ -64,6 +81,10 @@ public class BatchingLogEventObserver implements LogEventObserver {
         executor = scheduledExecutorService;
     }
 
+    /**
+     * Block until the current batch is processed by the internal scheduler.
+     * Especially useful for testing.
+     */
     public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
         scheduledExecutorService.awaitTermination(timeout, unit);
     }

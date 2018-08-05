@@ -14,10 +14,6 @@ public interface LogEventFormatter {
 
     String format(LogEvent logEvent);
 
-    static LogEventFormatter withDefaultFormat() {
-        return new TTLLEventLogFormatter();
-    }
-
     static String restrictLength(String s, Optional<Integer> minLength, Optional<Integer> maxLength) {
         return truncate(pad(s, minLength), maxLength);
     }

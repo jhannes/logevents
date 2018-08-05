@@ -7,6 +7,13 @@ import java.util.List;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 
+/**
+ * Delegates log events to a list of observers. Used to deal with configurations
+ * what should log events to several destinations. Use {@link #combine(LogEventObserver...)}
+ * to easily compose {@link LogEventObserver}s.
+ *
+ * @author Johannes Brodwall
+ */
 public class CompositeLogEventObserver implements LogEventObserver {
 
     private List<LogEventObserver> observers;
