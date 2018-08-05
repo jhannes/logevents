@@ -194,6 +194,37 @@ public class PatternLogEventFormatterTest {
         assertEquals(Collections.emptyList(), findDuplicates(resultingStrings));
     }
 
+    private IllegalArgumentException createException() {
+        return new IllegalArgumentException("Error message");
+    }
+
+    @Test
+    public void shouldIncludeExceptionByDefault() {
+        formatter.setPattern("%-5level %logger{36} - %msg%n");
+        IllegalArgumentException ex = createException();
+        LogEvent event = new LogEvent("some.logger.name", Level.ERROR, "An error happened", ex);
+
+        String[] lines = formatter.format(event).split("\r?\n");
+        assertEquals("ERROR some.logger.name - An error happened", lines[0]);
+        assertEquals(ex.toString(), lines[1]);
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:198)",
+                lines[2]);
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:204)",
+                lines[3]);
+    }
+
+    @Test
+    public void shouldSpecifyStackLength() {
+        formatter.setPattern("%-5level %logger{36} - %msg%n%ex{2}");
+        LogEvent event = new LogEvent("some.logger.name", Level.ERROR, "An error happened", createException());
+
+        String[] lines = formatter.format(event).split("\r?\n");
+        assertEquals(2+2, lines.length);
+        assertEquals("ERROR some.logger.name - An error happened", lines[0]);
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:198)",
+                lines[2]);
+    }
+
     private List<String> findDuplicates(List<String> resultingStrings) {
         Set<String> uniqueResults = new HashSet<>();
         Set<String> duplicatedResults = new HashSet<>();

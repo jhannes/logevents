@@ -3,6 +3,7 @@ package org.logevents.formatting;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 /**
  * Used to parse a single conversion for {@link PatternLogEventFormatter}. A
@@ -20,6 +21,7 @@ class PatternConverterSpec {
     private List<String> parameters = new ArrayList<>();
     private Optional<LogEventFormatter> subpattern = Optional.empty();
     private StringScanner scanner;
+    private BiFunction<Throwable, Optional<Integer>, String> throwableFormatter;
 
     public PatternConverterSpec(StringScanner scanner) {
         this.scanner = scanner;
@@ -96,6 +98,8 @@ class PatternConverterSpec {
     }
 
     private void readSubpattern(PatternLogEventFormatter formatter) {
+        // TODO: Should only read subpattern for %replace and %<colors>, so that
+        //   it's possible to do %file(%line)
         if (scanner.current() == '(')  {
             scanner.advance();
             this.subpattern = Optional.of(formatter.readConverter(scanner, ')'));
@@ -148,6 +152,14 @@ class PatternConverterSpec {
         scanner.advance();
         scanner.skipWhitespace();
         return scanner.advance() == ',';
+    }
+
+    public BiFunction<Throwable, Optional<Integer>, String> getThrowableFormatter() {
+        return throwableFormatter;
+    }
+
+    public void setThrowableFormatter(BiFunction<Throwable, Optional<Integer>, String> throwableFormatter) {
+        this.throwableFormatter = throwableFormatter;
     }
 
 }

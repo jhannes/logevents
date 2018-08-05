@@ -7,10 +7,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,10 +33,17 @@ import org.logevents.util.Configuration;
  */
 public class PatternLogEventFormatter implements LogEventFormatter {
 
-    static class ConverterBuilderFactory {
-        private static Map<String, Function<PatternConverterSpec, LogEventFormatter>> converterBuilders = new HashMap<>();
+    @FunctionalInterface
+    public interface ConverterBuilder {
+        LogEventFormatter apply(PatternConverterSpec spec);
+    }
 
-        public void putWithoutLengthRestriction(String conversionWord, Function<PatternConverterSpec, LogEventFormatter> converterBuilder) {
+    static class ConverterBuilderFactory {
+        private Map<String, ConverterBuilder> converterBuilders = new HashMap<>();
+
+        private Set<String> throwableConverters = new HashSet<>();
+
+        public void putWithoutLengthRestriction(String conversionWord, ConverterBuilder converterBuilder) {
             converterBuilders.put(conversionWord, converterBuilder);
         }
 
@@ -41,9 +51,14 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             for (String alias : aliases) {
                 converterBuilders.put(alias, converterBuilders.get(conversionWord));
             }
+            if (isThrowableHandler(conversionWord)) {
+                for (String alias : aliases) {
+                    throwableConverters.add(alias);
+                }
+            }
         }
 
-        public void put(String conversionWord, Function<PatternConverterSpec, LogEventFormatter> converterBuilder) {
+        public void put(String conversionWord, ConverterBuilder converterBuilder) {
             putWithoutLengthRestriction(conversionWord,
                     spec -> {
                         LogEventFormatter f = converterBuilder.apply(spec);
@@ -51,6 +66,11 @@ public class PatternLogEventFormatter implements LogEventFormatter {
                                 maxLength = spec.getMaxLength();
                         return e -> restrictLength(f.format(e), minLength, maxLength);
                     });
+        }
+
+        public void putExceptionHandler(String conversionWord, ConverterBuilder converterBuilder) {
+            put(conversionWord, converterBuilder);
+            throwableConverters.add(conversionWord);
         }
 
         public void putTransformer(String conversionWord, Function<PatternConverterSpec, Function<String, String>> transformerBuilder) {
@@ -61,13 +81,13 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             });
         }
 
-        public Function<PatternConverterSpec, LogEventFormatter> get(String conversionWord) {
+        public ConverterBuilder get(String conversionWord) {
             return converterBuilders.get(conversionWord);
         }
 
         public LogEventFormatter create(PatternConverterSpec spec) {
             String conversionWord = spec.getConversionWord();
-            Function<PatternConverterSpec, LogEventFormatter> function = converterBuilders.get(conversionWord);
+            ConverterBuilder function = converterBuilders.get(conversionWord);
             if (function == null) {
                 throw new IllegalArgumentException("Unknown conversion word <%" + conversionWord + "> not in " + getConversionWords());
             }
@@ -83,6 +103,9 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             return converterBuilders.keySet();
         }
 
+        public boolean isThrowableHandler(String conversionWord) {
+            return throwableConverters.contains(conversionWord);
+        }
 
     }
 
@@ -109,10 +132,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.put("line", spec -> e -> String.valueOf(e.getCallerLine()));
         factory.putAliases("line", new String[] { "L" });
 
-        factory.put("n", spec -> {
-            String newline = System.getProperty("line.separator");
-            return e -> newline;
-        });
+        factory.put("n", spec -> e -> newLine());
 
         factory.put("date", spec -> {
             DateTimeFormatter formatter = spec.getParameter(0)
@@ -131,6 +151,13 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.putAliases("message", new String[] { "m", "msg" });
         factory.put("thread", spec -> e -> e.getThreadName());
         factory.putAliases("thread", new String[] { "t" });
+
+        factory.putExceptionHandler("exception", spec -> {
+            BiFunction<Throwable, Optional<Integer>, String> throwableFormatter = spec.getThrowableFormatter();
+            Optional<Integer> length = spec.getIntParameter(0);
+            return e -> e.getThrowable() != null ? throwableFormatter.apply(e.getThrowable(), length) : "";
+        });
+        factory.putAliases("exception", new String[] { "ex", "throwable" });
 
         factory.put("mdc", spec -> {
             if (spec.getParameters().isEmpty()) {
@@ -188,6 +215,10 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.putTransformer("boldWhite", spec -> s -> ansiFormat.boldWhite(s));
     }
 
+    private static String newLine() {
+        return System.getProperty("line.separator");
+    }
+
 
     private String pattern;
     private LogEventFormatter converter;
@@ -210,6 +241,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
     }
 
     LogEventFormatter readConverter(StringScanner scanner, char terminator) {
+        boolean includesThrowableHandler = false;
         List<LogEventFormatter> converters = new ArrayList<>();
         while (scanner.hasMoreCharacters() && scanner.current() != terminator) {
             // TODO: Escaped %
@@ -218,12 +250,35 @@ public class PatternLogEventFormatter implements LogEventFormatter {
                 converters.add(getConstant(text.toString()));
             }
             if (scanner.hasMoreCharacters() && scanner.current() != terminator) {
-                PatternConverterSpec builder = new PatternConverterSpec(scanner);
-                builder.readConversion(this);
-                converters.add(factory.create(builder));
+                PatternConverterSpec patternSpec = new PatternConverterSpec(scanner);
+                patternSpec.readConversion(this);
+                patternSpec.setThrowableFormatter(this::formatThrowable);
+                converters.add(factory.create(patternSpec));
+
+                includesThrowableHandler |= factory.isThrowableHandler(patternSpec.getConversionWord());
             }
         }
+        if (!includesThrowableHandler) {
+            converters.add(e -> formatThrowable(e.getThrowable(), Optional.empty()));
+        }
         return compositeFormatter(converters);
+    }
+
+    private String formatThrowable(Throwable ex, Optional<Integer> optLength) {
+        if (ex == null) {
+            return "";
+        }
+        Integer length = optLength.orElse(Integer.MAX_VALUE);
+        StringBuilder builder = new StringBuilder();
+        builder.append(ex.toString()).append(newLine());
+
+        int lines = 0;
+        for (StackTraceElement frame : ex.getStackTrace()) {
+            if (++lines > length) break;
+            builder.append("\tat ").append(frame).append(newLine());
+        }
+
+        return builder.toString();
     }
 
     private static LogEventFormatter compositeFormatter(List<LogEventFormatter> converters) {
