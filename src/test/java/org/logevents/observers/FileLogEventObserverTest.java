@@ -13,7 +13,7 @@ import org.junit.Test;
 import org.logevents.LogEventFactory;
 import org.logevents.LoggerConfiguration;
 import org.logevents.destinations.FileDestination;
-import org.logevents.destinations.PatternLogEventFormatter;
+import org.logevents.formatting.PatternLogEventFormatter;
 
 public class FileLogEventObserverTest {
 

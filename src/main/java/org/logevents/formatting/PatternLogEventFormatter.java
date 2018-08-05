@@ -1,6 +1,6 @@
-package org.logevents.destinations;
+package org.logevents.formatting;
 
-import static org.logevents.destinations.LogEventFormatter.restrictLength;
+import static org.logevents.formatting.LogEventFormatter.restrictLength;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;

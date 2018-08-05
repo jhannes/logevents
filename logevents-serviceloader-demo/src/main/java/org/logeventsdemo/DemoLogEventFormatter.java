@@ -1,7 +1,7 @@
 package org.logeventsdemo;
 
 import org.logevents.LogEvent;
-import org.logevents.destinations.LogEventFormatter;
+import org.logevents.formatting.LogEventFormatter;
 
 public class DemoLogEventFormatter implements LogEventFormatter {
 

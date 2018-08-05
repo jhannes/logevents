@@ -1,4 +1,4 @@
-package org.logevents.destinations;
+package org.logevents.formatting;
 
 import static org.junit.Assert.assertEquals;
 
@@ -8,6 +8,8 @@ import java.time.ZonedDateTime;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.formatting.ConsoleFormatting;
+import org.logevents.formatting.ConsoleLogEventFormatter;
 import org.slf4j.event.Level;
 
 public class ConsoleLogEventFormatterTest {

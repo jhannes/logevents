@@ -6,7 +6,7 @@ import java.util.Properties;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.destinations.LogEventDestination;
-import org.logevents.destinations.LogEventFormatter;
+import org.logevents.formatting.LogEventFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 

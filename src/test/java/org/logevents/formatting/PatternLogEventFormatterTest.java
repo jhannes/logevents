@@ -1,4 +1,4 @@
-package org.logevents.destinations;
+package org.logevents.formatting;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
+import org.logevents.formatting.ConsoleFormatting;
+import org.logevents.formatting.PatternLogEventFormatter;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
@@ -96,8 +98,8 @@ public class PatternLogEventFormatterTest {
         LogEvent event = buffer.getEvents().get(0);
 
         formatter.setPattern("%file:%line%n%class#%method");
-        assertEquals("PatternLogEventFormatterTest.java:95" + System.getProperty("line.separator")
-                 + "org.logevents.destinations.PatternLogEventFormatterTest#shouldOutputLocation",
+        assertEquals("PatternLogEventFormatterTest.java:97" + System.getProperty("line.separator")
+                 + "org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation",
                 formatter.format(event));
     }
 

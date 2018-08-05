@@ -1,4 +1,4 @@
-package org.logevents.destinations;
+package org.logevents.formatting;
 
 import java.util.ArrayList;
 import java.util.List;

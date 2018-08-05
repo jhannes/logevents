@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.Properties;
 
 import org.logevents.destinations.DateRollingFileDestination;
-import org.logevents.destinations.LogEventFormatter;
-import org.logevents.destinations.TTLLEventLogFormatter;
+import org.logevents.formatting.LogEventFormatter;
+import org.logevents.formatting.TTLLEventLogFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.ConfigUtil;
 
