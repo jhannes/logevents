@@ -219,8 +219,9 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         return System.getProperty("line.separator");
     }
 
-
     private String pattern;
+    private ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
+
     private LogEventFormatter converter;
 
     public Collection<String> getConversionWords() {
@@ -232,7 +233,12 @@ public class PatternLogEventFormatter implements LogEventFormatter {
     }
 
     public PatternLogEventFormatter(Properties properties, String prefix) {
-        this(new Configuration(properties, prefix).getString("pattern"));
+        this(new Configuration(properties, prefix));
+    }
+
+    public PatternLogEventFormatter(Configuration configuration) {
+        this(configuration.getString("pattern"));
+        // TODO: Configure StackTraceFormatter (with default!)
     }
 
     public void setPattern(String pattern) {
@@ -269,16 +275,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             return "";
         }
         Integer length = optLength.orElse(Integer.MAX_VALUE);
-        StringBuilder builder = new StringBuilder();
-        builder.append(ex.toString()).append(newLine());
-
-        int lines = 0;
-        for (StackTraceElement frame : ex.getStackTrace()) {
-            if (++lines > length) break;
-            builder.append("\tat ").append(frame).append(newLine());
-        }
-
-        return builder.toString();
+        return exceptionFormatter.format(ex, length);
     }
 
     private static LogEventFormatter compositeFormatter(List<LogEventFormatter> converters) {
