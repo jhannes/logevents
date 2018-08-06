@@ -238,7 +238,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
     public PatternLogEventFormatter(Configuration configuration) {
         this(configuration.getString("pattern"));
-        // TODO: Configure StackTraceFormatter (with default!)
+        // TODO: Configure ExceptionFormatter (with default!)
     }
 
     public void setPattern(String pattern) {

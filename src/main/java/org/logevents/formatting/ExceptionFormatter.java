@@ -2,6 +2,8 @@ package org.logevents.formatting;
 
 public class ExceptionFormatter {
 
+    private String[] packageFilter = new String[0];
+
     private static String newLine() {
         return System.getProperty("line.separator");
     }
@@ -21,8 +23,19 @@ public class ExceptionFormatter {
         int commonStackStart = findCommonStart(enclosingTrace, stackTrace);
 
         int uniquePrefix = stackTrace.length - commonStackStart;
-        for (int i = 0; i < uniquePrefix && i < maxLength; i++) {
-            outputStackFrame(stackTrace[i], indent, builder);
+        int ignored = 0;
+        int actualLines = 0;
+        for (int i = 0; i < uniquePrefix && actualLines < maxLength; i++) {
+            if (isIgnored(stackTrace[i])) {
+                ignored++;
+            } else {
+                outputStackFrame(stackTrace[i], indent, builder, ignored);
+                actualLines++;
+                ignored = 0;
+            }
+        }
+        if (ignored > 0) {
+            outputIgnoredLineCount(ignored, indent, builder).append(newLine());
         }
         if (uniquePrefix < stackTrace.length && uniquePrefix < maxLength) {
             builder.append(indent).append("\t... ").append(commonStackStart).append(" more").append(newLine());
@@ -38,8 +51,26 @@ public class ExceptionFormatter {
         }
     }
 
-    protected StringBuilder outputStackFrame(StackTraceElement frame, String indent, StringBuilder builder) {
-        return builder.append(indent).append("\tat ").append(frame).append(newLine());
+    private StringBuilder outputIgnoredLineCount(int ignored, String indent, StringBuilder builder) {
+        return builder.append(indent).append("[").append(ignored).append(" skipped]");
+    }
+
+    private boolean isIgnored(StackTraceElement frame) {
+        for (String filter : this.packageFilter) {
+            if (frame.getClassName().startsWith(filter)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected void outputStackFrame(StackTraceElement frame, String indent, StringBuilder builder, int ignored) {
+        builder.append(indent).append("\tat ").append(frame);
+        if (ignored > 0) {
+            builder.append(" ");
+            outputIgnoredLineCount(ignored, indent, builder);
+        }
+        builder.append(newLine());
     }
 
     private int findCommonStart(StackTraceElement[] enclosingTrace, StackTraceElement[] trace) {
@@ -51,6 +82,10 @@ public class ExceptionFormatter {
             i++;
         }
         return i;
+    }
+
+    public void setPackageFilter(String[] packageFilter) {
+        this.packageFilter = packageFilter;
     }
 
 }

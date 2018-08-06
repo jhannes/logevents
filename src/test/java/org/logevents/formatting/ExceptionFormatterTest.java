@@ -116,5 +116,48 @@ public class ExceptionFormatterTest {
         assertEquals(1 + 2 + 1 + 2 + 1 + 2, lines.length);
     }
 
+    @Test
+    public void shouldFilterStackTrace() {
+        IOException exceptions = new IOException("Nested nested");
+        exceptions.setStackTrace(new StackTraceElement[] {
+                ioInternalMethod, ioApiMethod,
+                nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod,
+                internalMethod, publicMethod, mainMethod
+        });
+
+        formatter.setPackageFilter(new String[] {
+                "sun.nio.fs", "java.nio"
+        });
+        String[] lines = formatter.format(exceptions, 4).split("\r?\n");
+
+        assertEquals(exceptions.toString(), lines[0]);
+        assertEquals("\tat " + ioInternalMethod, lines[1]);
+        assertEquals("\tat " + ioApiMethod, lines[2]);
+        assertEquals("\tat " + internalMethod + " [5 skipped]", lines[3]);
+        assertEquals("\tat " + publicMethod, lines[4]);
+        assertEquals(1+4, lines.length);
+    }
+
+    @Test
+    public void shouldOutputFinalIgnoredLineCount() {
+        IOException exceptions = new IOException("Nested nested");
+        exceptions.setStackTrace(new StackTraceElement[] {
+                ioInternalMethod, ioApiMethod,
+                nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod
+        });
+
+        formatter.setPackageFilter(new String[] {
+                "sun.nio.fs", "java.nio"
+        });
+        String[] lines = formatter.format(exceptions, 100).split("\r?\n");
+
+        assertEquals(exceptions.toString(), lines[0]);
+        assertEquals("\tat " + ioInternalMethod, lines[1]);
+        assertEquals("\tat " + ioApiMethod, lines[2]);
+        assertEquals("[5 skipped]", lines[3]);
+        assertEquals(4, lines.length);
+
+    }
+
 
 }
