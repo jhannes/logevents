@@ -9,6 +9,9 @@ public class ExceptionFormatter {
     }
 
     public String format(Throwable ex, Integer length) {
+        if (ex == null) {
+            return "";
+        }
         StringBuilder builder = new StringBuilder();
         outputException(ex, null, length, "", "", builder);
         return builder.toString();

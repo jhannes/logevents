@@ -9,6 +9,9 @@ import org.logevents.LogEvent;
  * @author Johannes Brodwall
  */
 public final class TTLLEventLogFormatter implements LogEventFormatter {
+
+    protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
+
     @Override
     public String format(LogEvent e) {
         return String.format("%s [%s] [%s] [%s]: %s\n",
@@ -17,7 +20,7 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
                 LogEventFormatter.rightPad(e.getLevel(), 5, ' '),
                 e.getLoggerName(),
                 e.formatMessage())
-                + e.formatStackTrace();
+                + exceptionFormatter.format(e.getThrowable(), Integer.MAX_VALUE);
     }
 
     @Override

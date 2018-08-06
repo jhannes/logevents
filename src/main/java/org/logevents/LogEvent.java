@@ -1,7 +1,5 @@
 package org.logevents;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -214,15 +212,6 @@ public class LogEvent implements LoggingEvent {
     public String getCallerFileName() {
         // TODO Better implementation
         return getCallerLocation().getFileName();
-    }
-
-    public String formatStackTrace() {
-        if (getThrowable() != null) {
-            StringWriter s = new StringWriter();
-            getThrowable().printStackTrace(new PrintWriter(s));
-            return s.toString();
-        }
-        return "";
     }
 
     @Override

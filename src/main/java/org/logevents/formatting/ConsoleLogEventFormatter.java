@@ -15,6 +15,8 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
 
     protected final ConsoleFormatting format = ConsoleFormatting.getInstance();
 
+    protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
+
     @Override
     public String format(LogEvent e) {
         return String.format("%s [%s] [%s] [%s]: %s\n",
@@ -23,7 +25,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 colorizedLevel(e),
                 format.bold(e.getLoggerName()),
                 e.formatMessage())
-                + e.formatStackTrace();
+                + exceptionFormatter.format(e.getThrowable(), Integer.MAX_VALUE);
     }
 
     /**
