@@ -6,11 +6,23 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.Properties;
+
+import org.logevents.util.Configuration;
 
 public class ExceptionFormatter {
 
     private String[] packageFilter = new String[0];
     private boolean includePackagingData = false;
+
+    public ExceptionFormatter(Properties properties, String prefix) {
+        Configuration configuration = new Configuration(properties, prefix);
+        packageFilter = configuration.getStringList("packageFilter");
+        includePackagingData = configuration.getBoolean("includePackagingData");
+    }
+
+    public ExceptionFormatter() {
+    }
 
     protected static String newLine() {
         return System.getProperty("line.separator");

@@ -3,8 +3,10 @@ package org.logevents.formatting;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.Properties;
 
 import org.junit.Test;
+import org.logevents.util.Configuration;
 
 public class CauseFirstExceptionFormatterTest {
 
@@ -15,7 +17,11 @@ public class CauseFirstExceptionFormatterTest {
     private StackTraceElement ioApiMethod = new StackTraceElement("java.io.FilterOutputStream", "close", "FilterOutputStream.java", 180);
     private StackTraceElement ioInternalMethod = new StackTraceElement("java.io.FileOutputStream", "close", "FileOutputStream.java", 323);
 
-    private CauseFirstExceptionFormatter formatter = new CauseFirstExceptionFormatter();
+    private Properties properties = new Properties();
+    {
+        properties.setProperty("observer.file.formatter.exceptionFormatter",
+                CauseFirstExceptionFormatter.class.getName());
+    }
 
     @Test
     public void shouldFormatExceptionWithRootCauseFirst() {
@@ -32,7 +38,7 @@ public class CauseFirstExceptionFormatterTest {
                 internalMethod, publicMethod, mainMethod
         });
 
-        String[] lines = formatter.format(exception, 100).split("\r?\n");
+        String[] lines = getFormatter().format(exception, 100).split("\r?\n");
 
         assertEquals(nestedNested.toString(), lines[0]);
         assertEquals("\tat " + ioInternalMethod, lines[1]);
@@ -65,7 +71,7 @@ public class CauseFirstExceptionFormatterTest {
         });
         wrapping.addSuppressed(suppressed);
 
-        String[] lines = formatter.format(wrapping, 100).split("\r?\n");
+        String[] lines = getFormatter().format(wrapping, 100).split("\r?\n");
 
         assertEquals(wrapping.toString(), lines[0]);
         assertEquals("\tat " + nioInternalMethod, lines[1]);
@@ -81,5 +87,10 @@ public class CauseFirstExceptionFormatterTest {
         assertEquals("\t\tat " + ioApiMethod, lines[9]);
     }
 
+
+    private ExceptionFormatter getFormatter() {
+        Configuration configuration = new Configuration(properties, "observer.file.formatter");
+        return configuration.createInstance("exceptionFormatter", ExceptionFormatter.class);
+    }
 
 }

@@ -220,7 +220,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
     }
 
     private String pattern;
-    private ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
+    private final ExceptionFormatter exceptionFormatter;
 
     private LogEventFormatter converter;
 
@@ -230,6 +230,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
     public PatternLogEventFormatter(String pattern) {
         setPattern(pattern);
+        this.exceptionFormatter = new ExceptionFormatter();
     }
 
     public PatternLogEventFormatter(Properties properties, String prefix) {
@@ -237,8 +238,8 @@ public class PatternLogEventFormatter implements LogEventFormatter {
     }
 
     public PatternLogEventFormatter(Configuration configuration) {
-        this(configuration.getString("pattern"));
-        // TODO: Configure ExceptionFormatter (with default!)
+        setPattern(configuration.getString("pattern"));
+        this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", ExceptionFormatter.class);
     }
 
     public void setPattern(String pattern) {

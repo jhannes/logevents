@@ -6,7 +6,7 @@ import org.logevents.destinations.ConsoleLogEventDestination;
 import org.logevents.formatting.ConsoleLogEventFormatter;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.ConfigUtil;
+import org.logevents.util.Configuration;
 
 /**
  * Log messages to the system out with suitable formatter. Convenience class
@@ -19,17 +19,20 @@ import org.logevents.util.ConfigUtil;
  */
 public class ConsoleLogEventObserver extends TextLogEventObserver {
 
-    public ConsoleLogEventObserver(LogEventFormatter logEventFormatter) {
-        super(new ConsoleLogEventDestination(), logEventFormatter);
+    public ConsoleLogEventObserver(LogEventFormatter formatter) {
+        super(new ConsoleLogEventDestination(), formatter);
     }
 
     public ConsoleLogEventObserver() {
         this(new ConsoleLogEventFormatter());
     }
 
-    public ConsoleLogEventObserver(Properties configuration, String prefix) {
-        this(ConfigUtil.create(prefix + ".logEventFormatter", "org.logevents.destinations", configuration));
-        LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
+    public ConsoleLogEventObserver(Configuration configuration) {
+        this(configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, ConsoleLogEventFormatter.class));
+        LogEventStatus.getInstance().addInfo(this, "Configured " + configuration.getPrefix());
     }
 
+    public ConsoleLogEventObserver(Properties properties, String prefix) {
+        this(new Configuration(properties, prefix));
+    }
 }

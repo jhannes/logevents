@@ -29,9 +29,9 @@ public class TextLogEventObserver implements LogEventObserver {
         LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
     }
 
-    public TextLogEventObserver(LogEventDestination eventDestination, LogEventFormatter logEventFormatter) {
-        this.destination = eventDestination;
-        this.formatter = logEventFormatter;
+    public TextLogEventObserver(LogEventDestination destination, LogEventFormatter formatter) {
+        this.destination = destination;
+        this.formatter = formatter;
     }
 
     @Override

@@ -1,6 +1,12 @@
 package org.logevents.formatting;
 
+import java.util.Properties;
+
 public class CauseFirstExceptionFormatter extends ExceptionFormatter {
+
+    public CauseFirstExceptionFormatter(Properties properties, String prefix) {
+        super(properties, prefix);
+    }
 
     @Override
     protected void outputException(Throwable ex, Throwable enclosing, Integer length, String prefix, String indent, StringBuilder builder) {

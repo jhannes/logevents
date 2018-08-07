@@ -38,6 +38,18 @@ public class Configuration {
                 .orElseThrow(() -> new IllegalArgumentException("Missing required key <" + fullKey(key) + "> in <" + properties.keySet() + ">"));
     }
 
+    public boolean getBoolean(String key) {
+        return optionalString(key)
+                .map(Boolean::valueOf)
+                .orElse(false);
+    }
+
+    public String[] getStringList(String key) {
+        return optionalString(key)
+                .map(s -> s.split(",\\s*"))
+                .orElse(new String[0]);
+    }
+
     public Optional<String> optionalString(String key) {
         return Optional.ofNullable(properties.getProperty(fullKey(key)));
     }
@@ -58,9 +70,24 @@ public class Configuration {
         return ConfigUtil.create(fullKey(key), defaultPackage, properties);
     }
 
+    public <T> T createInstanceWithDefault(String key, Class<T> defaultClass) {
+        Class<?> clazz = ConfigUtil.getClass(fullKey(key), defaultClass.getPackage().getName(), properties)
+                .orElse(defaultClass);
+        return ConfigUtil.create(fullKey(key), clazz, properties);
+    }
+
+    public <T> T  createInstanceWithDefault(String key, Class<T> targetType, Class<? extends T> defaultClass) {
+        Class<?> clazz = ConfigUtil.getClass(fullKey(key), targetType.getPackage().getName(), properties)
+                .orElse(defaultClass);
+        return ConfigUtil.create(fullKey(key), clazz, properties);
+    }
+
     public String getPrefix() {
         return prefix;
     }
+
+
+
 
 
 }

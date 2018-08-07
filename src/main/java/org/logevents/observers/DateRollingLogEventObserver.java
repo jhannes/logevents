@@ -7,7 +7,7 @@ import org.logevents.destinations.DateRollingFileDestination;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.TTLLEventLogFormatter;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.ConfigUtil;
+import org.logevents.util.Configuration;
 
 /**
  * Log events to a file with the date appended to the fileName pattern.
@@ -19,27 +19,21 @@ import org.logevents.util.ConfigUtil;
  */
 public class DateRollingLogEventObserver extends TextLogEventObserver {
 
-    public DateRollingLogEventObserver(String fileName, LogEventFormatter logEventFormatter) throws IOException {
-        super(new DateRollingFileDestination(fileName), logEventFormatter);
+    public DateRollingLogEventObserver(String fileName, LogEventFormatter formatter) throws IOException {
+        super(new DateRollingFileDestination(fileName), formatter);
     }
 
     public DateRollingLogEventObserver(String fileName) throws IOException {
         this(fileName, new TTLLEventLogFormatter());
     }
 
-    public DateRollingLogEventObserver(Properties configuration, String prefix) throws IOException {
-        super(new DateRollingFileDestination(configuration, prefix),
-                createFormatter(configuration, prefix));
-        LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
+    public DateRollingLogEventObserver(Configuration configuration) throws IOException {
+        this(configuration.getString("filename"),
+                configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class));
+        LogEventStatus.getInstance().addInfo(this, "Configured " + configuration.getPrefix());
     }
 
-    private static LogEventFormatter createFormatter(Properties configuration, String prefix) {
-        if (configuration.containsKey(prefix + ".logEventFormatter")) {
-            return ConfigUtil.create(prefix + ".logEventFormatter", "org.logevents.destinations", configuration);
-        } else {
-            return new TTLLEventLogFormatter();
-        }
+    public DateRollingLogEventObserver(Properties properties, String prefix) throws IOException {
+        this(new Configuration(properties, prefix));
     }
-
-
 }

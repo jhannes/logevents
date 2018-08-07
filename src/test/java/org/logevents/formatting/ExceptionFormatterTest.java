@@ -1,21 +1,13 @@
 package org.logevents.formatting;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.StringJoiner;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Properties;
 
 import org.junit.Test;
+import org.logevents.util.Configuration;
 
 public class ExceptionFormatterTest {
 
@@ -26,8 +18,11 @@ public class ExceptionFormatterTest {
     private StackTraceElement nioInternalMethod = new StackTraceElement("sun.nio.fs.WindowsException", "translateToIOException", "WindowsException.java", 79);
     private StackTraceElement ioApiMethod = new StackTraceElement("java.io.FilterOutputStream", "close", "FilterOutputStream.java", 180);
     private StackTraceElement ioInternalMethod = new StackTraceElement("java.io.FileOutputStream", "close", "FileOutputStream.java", 323);
-
-    private ExceptionFormatter formatter = new ExceptionFormatter();
+    private Properties properties = new Properties();
+    {
+        properties.setProperty("observer.file.formatter.exceptionFormatter",
+                ExceptionFormatter.class.getName());
+    }
 
     @Test
     public void shouldFormatStackTrace() {
@@ -36,7 +31,7 @@ public class ExceptionFormatterTest {
                 internalMethod, publicMethod, mainMethod
         });
 
-        String[] lines = formatter.format(exception, 100).split("\r?\n");
+        String[] lines = getFormatter().format(exception, 100).split("\r?\n");
         assertEquals("java.lang.RuntimeException: This is an error message", lines[0]);
         assertEquals("\tat org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)", lines[1]);
         assertEquals("\tat org.logeventsdemo.internal.MyClassName.publicMethod(MyClassName.java:31)", lines[2]);
@@ -56,7 +51,7 @@ public class ExceptionFormatterTest {
                 internalMethod, publicMethod, mainMethod
         });
 
-        String[] lines = formatter.format(exception, 100).split("\r?\n");
+        String[] lines = getFormatter().format(exception, 100).split("\r?\n");
 
         assertEquals("java.lang.RuntimeException: This is an error message", lines[0]);
         assertEquals("\tat " + internalMethod, lines[1]);
@@ -84,7 +79,7 @@ public class ExceptionFormatterTest {
         });
         nestedSuppressed.addSuppressed(suppressedSuppressed);
 
-        String[] lines = formatter.format(nested, 100).split("\r?\n");
+        String[] lines = getFormatter().format(nested, 100).split("\r?\n");
 
         assertEquals(nested.toString(), lines[0]);
         assertEquals("\tat " + nioInternalMethod, lines[1]);
@@ -113,7 +108,7 @@ public class ExceptionFormatterTest {
                 internalMethod, publicMethod, mainMethod
         });
 
-        String[] lines = formatter.format(exception, 2).split("\r?\n");
+        String[] lines = getFormatter().format(exception, 2).split("\r?\n");
 
         assertEquals(exception.toString(), lines[0]);
         assertEquals("\tat " + internalMethod, lines[1]);
@@ -136,10 +131,9 @@ public class ExceptionFormatterTest {
                 internalMethod, publicMethod, mainMethod
         });
 
-        formatter.setPackageFilter(new String[] {
-                "sun.nio.fs", "java.nio"
-        });
-        String[] lines = formatter.format(exceptions, 4).split("\r?\n");
+        properties.setProperty("observer.file.formatter.exceptionFormatter.packageFilter",
+                "sun.nio.fs, java.nio");
+        String[] lines = getFormatter().format(exceptions, 4).split("\r?\n");
 
         assertEquals(exceptions.toString(), lines[0]);
         assertEquals("\tat " + ioInternalMethod, lines[1]);
@@ -157,10 +151,9 @@ public class ExceptionFormatterTest {
                 nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod
         });
 
-        formatter.setPackageFilter(new String[] {
-                "sun.nio.fs", "java.nio"
-        });
-        String[] lines = formatter.format(exceptions, 100).split("\r?\n");
+        properties.setProperty("observer.file.formatter.exceptionFormatter.packageFilter",
+                "sun.nio.fs, java.nio");
+        String[] lines = getFormatter().format(exceptions, 100).split("\r?\n");
 
         assertEquals(exceptions.toString(), lines[0]);
         assertEquals("\tat " + ioInternalMethod, lines[1]);
@@ -186,9 +179,9 @@ public class ExceptionFormatterTest {
         };
         exception.setStackTrace(stackTrace);
 
-        formatter.setIncludePackagingData(true);
+        properties.setProperty("observer.file.formatter.exceptionFormatter.includePackagingData", "true");
 
-        String[] lines = formatter.format(exception, 100).split("\r?\n");
+        String[] lines = getFormatter().format(exception, 100).split("\r?\n");
 
         String javaVersion = System.getProperty("java.version");
 
@@ -201,5 +194,8 @@ public class ExceptionFormatterTest {
         assertEquals("\tat " + stackTrace[5] + " [junit-4.12.jar:4.12]", lines[6]);
     }
 
-
+    private ExceptionFormatter getFormatter() {
+        Configuration configuration = new Configuration(properties, "observer.file.formatter");
+        return configuration.createInstance("exceptionFormatter", ExceptionFormatter.class);
+    }
 }

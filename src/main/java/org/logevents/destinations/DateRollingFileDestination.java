@@ -9,6 +9,8 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Properties;
 
+import org.logevents.util.Configuration;
+
 /**
  * Outputs to files with a file name that gets current date appended.
  *
@@ -20,8 +22,8 @@ public class DateRollingFileDestination implements LogEventDestination {
     private Path logDirectory;
     private Path fileName;
 
-    public DateRollingFileDestination(Properties configuration, String prefix) throws IOException {
-        this(configuration.getProperty(prefix + ".filename"));
+    public DateRollingFileDestination(Properties properties, String prefix) throws IOException {
+        this(new Configuration(properties, prefix).getString("filename"));
     }
 
     public DateRollingFileDestination(String fileName) throws IOException {
