@@ -38,7 +38,7 @@ public class ExceptionFormatter {
     }
 
     protected void outputException(Throwable ex, Throwable enclosing, Integer maxLength, String prefix, String indent, StringBuilder builder) {
-        builder.append(indent).append(prefix).append(ex.toString()).append(newLine());
+        outputExceptionHeader(ex, prefix, indent, builder);
 
         outputStack(ex, maxLength, indent, enclosing, builder);
 
@@ -52,6 +52,10 @@ public class ExceptionFormatter {
         }
     }
 
+    protected void outputExceptionHeader(Throwable ex, String prefix, String indent, StringBuilder builder) {
+        builder.append(indent).append(prefix).append(ex.toString()).append(newLine());
+    }
+
     protected void outputStack(Throwable ex, Integer maxLength, String indent, Throwable enclosing, StringBuilder builder) {
         int uniquePrefix = uniquePrefix(ex, enclosing);
         StackTraceElement[] stackTrace = ex.getStackTrace();
@@ -61,7 +65,7 @@ public class ExceptionFormatter {
             if (isIgnored(stackTrace[i])) {
                 ignored++;
             } else {
-                outputStackFrame(stackTrace[i], indent, builder, ignored);
+                outputStackFrame(stackTrace[i], ignored, indent, builder);
                 actualLines++;
                 ignored = 0;
             }
@@ -70,8 +74,12 @@ public class ExceptionFormatter {
             outputIgnoredLineCount(ignored, indent, builder).append(newLine());
         }
         if (uniquePrefix < stackTrace.length && uniquePrefix < maxLength) {
-            builder.append(indent).append("\t... ").append(stackTrace.length - uniquePrefix).append(" more").append(newLine());
+            outputIgnoredCommonLines(stackTrace.length - uniquePrefix, indent, builder);
         }
+    }
+
+    protected StringBuilder outputIgnoredCommonLines(int commonLines, String indent, StringBuilder builder) {
+        return builder.append(indent).append("\t... ").append(commonLines).append(" more").append(newLine());
     }
 
     protected StringBuilder outputIgnoredLineCount(int ignored, String indent, StringBuilder builder) {
@@ -87,7 +95,7 @@ public class ExceptionFormatter {
         return false;
     }
 
-    protected void outputStackFrame(StackTraceElement frame, String indent, StringBuilder builder, int ignored) {
+    protected void outputStackFrame(StackTraceElement frame, int ignored, String indent, StringBuilder builder) {
         builder.append(indent).append("\tat ").append(frame);
         if (ignored > 0) {
             builder.append(" ");
@@ -99,15 +107,15 @@ public class ExceptionFormatter {
         builder.append(newLine());
     }
 
-    private String getPackagingData(StackTraceElement frame) {
+    protected String getPackagingData(StackTraceElement frame) {
         return getPackagingData(frame.getClassName());
     }
 
-    private String getPackagingData(String className) {
+    protected String getPackagingData(String className) {
         return "[" + getCodeSource(className) + ":" + getVersion(className) + "]";
     }
 
-    private String getCodeSource(String className) {
+    protected String getCodeSource(String className) {
         try {
             String classFile = String.join("/", className.split("\\.")) + ".class";
             URL resource = getClass().getResource("/" + classFile);
@@ -128,7 +136,7 @@ public class ExceptionFormatter {
         }
     }
 
-    private String getVersion(String className) {
+    protected String getVersion(String className) {
         try {
             return Optional.ofNullable(Class.forName(className).getPackage().getImplementationVersion())
                     .orElse("na");

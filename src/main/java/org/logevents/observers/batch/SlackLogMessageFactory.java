@@ -12,6 +12,8 @@ import org.logevents.LogEvent;
 
 public class SlackLogMessageFactory {
 
+    private SlackExceptionFormatter exceptionFormatter = new SlackExceptionFormatter();
+
     public Map<String, Object> createSlackMessage(List<LogEventGroup> batch, Optional<String> username, Optional<String> channel) {
         LogEventGroup mainGroup = firstHighestLevelLogEventGroup(batch);
 
@@ -98,7 +100,7 @@ public class SlackLogMessageFactory {
     }
 
     protected Map<String, Object> createStackTraceAttachment(LogEvent event) {
-        HashMap<String, Object> attachment = new HashMap<>();
+        HashMap<String, Object> attachment = new LinkedHashMap<>();
         attachment.put("title", "Stack Trace");
         attachment.put("color", "danger");
         attachment.put("fields", Arrays.asList(
@@ -106,7 +108,8 @@ public class SlackLogMessageFactory {
                 slackMessageField("Message", event.getThrowable().getMessage(), false)
                 ));
         attachment.put("mrkdwn_in", Arrays.asList("text"));
-        attachment.put("text", createStackTraceText(event));
+        attachment.put("text",
+                "```\n" + exceptionFormatter.format(event.getThrowable(), Integer.MAX_VALUE) + "\n```");
         return attachment;
     }
 
@@ -116,34 +119,6 @@ public class SlackLogMessageFactory {
         field.put("value", value);
         field.put("short", isShort);
         return field;
-    }
-
-    protected String createStackTraceText(LogEvent event) {
-        Throwable throwable = event.getRootThrowable();
-        StringBuilder result = new StringBuilder();
-        result.append(bold(throwable.getClass().getName()));
-        result.append(": ").append(throwable.getMessage()).append("\n");
-        for (StackTraceElement stackTraceElement : throwable.getStackTrace()) {
-            result.append(asString(stackTraceElement)).append("\n");
-        }
-        return result.toString();
-    }
-
-    protected String asString(StackTraceElement stackTraceElement) {
-        String sourceLink = getSourceLink(stackTraceElement);
-        if (sourceLink == null) {
-            return ">" + stackTraceElement;
-        } else {
-            return "><" + sourceLink + "|" + stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName() + ">";
-        }
-    }
-
-    protected String getSourceLink(StackTraceElement stackTraceElement) {
-        if (stackTraceElement.getClassName().startsWith("org.logevents")) {
-            return "https://github.com/jhannes/logevents/tree/master/src/main/java/"
-                    + stackTraceElement.getClassName().replaceAll("\\.", "/") + ".java#L" + stackTraceElement.getLineNumber();
-        }
-        return null;
     }
 
     protected String bold(String s) {
