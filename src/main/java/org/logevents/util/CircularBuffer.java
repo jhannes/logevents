@@ -110,10 +110,7 @@ public class CircularBuffer<T> implements Collection<T> {
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        for (Object object : c) {
-            remove(object);
-        }
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
