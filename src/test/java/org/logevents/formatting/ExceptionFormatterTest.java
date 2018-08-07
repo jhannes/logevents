@@ -1,8 +1,19 @@
 package org.logevents.formatting;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 
@@ -157,6 +168,37 @@ public class ExceptionFormatterTest {
         assertEquals("[5 skipped]", lines[3]);
         assertEquals(4, lines.length);
 
+    }
+
+
+    @Test
+    public void shouldFindPackagingInformation() throws IOException, URISyntaxException {
+        RuntimeException exception = new RuntimeException("Something wen wrong");
+        StackTraceElement[] stackTrace = new StackTraceElement[] {
+            new StackTraceElement("sun.nio.fs.WindowsFileSystemProvider", "newByteChannel", "WindowsFileSystemProvider.java", 230),
+            new StackTraceElement("java.nio.file.Files", "write", "Files.java", 3292),
+
+
+            new StackTraceElement("org.logevents.formatting.ExceptionFormatterTest", "shouldFindPackagingInformation", "ExceptionFormatterTest.java", 175),
+            new StackTraceElement("org.logevents.formatting.NoSuchClass", "unknownMethod", "NoSuchClass.java", 17),
+            new StackTraceElement("org.junit.runners.model.FrameworkMethod$1", "runReflectiveCall", "FrameworkMethod.java", 50),
+            new StackTraceElement("org.junit.internal.runners.model.ReflectiveCallable", "run", ".ReflectiveCallable.java", 12),
+        };
+        exception.setStackTrace(stackTrace);
+
+        formatter.setIncludePackagingData(true);
+
+        String[] lines = formatter.format(exception, 100).split("\r?\n");
+
+        String javaVersion = System.getProperty("java.version");
+
+        assertEquals(exception.toString(), lines[0]);
+        assertEquals("\tat " + stackTrace[0] + " [rt.jar:" + javaVersion + "]", lines[1]);
+        assertEquals("\tat " + stackTrace[1] + " [rt.jar:" + javaVersion + "]", lines[2]);
+        assertEquals("\tat " + stackTrace[2] + " [test-classes:na]", lines[3]);
+        assertEquals("\tat " + stackTrace[3] + " [na:na]", lines[4]);
+        assertEquals("\tat " + stackTrace[4] + " [junit-4.12.jar:4.12]", lines[5]);
+        assertEquals("\tat " + stackTrace[5] + " [junit-4.12.jar:4.12]", lines[6]);
     }
 
 

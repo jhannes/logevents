@@ -1,8 +1,16 @@
 package org.logevents.formatting;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
+
 public class ExceptionFormatter {
 
     private String[] packageFilter = new String[0];
+    private boolean includePackagingData = false;
 
     protected static String newLine() {
         return System.getProperty("line.separator");
@@ -73,7 +81,48 @@ public class ExceptionFormatter {
             builder.append(" ");
             outputIgnoredLineCount(ignored, indent, builder);
         }
+        if (includePackagingData) {
+            builder.append(" ").append(getPackagingData(frame));
+        }
         builder.append(newLine());
+    }
+
+    private String getPackagingData(StackTraceElement frame) {
+        return getPackagingData(frame.getClassName());
+    }
+
+    private String getPackagingData(String className) {
+        return "[" + getCodeSource(className) + ":" + getVersion(className) + "]";
+    }
+
+    private String getCodeSource(String className) {
+        try {
+            String classFile = String.join("/", className.split("\\.")) + ".class";
+            URL resource = getClass().getResource("/" + classFile);
+            if (resource == null) {
+                return "na";
+            } else if (!resource.getProtocol().equals("jar")) {
+                Path classFileFullPath = Paths.get(resource.toURI());
+                Path classFileRelativePath = Paths.get(classFile);
+
+                return Paths.get(classFileFullPath.toString().substring(0, classFileFullPath.toString().length() - classFileRelativePath.toString().length()))
+                        .getFileName().toString();
+            } else {
+                String jarFile = resource.getFile().split("!")[0];
+                return Paths.get(new URL(jarFile).toURI()).getFileName().toString();
+            }
+        } catch (URISyntaxException|IOException e) {
+            return "na";
+        }
+    }
+
+    private String getVersion(String className) {
+        try {
+            return Optional.ofNullable(Class.forName(className).getPackage().getImplementationVersion())
+                    .orElse("na");
+        } catch (ClassNotFoundException e) {
+            return "na";
+        }
     }
 
     protected int uniquePrefix(Throwable ex, Throwable enclosing) {
@@ -98,6 +147,10 @@ public class ExceptionFormatter {
 
     public void setPackageFilter(String[] packageFilter) {
         this.packageFilter = packageFilter;
+    }
+
+    public void setIncludePackagingData(boolean includePackagingData) {
+        this.includePackagingData = includePackagingData;
     }
 
 }
