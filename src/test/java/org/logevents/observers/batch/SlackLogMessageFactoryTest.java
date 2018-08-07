@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import java.util.UUID;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
@@ -19,15 +18,16 @@ import org.slf4j.event.Level;
 public class SlackLogMessageFactoryTest {
 
     private String loggerName = getClass().getName();
+    private Random random = new Random();
 
     @Test
     public void shouldCreateSlackMessage() {
-        String userName = UUID.randomUUID().toString();
-        String channelName = UUID.randomUUID().toString();
+        String userName = randomString();
+        String channelName = randomString();
 
         String loggerName = getClass().getName();
         Level level = pickOne(Level.values());
-        String format = UUID.randomUUID().toString();
+        String format = randomString();
 
         List<LogEventGroup> batch = new ArrayList<>();
         batch.add(new LogEventGroup(new LogEvent(loggerName, level, format)));
@@ -38,6 +38,10 @@ public class SlackLogMessageFactoryTest {
 
         List<Object> fields = JsonUtil.getList(JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 0), "fields");
         assertEquals(level.toString(), JsonUtil.getField(JsonUtil.getObject(fields, 0), "value"));
+    }
+
+    private String randomString() {
+        return Long.toString(random.nextLong () & Long.MAX_VALUE, 36);
     }
 
     @Test
@@ -61,7 +65,7 @@ public class SlackLogMessageFactoryTest {
 
     @Test
     public void shouldOutputStackTrace() {
-        Exception exception = new IOException("Something went wrong with " + UUID.randomUUID());
+        Exception exception = new IOException("Something went wrong with " + randomString());
         List<LogEventGroup> batch = new ArrayList<>();
         batch.add(new LogEventGroup(new LogEvent(loggerName, Level.WARN, "A lesser important message", exception)));
         Map<String, Object> slackMessage = new SlackLogMessageFactory().createSlackMessage(batch, Optional.empty(), Optional.empty());

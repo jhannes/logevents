@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -52,7 +51,7 @@ public class JsonUtilTest {
     @Test(expected=IllegalArgumentException.class)
     public void shouldThrowOnUnknownType() {
         Map<String, Object> jsonObject = new LinkedHashMap<>();
-        jsonObject.put("uuid", UUID.randomUUID());
+        jsonObject.put("object", new Object());
         JsonUtil.toIndentedJson(jsonObject);
     }
 

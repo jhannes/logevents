@@ -60,7 +60,7 @@ public class BatchingLogEventObserverTest {
         BatchingLogEventObserver observer = new BatchingLogEventObserver(configuration, "observers.batch");
 
         LogEvent message = sampleMessage("This is a strange message", Level.INFO);
-        Thread.sleep(200);
+        Thread.sleep(20);
         Instant sendTime = observer.addToBatch(message, Instant.now());
         assertEquals(message.getInstant().plus(idleThreshold), sendTime);
     }

@@ -6,7 +6,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.util.UUID;
+import java.time.Instant;
+import java.util.Random;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -19,8 +20,13 @@ public class LoggerDelegatorTest {
 
     private LoggerDelegator loggerDelegator = new LogEventFactory.RootLoggerDelegator();
     private CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
+    private static Random random = new Random();
 
-    private Marker marker = MarkerFactory.getMarker(UUID.randomUUID().toString());
+    private Marker marker = MarkerFactory.getMarker(randomString());
+
+    private String randomString() {
+        return Long.toString(random.nextLong () & Long.MAX_VALUE, 36);
+    }
 
     @Before
     public void setupLoggerDelegator() {
@@ -33,7 +39,7 @@ public class LoggerDelegatorTest {
     public void shouldRecordEventLocation() {
         loggerDelegator.error("Some message");
         LogEvent event = observer.getEvents().get(0);
-        assertEquals(34, event.getCallerLocation().getLineNumber());
+        assertEquals(40, event.getCallerLocation().getLineNumber());
         assertEquals("LoggerDelegatorTest.java", event.getCallerLocation().getFileName());
         assertEquals(getClass().getName(), event.getCallerLocation().getClassName());
         assertEquals("shouldRecordEventLocation", event.getCallerLocation().getMethodName());
@@ -70,23 +76,23 @@ public class LoggerDelegatorTest {
     @Test
     public void shouldLogErrorWithArgument() {
         String message = randomString() + ": {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.error(message, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.error(message, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
         assertEquals(Level.ERROR, event.getLevel());
-        assertArrayEquals(new Object[] { uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant }, event.getArgumentArray());
     }
 
     @Test
     public void shouldLogErrorWithTwoArgument() {
         String message = randomString() + ": {} and {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.error(message, uuid, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.error(message, instant, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
         assertEquals(Level.ERROR, event.getLevel());
-        assertArrayEquals(new Object[] { uuid, uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant, instant }, event.getArgumentArray());
     }
 
     @Test
@@ -136,23 +142,23 @@ public class LoggerDelegatorTest {
     @Test
     public void shouldLogWarnWithArgument() {
         String message = randomString() + ": {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.warn(message, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.warn(message, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
         assertEquals(Level.WARN, event.getLevel());
-        assertArrayEquals(new Object[] { uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant }, event.getArgumentArray());
     }
 
     @Test
     public void shouldLogWarnWithTwoArgument() {
         String message = randomString() + ": {} and {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.warn(message, uuid, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.warn(message, instant, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
         assertEquals(Level.WARN, event.getLevel());
-        assertArrayEquals(new Object[] { uuid, uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant, instant }, event.getArgumentArray());
     }
 
     @Test
@@ -202,23 +208,23 @@ public class LoggerDelegatorTest {
     @Test
     public void shouldLogInfoWithArgument() {
         String message = randomString() + ": {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.info(message, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.info(message, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
         assertEquals(Level.INFO, event.getLevel());
-        assertArrayEquals(new Object[] { uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant }, event.getArgumentArray());
     }
 
     @Test
     public void shouldLogInfoWithTwoArgument() {
         String message = randomString() + ": {} and {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.info(message, uuid, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.info(message, instant, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
         assertEquals(Level.INFO, event.getLevel());
-        assertArrayEquals(new Object[] { uuid, uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant, instant }, event.getArgumentArray());
     }
 
     @Test
@@ -268,23 +274,23 @@ public class LoggerDelegatorTest {
     @Test
     public void shouldLogDebugWithArgument() {
         String message = randomString() + ": {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.debug(message, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.debug(message, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
         assertEquals(Level.DEBUG, event.getLevel());
-        assertArrayEquals(new Object[] { uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant }, event.getArgumentArray());
     }
 
     @Test
     public void shouldLogDebugWithTwoArgument() {
         String message = randomString() + ": {} and {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.debug(message, uuid, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.debug(message, instant, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
         assertEquals(Level.DEBUG, event.getLevel());
-        assertArrayEquals(new Object[] { uuid, uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant, instant }, event.getArgumentArray());
     }
 
     @Test
@@ -334,23 +340,23 @@ public class LoggerDelegatorTest {
     @Test
     public void shouldLogTraceWithArgument() {
         String message = randomString() + ": {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.trace(message, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.trace(message, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
         assertEquals(Level.TRACE, event.getLevel());
-        assertArrayEquals(new Object[] { uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant }, event.getArgumentArray());
     }
 
     @Test
     public void shouldLogTraceWithTwoArgument() {
         String message = randomString() + ": {} and {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.trace(message, uuid, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.trace(message, instant, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
         assertEquals(Level.TRACE, event.getLevel());
-        assertArrayEquals(new Object[] { uuid, uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant, instant }, event.getArgumentArray());
     }
 
     @Test
@@ -401,25 +407,25 @@ public class LoggerDelegatorTest {
     @Test
     public void shouldLogErrorWithArgumentWithMarker() {
         String message = randomString() + ": {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.error(marker, message, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.error(marker, message, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
         assertEquals(Level.ERROR, event.getLevel());
-        assertArrayEquals(new Object[] { uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant }, event.getArgumentArray());
     }
 
     @Test
     public void shouldLogErrorWithTwoArgumentWithMarker() {
         String message = randomString() + ": {} and {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.error(marker, message, uuid, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.error(marker, message, instant, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
         assertEquals(Level.ERROR, event.getLevel());
-        assertArrayEquals(new Object[] { uuid, uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant, instant }, event.getArgumentArray());
     }
 
     @Test
@@ -473,25 +479,25 @@ public class LoggerDelegatorTest {
     @Test
     public void shouldLogWarnWithArgumentWithMarker() {
         String message = randomString() + ": {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.warn(marker, message, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.warn(marker, message, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
         assertEquals(Level.WARN, event.getLevel());
-        assertArrayEquals(new Object[] { uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant }, event.getArgumentArray());
     }
 
     @Test
     public void shouldLogWarnWithTwoArgumentWithMarker() {
         String message = randomString() + ": {} and {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.warn(marker, message, uuid, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.warn(marker, message, instant, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
         assertEquals(Level.WARN, event.getLevel());
-        assertArrayEquals(new Object[] { uuid, uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant, instant }, event.getArgumentArray());
     }
 
     @Test
@@ -545,25 +551,25 @@ public class LoggerDelegatorTest {
     @Test
     public void shouldLogInfoWithArgumentWithMarker() {
         String message = randomString() + ": {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.info(marker, message, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.info(marker, message, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
         assertEquals(Level.INFO, event.getLevel());
-        assertArrayEquals(new Object[] { uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant }, event.getArgumentArray());
     }
 
     @Test
     public void shouldLogInfoWithTwoArgumentWithMarker() {
         String message = randomString() + ": {} and {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.info(marker, message, uuid, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.info(marker, message, instant, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
         assertEquals(Level.INFO, event.getLevel());
-        assertArrayEquals(new Object[] { uuid, uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant, instant }, event.getArgumentArray());
     }
 
     @Test
@@ -617,25 +623,25 @@ public class LoggerDelegatorTest {
     @Test
     public void shouldLogDebugWithArgumentWithMarker() {
         String message = randomString() + ": {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.debug(marker, message, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.debug(marker, message, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
         assertEquals(Level.DEBUG, event.getLevel());
-        assertArrayEquals(new Object[] { uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant }, event.getArgumentArray());
     }
 
     @Test
     public void shouldLogDebugWithTwoArgumentWithMarker() {
         String message = randomString() + ": {} and {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.debug(marker, message, uuid, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.debug(marker, message, instant, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
         assertEquals(Level.DEBUG, event.getLevel());
-        assertArrayEquals(new Object[] { uuid, uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant, instant }, event.getArgumentArray());
     }
 
     @Test
@@ -689,25 +695,25 @@ public class LoggerDelegatorTest {
     @Test
     public void shouldLogTraceWithArgumentWithMarker() {
         String message = randomString() + ": {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.trace(marker, message, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.trace(marker, message, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
         assertEquals(Level.TRACE, event.getLevel());
-        assertArrayEquals(new Object[] { uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant }, event.getArgumentArray());
     }
 
     @Test
     public void shouldLogTraceWithTwoArgumentWithMarker() {
         String message = randomString() + ": {} and {}";
-        UUID uuid = UUID.randomUUID();
-        loggerDelegator.trace(marker, message, uuid, uuid);
+        Instant instant = Instant.now();
+        loggerDelegator.trace(marker, message, instant, instant);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
         assertEquals(Level.TRACE, event.getLevel());
-        assertArrayEquals(new Object[] { uuid, uuid }, event.getArgumentArray());
+        assertArrayEquals(new Object[] { instant, instant }, event.getArgumentArray());
     }
 
     @Test
@@ -749,10 +755,6 @@ public class LoggerDelegatorTest {
 
     private Exception randomException() {
         return new IOException("Something happened with " + randomString());
-    }
-
-    private String randomString() {
-        return UUID.randomUUID().toString();
     }
 
 }
