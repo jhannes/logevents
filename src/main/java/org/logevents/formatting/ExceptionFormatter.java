@@ -14,11 +14,13 @@ public class ExceptionFormatter {
 
     private String[] packageFilter = new String[0];
     private boolean includePackagingData = false;
+    private int maxLength = Integer.MAX_VALUE;
 
     public ExceptionFormatter(Properties properties, String prefix) {
         Configuration configuration = new Configuration(properties, prefix);
         packageFilter = configuration.getStringList("packageFilter");
         includePackagingData = configuration.getBoolean("includePackagingData");
+        maxLength = configuration.optionalInt("maxLength").orElse(Integer.MAX_VALUE);
     }
 
     public ExceptionFormatter() {
@@ -28,27 +30,27 @@ public class ExceptionFormatter {
         return System.getProperty("line.separator");
     }
 
-    public String format(Throwable ex, Integer length) {
+    public String format(Throwable ex) {
         if (ex == null) {
             return "";
         }
         StringBuilder builder = new StringBuilder();
-        outputException(ex, null, length, "", "", builder);
+        outputException(ex, null, "", "", builder);
         return builder.toString();
     }
 
-    protected void outputException(Throwable ex, Throwable enclosing, Integer maxLength, String prefix, String indent, StringBuilder builder) {
+    protected void outputException(Throwable ex, Throwable enclosing, String prefix, String indent, StringBuilder builder) {
         outputExceptionHeader(ex, prefix, indent, builder);
 
-        outputStack(ex, maxLength, indent, enclosing, builder);
+        outputStack(ex, indent, enclosing, builder);
 
         for (Throwable suppressedException : ex.getSuppressed()) {
-            outputException(suppressedException, ex, maxLength, "Suppressed: ", indent + "\t", builder);
+            outputException(suppressedException, ex, "Suppressed: ", indent + "\t", builder);
         }
 
         Throwable cause = ex.getCause();
         if (cause != null) {
-            outputException(cause, ex, maxLength, "Caused by: ", indent, builder);
+            outputException(cause, ex, "Caused by: ", indent, builder);
         }
     }
 
@@ -56,7 +58,7 @@ public class ExceptionFormatter {
         builder.append(indent).append(prefix).append(ex.toString()).append(newLine());
     }
 
-    protected void outputStack(Throwable ex, Integer maxLength, String indent, Throwable enclosing, StringBuilder builder) {
+    protected void outputStack(Throwable ex, String indent, Throwable enclosing, StringBuilder builder) {
         int uniquePrefix = uniquePrefix(ex, enclosing);
         StackTraceElement[] stackTrace = ex.getStackTrace();
         int ignored = 0;
@@ -173,4 +175,7 @@ public class ExceptionFormatter {
         this.includePackagingData = includePackagingData;
     }
 
+    public void setMaxLength(int maxLength) {
+        this.maxLength = maxLength;
+    }
 }

@@ -25,6 +25,10 @@ public class Configuration {
         }
     }
 
+    public Optional<Integer> optionalInt(String key) {
+        return optionalString(key).map(Integer::parseInt);
+    }
+
     public Duration getDuration(String key) {
         try {
             return Duration.parse(getString(key));
@@ -85,9 +89,4 @@ public class Configuration {
     public String getPrefix() {
         return prefix;
     }
-
-
-
-
-
 }

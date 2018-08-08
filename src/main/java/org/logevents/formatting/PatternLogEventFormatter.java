@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -132,8 +131,6 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.put("line", spec -> e -> String.valueOf(e.getCallerLine()));
         factory.putAliases("line", new String[] { "L" });
 
-        factory.put("n", spec -> e -> newLine());
-
         factory.put("date", spec -> {
             DateTimeFormatter formatter = spec.getParameter(0)
                     .map(DateTimeFormatter::ofPattern)
@@ -152,12 +149,12 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.put("thread", spec -> e -> e.getThreadName());
         factory.putAliases("thread", new String[] { "t" });
 
-        factory.putExceptionHandler("exception", spec -> {
-            BiFunction<Throwable, Optional<Integer>, String> throwableFormatter = spec.getThrowableFormatter();
-            Optional<Integer> length = spec.getIntParameter(0);
-            return e -> e.getThrowable() != null ? throwableFormatter.apply(e.getThrowable(), length) : "";
-        });
-        factory.putAliases("exception", new String[] { "ex", "throwable" });
+//        factory.putExceptionHandler("exception", spec -> {
+//            BiFunction<Throwable, Optional<Integer>, String> throwableFormatter = spec.getThrowableFormatter();
+//            Optional<Integer> length = spec.getIntParameter(0);
+//            return e -> e.getThrowable() != null ? throwableFormatter.apply(e.getThrowable(), length) : "";
+//        });
+//        factory.putAliases("exception", new String[] { "ex", "throwable" });
 
         factory.put("mdc", spec -> {
             if (spec.getParameters().isEmpty()) {
@@ -178,16 +175,12 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
 
         // TODO
-        //  exception / throwable / ex {depth, evaluators... }
 
         //  relative / r - Outputs the number of milliseconds elapsed since the start of the application until the creation of the logging event.
 
         //  marker
         //  caller
-        //  xException / xThrowble / xEx {depth, evaluators... } - with packaging information
-        //  nopexception - The %nopex conversion word allows the user to override PatternLayout's internal safety mechanism which silently adds the %xThrowable conversion keyword in the absence of another conversion word handling exceptions.
         //  ?? property
-        //  rException / rThrowable / rEx {depth, evaluators... } - Outputs the stack trace of the exception associated with the logging event, if any. The root cause will be output first instead of the standard "root cause last". Here is a sample output (edited for space):
 
         factory.put("highlight", spec -> {
             LogEventFormatter nestedFormatter = spec.getSubpattern().orElse(e -> "");
@@ -242,13 +235,16 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", ExceptionFormatter.class);
     }
 
+    public ExceptionFormatter getExceptionFormatter() {
+        return exceptionFormatter;
+    }
+
     public void setPattern(String pattern) {
         this.pattern = pattern;
         this.converter = readConverter(new StringScanner(pattern), '\0');
     }
 
     LogEventFormatter readConverter(StringScanner scanner, char terminator) {
-        boolean includesThrowableHandler = false;
         List<LogEventFormatter> converters = new ArrayList<>();
         while (scanner.hasMoreCharacters() && scanner.current() != terminator) {
             // TODO: Escaped %
@@ -259,24 +255,10 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             if (scanner.hasMoreCharacters() && scanner.current() != terminator) {
                 PatternConverterSpec patternSpec = new PatternConverterSpec(scanner);
                 patternSpec.readConversion(this);
-                patternSpec.setThrowableFormatter(this::formatThrowable);
                 converters.add(factory.create(patternSpec));
-
-                includesThrowableHandler |= factory.isThrowableHandler(patternSpec.getConversionWord());
             }
         }
-        if (!includesThrowableHandler) {
-            converters.add(e -> formatThrowable(e.getThrowable(), Optional.empty()));
-        }
         return compositeFormatter(converters);
-    }
-
-    private String formatThrowable(Throwable ex, Optional<Integer> optLength) {
-        if (ex == null) {
-            return "";
-        }
-        Integer length = optLength.orElse(Integer.MAX_VALUE);
-        return exceptionFormatter.format(ex, length);
     }
 
     private static LogEventFormatter compositeFormatter(List<LogEventFormatter> converters) {
@@ -287,7 +269,8 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
     @Override
     public String format(LogEvent event) {
-        return converter.format(event);
+        return converter.format(event) +
+                (event.getThrowable() != null ? newLine() + exceptionFormatter.format(event.getThrowable()) : "");
     }
 
     private static LogEventFormatter getConstant(String string) {

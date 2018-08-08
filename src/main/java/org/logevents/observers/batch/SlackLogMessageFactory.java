@@ -109,7 +109,7 @@ public class SlackLogMessageFactory {
                 ));
         attachment.put("mrkdwn_in", Arrays.asList("text"));
         attachment.put("text",
-                "```\n" + exceptionFormatter.format(event.getThrowable(), Integer.MAX_VALUE) + "\n```");
+                "```\n" + exceptionFormatter.format(event.getThrowable()) + "\n```");
         return attachment;
     }
 

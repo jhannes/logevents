@@ -157,9 +157,4 @@ class PatternConverterSpec {
     public BiFunction<Throwable, Optional<Integer>, String> getThrowableFormatter() {
         return throwableFormatter;
     }
-
-    public void setThrowableFormatter(BiFunction<Throwable, Optional<Integer>, String> throwableFormatter) {
-        this.throwableFormatter = throwableFormatter;
-    }
-
 }

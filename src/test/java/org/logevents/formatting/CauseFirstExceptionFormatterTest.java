@@ -38,7 +38,7 @@ public class CauseFirstExceptionFormatterTest {
                 internalMethod, publicMethod, mainMethod
         });
 
-        String[] lines = getFormatter().format(exception, 100).split("\r?\n");
+        String[] lines = getFormatter().format(exception).split("\r?\n");
 
         assertEquals(nestedNested.toString(), lines[0]);
         assertEquals("\tat " + ioInternalMethod, lines[1]);
@@ -71,7 +71,7 @@ public class CauseFirstExceptionFormatterTest {
         });
         wrapping.addSuppressed(suppressed);
 
-        String[] lines = getFormatter().format(wrapping, 100).split("\r?\n");
+        String[] lines = getFormatter().format(wrapping).split("\r?\n");
 
         assertEquals(wrapping.toString(), lines[0]);
         assertEquals("\tat " + nioInternalMethod, lines[1]);

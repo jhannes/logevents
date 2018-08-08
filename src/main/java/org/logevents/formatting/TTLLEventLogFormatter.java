@@ -20,7 +20,7 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
                 LogEventFormatter.rightPad(e.getLevel(), 5, ' '),
                 e.getLoggerName(),
                 e.formatMessage())
-                + exceptionFormatter.format(e.getThrowable(), Integer.MAX_VALUE);
+                + exceptionFormatter.format(e.getThrowable());
     }
 
     @Override

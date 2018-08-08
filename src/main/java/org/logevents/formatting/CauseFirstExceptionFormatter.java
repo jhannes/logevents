@@ -9,18 +9,18 @@ public class CauseFirstExceptionFormatter extends ExceptionFormatter {
     }
 
     @Override
-    protected void outputException(Throwable ex, Throwable enclosing, Integer length, String prefix, String indent, StringBuilder builder) {
+    protected void outputException(Throwable ex, Throwable enclosing, String prefix, String indent, StringBuilder builder) {
         if (ex.getCause() == null) {
             outputExceptionHeader(ex, prefix, indent, builder);
         } else {
-            outputException(ex.getCause(), ex, length, prefix, indent, builder);
+            outputException(ex.getCause(), ex, prefix, indent, builder);
             outputExceptionHeader(ex, "Wrapped by: ", indent, builder);
         }
 
-        outputStack(ex, length, indent, enclosing, builder);
+        outputStack(ex, indent, enclosing, builder);
 
         for (Throwable suppressed : ex.getSuppressed()) {
-            outputException(suppressed, ex, length, "Suppressed: ", indent + "\t", builder);
+            outputException(suppressed, ex, "Suppressed: ", indent + "\t", builder);
         }
     }
 

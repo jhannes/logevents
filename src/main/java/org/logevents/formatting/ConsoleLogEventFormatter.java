@@ -25,7 +25,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 colorizedLevel(e),
                 format.bold(e.getLoggerName()),
                 e.formatMessage())
-                + exceptionFormatter.format(e.getThrowable(), Integer.MAX_VALUE);
+                + exceptionFormatter.format(e.getThrowable());
     }
 
     /**

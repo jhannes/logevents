@@ -266,6 +266,51 @@ can be omitted - so `TextLogEventObserver` and be used instead of
 `org.logevents.TextLogEventObserver`.
 
 
+### PatternLogEventFormatter and ExceptionFormatter
+
+If you do programmatic configuration, the recommended approach is to implement
+message formatting in code. See `ConsoleLogEventFormatter` as an example.
+
+However, if you use properties files for configuration, you will probably
+want to use `PatternLogEventFormatter` to format the log events. Here
+is an example:
+
+```
+observer.file=DateRollingLogEventObserver
+observer.file.filename=logs/application.log
+observer.file.formatter=PatternLogEventFormatter
+observer.file.formatter.pattern=%date{HH:mm:ss} %highlight([%5level]) [%thread] [%mdc{user:-<no user>}] %logger{20}: %message
+observer.file.formatter.exceptionFormatter=CauseFirstExceptionFormatter
+observer.file.formatter.exceptionFormatter.packageFilter=sun.nio, my.internal.package
+
+root=INFO file
+```
+
+The following conversion words are supported:
+
+* `%date{<format>, <timezone>}`: The time when the log event was generated. Examples:
+  `%date{HH:mm:ss, UTC}`. The parameters are passed to `DateTimeFormatter.ofPattern()`
+  and `ZoneId.of()` respectively
+* `%logger{<length>}`: The name of the logger (the parameter to LoggerFactory.getLogger())
+* `%message`: The formatted message of the log event, with "{}" replaced by log arguments
+* `%thread`: The thread that created the log event
+* `%class`: The class name of the caller of the log event
+* `%method`: The class method of the caller of the log event
+* `%file`: The file name of the caller of the log event
+* `%line`: The line number of the caller of the log event
+* `%mdc{<key>:-<default>}`: The value of the specified MDC variable.
+   `%mdc` outputs all MDC variables.
+* `%highlight(<sub pattern>)` will format the sub-pattern as normal and output
+  the text in a color appropriate for the log level of the event
+* `%red(<sub pattern>)`, `%green(<sub pattern>)`, `%blue(<sub pattern>)`, etc
+  formats the message according to the sub pattern and outputs it in the given color
+
+As opposed to log4j and logback, logevents don't consider exception formatting as part
+of the normal formatting pattern. Instead, you must set `.pattern.exceptionFormatter`
+to customize the output of exceptions. On the upside, this means that it's
+quite easy to create and plug in your own classes for exception formatting.
+
+
 ### Intercepting log4j and JUL logging
 
 SLF4J comes out of the box with a bridge from java.util.logging
@@ -421,7 +466,7 @@ less code to implement with Logevents.
 
 ### TODO
 
-* PatternFormatter
 * MDC-based batching
 * JMX
 * Configuration on local directory with reload
+
