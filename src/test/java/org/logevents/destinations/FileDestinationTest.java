@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Properties;
 
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;

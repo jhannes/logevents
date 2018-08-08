@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.junit.Ignore;
@@ -168,7 +169,6 @@ public class ExceptionFormatterTest {
     }
 
     @Test
-    @Ignore("Seems to break on Linux")
     public void shouldFindPackagingInformation() throws IOException, URISyntaxException {
         RuntimeException exception = new RuntimeException("Something wen wrong");
         StackTraceElement[] stackTrace = new StackTraceElement[] {
@@ -189,13 +189,14 @@ public class ExceptionFormatterTest {
 
         String javaVersion = System.getProperty("java.version");
 
-        assertEquals(exception.toString(), lines[0]);
-        assertEquals("\tat " + stackTrace[0] + " [rt.jar:" + javaVersion + "]", lines[1]);
-        assertEquals("\tat " + stackTrace[1] + " [rt.jar:" + javaVersion + "]", lines[2]);
-        assertEquals("\tat " + stackTrace[2] + " [test-classes:na]", lines[3]);
-        assertEquals("\tat " + stackTrace[3] + " [na:na]", lines[4]);
-        assertEquals("\tat " + stackTrace[4] + " [junit-4.12.jar:4.12]", lines[5]);
-        assertEquals("\tat " + stackTrace[5] + " [junit-4.12.jar:4.12]", lines[6]);
+        assertEquals(Arrays.asList(exception.toString(),
+                "\tat " + stackTrace[0] + " [rt.jar:" + javaVersion + "]",
+                "\tat " + stackTrace[1] + " [rt.jar:" + javaVersion + "]",
+                "\tat " + stackTrace[2] + " [test-classes:na]",
+                "\tat " + stackTrace[3] + " [na:na]",
+                "\tat " + stackTrace[4] + " [junit-4.12.jar:4.12]",
+                "\tat " + stackTrace[5] + " [junit-4.12.jar:4.12]"),
+                Arrays.asList(lines));
     }
 
     private ExceptionFormatter getFormatter() {
