@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.status.LogEventStatus;
@@ -48,8 +49,7 @@ public class FileDestinationTest {
         Files.delete(path);
         file.writeEvent("Test message - written as we recover\n");
 
-        assertEquals(Arrays.asList("Test message - written as we recover"),
-                Files.readAllLines(path));
+        assertEquals(Arrays.asList("Test message - written as we recover"), Files.readAllLines(path));
     }
 
     @Test
@@ -60,7 +60,7 @@ public class FileDestinationTest {
         // Now we can't log to path, because it's an existing DIRECTORY
         Files.createDirectories(path);
 
-        for (int i=0; i<file.getCircuitBreakThreshold()+1; i++) {
+        for (int i = 0; i < file.getCircuitBreakThreshold() + 1; i++) {
             file.writeEvent("Test message - file can't be created\n");
         }
 
@@ -71,8 +71,7 @@ public class FileDestinationTest {
         file.setCircuitBrokenUntil(Instant.now().minusMillis(1));
         file.writeEvent("Test message - circuit is recovered\n");
 
-        assertEquals(Arrays.asList("Test message - circuit is recovered"),
-                Files.readAllLines(path));
+        assertEquals(Arrays.asList("Test message - circuit is recovered"), Files.readAllLines(path));
     }
 
     @Test
@@ -87,11 +86,9 @@ public class FileDestinationTest {
 
         file.setPath(second);
         file.writeEvent("Written to new file\n");
-        assertEquals(Arrays.asList("Written to new file"),
-                Files.readAllLines(second));
+        assertEquals(Arrays.asList("Written to new file"), Files.readAllLines(second));
 
     }
-
 
     public static class Locker {
         public static void main(String[] args) throws InterruptedException, IOException {
@@ -104,20 +101,19 @@ public class FileDestinationTest {
     }
 
     @Test
-    @Ignore("Only works on Windows??")
     public void shouldRecoverFromLockedFile() throws IOException, InterruptedException {
+        Assume.assumeTrue("File locking is not supported on Linux", isWindows());
+
         Path path = Paths.get("target", "logs", "file-test-2.log");
         Files.deleteIfExists(path);
 
         String java = System.getProperty("java.home") + "/bin/java";
-        ProcessBuilder builder = new ProcessBuilder(java,
-                "-classpath", "target/test-classes",
-                Locker.class.getName(), path.toAbsolutePath().toString());
+        ProcessBuilder builder = new ProcessBuilder(java, "-classpath", "target/test-classes", Locker.class.getName(),
+                path.toAbsolutePath().toString());
         Process process = builder.start();
 
         BufferedReader processReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         System.out.println(processReader.readLine());
-
 
         Properties properties = new Properties();
         properties.setProperty("observer.file.destination.filename", path.toString());
@@ -132,7 +128,8 @@ public class FileDestinationTest {
         assertEquals(Collections.emptyList(), Files.readAllLines(path));
 
         List<StatusEvent> messages = LogEventStatus.getInstance().getHeadMessages(file, StatusLevel.ERROR);
-        assertEquals("The process cannot access the file because another process has locked a portion of the file", messages.get(0).getMessage());
+        assertEquals("The process cannot access the file because another process has locked a portion of the file",
+                messages.get(0).getMessage());
 
         assertEquals(Collections.emptyList(), Files.readAllLines(path));
 
@@ -148,5 +145,7 @@ public class FileDestinationTest {
         return file;
     }
 
-
+    private boolean isWindows() {
+        return System.getProperty("os.name").startsWith("Windows");
+    }
 }
