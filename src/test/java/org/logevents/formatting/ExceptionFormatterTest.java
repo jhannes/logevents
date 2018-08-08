@@ -172,10 +172,7 @@ public class ExceptionFormatterTest {
     public void shouldFindPackagingInformation() throws IOException, URISyntaxException {
         RuntimeException exception = new RuntimeException("Something wen wrong");
         StackTraceElement[] stackTrace = new StackTraceElement[] {
-            new StackTraceElement("sun.nio.fs.WindowsFileSystemProvider", "newByteChannel", "WindowsFileSystemProvider.java", 230),
             new StackTraceElement("java.nio.file.Files", "write", "Files.java", 3292),
-
-
             new StackTraceElement("org.logevents.formatting.ExceptionFormatterTest", "shouldFindPackagingInformation", "ExceptionFormatterTest.java", 175),
             new StackTraceElement("org.logevents.formatting.NoSuchClass", "unknownMethod", "NoSuchClass.java", 17),
             new StackTraceElement("org.junit.runners.model.FrameworkMethod$1", "runReflectiveCall", "FrameworkMethod.java", 50),
@@ -191,11 +188,10 @@ public class ExceptionFormatterTest {
 
         assertEquals(Arrays.asList(exception.toString(),
                 "\tat " + stackTrace[0] + " [rt.jar:" + javaVersion + "]",
-                "\tat " + stackTrace[1] + " [rt.jar:" + javaVersion + "]",
-                "\tat " + stackTrace[2] + " [test-classes:na]",
-                "\tat " + stackTrace[3] + " [na:na]",
-                "\tat " + stackTrace[4] + " [junit-4.12.jar:4.12]",
-                "\tat " + stackTrace[5] + " [junit-4.12.jar:4.12]"),
+                "\tat " + stackTrace[1] + " [test-classes:na]",
+                "\tat " + stackTrace[2] + " [na:na]",
+                "\tat " + stackTrace[3] + " [junit-4.12.jar:4.12]",
+                "\tat " + stackTrace[4] + " [junit-4.12.jar:4.12]"),
                 Arrays.asList(lines));
     }
 
