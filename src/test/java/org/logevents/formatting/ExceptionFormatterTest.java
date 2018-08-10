@@ -7,7 +7,6 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Properties;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.util.Configuration;
 
