@@ -115,7 +115,7 @@ public class DefaultLogEventConfiguratorTest {
 
         Properties newPropertiesFile = new Properties();
         Thread.sleep(10);
-        newPropertiesFile.setProperty("root", "INFO console");
+        newPropertiesFile.setProperty("root", "INFO");
         writeProps(propertiesDir.resolve("logevents-production.properties"), newPropertiesFile);
         assertEquals("INFO", logEventFactory.getRootLogger().getLevelThreshold().toString());
 
@@ -129,7 +129,9 @@ public class DefaultLogEventConfiguratorTest {
 
     @After
     public void deleteConfigFiles() throws IOException {
-        Files.list(propertiesDir).map(Path::toFile).forEach(file -> file.delete());
+        if (Files.isDirectory(propertiesDir)) {
+            Files.list(propertiesDir).map(Path::toFile).forEach(file -> file.delete());
+        }
     }
 
 
