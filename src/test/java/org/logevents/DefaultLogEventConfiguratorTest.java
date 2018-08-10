@@ -64,9 +64,7 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldScanPropertiesFilesWhenFileIsChanged() throws IOException, InterruptedException {
-        Files.deleteIfExists(propertiesDir.resolve("logevents.properties"));
-        Files.deleteIfExists(propertiesDir.resolve("logevents-profile1.properties"));
-
+        deleteConfigFiles();
         Files.createDirectories(propertiesDir);
 
         Properties defaultProperties = new Properties();
@@ -98,9 +96,7 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldScanPropertiesFilesWhenHigherPriorityFileIsAdded() throws IOException, InterruptedException {
-        Files.deleteIfExists(propertiesDir.resolve("logevents.properties"));
-        Files.deleteIfExists(propertiesDir.resolve("logevents-production.properties"));
-
+        deleteConfigFiles();
         Files.createDirectories(propertiesDir);
 
         Properties defaultProperties = new Properties();

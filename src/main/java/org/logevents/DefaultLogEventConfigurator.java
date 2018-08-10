@@ -105,7 +105,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * Read configuration from the default configuration file based on
      * {@link #getProfiles()}
      */
-    protected void resetConfigurationFromFiles(LogEventFactory factory) {
+    protected synchronized void resetConfigurationFromFiles(LogEventFactory factory) {
         setDefaultLogging(factory);
         loadConfiguration(factory, loadPropertiesFromFiles(getConfigurationFileNames()));
     }
