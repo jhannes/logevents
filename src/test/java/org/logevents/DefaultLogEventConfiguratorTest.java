@@ -64,6 +64,7 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldScanPropertiesFilesWhenFileIsChanged() throws IOException, InterruptedException {
+        propertiesDir = Paths.get("target", "test-data", "scan-change", "properties");
         deleteConfigFiles();
         Files.createDirectories(propertiesDir);
 
@@ -79,7 +80,7 @@ public class DefaultLogEventConfiguratorTest {
 
         System.setProperty("profiles", "profile1");
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
-        LogEventFactory logEventFactory = LogEventFactory.getInstance();
+        LogEventFactory logEventFactory = new LogEventFactory();
         configurator.configure(logEventFactory);
 
         assertEquals("ERROR", logEventFactory.getRootLogger().getLevelThreshold().toString());
@@ -96,6 +97,7 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldScanPropertiesFilesWhenHigherPriorityFileIsAdded() throws IOException, InterruptedException {
+        propertiesDir = Paths.get("target", "test-data", "scan-new", "properties");
         deleteConfigFiles();
         Files.createDirectories(propertiesDir);
 
@@ -104,7 +106,8 @@ public class DefaultLogEventConfiguratorTest {
         writeProps(propertiesDir.resolve("logevents.properties"), defaultProperties);
 
         System.setProperty("profiles", "production");
-        LogEventFactory logEventFactory = LogEventFactory.getInstance();
+        DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
+        LogEventFactory logEventFactory = new LogEventFactory();
         configurator.configure(logEventFactory);
 
         assertEquals("DEBUG", logEventFactory.getRootLogger().getLevelThreshold().toString());
