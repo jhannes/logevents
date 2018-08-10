@@ -3,8 +3,14 @@ package org.logevents;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 
+import org.junit.After;
 import org.junit.Test;
 import org.slf4j.event.Level;
 
@@ -13,13 +19,14 @@ public class DefaultLogEventConfiguratorTest {
     private LogEventFactory factory = new LogEventFactory();
     private DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
     private Properties properties = new Properties();
+    private Path propertiesDir = Paths.get("target", "test-data", "properties");
 
     @Test
     public void shouldSetRootLevelFromProperties() {
         properties.setProperty("root", "TRACE");
         String oldObserver = factory.getRootLogger().getObserver();
 
-        configurator.configure(factory, properties);
+        configurator.loadConfiguration(factory, properties);
 
         assertTrue(factory.getLoggers() + " should be empty", factory.getLoggers().isEmpty());
         assertEquals(Level.TRACE, factory.getRootLogger().getLevelThreshold());
@@ -32,7 +39,7 @@ public class DefaultLogEventConfiguratorTest {
         properties.setProperty("observer.file", "DateRollingLogEventObserver");
         properties.setProperty("observer.file.filename", "logs/application.log");
 
-        configurator.configure(factory, properties);
+        configurator.loadConfiguration(factory, properties);
         assertEquals(Level.DEBUG, factory.getRootLogger().getLevelThreshold());
         assertEquals(
                 "DateRollingLogEventObserver{"
@@ -47,7 +54,7 @@ public class DefaultLogEventConfiguratorTest {
         properties.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
         properties.setProperty("observer.buffer2", "CircularBufferLogEventObserver");
 
-        configurator.configure(factory, properties);
+        configurator.loadConfiguration(factory, properties);
         assertEquals(Level.ERROR, factory.getLogger("org.example").getLevelThreshold());
         assertEquals(
                 "CompositeLogEventObserver{"
@@ -55,7 +62,75 @@ public class DefaultLogEventConfiguratorTest {
                 factory.getLogger("org.example").getObserver());
     }
 
-    // TODO: Test that file without directory is handled okay
+    @Test
+    public void shouldScanPropertiesFilesWhenFileIsChanged() throws IOException, InterruptedException {
+        Files.deleteIfExists(propertiesDir.resolve("logevents.properties"));
+        Files.deleteIfExists(propertiesDir.resolve("logevents-profile1.properties"));
+
+        Files.createDirectories(propertiesDir);
+
+        Properties defaultProperties = new Properties();
+        defaultProperties.setProperty("root", "DEBUG");
+        defaultProperties.setProperty("observer.console", "ConsoleLogEventObserver");
+        defaultProperties.setProperty("observer.null", "NullLogEventObserver");
+        writeProps(propertiesDir.resolve("logevents.properties"), defaultProperties);
+
+        Properties firstProfileProperty = new Properties();
+        firstProfileProperty.setProperty("root", "ERROR console");
+        writeProps(propertiesDir.resolve("logevents-profile1.properties"), firstProfileProperty);
+
+        System.setProperty("profiles", "profile1");
+        DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
+        LogEventFactory logEventFactory = LogEventFactory.getInstance();
+        configurator.configure(logEventFactory);
+
+        assertEquals("ERROR", logEventFactory.getRootLogger().getLevelThreshold().toString());
+        assertEquals("ConsoleLogEventObserver{destination=ConsoleLogEventDestination,formatter=ConsoleLogEventFormatter}", logEventFactory.getRootLogger().getObserver());
+
+        firstProfileProperty.setProperty("root", "TRACE null");
+        writeProps(propertiesDir.resolve("logevents-profile1.properties"), firstProfileProperty);
+
+        Thread.sleep(10);
+
+        assertEquals("TRACE", logEventFactory.getRootLogger().getLevelThreshold().toString());
+        assertEquals("<inherit>", logEventFactory.getRootLogger().getObserver());
+    }
+
+    @Test
+    public void shouldScanPropertiesFilesWhenHigherPriorityFileIsAdded() throws IOException, InterruptedException {
+        Files.deleteIfExists(propertiesDir.resolve("logevents.properties"));
+        Files.deleteIfExists(propertiesDir.resolve("logevents-production.properties"));
+
+        Files.createDirectories(propertiesDir);
+
+        Properties defaultProperties = new Properties();
+        defaultProperties.setProperty("root", "DEBUG");
+        writeProps(propertiesDir.resolve("logevents.properties"), defaultProperties);
+
+        System.setProperty("profiles", "production");
+        LogEventFactory logEventFactory = LogEventFactory.getInstance();
+        configurator.configure(logEventFactory);
+
+        assertEquals("DEBUG", logEventFactory.getRootLogger().getLevelThreshold().toString());
+
+        Properties newPropertiesFile = new Properties();
+        Thread.sleep(10);
+        newPropertiesFile.setProperty("root", "INFO console");
+        writeProps(propertiesDir.resolve("logevents-production.properties"), newPropertiesFile);
+        assertEquals("INFO", logEventFactory.getRootLogger().getLevelThreshold().toString());
+
+    }
+
+    private void writeProps(Path file, Properties defaultProperties) throws IOException {
+        try (FileWriter writer = new FileWriter(file.toFile())) {
+            defaultProperties.store(writer, "Default configuration file");
+        }
+    }
+
+    @After
+    public void deleteConfigFiles() throws IOException {
+        Files.list(propertiesDir).map(Path::toFile).forEach(file -> file.delete());
+    }
 
 
 }

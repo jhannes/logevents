@@ -1,7 +1,19 @@
 package org.logevents;
 
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +25,7 @@ import java.util.stream.Stream;
 
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
+import org.logevents.status.LogEventStatus;
 import org.logevents.util.ConfigUtil;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.event.Level;
@@ -26,23 +39,75 @@ import org.slf4j.event.Level;
  */
 public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
+    private Path propertiesDir;
+    private WatchService newWatchService;
+
+    public DefaultLogEventConfigurator(Path propertiesDir) {
+        this.propertiesDir = propertiesDir;
+    }
+
+    public DefaultLogEventConfigurator() {
+        this(Paths.get(".").toAbsolutePath().normalize());
+    }
+
     /**
      * Implementation of {@link LogEventConfigurator#configure(LogEventFactory)}.
      * Suitable for overriding.
      */
     @Override
     public void configure(LogEventFactory factory) {
-        setDefaultLogging(factory);
         installJavaUtilLoggingBridge();
-        loadConfigurationFiles(factory);
+        resetConfigurationFromFiles(factory);
+        startConfigurationFileWatcher(factory);
+    }
+
+    /**
+     * Starts a thread which watches the configurator's propertiesDir for changes
+     * and resets the configuration from files when something is changed.
+     */
+    protected void startConfigurationFileWatcher(LogEventFactory factory) {
+        try {
+            newWatchService = propertiesDir.getFileSystem().newWatchService();
+            propertiesDir.register(newWatchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+
+            Thread configurationWatcher = new Thread(() -> {
+                try {
+                    while (true) {
+                        WatchKey key = newWatchService.take();
+                        boolean shouldReload = false;
+                        List<String> fileNames = getConfigurationFileNames();
+                        for (WatchEvent<?> watchEvent : key.pollEvents()) {
+                            Path context = (Path)watchEvent.context();
+                            if (fileNames.contains(context.getFileName().toString())) {
+                                shouldReload = true;
+                            }
+                        }
+                        key.reset();
+                        if (shouldReload) {
+                            resetConfigurationFromFiles(factory);
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    LogEventStatus.getInstance().addInfo(DefaultLogEventConfigurator.this,
+                            this + " interrupted, exiting");
+                    return;
+                }
+            });
+            configurationWatcher.setName("Logevents-configuration-watcher");
+            configurationWatcher.setDaemon(true);
+            configurationWatcher.start();
+        } catch (IOException e) {
+            LogEventStatus.getInstance().addError(this, "Could not start file watcher", e);
+        }
     }
 
     /**
      * Read configuration from the default configuration file based on
      * {@link #getProfiles()}
      */
-    protected void loadConfigurationFiles(LogEventFactory factory) {
-        configure(factory, loadConfiguration(getProfiles()));
+    protected void resetConfigurationFromFiles(LogEventFactory factory) {
+        setDefaultLogging(factory);
+        loadConfiguration(factory, loadPropertiesFromFiles(getConfigurationFileNames()));
     }
 
     /**
@@ -96,24 +161,52 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
     /**
      * Loads all properties files relevant for the argument set of profiles
+     * @param configurationFileNames TODO
      */
-    protected Properties loadConfiguration(List<String> profiles) {
+    protected Properties loadPropertiesFromFiles(List<String> configurationFileNames) {
         Properties properties = new Properties();
-        loadConfig(properties, "/logevents.properties");
-        for (String profile : profiles) {
+        for (String filename : configurationFileNames) {
+            loadConfigResource(properties, filename);
+        }
+        for (String filename : configurationFileNames) {
+            loadConfigFile(properties, filename);
+        }
+        return properties;
+    }
+
+    /**
+     * Gets the corresponding configuration file names for the active profiles
+     */
+    protected List<String> getConfigurationFileNames() {
+        List<String> result = new ArrayList<>();
+        result.add("logevents.properties");
+        for (String profile : getProfiles()) {
             if (!profile.isEmpty()) {
-                loadConfig(properties, "/logevents-" + profile + ".properties");
+                result.add(String.format("logevents-%s.properties", profile));
             }
         }
+        return result;
+    }
 
-        return properties;
+    /**
+     * Inserts properties from the file into the properties if it exists.
+     */
+    protected void loadConfigFile(Properties properties, String fileName) {
+        if (Files.isRegularFile(this.propertiesDir.resolve(fileName))) {
+            try (InputStream propertiesFile = new FileInputStream(this.propertiesDir.resolve(fileName).toFile())) {
+                properties.load(propertiesFile);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
     }
 
     /**
      * Inserts properties from the resource name into the properties.
      */
-    protected void loadConfig(Properties properties, String resourceName) {
-        try (InputStream defaultPropertiesFile = getClass().getResourceAsStream(resourceName)) {
+    protected void loadConfigResource(Properties properties, String resourceName) {
+        try (InputStream defaultPropertiesFile = getClass().getClassLoader().getResourceAsStream(resourceName)) {
             if (defaultPropertiesFile != null) {
                 properties.load(defaultPropertiesFile);
             }
@@ -128,7 +221,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * properties on the format 'observers.prefix=ClassName' and loggers have
      * properties on the format 'logger.log.name=LEVEL observer1,observer2'.
      */
-    protected void configure(LogEventFactory factory, Properties configuration) {
+    protected void loadConfiguration(LogEventFactory factory, Properties configuration) {
         Map<String, LogEventObserver> observers = new HashMap<>();
         for (Object key : configuration.keySet()) {
             if (key.toString().startsWith("observer.")) {
