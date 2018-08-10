@@ -247,8 +247,8 @@ If running in JUnit, the profile `test` will be active by default (TODO).
 `logevents-<profile>.properties` for any properties set in one of the profile
 environment variables or system properties.
 
-You can use `LogEventsConfigurator.load(filename)` to read the configuration from a
-properties file explicitly.
+The properties files is read from the classpath and from the current working directory,
+which is also watched for changes in the files.
 
 The properties-file is on the following format:
 
@@ -468,5 +468,4 @@ less code to implement with Logevents.
 
 * MDC-based batching
 * JMX
-* Configuration on local directory with reload
 
