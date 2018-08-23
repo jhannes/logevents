@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.logevents</groupId>
     <artifactId>logevents</artifactId>
-    <version>0.1.4-SNAPSHOT</version>
+    <version>0.1.4</version>
     <name>logevents for Java</name>
     <description>Simple implementation of slf4j</description>
 
@@ -106,7 +106,7 @@
         <connection>scm:git:https://github.com/jhannes/logevents.git</connection>
         <developerConnection>scm:git:https://github.com/jhannes/logevents.git</developerConnection>
         <url>https://github.com/jhannes/logevents.git</url>
-        <tag>HEAD</tag>
+        <tag>logevents-0.1.4</tag>
     </scm>
     <distributionManagement>
         <snapshotRepository>
