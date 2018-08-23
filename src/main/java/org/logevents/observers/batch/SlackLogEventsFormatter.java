@@ -10,7 +10,7 @@ import java.util.Optional;
 
 import org.logevents.LogEvent;
 
-public class SlackLogMessageFactory {
+public class SlackLogEventsFormatter {
 
     private SlackExceptionFormatter exceptionFormatter = new SlackExceptionFormatter();
 

@@ -18,12 +18,21 @@ public class Configuration {
     }
 
     public URL getUrl(String key) {
+        return toUrl(key, getString(key));
+    }
+
+    private URL toUrl(String key, String string) {
         try {
-            return new URL(getString(key));
+            return new URL(string);
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
+            throw new IllegalArgumentException(fullKey(key) + " value " + string + ": " + e.getMessage());
         }
     }
+
+    public Optional<URL> optionalUrl(String key) {
+        return optionalString(key).map(s -> toUrl(key, s));
+    }
+
 
     public Optional<Integer> optionalInt(String key) {
         return optionalString(key).map(Integer::parseInt);
@@ -89,4 +98,5 @@ public class Configuration {
     public String getPrefix() {
         return prefix;
     }
+
 }

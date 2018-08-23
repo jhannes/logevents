@@ -28,7 +28,7 @@ import org.slf4j.event.Level;
 @SuppressWarnings("restriction")
 public class SlackLogEventBatchProcessorTest {
 
-    public static class Factory extends SlackLogMessageFactory {
+    public static class Formatter extends SlackLogEventsFormatter {
         @Override
         protected List<Map<String, Object>> createAttachments(LogEventGroup mainGroup, List<LogEventGroup> batch) {
             return null;
@@ -53,7 +53,7 @@ public class SlackLogEventBatchProcessorTest {
 
         Properties properties = new Properties();
         properties.setProperty("observer.slack.processor.slackUrl", "http://localhost:" + port);
-        properties.setProperty("observer.slack.processor.slackLogMessageFactory", Factory.class.getName());
+        properties.setProperty("observer.slack.processor.slackLogEventsFormatter", Formatter.class.getName());
         SlackLogEventBatchProcessor processor = new SlackLogEventBatchProcessor(properties, "observer.slack.processor");
         processor.setChannel("general");
         processor.setUsername("loguser");

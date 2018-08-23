@@ -32,7 +32,7 @@ public class SlackLogMessageFactoryTest {
         List<LogEventGroup> batch = new ArrayList<>();
         batch.add(new LogEventGroup(new LogEvent(loggerName, level, format)));
 
-        Map<String, Object> slackMessage = new SlackLogMessageFactory().createSlackMessage(batch, Optional.of(userName), Optional.of(channelName));
+        Map<String, Object> slackMessage = new SlackLogEventsFormatter().createSlackMessage(batch, Optional.of(userName), Optional.of(channelName));
         assertEquals(channelName, JsonUtil.getField(slackMessage, "channel"));
         assertContains(format, JsonUtil.getField(slackMessage, "text").toString());
 
@@ -53,7 +53,7 @@ public class SlackLogMessageFactoryTest {
         batch.add(logEventGroup);
         batch.add(new LogEventGroup(new LogEvent(loggerName, Level.ERROR, "Yet another message")));
 
-        Map<String, Object> slackMessage = new SlackLogMessageFactory().createSlackMessage(batch, Optional.empty(), Optional.empty());
+        Map<String, Object> slackMessage = new SlackLogEventsFormatter().createSlackMessage(batch, Optional.empty(), Optional.empty());
 
         Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);
         assertEquals("Suppressed log events", JsonUtil.getField(suppressedEventsAttachment, "title"));
@@ -68,7 +68,7 @@ public class SlackLogMessageFactoryTest {
         Exception exception = new IOException("Something went wrong with " + randomString());
         List<LogEventGroup> batch = new ArrayList<>();
         batch.add(new LogEventGroup(new LogEvent(loggerName, Level.WARN, "A lesser important message", exception)));
-        Map<String, Object> slackMessage = new SlackLogMessageFactory().createSlackMessage(batch, Optional.empty(), Optional.empty());
+        Map<String, Object> slackMessage = new SlackLogEventsFormatter().createSlackMessage(batch, Optional.empty(), Optional.empty());
 
         Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);
         assertEquals("Stack Trace", JsonUtil.getField(suppressedEventsAttachment, "title"));

@@ -18,21 +18,25 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
     private Optional<String> username = Optional.empty();
     private Optional<String> channel = Optional.empty();
     private URL slackUrl;
-    private SlackLogMessageFactory slackLogMessageFactory;
+    private SlackLogEventsFormatter slackLogEventsFormatter;
 
     public SlackLogEventBatchProcessor(URL url) {
         this.slackUrl = url;
-        slackLogMessageFactory = new SlackLogMessageFactory();
+        setSlackLogEventsFormatter(new SlackLogEventsFormatter());
     }
 
     public SlackLogEventBatchProcessor(Properties properties, String prefix) throws MalformedURLException {
         Configuration configuration = new Configuration(properties, prefix);
         username = configuration.optionalString("username");
         channel = configuration.optionalString("channel");
-        slackUrl = configuration.getUrl("slackUrl");
-        slackLogMessageFactory = configuration.createInstance("slackLogMessageFactory", SlackLogMessageFactory.class);
+        slackUrl = configuration.optionalUrl("slackUrl").orElse(null);
+        setSlackLogEventsFormatter(configuration.createInstance("slackLogEventsFormatter", SlackLogEventsFormatter.class));
 
         LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
+    }
+
+    public void setSlackLogEventsFormatter(SlackLogEventsFormatter slackLogEventsFormatter) {
+        this.slackLogEventsFormatter = slackLogEventsFormatter;
     }
 
     public void setUsername(String username) {
@@ -45,9 +49,12 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
 
     @Override
     public void processBatch(List<LogEventGroup> batch) {
+        if (slackUrl == null) {
+            return;
+        }
         Map<String, Object> slackMessage;
         try {
-            slackMessage = slackLogMessageFactory.createSlackMessage(batch, username, channel);
+            slackMessage = slackLogEventsFormatter.createSlackMessage(batch, username, channel);
         } catch (Exception e) {
             LogEventStatus.getInstance().addFatal(this, "Runtime error generating slack message", e);
             return;
