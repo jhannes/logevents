@@ -14,7 +14,7 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
 
         @Override
         public String format(LogEvent logEvent) {
-            return String.format("TEST(%s) %s [%s] [%s] [%s]: %s\n",
+            return String.format("TEST(%s) %s [%s] [%s] [%s]: %s",
                     getTestMethod(logEvent),
                     logEvent.getZonedDateTime().toLocalTime(),
                     logEvent.getThreadName(),

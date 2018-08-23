@@ -22,7 +22,7 @@ public class ConsoleLogEventFormatterTest {
     public void shouldLogMessage() {
         Instant time = ZonedDateTime.of(2018, 8, 1, 10, 0, 0, 0, ZoneId.systemDefault()).toInstant();
         String message = formatter.format(new LogEvent(loggerName, Level.INFO, time, null, "Hello {}", new Object[] { "there" }));
-        assertEquals("10:00 [main] [\033[34mINFO \033[m] [\033[1;mcom.example.LoggerName\033[m]: Hello there\n",
+        assertEquals("10:00 [main] [\033[34mINFO \033[m] [\033[1;mcom.example.LoggerName\033[m]: Hello there",
                 message);
     }
 
