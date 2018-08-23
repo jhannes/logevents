@@ -191,11 +191,22 @@ public class LogEvent implements LoggingEvent {
             StackTraceElement stackTraceElement = stackTrace[i];
             if (stackTraceElement.getClassName().equals(LoggerDelegator.class.getName())) {
                 assert !stackTrace[i+1].getClassName().startsWith("org.slf4j.");
+
+                while (isLoggingClass(stackTrace[i+1])) {
+                    i++;
+                }
+
                 this.callerLocation = stackTrace[i+1];
                 return callerLocation;
             }
         }
         throw new RuntimeException("Could not find calling stack trace element!");
+    }
+
+    private boolean isLoggingClass(StackTraceElement stackTraceElement) {
+        String className = stackTraceElement.getClassName();
+        return className.startsWith("org.apache.commons.logging.") || className.startsWith("org.flywaydb.core.internal.util.logging.")
+                || className.startsWith("java.util.logging.") || className.startsWith("org.log4j.");
     }
 
     public StackTraceElement[] getStackTrace() {
