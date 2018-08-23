@@ -22,29 +22,41 @@ import org.logevents.util.Configuration;
  */
 public class FileDestination implements LogEventDestination {
 
-    private Path logDirectory;
+    protected Path logDirectory;
     private FileChannel channel;
-    private Path path;
     private Path openedPath;
     private Instant circuitBrokenUntil;
     private int successiveErrors;
+    private Path fileName;
 
-    public FileDestination(String filename) throws IOException {
-        this.path = Paths.get(filename);
-        logDirectory = path.getParent();
-        if (logDirectory == null) {
-            logDirectory = Paths.get(".");
-        } else {
-            Files.createDirectories(logDirectory);
-        }
+    public FileDestination(String filename) {
+        this(Paths.get(filename));
     }
 
-    public FileDestination(Configuration configuration) throws IOException {
+    public FileDestination(Configuration configuration) {
         this(configuration.getString("filename"));
     }
 
-    public FileDestination(Properties configuration, String prefix) throws IOException {
+    public FileDestination(Properties configuration, String prefix) {
         this(new Configuration(configuration, prefix));
+    }
+
+    public FileDestination(Path path) {
+        this(path.getParent(), path.getFileName());
+    }
+
+    public FileDestination(Path parent, Path fileName) {
+        this.logDirectory = parent;
+        this.fileName = fileName;
+        if (logDirectory == null) {
+            logDirectory = Paths.get(".");
+        } else {
+            try {
+                Files.createDirectories(logDirectory);
+            } catch (IOException e) {
+                LogEventStatus.getInstance().addFatal(this, "Can't create directory " + logDirectory, e);
+            }
+        }
     }
 
     @Override
@@ -105,11 +117,12 @@ public class FileDestination implements LogEventDestination {
     }
 
     public Path getPath() {
-        return path;
+        return logDirectory.resolve(fileName);
     }
 
     public synchronized void setPath(Path path) {
-        this.path = path;
+        this.logDirectory = path.getParent();
+        this.fileName = path.getFileName();
     }
 
     public int getCircuitBreakThreshold() {

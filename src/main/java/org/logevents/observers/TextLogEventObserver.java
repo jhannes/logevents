@@ -37,7 +37,7 @@ public class TextLogEventObserver implements LogEventObserver {
     @Override
     public void logEvent(LogEvent logEvent) {
         try {
-            destination.writeEvent(formatter.format(logEvent));
+            destination.writeEvent(formatter.format(logEvent) + "\n");
         } catch (IOException e) {
             LogEventStatus.getInstance().addError(this, "Failed to write log event", e);
         }

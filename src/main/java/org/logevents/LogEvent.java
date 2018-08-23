@@ -43,8 +43,9 @@ public class LogEvent implements LoggingEvent {
     private final Map<String, String> mdcProperties;
 
     private StackTraceElement callerLocation;
+    private StackTraceElement[] stackTrace;
 
-    public LogEvent(String loggerName, Level level, Marker marker, String format, Object[] args, Instant timestamp) {
+    public LogEvent(String loggerName, Level level, Instant timestamp, Marker marker, String format, Object... args) {
         this.loggerName = loggerName;
         this.level = level;
         this.marker = marker;
@@ -62,11 +63,11 @@ public class LogEvent implements LoggingEvent {
     }
 
     public LogEvent(String loggerName, Level level, Marker marker, String format, Object... args) {
-        this(loggerName, level, marker, format, args, Instant.now());
+        this(loggerName, level, Instant.now(), marker, format, args);
     }
 
     public LogEvent(String loggerName, Level level, String format, Object... args) {
-        this(loggerName, level, null, format, args, Instant.now());
+        this(loggerName, level, Instant.now(), null, format, args);
     }
 
     /**
@@ -185,7 +186,7 @@ public class LogEvent implements LoggingEvent {
         if (this.threadId != Thread.currentThread().getId()) {
             throw new IllegalStateException("Can't find caller location from different thread");
         }
-        StackTraceElement[] stackTrace = new Throwable().getStackTrace();
+        StackTraceElement[] stackTrace = getStackTrace();
         for (int i = 0; i < stackTrace.length-1; i++) {
             StackTraceElement stackTraceElement = stackTrace[i];
             if (stackTraceElement.getClassName().equals(LoggerDelegator.class.getName())) {
@@ -195,6 +196,13 @@ public class LogEvent implements LoggingEvent {
             }
         }
         throw new RuntimeException("Could not find calling stack trace element!");
+    }
+
+    public StackTraceElement[] getStackTrace() {
+        if (stackTrace == null) {
+            stackTrace = new Throwable().getStackTrace();
+        }
+        return stackTrace;
     }
 
     public int getCallerLine() {
@@ -210,7 +218,6 @@ public class LogEvent implements LoggingEvent {
     }
 
     public String getCallerFileName() {
-        // TODO Better implementation
         return getCallerLocation().getFileName();
     }
 

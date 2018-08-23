@@ -23,7 +23,7 @@ public class LogEventRule implements TestRule, LogEventObserver {
     private Level level;
     private List<LogEvent> events = new ArrayList<>();
 
-    public LogEventRule(String logName, Level level) {
+    public LogEventRule(Level level, String logName) {
         this.logName = logName;
         this.level = level;
     }
@@ -40,7 +40,7 @@ public class LogEventRule implements TestRule, LogEventObserver {
                 events.isEmpty());
     }
 
-    public void assertSingleMessage(String message, Level level) {
+    public void assertSingleMessage(Level level, String message) {
         List<LogEvent> events = this.events.stream()
             .filter(m -> m.getLevel().equals(level))
             .collect(Collectors.toList());
@@ -50,7 +50,7 @@ public class LogEventRule implements TestRule, LogEventObserver {
         assertEquals(level, events.get(0).getLevel());
     }
 
-    public void assertContainsMessage(String message, Level level) {
+    public void assertContainsMessage(Level level, String message) {
         assertFalse("Expected <" + message + "> but no messages were logged",
                 events.isEmpty());
         for (LogEvent event : events) {

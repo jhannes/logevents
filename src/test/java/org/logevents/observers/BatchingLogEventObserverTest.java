@@ -74,14 +74,14 @@ public class BatchingLogEventObserverTest {
 
         Instant now = ZonedDateTime.of(2018, 8, 1, 20, 0, 0, 0, ZoneId.systemDefault()).toInstant();
 
-        LogEvent firstMessage = new LogEvent(getClass().getName(), Level.INFO, null, "a", new Object[0],
-                now.minus(maximumWaitTime).minus(Duration.ofMillis(100)));
+        LogEvent firstMessage = new LogEvent(getClass().getName(), Level.INFO, now.minus(maximumWaitTime).minus(Duration.ofMillis(100)), null, "a",
+                new Object[0]);
         Instant firstMessageSend = observer.logEvent(firstMessage, firstMessage.getInstant());
         assertTrue(firstMessageSend + " should be after " + firstMessage.getInstant(),
                 firstMessageSend.isAfter(firstMessage.getInstant()));
 
-        LogEvent secondMessage = new LogEvent(getClass().getName(), Level.INFO, null, "b", new Object[0],
-                now);
+        LogEvent secondMessage = new LogEvent(getClass().getName(), Level.INFO, now, null, "b",
+                new Object[0]);
         Instant secondMessageSend = observer.logEvent(secondMessage, secondMessage.getInstant());
         assertTrue(secondMessageSend + " should not be after " + secondMessage.getInstant(), !secondMessageSend.isAfter(secondMessage.getInstant()));
 

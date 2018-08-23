@@ -242,12 +242,28 @@ public class LogEventFactory implements ILoggerFactory {
 
         if (!serviceLoader.iterator().hasNext()) {
             LogEventStatus.getInstance().addInfo(this, "No configuration found - using default");
-            new DefaultLogEventConfigurator().configure(this);
+            if (isRunningInsideJunit()) {
+                new DefaultTestLogEventConfigurator().configure(this);
+            } else {
+                new DefaultLogEventConfigurator().configure(this);
+            }
         } else {
             serviceLoader.forEach(c -> {
                 LogEventStatus.getInstance().addInfo(this, "Loading service loader " + c);
                 c.configure(this);
             });
         }
+    }
+
+    /**
+     * Detects whether we are currently running in a unit test. Used to set default log level.
+     */
+    protected boolean isRunningInsideJunit() {
+        for (StackTraceElement stackTraceElement : new Throwable().getStackTrace()) {
+            if (stackTraceElement.getClassName().startsWith("org.junit.runners")) {
+                return true;
+            }
+        }
+        return false;
     }
 }

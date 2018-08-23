@@ -26,10 +26,10 @@ import org.slf4j.event.Level;
 
 public class PatternLogEventFormatterTest {
 
-    private Instant time = Instant.now();
+    private Instant time = Instant.ofEpochMilli(1535056492088L);
     private PatternLogEventFormatter formatter = new PatternLogEventFormatter("No pattern");
-    private LogEvent event = new LogEvent("some.logger.name", Level.INFO, "A message from {} to {}",
-            new Object[] { "A", "B" }, time);
+    private LogEvent event = new LogEvent("some.logger.name", Level.INFO, time, null, "A message from {} to {}",
+            new Object[] { "A", "B" });
     private ConsoleFormatting formatting = ConsoleFormatting.getInstance();
 
     @Test(expected = IllegalArgumentException.class)
@@ -53,7 +53,7 @@ public class PatternLogEventFormatterTest {
     @Test
     public void shouldOutputTime() {
         formatter.setPattern("%date");
-        assertEquals(time.toString(), formatter.format(event));
+        assertEquals("2018-08-23 22:34:52.088", formatter.format(event));
 
         formatter.setPattern("%date{HH:mm:ss}");
         assertEquals(DateTimeFormatter.ofPattern("HH:mm:ss").format(time.atZone(ZoneId.systemDefault())),

@@ -117,8 +117,18 @@ public class DefaultLogEventConfiguratorTest {
         newPropertiesFile.setProperty("root", "INFO");
         writeProps(propertiesDir.resolve("logevents-production.properties"), newPropertiesFile);
         assertEquals("INFO", logEventFactory.getRootLogger().getLevelThreshold().toString());
+    }
+
+    @Test
+    public void shouldFindTestMethod() {
+        LogEvent logEvent = new LogEvent("test", Level.INFO, "Testing");
+
+        String formattedMessage = new DefaultTestLogEventConfigurator().createFormatter().format(logEvent);
+        assertTrue(formattedMessage + " should start with test name",
+                formattedMessage.startsWith("TEST(DefaultLogEventConfiguratorTest.shouldFindTestMethod)"));
 
     }
+
 
     private void writeProps(Path file, Properties defaultProperties) throws IOException {
         try (FileWriter writer = new FileWriter(file.toFile())) {

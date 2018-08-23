@@ -137,26 +137,10 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * Logs to the console at level INFO, or level WARN if running in JUnit.
      */
     protected void setDefaultLogging(LogEventFactory factory) {
-        if (isRunningInsideJunit()) {
-            factory.setLevel(factory.getRootLogger(), Level.WARN);
-        } else {
-            factory.setLevel(factory.getRootLogger(), Level.INFO);
-        }
+        factory.setLevel(factory.getRootLogger(), Level.INFO);
         factory.setObserver(factory.getRootLogger(),
                 new ConsoleLogEventObserver(),
                 false);
-    }
-
-    /**
-     * Detects whether we are currently running in a unit test. Used to set default log level.
-     */
-    protected boolean isRunningInsideJunit() {
-        for (StackTraceElement stackTraceElement : new Throwable().getStackTrace()) {
-            if (stackTraceElement.getClassName().startsWith("org.junit.runners")) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

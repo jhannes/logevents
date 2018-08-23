@@ -14,12 +14,12 @@ public class LogEventRuleTest {
     private Logger logger = LoggerFactory.getLogger("com.example.application.Service");
 
     @Rule
-    public LogEventRule logEventRule = new LogEventRule("com.example", Level.DEBUG);
+    public LogEventRule logEventRule = new LogEventRule(Level.DEBUG, "com.example");
 
     @Test
     public void shouldCaptureSingleLogEvent() {
         logger.debug("Hello world");
-        logEventRule.assertSingleMessage("Hello world", Level.DEBUG);
+        logEventRule.assertSingleMessage(Level.DEBUG, "Hello world");
     }
 
     @Test
@@ -27,7 +27,7 @@ public class LogEventRuleTest {
         logger.debug("Not this one");
         logger.debug("Hello world");
         logger.info("Hello world");
-        logEventRule.assertContainsMessage("Hello world", Level.DEBUG);
+        logEventRule.assertContainsMessage(Level.DEBUG, "Hello world");
     }
 
     @Test
@@ -46,7 +46,7 @@ public class LogEventRuleTest {
     public void shouldChangeCaptureLevel() {
         logEventRule.setLevel(Level.TRACE);
         logger.trace("Trace message - SHOULD be logged");
-        logEventRule.assertSingleMessage("Trace message - SHOULD be logged", Level.TRACE);
+        logEventRule.assertSingleMessage(Level.TRACE, "Trace message - SHOULD be logged");
     }
 
     @Test

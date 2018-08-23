@@ -3,6 +3,7 @@ package org.logevents.formatting;
 import java.util.Locale;
 
 import org.fusesource.jansi.AnsiConsole;
+import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
 
 /**
@@ -25,9 +26,11 @@ public class ConsoleFormatting {
                 instance = new ConsoleFormatting();
             } else {
                 try {
+                    Class.forName("org.fusesource.jansi.AnsiConsole");
                     AnsiConsole.systemInstall();
                     instance = new ConsoleFormatting();
-                } catch (NoClassDefFoundError e) {
+                } catch (ClassNotFoundException e) {
+                    LogEventStatus.getInstance().addInfo(ConsoleFormatting.class, "Could not load jansi - color output not supported on Windows ");
                     instance = nullConsoleFormatting();
                 }
             }
