@@ -1,0 +1,40 @@
+@startuml
+
+package "slf4j" {
+  interface Logger
+  interface ILoggerFactory
+}
+
+package "org.logevents" {
+
+	class LoggerDelegator implements Logger
+	
+	class LogEventFactory implements ILoggerFactory
+		
+	interface LogEventObserver {
+	  logEvent(e)
+	}
+	LoggerDelegator ..> LogEventObserver
+	
+	class CompositeLogEventObserver implements LogEventObserver
+	class ConditionalLogEventObserver implements LogEventObserver
+	class TextLogEventObserver implements LogEventObserver
+	CompositeLogEventObserver ..> "*" LogEventObserver
+	ConditionalLogEventObserver ..> "1" LogEventObserver
+	
+	
+	package "destinations" {
+		interface LogEventFormatter
+		TextLogEventObserver ..> LogEventFormatter
+		class PatternFormatter implements LogEventFormatter
+		
+		interface LogEventDestination
+		TextLogEventObserver ..> LogEventDestination
+
+		class ConsoleLogEventDestination implements LogEventDestination
+		class FileLogEventDestination implements LogEventDestination
+	}
+	
+}
+	
+@enduml

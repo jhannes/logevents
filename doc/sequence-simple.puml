@@ -1,0 +1,43 @@
+@startuml
+
+title Simple Sequence Diagram
+
+participant MyLogger
+participant CompositeObserver
+participant ConditionalObserver
+participant file
+participant console
+participant ConsoleDestination
+participant FileDestination
+
+
+[-> MyLogger: error("Something went wrong")
+activate MyLogger
+  MyLogger -> MyLogger: create LogEvent
+  MyLogger -> CompositeObserver ++: logEvent(event)
+
+  loop observer in observers
+    CompositeObserver -> ConditionalObserver ++: logEvent(event)
+    alt event.level >= threshold
+        ConditionalObserver -> console ++: logEvent(event)
+        console -> console: text := formatEvent(event)
+        console -> ConsoleDestination ++: writeLine(text)
+        console <-- ConsoleDestination --
+        ConditionalObserver <-- console --
+    end
+    CompositeObserver <-- ConditionalObserver --
+  
+    CompositeObserver -> file ++: logEvent(event)
+      file -> file: text := formatEvent(event)
+      file -> FileDestination ++: writeLine(text)
+      file <-- FileDestination --
+    CompositeObserver <-- file --
+  end loop
+
+
+  MyLogger <-- CompositeObserver --
+deactivate MyLogger
+
+
+
+@enduml
