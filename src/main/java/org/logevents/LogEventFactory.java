@@ -120,7 +120,7 @@ public class LogEventFactory implements ILoggerFactory {
     }
 
     @Override
-    public LoggerConfiguration getLogger(String name) {
+    public synchronized LoggerConfiguration getLogger(String name) {
         if (!loggerCache.containsKey(name)) {
             int lastPeriodPos = name.lastIndexOf('.');
             LoggerConfiguration parent = (lastPeriodPos < 0 ? rootLogger : getLogger(name.substring(0, lastPeriodPos)));
