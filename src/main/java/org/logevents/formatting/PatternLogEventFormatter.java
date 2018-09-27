@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 import org.logevents.LogEvent;
 import org.logevents.util.Configuration;
+import org.logevents.util.StringScanner;
 
 /**
  * This class represents a {@link LogEventFormatter} which outputs the

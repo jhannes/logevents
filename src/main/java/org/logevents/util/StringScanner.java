@@ -1,6 +1,8 @@
-package org.logevents.formatting;
+package org.logevents.util;
 
 import java.util.Optional;
+
+import org.logevents.formatting.PatternLogEventFormatter;
 
 /**
  * Utility method used to handle {@link PatternLogEventFormatter}

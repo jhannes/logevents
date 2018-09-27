@@ -1,4 +1,4 @@
-package org.logevents.destinations;
+package org.logevents.observers;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -18,7 +18,7 @@ import org.logevents.status.LogEventStatus;
  * @author Johannes Brodwall
  *
  */
-public class FileDestination {
+class FileDestination {
 
     protected Path logDirectory;
     private FileChannel channel;

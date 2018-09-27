@@ -15,12 +15,11 @@ import java.util.stream.Collectors;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
-import org.logevents.destinations.FileDestination;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.PatternConverterSpec;
-import org.logevents.formatting.StringScanner;
 import org.logevents.formatting.TTLLEventLogFormatter;
 import org.logevents.util.Configuration;
+import org.logevents.util.StringScanner;
 
 public class FileLogEventObserver implements LogEventObserver {
 

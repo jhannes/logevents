@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
+import org.logevents.util.StringScanner;
+
 /**
  * Used to parse a single conversion for {@link PatternLogEventFormatter}. A
  * conversion is on the format

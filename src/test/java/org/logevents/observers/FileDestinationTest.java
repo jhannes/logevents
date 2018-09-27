@@ -1,4 +1,4 @@
-package org.logevents.destinations;
+package org.logevents.observers;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -19,6 +19,7 @@ import java.util.Properties;
 
 import org.junit.Assume;
 import org.junit.Test;
+import org.logevents.observers.FileDestination;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.logevents.status.StatusEvent.StatusLevel;
