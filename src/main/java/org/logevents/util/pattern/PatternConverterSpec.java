@@ -1,11 +1,12 @@
-package org.logevents.formatting;
+package org.logevents.util.pattern;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
-import org.logevents.util.StringScanner;
+import org.logevents.formatting.PatternLogEventFormatter;
 
 /**
  * Used to parse a single conversion for {@link PatternLogEventFormatter}. A
@@ -15,13 +16,13 @@ import org.logevents.util.StringScanner;
  * @author Johannes Brodwall
  *
  */
-public class PatternConverterSpec {
+public class PatternConverterSpec<T extends Function<?, String>> {
 
     private Optional<Integer> minLength;
     private Optional<Integer> maxLength;
     private String conversionWord;
     private List<String> parameters = new ArrayList<>();
-    private Optional<LogEventFormatter> subpattern = Optional.empty();
+    private Optional<T> subpattern = Optional.empty();
     private StringScanner scanner;
     private BiFunction<Throwable, Optional<Integer>, String> throwableFormatter;
 
@@ -34,7 +35,7 @@ public class PatternConverterSpec {
      * once as it doesn't rewind the scanner.
      * @param formatter Used for sub-patterns
      */
-    public void readConversion(PatternLogEventFormatter formatter) {
+    public void readConversion(PatternReader<T> formatter) {
         readConversion();
         try {
             readSubpattern(formatter);
@@ -81,7 +82,7 @@ public class PatternConverterSpec {
      * A fully parsed sub pattern specified in parenthesis () after the conversion word.
      * The string used in the subpattern can contain further conversions of its own.
      */
-    public Optional<LogEventFormatter> getSubpattern() {
+    public Optional<T> getSubpattern() {
         return subpattern;
     }
 
@@ -103,12 +104,12 @@ public class PatternConverterSpec {
         return getParameter(i).map(Integer::parseInt);
     }
 
-    private void readSubpattern(PatternLogEventFormatter formatter) {
+    private void readSubpattern(PatternReader<T> parser) {
         // TODO: Should only read subpattern for %replace and %<colors>, so that
         //   it's possible to do %file(%line)
         if (scanner.current() == '(')  {
             scanner.advance();
-            this.subpattern = Optional.of(formatter.readConverter(scanner, ')'));
+            this.subpattern = Optional.of(parser.readConverter(scanner, ')'));
             scanner.advance();
         }
     }

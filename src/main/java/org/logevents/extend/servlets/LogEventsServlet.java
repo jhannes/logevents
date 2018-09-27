@@ -77,7 +77,7 @@ public class LogEventsServlet extends HttpServlet {
     private List<String> convert(Collection<LogEvent> events) {
         ArrayList<String> result = new ArrayList<>();
         for (LogEvent event : events) {
-            result.add(formatter.format(event));
+            result.add(formatter.apply(event));
         }
         return result;
     }

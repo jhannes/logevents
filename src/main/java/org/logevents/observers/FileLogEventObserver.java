@@ -5,26 +5,20 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.formatting.LogEventFormatter;
-import org.logevents.formatting.PatternConverterSpec;
+import org.logevents.formatting.LogEventFormatterBuilderFactory;
 import org.logevents.formatting.TTLLEventLogFormatter;
 import org.logevents.util.Configuration;
-import org.logevents.util.StringScanner;
+import org.logevents.util.pattern.PatternReader;
 
 public class FileLogEventObserver implements LogEventObserver {
 
     protected final Path path;
-    private final Function<LogEvent, String> filenameGenerator;
+    private final LogEventFormatter filenameGenerator;
     private final LogEventFormatter formatter;
     private final FileDestination destination;
 
@@ -41,13 +35,14 @@ public class FileLogEventObserver implements LogEventObserver {
     public FileLogEventObserver(LogEventFormatter formatter, Path path) {
         this.formatter = formatter;
         this.path = path;
-        this.filenameGenerator = parseFilenameGenerator(path.getFileName().toString());
-        destination = new FileDestination(path.getParent());
+
+        this.filenameGenerator = new PatternReader<LogEventFormatter>(factory).readPattern(path.getFileName().toString());
+        this.destination = new FileDestination(path.getParent());
     }
 
     @Override
     public void logEvent(LogEvent logEvent) {
-        destination.writeEvent(getFilename(logEvent), formatter.format(logEvent) + "\n");
+        destination.writeEvent(getFilename(logEvent), formatter.apply(logEvent) + "\n");
     }
 
     protected String getFilename(LogEvent logEvent) {
@@ -62,7 +57,7 @@ public class FileLogEventObserver implements LogEventObserver {
     }
 
 
-    private static Map<String, Function<PatternConverterSpec, Function<LogEvent, String>>> factory = new HashMap<>();
+    private static LogEventFormatterBuilderFactory factory = new LogEventFormatterBuilderFactory();
 
     static {
         factory.put("date", spec -> {
@@ -76,43 +71,6 @@ public class FileLogEventObserver implements LogEventObserver {
         });
 
         factory.put("d", factory.get("date"));
-    }
-
-    private static Function<LogEvent, String> parseFilenameGenerator(String filenamePattern) {
-        StringScanner scanner = new StringScanner(filenamePattern);
-
-        List<Function<LogEvent, String>> converters = new ArrayList<>();
-        while (scanner.hasMoreCharacters()) {
-            // TODO: Escaped %
-            String text = scanner.readUntil('%');
-            if (text.length() > 0) {
-                converters.add(getConstant(text));
-            }
-            if (scanner.hasMoreCharacters()) {
-                PatternConverterSpec patternSpec = new PatternConverterSpec(scanner);
-                patternSpec.readConversion();
-                converters.add(createPattern(patternSpec));
-            }
-        }
-
-        return compositeFormatter(converters);
-    }
-
-    private static Function<LogEvent, String> compositeFormatter(List<Function<LogEvent, String>> converters) {
-        return e -> converters.stream()
-                .map(converter -> converter.apply(e))
-                .collect(Collectors.joining(""));
-    }
-
-    private static Function<LogEvent, String> createPattern(PatternConverterSpec patternSpec) {
-        if (!factory.containsKey(patternSpec.getConversionWord())) {
-            throw new IllegalArgumentException("Unknown conversion <%" + patternSpec + "> not in " + factory.keySet());
-        }
-        return factory.get(patternSpec.getConversionWord()).apply(patternSpec);
-    }
-
-    private static Function<LogEvent, String> getConstant(String string) {
-        return e -> string;
     }
 
 }

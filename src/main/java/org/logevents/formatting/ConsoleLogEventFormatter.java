@@ -6,7 +6,7 @@ import org.slf4j.event.Level;
 
 /**
  * A simple formatter used by {@link ConsoleLogEventObserver} by default.
- * Suitable for overriding {@link #format(LogEvent)}
+ * Suitable for overriding {@link #apply(LogEvent)}
  *
  * @author Johannes Brodwall
  *
@@ -18,7 +18,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
 
     @Override
-    public String format(LogEvent e) {
+    public String apply(LogEvent e) {
         return String.format("%s [%s] [%s] [%s]: %s",
                 e.getZonedDateTime().toLocalTime(),
                 e.getThreadName(),

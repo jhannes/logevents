@@ -124,7 +124,7 @@ public class DefaultLogEventConfiguratorTest {
     public void shouldFindTestMethod() {
         LogEvent logEvent = new LogEvent("test", Level.INFO, "Testing");
 
-        String formattedMessage = new DefaultTestLogEventConfigurator().createFormatter().format(logEvent);
+        String formattedMessage = new DefaultTestLogEventConfigurator().createFormatter().apply(logEvent);
         assertTrue(formattedMessage + " should start with test name",
                 formattedMessage.startsWith("TEST(DefaultLogEventConfiguratorTest.shouldFindTestMethod)"));
 

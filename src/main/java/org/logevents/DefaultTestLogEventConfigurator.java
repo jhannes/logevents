@@ -13,7 +13,7 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
     private static class ConsoleLogEventTestFormatter extends ConsoleLogEventFormatter {
 
         @Override
-        public String format(LogEvent logEvent) {
+        public String apply(LogEvent logEvent) {
             return String.format("TEST(%s) %s [%s] [%s] [%s]: %s",
                     getTestMethod(logEvent),
                     logEvent.getZonedDateTime().toLocalTime(),

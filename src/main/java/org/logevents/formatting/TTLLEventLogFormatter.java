@@ -13,7 +13,7 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
 
     @Override
-    public String format(LogEvent e) {
+    public String apply(LogEvent e) {
         return String.format("%s [%s] [%s] [%s]: %s",
                 e.getZonedDateTime().toLocalTime(),
                 e.getThreadName(),

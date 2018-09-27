@@ -40,7 +40,7 @@ public class ConsoleLogEventObserver implements LogEventObserver {
 
     @Override
     public void logEvent(LogEvent logEvent) {
-        System.out.print(formatter.format(logEvent));
+        System.out.print(formatter.apply(logEvent));
         System.out.flush();
     }
 

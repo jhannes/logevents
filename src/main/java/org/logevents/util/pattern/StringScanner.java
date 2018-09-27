@@ -1,4 +1,4 @@
-package org.logevents.util;
+package org.logevents.util.pattern;
 
 import java.util.Optional;
 
