@@ -1,7 +1,5 @@
 package org.logevents.destinations;
 
-import java.io.IOException;
-
 /**
  * Represents a destination for formatted log messages. Usually
  * a file or console.
@@ -11,6 +9,6 @@ import java.io.IOException;
  */
 public interface LogEventDestination {
 
-    void writeEvent(String format) throws IOException;
+    void writeEvent(String format);
 
 }

@@ -30,7 +30,7 @@ public class FileDestinationTest {
         Path path = Paths.get("target", "logs", "file-test.log");
         FileDestination file = createFileDestination(path);
 
-        file.writeEvent("Hello world\n");
+        file.writeEvent(path.getFileName().toString(), "Hello world\n");
 
         assertEquals(Arrays.asList("Hello world"), Files.readAllLines(path));
     }
@@ -42,11 +42,11 @@ public class FileDestinationTest {
 
         // Now we can't log to path, because it's an existing DIRECTORY
         Files.createDirectories(path);
-        file.writeEvent("Test message - dropped because log file is blocked by existing directory\n");
-        file.writeEvent("Test message - also dropped\n");
+        file.writeEvent(path.getFileName().toString(), "Test message - dropped because log file is blocked by existing directory\n");
+        file.writeEvent(path.getFileName().toString(), "Test message - also dropped\n");
 
         Files.delete(path);
-        file.writeEvent("Test message - written as we recover\n");
+        file.writeEvent(path.getFileName().toString(), "Test message - written as we recover\n");
 
         assertEquals(Arrays.asList("Test message - written as we recover"), Files.readAllLines(path));
     }
@@ -60,15 +60,15 @@ public class FileDestinationTest {
         Files.createDirectories(path);
 
         for (int i = 0; i < file.getCircuitBreakThreshold() + 1; i++) {
-            file.writeEvent("Test message - file can't be created\n");
+            file.writeEvent(path.getFileName().toString(), "Test message - file can't be created\n");
         }
 
         // Now we can write...
         Files.deleteIfExists(path);
-        file.writeEvent("Test message - won't be written because circuit is broken\n");
+        file.writeEvent(path.getFileName().toString(), "Test message - won't be written because circuit is broken\n");
 
         file.setCircuitBrokenUntil(Instant.now().minusMillis(1));
-        file.writeEvent("Test message - circuit is recovered\n");
+        file.writeEvent(path.getFileName().toString(), "Test message - circuit is recovered\n");
 
         assertEquals(Arrays.asList("Test message - circuit is recovered"), Files.readAllLines(path));
     }
@@ -81,10 +81,9 @@ public class FileDestinationTest {
 
         FileDestination file = createFileDestination(first);
 
-        file.writeEvent("Written to old file\n");
+        file.writeEvent(first.getFileName().toString(), "Written to old file\n");
 
-        file.setPath(second);
-        file.writeEvent("Written to new file\n");
+        file.writeEvent(second.getFileName().toString(), "Written to new file\n");
         assertEquals(Arrays.asList("Written to new file"), Files.readAllLines(second));
 
     }
@@ -116,9 +115,9 @@ public class FileDestinationTest {
 
         Properties properties = new Properties();
         properties.setProperty("observer.file.destination.filename", path.toString());
-        FileDestination file = new FileDestination(properties, "observer.file.destination");
+        FileDestination file = new FileDestination(path.getParent());
 
-        file.writeEvent("Test message\n");
+        file.writeEvent(path.getFileName().toString(), "Test message\n");
 
         assertTrue(process.isAlive());
         process.destroy();
@@ -132,7 +131,7 @@ public class FileDestinationTest {
 
         assertEquals(Collections.emptyList(), Files.readAllLines(path));
 
-        file.writeEvent("Test message\n");
+        file.writeEvent(path.getFileName().toString(), "Test message\n");
         assertEquals(Arrays.asList("Test message"), Files.readAllLines(path));
     }
 
@@ -140,7 +139,7 @@ public class FileDestinationTest {
         Files.deleteIfExists(path);
         Properties properties = new Properties();
         properties.setProperty("observer.file.destination.filename", path.toString());
-        FileDestination file = new FileDestination(properties, "observer.file.destination");
+        FileDestination file = new FileDestination(path.getParent());
         return file;
     }
 

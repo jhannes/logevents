@@ -18,21 +18,16 @@ package "org.logevents" {
 	
 	class CompositeLogEventObserver implements LogEventObserver
 	class ConditionalLogEventObserver implements LogEventObserver
-	class TextLogEventObserver implements LogEventObserver
+	class FileLogEventObserver implements LogEventObserver
 	CompositeLogEventObserver ..> "*" LogEventObserver
 	ConditionalLogEventObserver ..> "1" LogEventObserver
 	
 	
-	package "destinations" {
+	package "formatting" {
 		interface LogEventFormatter
-		TextLogEventObserver ..> LogEventFormatter
+		FileLogEventObserver ..> LogEventFormatter
 		class PatternFormatter implements LogEventFormatter
-		
-		interface LogEventDestination
-		TextLogEventObserver ..> LogEventDestination
-
-		class ConsoleLogEventDestination implements LogEventDestination
-		class FileLogEventDestination implements LogEventDestination
+        class TTLLFormatter implements LogEventFormatter
 	}
 	
 }

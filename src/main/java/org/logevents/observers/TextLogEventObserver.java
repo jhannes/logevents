@@ -1,6 +1,5 @@
 package org.logevents.observers;
 
-import java.io.IOException;
 import java.util.Properties;
 
 import org.logevents.LogEvent;
@@ -17,7 +16,7 @@ import org.logevents.util.Configuration;
  *
  * @author Johannes Brodwall
  */
-public class TextLogEventObserver implements LogEventObserver {
+public abstract class TextLogEventObserver implements LogEventObserver {
 
     private final LogEventDestination destination;
     private final LogEventFormatter formatter;
@@ -36,11 +35,7 @@ public class TextLogEventObserver implements LogEventObserver {
 
     @Override
     public void logEvent(LogEvent logEvent) {
-        try {
-            destination.writeEvent(formatter.format(logEvent) + "\n");
-        } catch (IOException e) {
-            LogEventStatus.getInstance().addError(this, "Failed to write log event", e);
-        }
+        destination.writeEvent(formatter.format(logEvent) + "\n");
     }
 
     @Override

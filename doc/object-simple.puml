@@ -7,17 +7,17 @@ object CompositeObserver
 object ConditionalObserver
 object file
 object console
-object ConsoleDestination
-object FileDestination
+object ConsoleObserver
+object FileObserver
 
 MyLogger -- CompositeObserver
 CompositeObserver o-- ConditionalObserver
 CompositeObserver o-- file
 ConditionalObserver o-- console
-console o-- ConsoleDestination
-file o-- FileDestination
+console o-- ConsoleObserver
+file o-- FileObserver
 
-FileDestination : filename = "application.log"
+FileObserver : filename = "application.log"
 ConditionalObserver : level = WARN
 
 

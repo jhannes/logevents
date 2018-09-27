@@ -13,7 +13,7 @@ import java.util.function.BiFunction;
  * @author Johannes Brodwall
  *
  */
-class PatternConverterSpec {
+public class PatternConverterSpec {
 
     private Optional<Integer> minLength;
     private Optional<Integer> maxLength;
@@ -33,16 +33,20 @@ class PatternConverterSpec {
      * @param formatter Used for sub-patterns
      */
     public void readConversion(PatternLogEventFormatter formatter) {
-        scanner.advance();
-        readMinLength();
-        readMaxLength();
-        readConversionWord();
+        readConversion();
         try {
             readSubpattern(formatter);
             readParameters();
         } catch (StringIndexOutOfBoundsException e) {
             throw new IllegalArgumentException("End of string while reading <%" + getConversionWord() + "> from " + scanner);
         }
+    }
+
+    public void readConversion() {
+        scanner.advance();
+        readMinLength();
+        readMaxLength();
+        readConversionWord();
     }
 
     /**

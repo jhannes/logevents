@@ -39,23 +39,19 @@ package "org.logevents" {
 	  cooldownTime
 	  maximumWaitTime
 	}
-	class TextLogEventObserver implements LogEventObserver
 	class CircularBufferLogEventDestination implements LogEventObserver
+	class FileLogEventObserver implements LogEventObserver
+	class ConsoleLogEventObserver implements LogEventObserver
 	CompositeLogEventObserver ..> "*" LogEventObserver
 	ConditionalLogEventObserver ..> "1" LogEventObserver
 	
 	
-	package "destinations" {
+	package "formatting" {
 		interface LogEventFormatter
-		TextLogEventObserver ..> LogEventFormatter
-		class PatternFormatter implements LogEventFormatter
-		
-		interface LogEventDestination
-		TextLogEventObserver ..> LogEventDestination
-
-		class ConsoleLogEventDestination implements LogEventDestination
-		class FileLogEventDestination implements LogEventDestination
-		class RollingFileEventDestination extends FileLogEventDestination
+		FileLogEventObserver ..> LogEventFormatter
+		ConsoleLogEventObserver ..> LogEventFormatter
+        class PatternFormatter implements LogEventFormatter
+        class TTLLFormatter implements LogEventFormatter
 	}
 	
 	class LogEventBatchProcessor

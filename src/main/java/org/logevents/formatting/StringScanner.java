@@ -11,7 +11,7 @@ import java.util.Optional;
  * @author Johannes Brodwall
  *
  */
-class StringScanner {
+public class StringScanner {
 
     private String string;
     private int position;

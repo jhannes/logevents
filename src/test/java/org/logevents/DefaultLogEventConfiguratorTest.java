@@ -35,15 +35,16 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldSetRootObserverFromProperties() {
+        Path logFile = Paths.get("logs", "application.log");
         properties.setProperty("root", "DEBUG file");
         properties.setProperty("observer.file", "DateRollingLogEventObserver");
-        properties.setProperty("observer.file.filename", "logs/application.log");
+        properties.setProperty("observer.file.filename", logFile.toString());
 
         configurator.loadConfiguration(factory, properties);
         assertEquals(Level.DEBUG, factory.getRootLogger().getLevelThreshold());
         assertEquals(
                 "DateRollingLogEventObserver{"
-                + "destination=DateRollingFileDestination{application.log},"
+                + "filename=" + logFile + ","
                 + "formatter=TTLLEventLogFormatter}",
                 factory.getRootLogger().getObserver());
     }
@@ -84,7 +85,7 @@ public class DefaultLogEventConfiguratorTest {
         configurator.configure(logEventFactory);
 
         assertEquals("ERROR", logEventFactory.getRootLogger().getLevelThreshold().toString());
-        assertEquals("ConsoleLogEventObserver{destination=ConsoleLogEventDestination,formatter=ConsoleLogEventFormatter}", logEventFactory.getRootLogger().getObserver());
+        assertEquals("ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}", logEventFactory.getRootLogger().getObserver());
 
         firstProfileProperty.setProperty("root", "TRACE null");
         writeProps(propertiesDir.resolve("logevents-profile1.properties"), firstProfileProperty);

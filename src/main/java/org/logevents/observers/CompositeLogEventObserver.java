@@ -24,6 +24,7 @@ public class CompositeLogEventObserver implements LogEventObserver {
 
     @Override
     public void logEvent(LogEvent e) {
+        // TODO: Error handling
         observers.forEach(o -> o.logEvent(e));
     }
 

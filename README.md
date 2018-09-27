@@ -39,7 +39,7 @@ Logevents tries to make concrete improvements compared to Logback:
 ## Architecture
 
 
-![Architecture Overview](doc/classes.png)
+![Architecture Overview](http://www.plantuml.com/plantuml/proxy?src=https://raw.github.com/jhannes/logevents/master/doc/classes.puml?v=2)
 
 
 ## Logging with SLF4J
@@ -276,8 +276,8 @@ want to use `PatternLogEventFormatter` to format the log events. Here
 is an example:
 
 ```
-observer.file=DateRollingLogEventObserver
-observer.file.filename=logs/application.log
+observer.file=FileLogEventObserver
+observer.file.filename=logs/application-%date.log
 observer.file.formatter=PatternLogEventFormatter
 observer.file.formatter.pattern=%date{HH:mm:ss} %highlight([%5level]) [%thread] [%mdc{user:-<no user>}] %logger{20}: %message
 observer.file.formatter.exceptionFormatter=CauseFirstExceptionFormatter

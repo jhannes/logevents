@@ -2,25 +2,27 @@ package org.logevents.observers;
 
 import java.util.Properties;
 
-import org.logevents.destinations.ConsoleLogEventDestination;
+import org.logevents.LogEvent;
+import org.logevents.LogEventObserver;
 import org.logevents.formatting.ConsoleLogEventFormatter;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 
 /**
- * Log messages to the system out with suitable formatter. Convenience class
- * that constructs a {@link TextLogEventObserver} with a reasonable default
- * destination (System.out) and format. By default, {@link ConsoleLogEventObserver}
+ * Log messages to the system out with suitable formatter.
+ * By default, {@link ConsoleLogEventObserver}
  * will log with ANSI colors if supported (on Linux, Mac and when
  * <a href="https://github.com/fusesource/jansi">JANSI</a> is in the classpath on Windows).
  *
  * @author Johannes Brodwall
  */
-public class ConsoleLogEventObserver extends TextLogEventObserver {
+public class ConsoleLogEventObserver implements LogEventObserver {
+
+    private LogEventFormatter formatter;
 
     public ConsoleLogEventObserver(LogEventFormatter formatter) {
-        super(new ConsoleLogEventDestination(), formatter);
+        this.formatter = formatter;
     }
 
     public ConsoleLogEventObserver() {
@@ -34,5 +36,16 @@ public class ConsoleLogEventObserver extends TextLogEventObserver {
 
     public ConsoleLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
+    }
+
+    @Override
+    public void logEvent(LogEvent logEvent) {
+        System.out.print(formatter.format(logEvent));
+        System.out.flush();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{formatter=" + formatter + "}";
     }
 }

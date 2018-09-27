@@ -9,10 +9,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.util.Properties;
 
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.Configuration;
 
 /**
  * Output to a given file.
@@ -20,61 +18,38 @@ import org.logevents.util.Configuration;
  * @author Johannes Brodwall
  *
  */
-public class FileDestination implements LogEventDestination {
+public class FileDestination {
 
     protected Path logDirectory;
     private FileChannel channel;
     private Path openedPath;
     private Instant circuitBrokenUntil;
     private int successiveErrors;
-    private Path fileName;
 
-    public FileDestination(String filename) {
-        this(Paths.get(filename));
-    }
-
-    public FileDestination(Configuration configuration) {
-        this(configuration.getString("filename"));
-    }
-
-    public FileDestination(Properties configuration, String prefix) {
-        this(new Configuration(configuration, prefix));
-    }
-
-    public FileDestination(Path path) {
-        this(path.getParent(), path.getFileName());
-    }
-
-    public FileDestination(Path parent, Path fileName) {
-        this.logDirectory = parent;
-        this.fileName = fileName;
-        if (logDirectory == null) {
-            logDirectory = Paths.get(".");
+    public FileDestination(Path logDirectory) {
+        this.logDirectory = logDirectory;
+        if (this.logDirectory == null) {
+            this.logDirectory = Paths.get(".");
         } else {
             try {
-                Files.createDirectories(logDirectory);
+                Files.createDirectories(this.logDirectory);
             } catch (IOException e) {
                 LogEventStatus.getInstance().addFatal(this, "Can't create directory " + logDirectory, e);
             }
         }
     }
 
-    @Override
-    public synchronized void writeEvent(String message) {
+    public synchronized void writeEvent(String filename, String message) {
+        Path path = logDirectory.resolve(filename);
         if (isCircuitBroken()) {
             return;
         }
         try {
             if (channel == null) {
-                openedPath = getPath();
+                openedPath = path;
                 channel = FileChannel.open(openedPath, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-            } else if (!openedPath.equals(getPath())) {
-                try {
-                    channel.close();
-                } catch (IOException e) {
-                }
-                openedPath = getPath();
-                channel = FileChannel.open(openedPath, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+            } else if (!openedPath.equals(path)) {
+                rollOver(path);
             }
             ByteBuffer src = ByteBuffer.wrap(message.getBytes());
             try(FileLock lock = channel.tryLock()) {
@@ -85,6 +60,15 @@ public class FileDestination implements LogEventDestination {
             LogEventStatus.getInstance().addError(this, e.getMessage(), e);
             checkIfCircuitShouldBreak();
         }
+    }
+
+    public void rollOver(Path path) throws IOException {
+        try {
+            channel.close();
+        } catch (IOException e) {
+        }
+        openedPath = path;
+        channel = FileChannel.open(openedPath, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
     }
 
 
@@ -109,20 +93,6 @@ public class FileDestination implements LogEventDestination {
         } else {
             return true;
         }
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{" + getPath().getFileName() + "}";
-    }
-
-    public Path getPath() {
-        return logDirectory.resolve(fileName);
-    }
-
-    public synchronized void setPath(Path path) {
-        this.logDirectory = path.getParent();
-        this.fileName = path.getFileName();
     }
 
     public int getCircuitBreakThreshold() {

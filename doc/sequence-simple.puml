@@ -7,8 +7,8 @@ participant CompositeObserver
 participant ConditionalObserver
 participant file
 participant console
-participant ConsoleDestination
-participant FileDestination
+participant ConsoleObserver
+participant FileObserver
 
 
 [-> MyLogger: error("Something went wrong")
@@ -21,16 +21,16 @@ activate MyLogger
     alt event.level >= threshold
         ConditionalObserver -> console ++: logEvent(event)
         console -> console: text := formatEvent(event)
-        console -> ConsoleDestination ++: writeLine(text)
-        console <-- ConsoleDestination --
+        console -> ConsoleObserver ++: writeLine(text)
+        console <-- ConsoleObserver --
         ConditionalObserver <-- console --
     end
     CompositeObserver <-- ConditionalObserver --
   
     CompositeObserver -> file ++: logEvent(event)
       file -> file: text := formatEvent(event)
-      file -> FileDestination ++: writeLine(text)
-      file <-- FileDestination --
+      file -> FileObserver ++: writeLine(text)
+      file <-- FileObserver --
     CompositeObserver <-- file --
   end loop
 
