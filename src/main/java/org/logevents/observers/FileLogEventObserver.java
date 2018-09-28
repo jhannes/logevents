@@ -42,7 +42,7 @@ public class FileLogEventObserver implements LogEventObserver {
 
     @Override
     public void logEvent(LogEvent logEvent) {
-        destination.writeEvent(getFilename(logEvent), formatter.apply(logEvent) + "\n");
+        destination.writeEvent(getFilename(logEvent), formatter.apply(logEvent));
     }
 
     protected String getFilename(LogEvent logEvent) {

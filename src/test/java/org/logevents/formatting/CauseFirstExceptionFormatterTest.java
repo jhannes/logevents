@@ -24,6 +24,16 @@ public class CauseFirstExceptionFormatterTest {
     }
 
     @Test
+    public void shouldFormatSimpleException() {
+        IOException simpleException = new IOException("This went wrong");
+        simpleException.setStackTrace(new StackTraceElement[] { publicMethod, mainMethod });
+
+        String nl = ExceptionFormatter.newLine();
+        assertEquals("java.io.IOException: This went wrong" + nl +  "\tat " + publicMethod + nl + "\tat " + mainMethod + nl,
+                getFormatter().format(simpleException));
+    }
+
+    @Test
     public void shouldFormatExceptionWithRootCauseFirst() {
         IOException nestedNested = new IOException("Nested nested");
         nestedNested.setStackTrace(new StackTraceElement[] {

@@ -39,51 +39,51 @@ public class PatternLogEventFormatterTest {
     @Test
     public void shouldOutputLogger() {
         formatter.setPattern("%logger");
-        assertEquals("some.logger.name", formatter.apply(event));
+        assertEquals("some.logger.name\n", formatter.apply(event));
     }
 
     @Test
     public void shouldOutputLevel() {
         formatter.setPattern("%level");
-        assertEquals("INFO", formatter.apply(event));
+        assertEquals("INFO\n", formatter.apply(event));
     }
 
     @Test
     public void shouldOutputTime() {
         formatter.setPattern("%date");
-        assertEquals("2018-08-23 22:34:52.088", formatter.apply(event));
+        assertEquals("2018-08-23 22:34:52.088\n", formatter.apply(event));
 
         formatter.setPattern("%date{HH:mm:ss}");
-        assertEquals(DateTimeFormatter.ofPattern("HH:mm:ss").format(time.atZone(ZoneId.systemDefault())),
+        assertEquals(DateTimeFormatter.ofPattern("HH:mm:ss").format(time.atZone(ZoneId.systemDefault())) + "\n",
                 formatter.apply(event));
 
         formatter.setPattern("%date{  HH:mm:ss, Europe/Vilnius}");
-        assertEquals(DateTimeFormatter.ofPattern("HH:mm:ss").format(time.atZone(ZoneId.of("Europe/Vilnius"))),
+        assertEquals(DateTimeFormatter.ofPattern("HH:mm:ss").format(time.atZone(ZoneId.of("Europe/Vilnius"))) + "\n",
                 formatter.apply(event));
 
         formatter.setPattern("%date{ 'HH:mm:ss,SSSS' }");
-        assertEquals(DateTimeFormatter.ofPattern("HH:mm:ss,SSSS").format(time.atZone(ZoneId.systemDefault())),
+        assertEquals(DateTimeFormatter.ofPattern("HH:mm:ss,SSSS").format(time.atZone(ZoneId.systemDefault())) + "\n",
                 formatter.apply(event));
     }
 
     @Test
     public void shouldOutputColors() {
         formatter.setPattern("%cyan( [level=%level] ) %logger");
-        assertEquals("\033[36m [level=INFO] \033[m some.logger.name",
+        assertEquals("\033[36m [level=INFO] \033[m some.logger.name\n",
                 formatter.apply(event));
     }
 
     @Test
     public void shouldReplaceSubstring() {
         formatter.setPattern("%red(%replace(..%logger..){'\\.', '/'})");
-        assertEquals("\033[31m//some/logger/name//\033[m",
+        assertEquals("\033[31m//some/logger/name//\033[m\n",
                 formatter.apply(event));
     }
 
     @Test
     public void shouldOutputMessageWithConstant() {
         formatter.setPattern("level: [%6level] logger: (%-20logger) shortLogger: (%-8.10logger)");
-        assertEquals("level: [  INFO] logger: (some.logger.name    ) shortLogger: (some.logge)", formatter.apply(event));
+        assertEquals("level: [  INFO] logger: (some.logger.name    ) shortLogger: (some.logge)\n", formatter.apply(event));
     }
 
     @Test
@@ -96,7 +96,7 @@ public class PatternLogEventFormatterTest {
         LogEvent event = buffer.getEvents().get(0);
 
         formatter.setPattern("%file:%line - %class#%method");
-        assertEquals("PatternLogEventFormatterTest.java:95 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation",
+        assertEquals("PatternLogEventFormatterTest.java:95 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
                 formatter.apply(event));
     }
 
@@ -109,10 +109,10 @@ public class PatternLogEventFormatterTest {
 
         formatter.setPattern("%highlight(%thread)");
         String s = Thread.currentThread().getName();
-        assertEquals(formatting.boldRed(s), formatter.apply(errorEvent));
-        assertEquals(formatting.red(s), formatter.apply(warnEvent));
-        assertEquals(formatting.blue(s), formatter.apply(infoEvent));
-        assertEquals(s, formatter.apply(debugEvent));
+        assertEquals(formatting.boldRed(s) + "\n", formatter.apply(errorEvent));
+        assertEquals(formatting.red(s) + "\n", formatter.apply(warnEvent));
+        assertEquals(formatting.blue(s) + "\n", formatter.apply(infoEvent));
+        assertEquals(s + "\n", formatter.apply(debugEvent));
     }
 
     @Test
@@ -122,16 +122,16 @@ public class PatternLogEventFormatterTest {
         LogEvent event = new LogEvent("some.logger.name", Level.WARN, "Warning message");
 
         formatter.setPattern("%boldGreen(role=%mdc{role})");
-        assertEquals(formatting.boldGreen("role=admin"), formatter.apply(event));
+        assertEquals(formatting.boldGreen("role=admin") + "\n", formatter.apply(event));
 
         formatter.setPattern("[%mdc{userid}]");
-        assertEquals("[]", formatter.apply(event));
+        assertEquals("[]\n", formatter.apply(event));
 
         formatter.setPattern("[%mdc{userid:-no user given}]");
-        assertEquals("[no user given]", formatter.apply(event));
+        assertEquals("[no user given]\n", formatter.apply(event));
 
         formatter.setPattern("%mdc");
-        assertEquals("user=Super User, role=admin", formatter.apply(event));
+        assertEquals("user=Super User, role=admin\n", formatter.apply(event));
     }
 
     @Test
@@ -171,7 +171,7 @@ public class PatternLogEventFormatterTest {
         for (String color : colors) {
                 formatter.setPattern(color + "(%level)");
             assertTrue("Strange color output " + formatter.apply(event),
-                    formatter.apply(event).matches("\033\\[(\\d+;)?\\d+mINFO\033\\[m"));
+                    formatter.apply(event).matches("\033\\[(\\d+;)?\\d+mINFO\033\\[m\n"));
         }
     }
 

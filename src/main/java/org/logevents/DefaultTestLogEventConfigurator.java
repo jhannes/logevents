@@ -13,15 +13,15 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
     private static class ConsoleLogEventTestFormatter extends ConsoleLogEventFormatter {
 
         @Override
-        public String apply(LogEvent logEvent) {
-            return String.format("TEST(%s) %s [%s] [%s] [%s]: %s",
-                    getTestMethod(logEvent),
-                    logEvent.getZonedDateTime().toLocalTime(),
-                    logEvent.getThreadName(),
-                    colorizedLevel(logEvent),
-                    format.bold(logEvent.getLoggerName()),
-                    logEvent.formatMessage())
-                    + exceptionFormatter.format(logEvent.getThrowable());
+        public String apply(LogEvent e) {
+            return String.format("TEST(%s) %s [%s] [%s] [%s]: %s\n",
+                    getTestMethod(e),
+                    e.getZonedDateTime().toLocalTime(),
+                    e.getThreadName(),
+                    colorizedLevel(e),
+                    format.bold(e.getLoggerName()),
+                    e.formatMessage())
+                    + exceptionFormatter.format(e.getThrowable());
         }
 
         private Object getTestMethod(LogEvent logEvent) {

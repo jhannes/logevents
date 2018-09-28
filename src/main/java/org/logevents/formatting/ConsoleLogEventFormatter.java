@@ -19,7 +19,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
 
     @Override
     public String apply(LogEvent e) {
-        return String.format("%s [%s] [%s] [%s]: %s",
+        return String.format("%s [%s] [%s] [%s]: %s\n",
                 e.getZonedDateTime().toLocalTime(),
                 e.getThreadName(),
                 colorizedLevel(e),

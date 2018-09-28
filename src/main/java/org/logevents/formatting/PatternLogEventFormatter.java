@@ -158,8 +158,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
     @Override
     public String apply(LogEvent event) {
-        return converter.apply(event) +
-                (event.getThrowable() != null ? "\n" +exceptionFormatter.format(event.getThrowable()) : "");
+        return converter.apply(event) + "\n" +exceptionFormatter.format(event.getThrowable());
     }
 
     @Override

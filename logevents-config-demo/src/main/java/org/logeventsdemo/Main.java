@@ -9,7 +9,7 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException {
         Logger logger = LoggerFactory.getLogger(Main.class);
-        logger.debug("Hello world - debug", new IOException());
+        logger.debug("Hello world - debug", new IOException(new RuntimeException()));
         logger.warn("Hello world - warning", new IOException());
 
         Thread.sleep(1 * 60 * 1000);

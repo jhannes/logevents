@@ -39,7 +39,7 @@ public class ConfigUtil {
             throw new IllegalArgumentException("Exception when creating " + prefix + "=" + clazz.getName() + ": " + e);
         } catch (InvocationTargetException e) {
             if (e.getTargetException() instanceof RuntimeException) {
-                throw new IllegalArgumentException("Exception when creating " + prefix + "=" + clazz.getName(), e.getTargetException());
+                throw new IllegalArgumentException("Exception when creating " + prefix + "=" + clazz.getName() + ": " + e.getTargetException());
             }
             throw new IllegalArgumentException("Exception when creating " + prefix + e);
         } catch (InstantiationException|IllegalAccessException e) {

@@ -26,6 +26,21 @@ public class ExceptionFormatterTest {
     }
 
     @Test
+    public void shouldFormatSimpleException() {
+        IOException simpleException = new IOException("This went wrong");
+        simpleException.setStackTrace(new StackTraceElement[] { publicMethod, mainMethod });
+
+        String nl = ExceptionFormatter.newLine();
+        assertEquals("java.io.IOException: This went wrong" + nl +  "\tat " + publicMethod + nl + "\tat " + mainMethod + nl,
+                getFormatter().format(simpleException));
+    }
+
+    @Test
+    public void shouldNoException() {
+        assertEquals("", getFormatter().format(null));
+    }
+
+    @Test
     public void shouldFormatStackTrace() {
         RuntimeException exception = new RuntimeException("This is an error message");
         exception.setStackTrace(new StackTraceElement[] {
