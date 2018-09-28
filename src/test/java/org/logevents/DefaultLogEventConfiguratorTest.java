@@ -8,10 +8,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Properties;
 
 import org.junit.After;
 import org.junit.Test;
+import org.logevents.observers.CircularBufferLogEventObserver;
 import org.slf4j.event.Level;
 
 public class DefaultLogEventConfiguratorTest {
@@ -51,7 +54,10 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldSetLoggerObserverFromProperties() {
-        properties.setProperty("logger.org.example", "ERROR buffer1,buffer2");
+        properties.setProperty("root", "ERROR null");
+        properties.setProperty("logger.org", "ERROR buffer1");
+        properties.setProperty("logger.org.example", "ERROR buffer2");
+        properties.setProperty("observer.null", "NullLogEventObserver");
         properties.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
         properties.setProperty("observer.buffer2", "CircularBufferLogEventObserver");
 
@@ -61,6 +67,30 @@ public class DefaultLogEventConfiguratorTest {
                 "CompositeLogEventObserver{"
                 + "[CircularBufferLogEventObserver{size=0}, CircularBufferLogEventObserver{size=0}]}",
                 factory.getLogger("org.example").getObserver());
+    }
+
+    @Test
+    public void shouldSetNonInheritingLoggerObserverFromProperties() {
+        properties.setProperty("root", "ERROR null");
+        properties.setProperty("logger.org", "ERROR buffer1");
+        properties.setProperty("logger.org.example", "ERROR buffer2");
+        properties.setProperty("includeParent.org.example", "false");
+        properties.setProperty("observer.null", "NullLogEventObserver");
+        properties.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
+        properties.setProperty("observer.buffer2", "CircularBufferLogEventObserver");
+
+        configurator.loadConfiguration(factory, properties);
+
+        factory.getLogger("org.example").error("Hello");
+        assertEquals("Hello",
+                ((CircularBufferLogEventObserver) configurator.getObserver("buffer2")).singleMessage());
+        assertEquals(Collections.emptyList(),
+                new ArrayList<>(((CircularBufferLogEventObserver) configurator.getObserver("buffer1")).getEvents()));
+
+        assertEquals(
+                "CircularBufferLogEventObserver{size=1}",
+                factory.getLogger("org.example").getObserver());
+
     }
 
     @Test
@@ -93,7 +123,7 @@ public class DefaultLogEventConfiguratorTest {
         Thread.sleep(10);
 
         assertEquals("TRACE", logEventFactory.getRootLogger().getLevelThreshold().toString());
-        assertEquals("<inherit>", logEventFactory.getRootLogger().getObserver());
+        assertEquals("NullLogEventObserver", logEventFactory.getRootLogger().getObserver());
     }
 
     @Test
@@ -114,7 +144,7 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals("DEBUG", logEventFactory.getRootLogger().getLevelThreshold().toString());
 
         Properties newPropertiesFile = new Properties();
-        Thread.sleep(10);
+        Thread.sleep(20);
         newPropertiesFile.setProperty("root", "INFO");
         writeProps(propertiesDir.resolve("logevents-production.properties"), newPropertiesFile);
         assertEquals("INFO", logEventFactory.getRootLogger().getLevelThreshold().toString());
@@ -127,7 +157,6 @@ public class DefaultLogEventConfiguratorTest {
         String formattedMessage = new DefaultTestLogEventConfigurator().createFormatter().apply(logEvent);
         assertTrue(formattedMessage + " should start with test name",
                 formattedMessage.startsWith("TEST(DefaultLogEventConfiguratorTest.shouldFindTestMethod)"));
-
     }
 
 

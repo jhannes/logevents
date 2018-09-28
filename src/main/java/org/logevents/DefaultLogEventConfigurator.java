@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,6 +40,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
     private Path propertiesDir;
     private WatchService newWatchService;
+    private Map<String, LogEventObserver> observers = new HashMap<>();
 
     public DefaultLogEventConfigurator(Path propertiesDir) {
         this.propertiesDir = propertiesDir;
@@ -206,24 +206,27 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * properties on the format 'logger.log.name=LEVEL observer1,observer2'.
      */
     protected void loadConfiguration(LogEventFactory factory, Properties configuration) {
-        Map<String, LogEventObserver> observers = new HashMap<>();
+        observers.clear();
         for (Object key : configuration.keySet()) {
             if (key.toString().startsWith("observer.")) {
-                configureObserver(key.toString(), configuration, observers);
+                configureObserver(key.toString(), configuration);
             }
         }
 
-        configureLogger(factory, factory.getRootLogger(), configuration.getProperty("root"), observers);
+        configureLogger(factory, factory.getRootLogger(), configuration.getProperty("root"), false);
 
         for (Object key : configuration.keySet()) {
             if (key.toString().startsWith("logger.")) {
                 String loggerName = key.toString().substring("logger.".length());
-                configureLogger(factory, factory.getLogger(loggerName), configuration.getProperty(key.toString()), observers);
+                boolean includeParent = !"false".equalsIgnoreCase(configuration.getProperty("includeParent." + loggerName));
+                configureLogger(factory, factory.getLogger(loggerName),
+                        configuration.getProperty(key.toString()),
+                        includeParent);
             }
         }
     }
 
-    private void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, Map<String, LogEventObserver> observerMap) {
+    private void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, boolean includeParent) {
         if (configuration != null) {
             int spacePos = configuration.indexOf(' ');
             Level level = Level.valueOf(spacePos < 0 ? configuration : configuration.substring(0, spacePos).trim());
@@ -231,21 +234,19 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
             if (spacePos > 0) {
                 List<LogEventObserver> observers = Stream.of(configuration.substring(spacePos+1).trim().split(","))
-                        .map(getObserver(observerMap))
+                        .map(this::getObserver)
                         .collect(Collectors.toList());
                 LogEventObserver observer = CompositeLogEventObserver.combineList(observers);
-                factory.setObserver(logger, observer, true);
+                factory.setObserver(logger, observer, includeParent);
             }
         }
     }
 
-    private static Function<? super String, LogEventObserver> getObserver(Map<String, LogEventObserver> observers) {
-        return observerName -> observers.computeIfAbsent(observerName, k -> {
-            throw new IllegalArgumentException("Unknown observer " + k + " in " + observers.keySet());
-        });
+    LogEventObserver getObserver(String observerName) {
+        return observers.get(observerName);
     }
 
-    private void configureObserver(String key, Properties configuration, Map<String, LogEventObserver> observers) {
+    private void configureObserver(String key, Properties configuration) {
         String name = key.split("\\.")[1];
         String prefix = "observer." + name;
         if (!observers.containsKey(name)) {

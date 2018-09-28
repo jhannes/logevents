@@ -51,9 +51,9 @@ public class LogEventsConfigurationServletTest {
         Map<String, Object> observers = JsonUtil.getObject(json, "observers");
         assertEquals("CircularBufferLogEventObserver{size=0}",
                 JsonUtil.getField(observers, "/"));
-        assertEquals("CircularBufferLogEventObserver{size=0}",
+        assertEquals("CompositeLogEventObserver{[CircularBufferLogEventObserver{size=0}, CircularBufferLogEventObserver{size=0}]}",
                 JsonUtil.getField(observers, "org.example"));
-        assertEquals("<inherit>",
+        assertEquals("CircularBufferLogEventObserver{size=0}",
                 JsonUtil.getField(observers, "org"));
     }
 

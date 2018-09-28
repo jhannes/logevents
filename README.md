@@ -257,6 +257,7 @@ observer.<observerName>=<observerClassName or alias>
 observer.<observerName>.<propertyKey>=<property value>
 
 logger.<category>=[<LEVEL> ]<observerName>
+includeParent.<category>=false
 
 root=[<LEVEL> ]<observerName>
 ```

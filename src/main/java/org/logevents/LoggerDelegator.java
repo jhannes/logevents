@@ -367,10 +367,7 @@ abstract class LoggerDelegator implements LoggerConfiguration {
 
     @Override
     public String getObserver() {
-        if (ownObserver instanceof NullLogEventObserver) {
-            return inheritParentObserver ? "<inherit>" : "<none>";
-        }
-        return ownObserver.toString();
+        return observer.toString();
     }
 
     public void setLevelThreshold(Level levelThreshold) {
