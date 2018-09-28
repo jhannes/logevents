@@ -144,7 +144,7 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals("DEBUG", logEventFactory.getRootLogger().getLevelThreshold().toString());
 
         Properties newPropertiesFile = new Properties();
-        Thread.sleep(20);
+        Thread.sleep(100);
         newPropertiesFile.setProperty("root", "INFO");
         writeProps(propertiesDir.resolve("logevents-production.properties"), newPropertiesFile);
         assertEquals("INFO", logEventFactory.getRootLogger().getLevelThreshold().toString());
