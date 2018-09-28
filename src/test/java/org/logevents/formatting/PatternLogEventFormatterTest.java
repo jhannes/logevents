@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
@@ -50,6 +51,8 @@ public class PatternLogEventFormatterTest {
 
     @Test
     public void shouldOutputTime() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/Oslo"));
+
         formatter.setPattern("%date");
         assertEquals("2018-08-23 22:34:52.088\n", formatter.apply(event));
 
@@ -96,7 +99,7 @@ public class PatternLogEventFormatterTest {
         LogEvent event = buffer.getEvents().get(0);
 
         formatter.setPattern("%file:%line - %class#%method");
-        assertEquals("PatternLogEventFormatterTest.java:95 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
+        assertEquals("PatternLogEventFormatterTest.java:98 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
                 formatter.apply(event));
     }
 
@@ -204,9 +207,9 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals("ERROR some.logger.name - An error happened", lines[0]);
         assertEquals(ex.toString(), lines[1]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:195)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:198)",
                 lines[2]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:201)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:204)",
                 lines[3]);
     }
 
@@ -219,7 +222,7 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(2+2, lines.length);
         assertEquals("ERROR some.logger.name - An error happened", lines[0]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:195)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:198)",
                 lines[2]);
     }
 
