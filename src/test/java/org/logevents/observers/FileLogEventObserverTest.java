@@ -58,7 +58,9 @@ public class FileLogEventObserverTest {
     @Test
     public void shouldLogToFileWithPattern() throws IOException {
         Path logDirectory = Paths.get("target", "test", "log");
-        Files.walk(logDirectory).map(Path::toFile).forEach(File::delete);
+        if (Files.exists(logDirectory)) {
+            Files.walk(logDirectory).map(Path::toFile).forEach(File::delete);
+        }
 
         Properties properties = new Properties();
         properties.setProperty("observer.file.filename", logDirectory.toString() + "/mylog-%date.log");
