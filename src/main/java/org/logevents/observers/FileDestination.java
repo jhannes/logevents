@@ -102,4 +102,9 @@ class FileDestination {
     void setCircuitBrokenUntil(Instant circuitBrokenUntil) {
         this.circuitBrokenUntil = circuitBrokenUntil;
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{dir=" + this.logDirectory + "}";
+    }
 }

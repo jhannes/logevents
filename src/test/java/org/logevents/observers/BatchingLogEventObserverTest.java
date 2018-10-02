@@ -85,7 +85,7 @@ public class BatchingLogEventObserverTest {
         Instant secondMessageSend = observer.logEvent(secondMessage, secondMessage.getInstant());
         assertTrue(secondMessageSend + " should not be after " + secondMessage.getInstant(), !secondMessageSend.isAfter(secondMessage.getInstant()));
 
-        observer.awaitTermination(100, TimeUnit.MILLISECONDS);
+        observer.awaitTermination(20, TimeUnit.MILLISECONDS);
         assertEquals(1, processor.batches.size());
         assertEquals(2, processor.batches.get(0).size());
     }

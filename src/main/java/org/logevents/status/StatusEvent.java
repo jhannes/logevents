@@ -39,7 +39,7 @@ public class StatusEvent {
     }
 
     public String formatMessage() {
-        return location + ": " + message + (throwable != null ? throwable.toString() : "");
+        return location + ": " + message + (throwable != null ? " " + throwable.toString() : "");
     }
 
     public static enum StatusLevel {

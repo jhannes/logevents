@@ -119,7 +119,7 @@ public class DefaultLogEventConfiguratorTest {
 
         firstProfileProperty.setProperty("root", "TRACE null");
         writeProps(propertiesDir.resolve("logevents-profile1.properties"), firstProfileProperty);
-        Thread.sleep(1000);
+        Thread.sleep(20);
 
         assertEquals("TRACE", logEventFactory.getRootLogger().getLevelThreshold().toString());
         assertEquals("NullLogEventObserver", logEventFactory.getRootLogger().getObserver());
@@ -145,7 +145,7 @@ public class DefaultLogEventConfiguratorTest {
         newPropertiesFile.setProperty("root", "INFO");
         writeProps(propertiesDir.resolve("logevents-production.properties"), newPropertiesFile);
 
-        Thread.sleep(1000);
+        Thread.sleep(20);
         assertEquals("INFO", logEventFactory.getRootLogger().getLevelThreshold().toString());
     }
 
