@@ -39,7 +39,7 @@ Logevents tries to make concrete improvements compared to Logback:
 ## Architecture
 
 
-![Architecture Overview](http://www.plantuml.com/plantuml/proxy?src=https://raw.github.com/jhannes/logevents/master/doc/classes.puml?v=2)
+![Architecture Overview](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/jhannes/logevents/master/doc/classes.puml)
 
 
 ## Logging with SLF4J
