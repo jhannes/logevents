@@ -61,7 +61,7 @@ public class StringScanner {
      * the position reaches the end of the string. The current position
      * remains at the terminator.
      *
-     * @param terminator The character to scan for
+     * @param terminatorsArray The characters to scan for
      * @return The substring until the terminator, not including terminator
      */
     public String readUntil(char... terminatorsArray) {

@@ -64,6 +64,8 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     /**
      * Starts a thread which watches the configurator's propertiesDir for changes
      * and resets the configuration from files when something is changed.
+     *
+     * @param factory The LogEventFactory that this configurator should configure
      */
     protected void startConfigurationFileWatcher(LogEventFactory factory) {
         try {
@@ -103,7 +105,9 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
     /**
      * Read configuration from the default configuration file based on
-     * {@link #getProfiles()}
+     * {@link #getProfiles()}.
+     *
+     * @param factory The LogEventFactory that this configurator should configure
      */
     protected synchronized void resetConfigurationFromFiles(LogEventFactory factory) {
         setDefaultLogging(factory);
@@ -114,6 +118,8 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * Used system properties and environment variables 'profiles', 'profile' and
      * 'spring.profiles.active' to determine which profiles are active in the
      * current environment.
+     *
+     * @return the activated profiles for the current JVM as a list of strings
      */
     protected List<String> getProfiles() {
         String profilesString = System.getProperty("profiles", System.getProperty("profile", System.getProperty("spring.profiles.active", "")));
@@ -135,6 +141,8 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
     /**
      * Logs to the console at level INFO, or level WARN if running in JUnit.
+     *
+     * @param factory The LogEventFactory that this configurator should configure
      */
     protected void setDefaultLogging(LogEventFactory factory) {
         factory.setLevel(factory.getRootLogger(), Level.INFO);
@@ -145,7 +153,10 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
     /**
      * Loads all properties files relevant for the argument set of profiles
-     * @param configurationFileNames TODO
+     * from classpath and current working directory.
+     *
+     * @param configurationFileNames the file names to load
+     * @return Properties with the configuration of all files merged together
      */
     protected Properties loadPropertiesFromFiles(List<String> configurationFileNames) {
         Properties properties = new Properties();
@@ -160,6 +171,8 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
     /**
      * Gets the corresponding configuration file names for the active profiles
+     *
+     * @return the file names for candidate configuration files or this JVM
      */
     protected List<String> getConfigurationFileNames() {
         List<String> result = new ArrayList<>();
@@ -173,7 +186,11 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     }
 
     /**
-     * Inserts properties from the file into the properties if it exists.
+     * Inserts properties from the file into the properties if it exists in
+     * {@link DefaultLogEventConfigurator#propertiesDir}
+     *
+     * @param properties The destination to read the configuration into
+     * @param fileName The filename to load from disk
      */
     protected void loadConfigFile(Properties properties, String fileName) {
         if (Files.isRegularFile(this.propertiesDir.resolve(fileName))) {
@@ -187,7 +204,10 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     }
 
     /**
-     * Inserts properties from the resource name into the properties.
+     * Inserts properties from the resource name on the classpath into the properties.
+     *
+     * @param properties The destination to read the configuration into
+     * @param resourceName The resource to load from classpath
      */
     protected void loadConfigResource(Properties properties, String resourceName) {
         try (InputStream defaultPropertiesFile = getClass().getClassLoader().getResourceAsStream(resourceName)) {
@@ -204,6 +224,9 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * Loads observers and loggers from the configuration. Observerers have
      * properties on the format 'observers.prefix=ClassName' and loggers have
      * properties on the format 'logger.log.name=LEVEL observer1,observer2'.
+     *
+     * @param factory The LogEventFactory that this configurator should configure
+     * @param configuration The merged configuration that should be applied to the factory
      */
     protected void loadConfiguration(LogEventFactory factory, Properties configuration) {
         observers.clear();
