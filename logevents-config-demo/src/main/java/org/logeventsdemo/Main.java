@@ -11,6 +11,7 @@ public class Main {
         Logger logger = LoggerFactory.getLogger(Main.class);
         logger.debug("Hello world - debug", new IOException(new RuntimeException()));
         logger.warn("Hello world - warning", new IOException());
+        logger.error("A message without exception");
 
         Thread.sleep(1 * 60 * 1000);
     }
