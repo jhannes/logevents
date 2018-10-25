@@ -10,11 +10,14 @@ Setting up and configuring logging should be *easy*, whether you want to do it w
 configuration files or in code. Log Events is a tiny logging framework built on top of
 SLF4J - the logging lingua franka for Java.
 
-Logevents supports setting up your logging with a `logevents-<profile>.properties` files,
-with a custom `LogeventsConfigurator` loaded with Java's service loader framework or
-programmatically.
+## Quick start
 
-Set up your logging configuration programatically:
+1. Add `org.logevents:logevents:0.1.5` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
+2. Add `logevents.properties` to your current working directory or `src/main/java` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level.
+3. Add the lines `observer.file=FileEventLogObserver`, `observer.file.filename=logs/mylog-%date.txt` and `root=DEBUG file` to send the log to a file instead
+4. (To me implemented) Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to log debug to the file and warning and higher to console.
+
+You can also set up environment specific logging with a file named `logevents-<profile>.properties` or you can configure Logevents programatically:
 
 ```java
 LogEventFactory logEventFactory = LogEventFactory.getInstance();
@@ -42,7 +45,7 @@ Logevents tries to make concrete improvements compared to Logback:
 ![Architecture Overview](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/jhannes/logevents/master/doc/classes.puml)
 
 
-## Logging with SLF4J
+## An introduction to logging with SLF4J
 
 This section is about SLF4J more than just about Logevents. It can be useful even if you
 are not using Logevents. The [SLF4J documentation](https://www.slf4j.org/manual.html)
@@ -367,7 +370,7 @@ factory.setRootLevel(Level.INFO);
 // Get yours at https://www.slack.com/apps/manage/custom-integrations
 URL slackUrl = new URL("https://hooks.slack.com/services/....");
 SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor(slackUrl);
-slackLogEventBatchProcessor.setUsername("Loge Vents");
+slackLogEventBatchProcessor.setUsername("MyApplication");
 slackLogEventBatchProcessor.setChannel("test");
 
 BatchingLogEventObserver batchEventObserver = new BatchingLogEventObserver(slackLogEventBatchProcessor);
