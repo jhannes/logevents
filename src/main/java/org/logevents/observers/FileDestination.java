@@ -30,12 +30,6 @@ class FileDestination {
         this.logDirectory = logDirectory;
         if (this.logDirectory == null) {
             this.logDirectory = Paths.get(".");
-        } else {
-            try {
-                Files.createDirectories(this.logDirectory);
-            } catch (IOException e) {
-                LogEventStatus.getInstance().addFatal(this, "Can't create directory " + logDirectory, e);
-            }
         }
     }
 
@@ -46,6 +40,11 @@ class FileDestination {
         }
         try {
             if (channel == null) {
+                try {
+                    Files.createDirectories(this.logDirectory);
+                } catch (IOException e) {
+                    LogEventStatus.getInstance().addFatal(this, "Can't create directory " + logDirectory, e);
+                }
                 openedPath = path;
                 channel = FileChannel.open(openedPath, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
             } else if (!openedPath.equals(path)) {

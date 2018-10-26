@@ -10,12 +10,25 @@ Setting up and configuring logging should be *easy*, whether you want to do it w
 configuration files or in code. Log Events is a tiny logging framework built on top of
 SLF4J - the logging lingua franka for Java.
 
-## Quick start
+Quick start:
 
 1. Add `org.logevents:logevents:0.1.5` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
 2. Add `logevents.properties` to your current working directory or `src/main/java` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level.
-3. Add the lines `observer.file=FileEventLogObserver`, `observer.file.filename=logs/mylog-%date.txt` and `root=DEBUG file` to send the log to a file instead
-4. (To me implemented) Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to log debug to the file and warning and higher to console.
+3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to the file `logs/<your-app-name>-%date.log` and warning events to console.
+4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See PatternEventLogFormatter for more details.
+5. You can simply add a Slack observer as well. [Get a slack webhook URL](https://www.slack.com/apps/manage/custom-integrations) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`.
+
+Here is a simple, but powerful `logevent.properties`:
+
+```
+observer.slack=SlackLogEventObserver
+observer.slack.slackUrl=....
+observer.slack.threshold=WARN
+
+observer.console.threshold=WARN
+
+root=DEBUG file,console,slack
+```
 
 You can also set up environment specific logging with a file named `logevents-<profile>.properties` or you can configure Logevents programatically:
 

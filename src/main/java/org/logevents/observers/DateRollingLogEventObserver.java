@@ -29,6 +29,7 @@ public class DateRollingLogEventObserver extends FileLogEventObserver {
     public DateRollingLogEventObserver(Configuration configuration) throws IOException {
         this(configuration.getString("filename"),
                 configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class));
+        configuration.checkForUnknownFields();
         LogEventStatus.getInstance().addInfo(this, "Configured " + configuration.getPrefix());
     }
 

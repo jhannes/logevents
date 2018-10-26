@@ -21,6 +21,7 @@ public class ExceptionFormatter {
         packageFilter = configuration.getStringList("packageFilter");
         includePackagingData = configuration.getBoolean("includePackagingData");
         maxLength = configuration.optionalInt("maxLength").orElse(Integer.MAX_VALUE);
+        configuration.checkForUnknownFields();
     }
 
     public ExceptionFormatter() {

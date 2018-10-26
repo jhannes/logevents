@@ -55,9 +55,9 @@ public class BatchingLogEventObserver implements LogEventObserver {
     private final LogEventBatchProcessor batchProcessor;
     private final ScheduledExecutorService executor;
 
-    private Duration cooldownTime = Duration.ofSeconds(15);
-    private Duration maximumWaitTime = Duration.ofMinutes(1);
-    private Duration idleThreshold = Duration.ofSeconds(5);
+    protected Duration cooldownTime = Duration.ofSeconds(15);
+    protected Duration maximumWaitTime = Duration.ofMinutes(1);
+    protected Duration idleThreshold = Duration.ofSeconds(5);
 
     private Instant lastSendTime = Instant.ofEpochMilli(0);
 
@@ -67,10 +67,11 @@ public class BatchingLogEventObserver implements LogEventObserver {
 
     public BatchingLogEventObserver(Properties properties, String prefix) {
         Configuration configuration = new Configuration(properties, prefix);
-        idleThreshold = configuration.getDuration("idleThreshold");
-        cooldownTime = configuration.getDuration("cooldownTime");
-        maximumWaitTime = configuration.getDuration("maximumWaitTime");
+        idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);
+        cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
+        maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
         batchProcessor = configuration.createInstance("batchProcessor", LogEventBatchProcessor.class);
+        configuration.checkForUnknownFields();
 
         executor = scheduledExecutorService;
         LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);

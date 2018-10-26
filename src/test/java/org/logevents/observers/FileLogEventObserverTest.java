@@ -1,6 +1,8 @@
 package org.logevents.observers;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,10 +15,13 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
+import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.formatting.PatternLogEventFormatter;
+import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
 public class FileLogEventObserverTest {
 
@@ -38,6 +43,19 @@ public class FileLogEventObserverTest {
     }
 
     @Test
+    public void shouldCreateDefaultFilename() {
+        Properties properties = new Properties();
+        FileLogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
+
+        assertEquals("logevents-test.log", observer.getFilename(new LogEvent("", Level.DEBUG, "hello")));
+
+        assertEquals("logevents", FileLogEventObserver.currentWorkingDirectory());
+        assertEquals("slf4j-api", FileLogEventObserver.determineJarName(Logger.class.getName()));
+        assertEquals("logevents", FileLogEventObserver.determineJarName(String.class.getName()));
+        assertEquals("logevents", FileLogEventObserver.determineJarName(getClass().getName()));
+    }
+
+    @Test
     public void shouldLogToFile() throws IOException {
         Path path = Paths.get("target", "test", "log", getClass().getSimpleName() + ".log");
         Files.deleteIfExists(path);
@@ -53,6 +71,23 @@ public class FileLogEventObserverTest {
         logger.warn("A warning message");
 
         assertEquals(Arrays.asList("A warning message"), Files.readAllLines(path));
+    }
+
+    @Test
+    public void shouldCreateDirectoryAtFirstLogEvent() throws IOException {
+        Path path = Paths.get("target", "test", "creation-test", "log-" + System.currentTimeMillis(), getClass().getSimpleName() + ".log");
+        Files.deleteIfExists(path);
+        Files.deleteIfExists(path.getParent());
+
+        Properties properties = new Properties();
+        properties.setProperty("observer.file.filename", path.toString());
+        LogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
+        factory.setObserver(logger, observer, false);
+
+        assertFalse(Files.exists(path.getParent()));
+
+        logger.warn("A warning message");
+        assertTrue(Files.exists(path.getParent()));
     }
 
     @Test

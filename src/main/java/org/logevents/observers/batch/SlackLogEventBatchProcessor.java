@@ -31,7 +31,7 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
         channel = configuration.optionalString("channel");
         slackUrl = configuration.optionalUrl("slackUrl").orElse(null);
         setSlackLogEventsFormatter(configuration.createInstanceWithDefault("slackLogEventsFormatter", SlackLogEventsFormatter.class));
-
+        configuration.checkForUnknownFields();
         LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
     }
 

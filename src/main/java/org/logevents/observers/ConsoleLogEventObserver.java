@@ -8,6 +8,7 @@ import org.logevents.formatting.ConsoleLogEventFormatter;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
+import org.slf4j.event.Level;
 
 /**
  * Log messages to the system out with suitable formatter.
@@ -20,6 +21,7 @@ import org.logevents.util.Configuration;
 public class ConsoleLogEventObserver implements LogEventObserver {
 
     private LogEventFormatter formatter;
+    private Level threshold;
 
     public ConsoleLogEventObserver(LogEventFormatter formatter) {
         this.formatter = formatter;
@@ -30,7 +32,10 @@ public class ConsoleLogEventObserver implements LogEventObserver {
     }
 
     public ConsoleLogEventObserver(Configuration configuration) {
-        this(configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, ConsoleLogEventFormatter.class));
+        this.formatter = configuration.createInstanceWithDefault("formatter",
+                LogEventFormatter.class, ConsoleLogEventFormatter.class);
+        this.threshold = configuration.optionalString("threshold").map(Level::valueOf).orElse(Level.TRACE);
+        configuration.checkForUnknownFields();
         LogEventStatus.getInstance().addInfo(this, "Configured " + configuration.getPrefix());
     }
 
@@ -39,9 +44,11 @@ public class ConsoleLogEventObserver implements LogEventObserver {
     }
 
     @Override
-    public void logEvent(LogEvent logEvent) {
-        System.out.print(formatter.apply(logEvent));
-        System.out.flush();
+    public void logEvent(LogEvent event) {
+        if (threshold.toInt() <= event.getLevel().toInt()) {
+            System.out.print(formatter.apply(event));
+            System.out.flush();
+        }
     }
 
     @Override

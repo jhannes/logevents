@@ -145,6 +145,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
     public PatternLogEventFormatter(Configuration configuration) {
         setPattern(configuration.getString("pattern"));
         this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", ExceptionFormatter.class);
+        configuration.checkForUnknownFields();
     }
 
     public ExceptionFormatter getExceptionFormatter() {

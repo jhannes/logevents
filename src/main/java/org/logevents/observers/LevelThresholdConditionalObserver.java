@@ -27,6 +27,7 @@ public class LevelThresholdConditionalObserver implements LogEventObserver {
     public LevelThresholdConditionalObserver(Configuration configuration) {
         threshold = Level.valueOf(configuration.getString("threshold"));
         delegate = configuration.createInstance("delegate", LogEventObserver.class, "org.logevents.observers");
+        configuration.checkForUnknownFields();
         LogEventStatus.getInstance().addInfo(this, "Configured " + configuration.getPrefix());
     }
 

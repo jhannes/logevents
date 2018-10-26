@@ -6,11 +6,15 @@ import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public class Configuration {
 
     private Properties properties;
     private String prefix;
+    private Set<String> expectedFields = new TreeSet<>();
 
     public Configuration(Properties properties, String prefix) {
         this.properties = properties;
@@ -46,6 +50,15 @@ public class Configuration {
         }
     }
 
+    public Optional<Duration> optionalDuration(String key) {
+        try {
+            return optionalString(key).map(Duration::parse);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
+        }
+    }
+
+
     public String getString(String key) {
         return optionalString(key)
                 .orElseThrow(() -> new IllegalArgumentException("Missing required key <" + fullKey(key) + "> in <" + properties.keySet() + ">"));
@@ -64,6 +77,7 @@ public class Configuration {
     }
 
     public Optional<String> optionalString(String key) {
+        expectedFields.add(key);
         return Optional.ofNullable(properties.getProperty(fullKey(key)));
     }
 
@@ -84,12 +98,14 @@ public class Configuration {
     }
 
     public <T> T createInstanceWithDefault(String key, Class<T> defaultClass) {
+        expectedFields.add(key);
         Class<?> clazz = ConfigUtil.getClass(fullKey(key), defaultClass.getPackage().getName(), properties)
                 .orElse(defaultClass);
         return ConfigUtil.create(fullKey(key), clazz, properties);
     }
 
     public <T> T  createInstanceWithDefault(String key, Class<T> targetType, Class<? extends T> defaultClass) {
+        expectedFields.add(key);
         Class<?> clazz = ConfigUtil.getClass(fullKey(key), targetType.getPackage().getName(), properties)
                 .orElse(defaultClass);
         return ConfigUtil.create(fullKey(key), clazz, properties);
@@ -98,5 +114,21 @@ public class Configuration {
     public String getPrefix() {
         return prefix;
     }
+
+    public void checkForUnknownFields() {
+        Set<String> actualFields = properties.stringPropertyNames().stream()
+            .filter(n -> n.startsWith(prefix + "."))
+            .map(n -> n.substring(prefix.length()+1))
+            .map(n -> n.replaceAll("(\\w+)*.*", "$1"))
+            .collect(Collectors.toSet());
+        Set<String> remainingFields = new TreeSet<>(actualFields);
+        remainingFields.removeAll(expectedFields);
+        if (!remainingFields.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("Unknown configuration options: %s for %s. Expected options: %s", remainingFields, prefix, expectedFields));
+        }
+
+    }
+
 
 }

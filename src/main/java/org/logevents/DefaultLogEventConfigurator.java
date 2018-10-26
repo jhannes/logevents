@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
+import org.logevents.observers.FileLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.ConfigUtil;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -231,10 +232,12 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     protected void loadConfiguration(LogEventFactory factory, Properties configuration) {
         observers.clear();
         for (Object key : configuration.keySet()) {
-            if (key.toString().startsWith("observer.")) {
+            if (key.toString().matches("observer\\.\\w+")) {
                 configureObserver(key.toString(), configuration);
             }
         }
+        observers.putIfAbsent("console", new ConsoleLogEventObserver(configuration, "observer.console"));
+        observers.putIfAbsent("file", new FileLogEventObserver(configuration, "observer.file"));
 
         configureLogger(factory, factory.getRootLogger(), configuration.getProperty("root"), false);
 
@@ -266,7 +269,9 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     }
 
     LogEventObserver getObserver(String observerName) {
-        return observers.get(observerName);
+        return observers.computeIfAbsent(observerName, key -> {
+            throw new IllegalArgumentException("Unknown observer <" + key + ">");
+        });
     }
 
     private void configureObserver(String key, Properties configuration) {

@@ -83,6 +83,21 @@ public class ConfigurationTest {
                 "Missing configuration for class in observer.foo.thread");
     }
 
+    @Test
+    public void shouldWarnOnUnusedProperties() {
+        properties.put("observer.foo.name", "test");
+        properties.put("observer.foo.value", "test");
+        properties.put("observer.foo.unknown", "test");
+        properties.put("observer.foo.also.unknown", "test");
+
+        configuration.getString("name");
+        configuration.getStringList("value");
+        configuration.optionalString("amount");
+
+        assertConfigurationError(() -> configuration.checkForUnknownFields(),
+                "Unknown configuration options: [also, unknown] for observer.foo. Expected options: [amount, name, value]");
+    }
+
     private void assertConfigurationError(Runnable r, String expected) {
         try {
             r.run();
