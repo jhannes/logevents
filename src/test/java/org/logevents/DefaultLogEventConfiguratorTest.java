@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Properties;
 
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Test;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.status.LogEventStatus;
@@ -160,6 +161,8 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldWriteStatusLogIfConfigFileIsLocked() throws IOException {
+        Assume.assumeTrue("File locking is not supported on Linux", isWindows());
+
         propertiesDir = Paths.get("target", "test-data", "faulty" + System.currentTimeMillis());
         deleteConfigFiles();
         Files.createDirectories(propertiesDir);
@@ -179,6 +182,8 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldWriteStatusLogIfConfigResourceIsLocked() throws IOException {
+        Assume.assumeTrue("File locking is not supported on Linux", isWindows());
+
         String filename = "faulty" + System.currentTimeMillis() + ".properties";
         propertiesDir = Paths.get("target", "test-classes");
         Path propsFile = propertiesDir.resolve(filename);
@@ -241,5 +246,7 @@ public class DefaultLogEventConfiguratorTest {
         }
     }
 
-
+    private boolean isWindows() {
+        return System.getProperty("os.name").startsWith("Windows");
+    }
 }
