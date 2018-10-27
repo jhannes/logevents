@@ -37,10 +37,10 @@ public class LogEventsServlet extends HttpServlet {
     }
 
     void attachLogEventObservers(LogEventFactory factory) {
-        factory.addObserver(factory.getRootLogger(), levelObserver(debugObserver, Level.DEBUG));
-        factory.addObserver(factory.getRootLogger(), levelObserver(infoObserver, Level.INFO));
-        factory.addObserver(factory.getRootLogger(), levelObserver(warnObserver, Level.WARN));
-        factory.addObserver(factory.getRootLogger(), levelObserver(errorObserver, Level.ERROR));
+        factory.addRootObserver(levelObserver(debugObserver, Level.DEBUG));
+        factory.addRootObserver(levelObserver(infoObserver, Level.INFO));
+        factory.addRootObserver(levelObserver(warnObserver, Level.WARN));
+        factory.addRootObserver(levelObserver(errorObserver, Level.ERROR));
     }
 
     private LogEventObserver levelObserver(LogEventObserver delegate, Level level) {

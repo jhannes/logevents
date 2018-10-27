@@ -26,7 +26,6 @@ public class LogEventStatus {
         System.setProperty("logevents.status", threshold.toString());
     }
 
-
     public void addFatal(Object location, String message, Throwable throwable) {
         add(new StatusEvent(location, message, StatusEvent.StatusLevel.FATAL, throwable));
     }
@@ -55,6 +54,16 @@ public class LogEventStatus {
         return headMessages.stream()
                 .filter(event -> event.getLocation() == target && threshold.toInt() <= event.getLevel().toInt())
                 .collect(Collectors.toList());
+    }
+
+    public StatusEvent lastMessage() {
+        if (!tailMessages.isEmpty()) {
+            return tailMessages.get(tailMessages.size()-1);
+        } else if (!headMessages.isEmpty()) {
+            return headMessages.get(headMessages.size()-1);
+        } else {
+            return null;
+        }
     }
 
 

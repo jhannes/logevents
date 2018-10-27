@@ -5,16 +5,20 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
 
 import org.junit.After;
 import org.junit.Test;
 import org.logevents.observers.CircularBufferLogEventObserver;
+import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
 
 public class DefaultLogEventConfiguratorTest {
@@ -152,6 +156,42 @@ public class DefaultLogEventConfiguratorTest {
 
         assertEquals("TRACE", logEventFactory.getRootLogger().getLevelThreshold().toString());
         assertEquals("NullLogEventObserver", logEventFactory.getRootLogger().getObserver());
+    }
+
+    @Test
+    public void shouldWriteStatusLogIfConfigFileIsLocked() throws IOException {
+        propertiesDir = Paths.get("target", "test-data", "faulty" + System.currentTimeMillis());
+        deleteConfigFiles();
+        Files.createDirectories(propertiesDir);
+        Path propsFile = propertiesDir.resolve("logevents-faultyconfig.properties");
+        writeProps(propsFile, new Properties());
+
+        try(RandomAccessFile file = new RandomAccessFile(propsFile.toFile(), "rw")) {
+            try (FileLock lock = file.getChannel().lock()) {
+                DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
+                configurator.loadPropertiesFromFiles(Arrays.asList("logevents-faultyconfig.properties"));
+            }
+            assertEquals("Can't load logevents-faultyconfig.properties",
+                    LogEventStatus.getInstance().lastMessage().getMessage());
+        }
+    }
+
+
+    @Test
+    public void shouldWriteStatusLogIfConfigResourceIsLocked() throws IOException {
+        String filename = "faulty" + System.currentTimeMillis() + ".properties";
+        propertiesDir = Paths.get("target", "test-classes");
+        Path propsFile = propertiesDir.resolve(filename);
+        writeProps(propsFile, new Properties());
+
+        try(RandomAccessFile file = new RandomAccessFile(propsFile.toFile(), "rw")) {
+            try (FileLock lock = file.getChannel().lock()) {
+                DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
+                configurator.loadPropertiesFromFiles(Arrays.asList(filename));
+            }
+            assertEquals("Can't load " + filename,
+                    LogEventStatus.getInstance().lastMessage().getMessage());
+        }
     }
 
     @Test

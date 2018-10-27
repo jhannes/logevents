@@ -8,11 +8,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -20,6 +22,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.observers.SlackLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.logevents.status.StatusEvent.StatusLevel;
@@ -79,7 +82,7 @@ public class SlackLogEventBatchProcessorTest {
         int port = server.getAddress().getPort();
 
         URL url = new URL("http://localhost:" + port);
-        SlackLogEventBatchProcessor processor = new SlackLogEventBatchProcessor(url);
+        SlackLogEventBatchProcessor processor = new SlackLogEventBatchProcessor(url, Optional.empty(), Optional.empty());
         LogEvent logEvent = new LogEvent("org.example", Level.WARN, "Nothing");
         processor.processBatch(Arrays.asList(new LogEventGroup(logEvent)));
 
@@ -88,6 +91,18 @@ public class SlackLogEventBatchProcessorTest {
         assertEquals("Failed to send slack message", events.get(0).getMessage());
         assertEquals("Failed to POST to " + url + ", status code: 400: A detailed error message",
                 events.get(0).getThrowable().getMessage());
+    }
+
+    @Test
+    public void shouldConfigureSlackObserver() throws MalformedURLException {
+        Properties properties = new Properties();
+        properties.put("observer.slack.slackUrl", "http://localhost:1234");
+        properties.put("observer.slack.channel", "general");
+        properties.put("observer.slack.username", "MyTestApp");
+        SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack");
+
+        assertEquals("SlackLogEventObserver{username=MyTestApp,channel=general,slackUrl=http://localhost:1234}",
+                observer.toString());
     }
 
     private HttpServer startServer(HttpHandler httpHandler) throws IOException {

@@ -198,8 +198,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
             try (InputStream propertiesFile = new FileInputStream(this.propertiesDir.resolve(fileName).toFile())) {
                 properties.load(propertiesFile);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                LogEventStatus.getInstance().addError(this, "Can't load " + fileName, e);
             }
         }
     }
@@ -211,13 +210,12 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @param resourceName The resource to load from classpath
      */
     protected void loadConfigResource(Properties properties, String resourceName) {
-        try (InputStream defaultPropertiesFile = getClass().getClassLoader().getResourceAsStream(resourceName)) {
-            if (defaultPropertiesFile != null) {
-                properties.load(defaultPropertiesFile);
+        try (InputStream propertiesFile = getClass().getClassLoader().getResourceAsStream(resourceName)) {
+            if (propertiesFile != null) {
+                properties.load(propertiesFile);
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LogEventStatus.getInstance().addError(this, "Can't load " + resourceName, e);
         }
     }
 
@@ -280,5 +278,10 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         if (!observers.containsKey(name)) {
             observers.put(name, ConfigUtil.create(prefix, "org.logevents.observers", configuration));
         }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" + this.propertiesDir + "}";
     }
 }

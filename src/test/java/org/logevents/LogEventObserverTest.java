@@ -70,7 +70,7 @@ public class LogEventObserverTest {
         CircularBufferLogEventObserver childObserver = new CircularBufferLogEventObserver();
         factory.setObserver(childLogger, childObserver, true);
         CircularBufferLogEventObserver childSecondaryObserver = new CircularBufferLogEventObserver();
-        factory.addObserver(childLogger, childSecondaryObserver);
+        factory.addObserver("org.logevents.testing.parent.Child", childSecondaryObserver);
 
         childLogger.warn("Message sent to multiple");
 

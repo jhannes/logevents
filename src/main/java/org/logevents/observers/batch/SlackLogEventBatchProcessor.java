@@ -20,8 +20,10 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
     private URL slackUrl;
     private SlackLogEventsFormatter slackLogEventsFormatter;
 
-    public SlackLogEventBatchProcessor(URL url) {
+    public SlackLogEventBatchProcessor(URL url, Optional<String> username, Optional<String> channel) {
         this.slackUrl = url;
+        this.username = username;
+        this.channel = channel;
         setSlackLogEventsFormatter(new SlackLogEventsFormatter());
     }
 
@@ -33,6 +35,18 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
         setSlackLogEventsFormatter(configuration.createInstanceWithDefault("slackLogEventsFormatter", SlackLogEventsFormatter.class));
         configuration.checkForUnknownFields();
         LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
+    }
+
+    public Optional<String> getUsername() {
+        return username;
+    }
+
+    public Optional<String> getChannel() {
+        return channel;
+    }
+
+    public URL getSlackUrl() {
+        return slackUrl;
     }
 
     public void setSlackLogEventsFormatter(SlackLogEventsFormatter slackLogEventsFormatter) {

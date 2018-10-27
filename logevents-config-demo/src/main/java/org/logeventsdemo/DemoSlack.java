@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Optional;
 
 import org.logevents.LogEventFactory;
 import org.logevents.observers.BatchingLogEventObserver;
@@ -25,9 +26,8 @@ public class DemoSlack {
 
         // Get yours at https://www.slack.com/apps/manage/custom-integrations
         URL slackUrl = new URL("https://hooks.slack.com/services/....");
-        SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor(slackUrl);
-        slackLogEventBatchProcessor.setUsername("Loge Vents");
-        slackLogEventBatchProcessor.setChannel("test");
+        SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor(slackUrl,
+                Optional.of("LogEvents"), Optional.of("testChannel"));
 
         BatchingLogEventObserver batchEventObserver = new BatchingLogEventObserver(slackLogEventBatchProcessor);
         batchEventObserver.setCooldownTime(Duration.ofSeconds(5));

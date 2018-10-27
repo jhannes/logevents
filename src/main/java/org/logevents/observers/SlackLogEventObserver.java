@@ -3,15 +3,12 @@ package org.logevents.observers;
 import java.net.MalformedURLException;
 import java.util.Properties;
 
-import org.logevents.LogEvent;
 import org.logevents.observers.batch.SlackLogEventBatchProcessor;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
 public class SlackLogEventObserver extends BatchingLogEventObserver {
-
-    private Level threshold;
 
     public SlackLogEventObserver(Properties properties, String prefix) throws MalformedURLException {
         this(new Configuration(properties, prefix));
@@ -28,8 +25,11 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
         configuration.checkForUnknownFields();
     }
 
-    public static SlackLogEventBatchProcessor createBatchProcessor(Configuration configuration) {
-        SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor(configuration.getUrl("slackUrl"));
+    private static SlackLogEventBatchProcessor createBatchProcessor(Configuration configuration) {
+        SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor(
+                configuration.getUrl("slackUrl"),
+                configuration.optionalString("username"),
+                configuration.optionalString("channel"));
         slackLogEventBatchProcessor.setSlackLogEventsFormatter(
                 configuration.createInstanceWithDefault("slackLogEventsFormatter", SlackLogEventsFormatter.class));
 
@@ -37,10 +37,15 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
     }
 
     @Override
-    public synchronized void logEvent(LogEvent event) {
-        if (threshold.toInt() <= event.getLevel().toInt()) {
-            super.logEvent(event);
-        }
+    public String toString() {
+        return getClass().getSimpleName() + "{"
+                + "username=" + getProcessor().getUsername().orElse("") + ","
+                + "channel=" + getProcessor().getChannel().orElse("") + ","
+                + "slackUrl=" + getProcessor().getSlackUrl()
+                + "}";
     }
 
+    private SlackLogEventBatchProcessor getProcessor() {
+        return (SlackLogEventBatchProcessor) batchProcessor;
+    }
 }

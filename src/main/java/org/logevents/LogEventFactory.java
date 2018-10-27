@@ -236,8 +236,9 @@ public class LogEventFactory implements ILoggerFactory {
      * This method is called the first time {@link #getInstance()} is called.
      */
     public void configure() {
-        rootLogger.setOwnObserver(new ConsoleLogEventObserver(), false);
+        rootLogger.reset();
         loggerCache.values().forEach(logger -> logger.reset());
+        rootLogger.setOwnObserver(new ConsoleLogEventObserver(), false);
         ServiceLoader<LogEventConfigurator> serviceLoader = ServiceLoader.load(LogEventConfigurator.class);
 
         if (!serviceLoader.iterator().hasNext()) {

@@ -19,6 +19,7 @@ import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.batch.LogEventGroup;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
+import org.slf4j.event.Level;
 
 /**
  * Used to gather up a number of log event to process as a batch. This is useful
@@ -52,8 +53,10 @@ public class BatchingLogEventObserver implements LogEventObserver {
                 }
             });
 
-    private final LogEventBatchProcessor batchProcessor;
+    protected final LogEventBatchProcessor batchProcessor;
     private final ScheduledExecutorService executor;
+
+    protected Level threshold = Level.TRACE;
 
     protected Duration cooldownTime = Duration.ofSeconds(15);
     protected Duration maximumWaitTime = Duration.ofMinutes(1);
@@ -67,6 +70,8 @@ public class BatchingLogEventObserver implements LogEventObserver {
 
     public BatchingLogEventObserver(Properties properties, String prefix) {
         Configuration configuration = new Configuration(properties, prefix);
+
+        threshold = configuration.optionalString("threshold").map(Level::valueOf).orElse(Level.DEBUG);
         idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);
         cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
         maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
@@ -96,13 +101,17 @@ public class BatchingLogEventObserver implements LogEventObserver {
     }
 
     Instant logEvent(LogEvent logEvent, Instant now) {
-        if (scheduledTask != null) {
-            scheduledTask.cancel(false);
+        if (threshold.toInt() <= logEvent.getLevel().toInt()) {
+            if (scheduledTask != null) {
+                scheduledTask.cancel(false);
+            }
+            Instant sendTime = addToBatch(logEvent, now);
+            Duration duration = Duration.between(now, sendTime);
+            scheduledTask = executor.schedule(this::execute, duration.toMillis(), TimeUnit.MILLISECONDS);
+            return sendTime;
+        } else {
+            return null;
         }
-        Instant sendTime = addToBatch(logEvent, now);
-        Duration duration = Duration.between(now, sendTime);
-        scheduledTask = executor.schedule(this::execute, duration.toMillis(), TimeUnit.MILLISECONDS);
-        return sendTime;
     }
 
     Instant addToBatch(LogEvent logEvent, Instant now) {
