@@ -25,6 +25,8 @@ import org.slf4j.event.Level;
 
 public class FileLogEventObserverTest {
 
+    private static final String CWD = Paths.get("").toAbsolutePath().getFileName().toString();
+
     private LogEventFactory factory = LogEventFactory.getInstance();
     private LoggerConfiguration logger = factory.getLogger(getClass().getName());
 
@@ -47,12 +49,12 @@ public class FileLogEventObserverTest {
         Properties properties = new Properties();
         FileLogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
 
-        assertEquals("logevents-test.log", observer.getFilename(new LogEvent("", Level.DEBUG, "hello")));
+        assertEquals(CWD + "-test.log", observer.getFilename(new LogEvent("", Level.DEBUG, "hello")));
 
-        assertEquals("logevents", FileLogEventObserver.currentWorkingDirectory());
+        assertEquals(CWD, FileLogEventObserver.currentWorkingDirectory());
         assertEquals("slf4j-api", FileLogEventObserver.determineJarName(Logger.class.getName()));
-        assertEquals("logevents", FileLogEventObserver.determineJarName(String.class.getName()));
-        assertEquals("logevents", FileLogEventObserver.determineJarName(getClass().getName()));
+        assertEquals(CWD, FileLogEventObserver.determineJarName(String.class.getName()));
+        assertEquals(CWD, FileLogEventObserver.determineJarName(getClass().getName()));
     }
 
     @Test

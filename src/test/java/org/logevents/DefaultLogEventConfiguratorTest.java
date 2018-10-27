@@ -25,6 +25,8 @@ import org.slf4j.event.Level;
 public class DefaultLogEventConfiguratorTest {
 
     private static final String FS = System.getProperty("file.separator");
+    private static final String CWD = Paths.get("").toAbsolutePath().getFileName().toString();
+
     private LogEventFactory factory = new LogEventFactory();
     private DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
     private Properties configuration = new Properties();
@@ -67,7 +69,7 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(
                 "CompositeLogEventObserver{["
                 +"ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, "
-                +"FileLogEventObserver{filename=logs" + FS + "logevents-test.log,formatter=TTLLEventLogFormatter}]}",
+                +"FileLogEventObserver{filename=logs" + FS + CWD + "-test.log,formatter=TTLLEventLogFormatter}]}",
                 factory.getRootLogger().getObserver());
     }
 
@@ -82,7 +84,7 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(
                 "CompositeLogEventObserver{["
                 +"ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, "
-                +"FileLogEventObserver{filename=logs" + FS + "logevents-test.log,formatter=ConsoleLogEventFormatter}]}",
+                +"FileLogEventObserver{filename=logs" + FS + CWD + "-test.log,formatter=ConsoleLogEventFormatter}]}",
                 factory.getRootLogger().getObserver());
     }
 
