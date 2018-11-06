@@ -20,11 +20,12 @@ import org.slf4j.event.Level;
  */
 public class ConsoleLogEventObserver implements LogEventObserver {
 
-    private LogEventFormatter formatter;
-    private Level threshold;
+    private final LogEventFormatter formatter;
+    private final Level threshold;
 
     public ConsoleLogEventObserver(LogEventFormatter formatter) {
         this.formatter = formatter;
+        this.threshold = Level.TRACE;
     }
 
     public ConsoleLogEventObserver() {

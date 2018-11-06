@@ -6,7 +6,7 @@ import org.logevents.formatting.LogEventFormatter;
 public class DemoLogEventFormatter implements LogEventFormatter {
 
     @Override
-    public String format(LogEvent logEvent) {
+    public String apply(LogEvent logEvent) {
         return "AN ERROR! " + "(" + logEvent.getLevel() + "): " + logEvent.formatMessage() + "\n" + "\tCalled at: "
                 + logEvent.getCallerLocation();
     }
