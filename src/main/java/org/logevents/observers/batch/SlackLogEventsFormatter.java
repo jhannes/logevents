@@ -1,5 +1,7 @@
 package org.logevents.observers.batch;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -91,12 +93,26 @@ public class SlackLogEventsFormatter {
         attachment.put("title", "Details");
         attachment.put("color", "danger");
         List<Map<String, Object>> fields = new ArrayList<>();
-        fields.add(slackMessageField("Level", event.getLevel().toString(), false));
-        for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
+        fields.add(slackMessageField("Level", event.getLevel().toString(), true));
+        fields.add(slackMessageField("Source", getMessageSource(), true));
+        for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()){
             fields.add(slackMessageField(entry.getKey(), entry.getValue(), false));
         }
         attachment.put("fields", fields);
         return attachment;
+    }
+
+    private String getMessageSource() {
+        String hostname = "unknown host";
+        try {
+            hostname = Optional.ofNullable(System.getenv("HOSTNAME"))
+                        .orElse(Optional.ofNullable(System.getenv("COMPUTERNAME"))
+                        .orElse(InetAddress.getLocalHost().getHostName()));
+        } catch (UnknownHostException e) {
+        }
+
+        String username = System.getProperty("user.name");
+        return username + "@" + hostname;
     }
 
     protected Map<String, Object> createStackTraceAttachment(LogEvent event) {
