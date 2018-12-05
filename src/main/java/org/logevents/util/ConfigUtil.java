@@ -8,7 +8,7 @@ public class ConfigUtil {
 
     public static <T> T create(String prefix, String defaultPackage, Properties properties) {
         Class<?> clazz = getClass(prefix, defaultPackage, properties)
-                .orElseThrow(() -> new IllegalArgumentException("Missing configuration for class in " + prefix));
+                .orElseThrow(() -> new LogEventConfigurationException("Missing configuration for class in " + prefix));
         return create(prefix, clazz, properties);
     }
 
@@ -23,7 +23,7 @@ public class ConfigUtil {
         try {
             return Optional.of(Class.forName(className));
         } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Can't create " + prefix + "=" + className + ": " + e);
+            throw new LogEventConfigurationException("Can't create " + prefix + "=" + className + ": " + e);
         }
     }
 
@@ -35,15 +35,20 @@ public class ConfigUtil {
             } catch (NoSuchMethodException e) {
                 return (T) clazz.newInstance();
             }
+        } catch (LogEventConfigurationException e) {
+            throw e;
         } catch (RuntimeException e) {
-            throw new IllegalArgumentException("Exception when creating " + prefix + "=" + clazz.getName() + ": " + e);
+            throw new LogEventConfigurationException("Exception when creating " + prefix + "=" + clazz.getName(), e);
         } catch (InvocationTargetException e) {
-            if (e.getTargetException() instanceof RuntimeException) {
-                throw new IllegalArgumentException("Exception when creating " + prefix + "=" + clazz.getName() + ": " + e.getTargetException());
+            if (e.getTargetException() instanceof LogEventConfigurationException) {
+                throw (LogEventConfigurationException)e.getTargetException();
             }
-            throw new IllegalArgumentException("Exception when creating " + prefix + e);
+            if (e.getTargetException() instanceof RuntimeException) {
+                throw new LogEventConfigurationException("Exception when creating " + prefix + "=" + clazz.getName(), e.getTargetException());
+            }
+            throw new LogEventConfigurationException("Exception when creating " + prefix + e);
         } catch (InstantiationException|IllegalAccessException e) {
-            throw new IllegalArgumentException("Can't create " + prefix + "=" + clazz.getName() + ": " + e);
+            throw new LogEventConfigurationException("Can't create " + prefix + "=" + clazz.getName() + ": " + e);
         }
     }
 

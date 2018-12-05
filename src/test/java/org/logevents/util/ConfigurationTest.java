@@ -66,8 +66,10 @@ public class ConfigurationTest {
     @Test
     public void shouldGiveGoodErrorMessageOnExceptionInConstuctor() {
         properties.put("observer.foo.thread", ClassWhichThrowsExceptionInConstructor.class.getName());
-        assertConfigurationErrorContains(() -> configuration.createInstance("thread", Thread.class),
-                "Exception when creating observer.foo.thread", "A custom error message");
+        LogEventConfigurationException ex = assertConfigurationErrorContains(() -> configuration.createInstance("thread", Thread.class),
+                "Exception when creating observer.foo.thread");
+        assertTrue("expected to find <" + "A custom error message" + "> in string " + ex.getCause().getMessage(),
+                ex.getCause().getMessage().contains("A custom error message"));
     }
 
     @Test
@@ -107,15 +109,17 @@ public class ConfigurationTest {
         }
     }
 
-    private void assertConfigurationErrorContains(Runnable r, String... expecteds) {
+    private LogEventConfigurationException assertConfigurationErrorContains(Runnable r, String... expecteds) {
         try {
             r.run();
             fail();
-        } catch (IllegalArgumentException e) {
+            return null;
+        } catch (LogEventConfigurationException e) {
             for (String expected : expecteds) {
                 assertTrue("expected to find <" + expected + "> in string " + e.getMessage(),
                         e.getMessage().contains(expected));
             }
+            return e;
         }
     }
 }

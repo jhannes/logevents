@@ -27,6 +27,7 @@ import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.ConfigUtil;
+import org.logevents.util.LogEventConfigurationException;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.event.Level;
 
@@ -112,7 +113,12 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      */
     protected synchronized void resetConfigurationFromFiles(LogEventFactory factory) {
         setDefaultLogging(factory);
-        loadConfiguration(factory, loadPropertiesFromFiles(getConfigurationFileNames()));
+        try {
+            loadConfiguration(factory, loadPropertiesFromFiles(getConfigurationFileNames()));
+        } catch (Exception e) {
+            LogEventStatus.getInstance().addFatal(this, "Failed to load " + getConfigurationFileNames(), e);
+            setDefaultLogging(factory);
+        }
     }
 
     /**
@@ -123,7 +129,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @return the activated profiles for the current JVM as a list of strings
      */
     protected List<String> getProfiles() {
-        String profilesString = System.getProperty("profiles", System.getProperty("profile", System.getProperty("spring.profiles.active", "")));
+        String profilesString = System.getProperty("profiles", System.getProperty("spring.profiles.active", ""));
         return Arrays.asList(profilesString.split(","));
     }
 
@@ -163,8 +169,6 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         Properties properties = new Properties();
         for (String filename : configurationFileNames) {
             loadConfigResource(properties, filename);
-        }
-        for (String filename : configurationFileNames) {
             loadConfigFile(properties, filename);
         }
         return properties;
@@ -258,7 +262,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
             if (spacePos > 0) {
                 List<LogEventObserver> observers = Stream.of(configuration.substring(spacePos+1).trim().split(","))
-                        .map(this::getObserver)
+                        .map(s -> getObserver(s.trim()))
                         .collect(Collectors.toList());
                 LogEventObserver observer = CompositeLogEventObserver.combineList(observers);
                 factory.setObserver(logger, observer, includeParent);
@@ -268,7 +272,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
     LogEventObserver getObserver(String observerName) {
         return observers.computeIfAbsent(observerName, key -> {
-            throw new IllegalArgumentException("Unknown observer <" + key + ">");
+            throw new LogEventConfigurationException("Unknown observer <" + key + ">");
         });
     }
 
