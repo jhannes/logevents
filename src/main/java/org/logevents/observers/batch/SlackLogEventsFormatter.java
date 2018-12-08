@@ -95,6 +95,7 @@ public class SlackLogEventsFormatter {
         List<Map<String, Object>> fields = new ArrayList<>();
         fields.add(slackMessageField("Level", event.getLevel().toString(), true));
         fields.add(slackMessageField("Source", getMessageSource(), true));
+        fields.add(slackMessageField("Main", System.getProperty("sun.java.command"), true));
         for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()){
             fields.add(slackMessageField(entry.getKey(), entry.getValue(), false));
         }

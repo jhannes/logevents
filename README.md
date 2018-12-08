@@ -16,7 +16,7 @@ SLF4J - the logging lingua franka for Java.
 2. Add `logevents.properties` to your current working directory or `src/main/java` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level.
 3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to the file `logs/<your-app-name>-%date.log` and warning events to console.
 4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See PatternEventLogFormatter for more details.
-5. You can simply add a Slack observer as well. [Get a slack webhook URL](https://www.slack.com/apps/manage/custom-integrations) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`.
+5. You can simply add a Slack observer as well. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`.
 
 Here is a simple, but powerful `logevent.properties`:
 

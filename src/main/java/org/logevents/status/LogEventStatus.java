@@ -47,6 +47,9 @@ public class LogEventStatus {
 
         if (this.getThreshold().toInt() <= statusEvent.getLevel().toInt()) {
             System.err.println(statusEvent.formatMessage());
+            if (statusEvent.getThrowable() != null) {
+                statusEvent.getThrowable().printStackTrace();
+            }
         }
     }
 

@@ -44,7 +44,7 @@ public class ConfigUtil {
                 throw (LogEventConfigurationException)e.getTargetException();
             }
             if (e.getTargetException() instanceof RuntimeException) {
-                throw new LogEventConfigurationException("Exception when creating " + prefix + "=" + clazz.getName(), e.getTargetException());
+                throw new LogEventConfigurationException("Exception when creating " + prefix + "=" + clazz.getName() + ": " + e.getTargetException(), e.getTargetException());
             }
             throw new LogEventConfigurationException("Exception when creating " + prefix + e);
         } catch (InstantiationException|IllegalAccessException e) {

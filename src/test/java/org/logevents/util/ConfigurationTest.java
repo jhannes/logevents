@@ -104,7 +104,7 @@ public class ConfigurationTest {
         try {
             r.run();
             fail();
-        } catch (IllegalArgumentException e) {
+        } catch (LogEventConfigurationException e) {
             assertEquals(expected, e.getMessage());
         }
     }

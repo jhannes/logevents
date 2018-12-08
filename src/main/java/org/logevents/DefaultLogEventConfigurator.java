@@ -16,9 +16,11 @@ import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -261,9 +263,10 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
             factory.setLevel(logger, level);
 
             if (spacePos > 0) {
-                List<LogEventObserver> observers = Stream.of(configuration.substring(spacePos+1).trim().split(","))
+                Set<LogEventObserver> observers = new LinkedHashSet<>(
+                        Stream.of(configuration.substring(spacePos+1).trim().split(","))
                         .map(s -> getObserver(s.trim()))
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toList()));
                 LogEventObserver observer = CompositeLogEventObserver.combineList(observers);
                 factory.setObserver(logger, observer, includeParent);
             }

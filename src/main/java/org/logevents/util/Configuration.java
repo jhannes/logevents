@@ -29,7 +29,7 @@ public class Configuration {
         try {
             return new URL(string);
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(fullKey(key) + " value " + string + ": " + e.getMessage());
+            throw new LogEventConfigurationException(fullKey(key) + " value " + string + ": " + e.getMessage());
         }
     }
 
@@ -46,7 +46,7 @@ public class Configuration {
         try {
             return Duration.parse(getString(key));
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
+            throw new LogEventConfigurationException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
         }
     }
 
@@ -54,14 +54,14 @@ public class Configuration {
         try {
             return optionalString(key).map(Duration::parse);
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
+            throw new LogEventConfigurationException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
         }
     }
 
 
     public String getString(String key) {
         return optionalString(key)
-                .orElseThrow(() -> new IllegalArgumentException("Missing required key <" + fullKey(key) + "> in <" + properties.keySet() + ">"));
+                .orElseThrow(() -> new LogEventConfigurationException("Missing required key <" + fullKey(key) + "> in <" + properties.keySet() + ">"));
     }
 
     public boolean getBoolean(String key) {
@@ -124,7 +124,7 @@ public class Configuration {
         Set<String> remainingFields = new TreeSet<>(actualFields);
         remainingFields.removeAll(expectedFields);
         if (!remainingFields.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new LogEventConfigurationException(
                     String.format("Unknown configuration options: %s for %s. Expected options: %s", remainingFields, prefix, expectedFields));
         }
 
