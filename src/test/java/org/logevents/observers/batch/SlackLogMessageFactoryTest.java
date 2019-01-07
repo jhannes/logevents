@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+
+import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.util.JsonUtil;
@@ -76,6 +78,7 @@ public class SlackLogMessageFactoryTest {
     }
 
     @Test
+    @Ignore
     public void shouldCreateSourceLinkInStackTrace() {
         SlackExceptionFormatter formatter = new SlackExceptionFormatter();
         formatter.addPackageMavenLocation("org.logevents", "org.logevents/logevents");
