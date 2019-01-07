@@ -216,7 +216,7 @@ public class PatternLogEventFormatterTest {
     @Test
     public void shouldSpecifyStackLength() {
         formatter.setPattern("%-5level %logger{36} - %msg");
-        formatter.getExceptionFormatter().setMaxLength(2);
+        formatter.getExceptionFormatter().get().setMaxLength(2);
         LogEvent event = new LogEvent("some.logger.name", Level.ERROR, "An error happened", createException());
 
         String[] lines = formatter.apply(event).split("\r?\n");

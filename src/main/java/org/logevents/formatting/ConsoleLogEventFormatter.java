@@ -1,5 +1,7 @@
 package org.logevents.formatting;
 
+import java.util.Optional;
+
 import org.logevents.LogEvent;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.slf4j.event.Level;
@@ -16,6 +18,11 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     protected final ConsoleFormatting format = ConsoleFormatting.getInstance();
 
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
+
+    @Override
+    public Optional<ExceptionFormatter> getExceptionFormatter() {
+        return Optional.of(exceptionFormatter);
+    }
 
     @Override
     public String apply(LogEvent e) {

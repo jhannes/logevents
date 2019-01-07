@@ -28,6 +28,7 @@ observer.slack.sourceCode.0.package=org.logevents
 observer.slack.sourceCode.0.maven=org.logevents/logevents
 
 observer.console.threshold=WARN
+observer.console.packageFilter=sun.reflect
 
 root=DEBUG file,console,slack
 ```

@@ -1,5 +1,6 @@
 package org.logevents.formatting;
 
+import java.util.Optional;
 import java.util.function.Function;
 
 import org.logevents.LogEvent;
@@ -28,5 +29,8 @@ public interface LogEventFormatter extends Function<LogEvent, String> {
         return new String(result);
     }
 
+    default Optional<ExceptionFormatter> getExceptionFormatter() {
+        return Optional.empty();
+    }
 
 }

@@ -148,8 +148,9 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         configuration.checkForUnknownFields();
     }
 
-    public ExceptionFormatter getExceptionFormatter() {
-        return exceptionFormatter;
+    @Override
+    public Optional<ExceptionFormatter> getExceptionFormatter() {
+        return Optional.of(exceptionFormatter);
     }
 
     public void setPattern(String pattern) {

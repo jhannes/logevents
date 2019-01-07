@@ -36,6 +36,8 @@ public class ConsoleLogEventObserver implements LogEventObserver {
         this.formatter = configuration.createInstanceWithDefault("formatter",
                 LogEventFormatter.class, ConsoleLogEventFormatter.class);
         this.threshold = configuration.optionalString("threshold").map(Level::valueOf).orElse(Level.TRACE);
+        formatter.getExceptionFormatter().ifPresent(
+                exceptionFormatter -> exceptionFormatter.setPackageFilter(configuration.getStringList("packageFilter")));
         configuration.checkForUnknownFields();
         LogEventStatus.getInstance().addInfo(this, "Configured " + configuration.getPrefix());
     }
