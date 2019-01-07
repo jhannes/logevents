@@ -7,7 +7,7 @@ public class LogEventConfigurationException extends RuntimeException {
     }
 
     public LogEventConfigurationException(String message, Throwable throwable) {
-        super(message, throwable);
+        super(message + ": " + throwable, throwable);
     }
 
 }

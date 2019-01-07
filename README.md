@@ -24,6 +24,8 @@ Here is a simple, but powerful `logevent.properties`:
 observer.slack=SlackLogEventObserver
 observer.slack.slackUrl=....
 observer.slack.threshold=WARN
+observer.slack.sourceCode.0.package=org.logevents
+observer.slack.sourceCode.0.maven=org.logevents/logevents
 
 observer.console.threshold=WARN
 
@@ -398,16 +400,13 @@ factory.setRootObserver(CompositeLogEventObserver.combine(
 Or with properties files:
 
 ```
-observer.slack=LevelThresholdConditionalObserver
+observer.slack=SlackLogEventObserver
 observer.slack.threshold=WARN
 
-observer.slack.delegate=BatchingLogEventObserver
-observer.slack.delegate.cooldownTime=PT10S
-observer.slack.delegate.maximumWaitTime=PT1M
-observer.slack.delegate.idleThreshold=PT5S
-
-observer.slack.delegate.batchProcessor=org.logevents.observers.batch.SlackLogEventBatchProcessor
-observer.slack.delegate.batchProcessor.slackUrl=https://hooks.slack.com/services/xxxx/xxxxx
+observer.slack.cooldownTime=PT10S
+observer.slack.maximumWaitTime=PT1M
+observer.slack.idleThreshold=PT5S
+observer.slack.slackUrl=https://hooks.slack.com/services/xxxx/xxxxx
 
 logger.org.logeventsdemo.Main=DEBUG slack
 
@@ -418,6 +417,28 @@ logger.org.logeventsdemo.Main=DEBUG slack
 Logevents comes with an example implementation of logging to Slack in
 the form of `SlackLogEventBatchProcessor`. You can subclass this to customize
 your Slack messages.
+
+`SlackLogEventBatchProcessor` can link your stack traces directly to your
+source code repository. Currently, Github and Bitbucket 5 URLs are supported.
+Examples:
+
+```
+observer.slack.sourceCode.0.packages=org.logevents
+# See if META-INF/maven/org.logevents/logevents/pom.xml is available
+#  If so, look for the <scm> tag in the pom-file
+observer.slack.sourceCode.0.maven=org.logevents/logevents
+
+observer.slack.sourceCode.1.packages=org.slf4j
+# Link to Github
+observer.slack.sourceCode.1.github=https://github.com/qos-ch/slf4j
+observer.slack.sourceCode.1.tag=v_1.7.25
+
+observer.slack.sourceCode.2.packages=com.myproject
+# Link to Bitbucket: https://bitbucket.example.com/EX/project/src/main/java/<java-path>?at=release#<line>
+observer.slack.sourceCode.2.github=https://bitbucket.example.com/EX/project/
+observer.slack.sourceCode.2.tag=release
+```
+
 
 
 ### Servlets

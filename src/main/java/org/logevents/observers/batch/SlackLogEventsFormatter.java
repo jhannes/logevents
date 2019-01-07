@@ -141,4 +141,20 @@ public class SlackLogEventsFormatter {
     protected String bold(String s) {
         return "*" + s + "*";
     }
+
+    public void addPackageGithubLocation(String sourcePackages, String project, Optional<String> tag) {
+        exceptionFormatter.addPackageGithubLocation(sourcePackages, project, tag);
+    }
+
+    public void addPackageBitbucket5Location(String sourcePackages, String url, Optional<String> tag) {
+        exceptionFormatter.addPackageBitbucket5Location(sourcePackages, url, tag);
+    }
+
+    public void addPackageMavenLocation(String sourcePackages, String mavenLocation) {
+        exceptionFormatter.addPackageMavenLocation(sourcePackages, mavenLocation);
+    }
+
+    public void setPackageFilter(String[] packageFilter) {
+        exceptionFormatter.setPackageFilter(packageFilter);
+    }
 }

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.util.JsonUtil;
@@ -74,6 +73,41 @@ public class SlackLogMessageFactoryTest {
         assertEquals("Stack Trace", JsonUtil.getField(suppressedEventsAttachment, "title"));
         assertContains("org.logevents.observers.batch.SlackLogMessageFactoryTest",
                 JsonUtil.getField(suppressedEventsAttachment, "text").toString());
+    }
+
+    @Test
+    public void shouldCreateSourceLinkInStackTrace() {
+        SlackExceptionFormatter formatter = new SlackExceptionFormatter();
+        formatter.addPackageMavenLocation("org.logevents", "org.logevents/logevents");
+
+        StringBuilder builder = new StringBuilder();
+        StackTraceElement frame = new StackTraceElement(SlackExceptionFormatter.class.getName(),
+                "addPackageMavenLocation", "SlackExceptionFormatter.java", 72);
+        formatter.outputStackFrame(frame , 2, "", builder);
+
+        assertContains("https://github.com/jhannes/logevents/blob",
+                builder.toString());
+        assertContains("src/main/java/org/logevents/observers/batch/SlackExceptionFormatter.java#L72",
+                builder.toString());
+    }
+
+    @Test
+    public void shouldCreateSourceLinkInBitbucket() {
+        SlackExceptionFormatter formatter = new SlackExceptionFormatter();
+        formatter.addPackageBitbucket5Location("com.atlassian.labs.hipchat",
+                "https://bitbucket.org/atlassian/hipchat-for-jira/src/51fead28c419edae0aa120e0f03c78d043cc81a5/",
+                Optional.of("hipchat-for-jira-plugin-1.3.7"));
+
+        StringBuilder builder = new StringBuilder();
+        StackTraceElement frame = new StackTraceElement("com.atlassian.labs.hipchat.action.Configuration",
+                "setHipChatAuthToken", "Configuration.java", 35);
+        formatter.outputStackFrame(frame , 0, "", builder);
+
+        assertContains("https://bitbucket.org/atlassian/hipchat-for-jira/src",
+                builder.toString());
+        assertContains("src/main/java/com/atlassian/labs/hipchat/action/Configuration.java?at=hipchat-for-jira-plugin-1.3.7#35",
+                builder.toString());
+
     }
 
     private void assertContains(String expected, String actual) {
