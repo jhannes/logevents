@@ -261,7 +261,7 @@ public class LogEventFactory implements ILoggerFactory {
      */
     protected boolean isRunningInsideJunit() {
         for (StackTraceElement stackTraceElement : new Throwable().getStackTrace()) {
-            if (stackTraceElement.getClassName().matches("^org.junit.(runners|platform.engine)")) {
+            if (stackTraceElement.getClassName().matches("^org.junit.(runners|platform.engine).*")) {
                 return true;
             }
         }
