@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,8 +29,7 @@ public class SlackLogMessageFactoryTest {
         Level level = pickOne(Level.values());
         String format = randomString();
 
-        List<LogEventGroup> batch = new ArrayList<>();
-        batch.add(new LogEventGroup(new LogEvent(loggerName, level, format)));
+        LogEventBatch batch = new LogEventBatch().add(new LogEvent(loggerName, level, format));
 
         Map<String, Object> slackMessage = new SlackLogEventsFormatter().createSlackMessage(batch, Optional.of(userName), Optional.of(channelName));
         assertEquals(channelName, JsonUtil.getField(slackMessage, "channel"));
@@ -47,12 +45,11 @@ public class SlackLogMessageFactoryTest {
 
     @Test
     public void shouldCollectMessagesInBatch() {
-        List<LogEventGroup> batch = new ArrayList<>();
-        batch.add(new LogEventGroup(new LogEvent(loggerName, Level.WARN, "A lesser important message")));
-        LogEventGroup logEventGroup = new LogEventGroup(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
-        logEventGroup.add(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
-        batch.add(logEventGroup);
-        batch.add(new LogEventGroup(new LogEvent(loggerName, Level.ERROR, "Yet another message")));
+        LogEventBatch batch = new LogEventBatch();
+        batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message"));
+        batch.add(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
+        batch.add(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
+        batch.add(new LogEvent(loggerName, Level.ERROR, "Yet another message"));
 
         Map<String, Object> slackMessage = new SlackLogEventsFormatter().createSlackMessage(batch, Optional.empty(), Optional.empty());
 
@@ -67,8 +64,8 @@ public class SlackLogMessageFactoryTest {
     @Test
     public void shouldOutputStackTrace() {
         Exception exception = new IOException("Something went wrong with " + randomString());
-        List<LogEventGroup> batch = new ArrayList<>();
-        batch.add(new LogEventGroup(new LogEvent(loggerName, Level.WARN, "A lesser important message", exception)));
+        LogEventBatch batch = new LogEventBatch();
+        batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message", exception));
         Map<String, Object> slackMessage = new SlackLogEventsFormatter().createSlackMessage(batch, Optional.empty(), Optional.empty());
 
         Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);

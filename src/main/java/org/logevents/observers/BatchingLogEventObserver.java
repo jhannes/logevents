@@ -2,8 +2,6 @@ package org.logevents.observers;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -15,8 +13,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
-import org.logevents.observers.batch.LogEventGroup;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
@@ -64,8 +62,7 @@ public class BatchingLogEventObserver implements LogEventObserver {
 
     private Instant lastSendTime = Instant.ofEpochMilli(0);
 
-    private List<LogEventGroup> currentBatch = new ArrayList<>();
-    private LogEventGroup currentMessage;
+    private LogEventBatch currentBatch = new LogEventBatch();
     private ScheduledFuture<?> scheduledTask;
 
     public BatchingLogEventObserver(Properties properties, String prefix) {
@@ -91,7 +88,7 @@ public class BatchingLogEventObserver implements LogEventObserver {
      * Block until the current batch is processed by the internal scheduler.
      * Especially useful for testing.
      */
-    public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+    public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         scheduledExecutorService.awaitTermination(timeout, unit);
     }
 
@@ -115,29 +112,23 @@ public class BatchingLogEventObserver implements LogEventObserver {
     }
 
     Instant addToBatch(LogEvent logEvent, Instant now) {
-        if (currentMessage != null && currentMessage.isMatching(logEvent)) {
-            currentMessage.add(logEvent);
-        } else {
-            currentMessage = new LogEventGroup(logEvent);
-            currentBatch.add(currentMessage);
-        }
+        currentBatch.add(logEvent);
         return nextSendDelay(now);
     }
 
     private void execute() {
-        List<LogEventGroup> batch = takeCurrentBatch();
+        LogEventBatch batch = takeCurrentBatch();
         if (!batch.isEmpty()) {
             batchProcessor.processBatch(batch);
         }
     }
 
-    public synchronized List<LogEventGroup> takeCurrentBatch() {
-        List<LogEventGroup> batch = new ArrayList<>();
-        batch.addAll(currentBatch);
-        currentBatch.clear();
-        currentMessage = null;
+    public synchronized LogEventBatch takeCurrentBatch() {
         lastSendTime = Instant.now();
-        return batch;
+        LogEventBatch returnedBatch = this.currentBatch;
+        currentBatch = new LogEventBatch();
+
+        return returnedBatch;
     }
 
     private Instant nextSendDelay(Instant now) {
@@ -157,11 +148,11 @@ public class BatchingLogEventObserver implements LogEventObserver {
     }
 
     private Instant firstEventInBatchTime() {
-        return currentBatch.get(0).firstEventTime();
+        return currentBatch.firstEventTime();
     }
 
     private Instant latestEventInBatchTime() {
-        return currentMessage.latestEventTime();
+        return currentBatch.latestEventTime();
     }
 
     public void setCooldownTime(Duration cooldownTime) {

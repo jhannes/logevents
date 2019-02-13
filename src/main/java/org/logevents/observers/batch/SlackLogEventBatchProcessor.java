@@ -15,8 +15,8 @@ import org.logevents.util.NetUtils;
 
 public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
 
-    private Optional<String> username = Optional.empty();
-    private Optional<String> channel = Optional.empty();
+    private Optional<String> username;
+    private Optional<String> channel;
     private URL slackUrl;
     private SlackLogEventsFormatter slackLogEventsFormatter;
 
@@ -27,7 +27,7 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
         setSlackLogEventsFormatter(new SlackLogEventsFormatter());
     }
 
-    public SlackLogEventBatchProcessor(Properties properties, String prefix) throws MalformedURLException {
+    public SlackLogEventBatchProcessor(Properties properties, String prefix) {
         Configuration configuration = new Configuration(properties, prefix);
         username = configuration.optionalString("username");
         channel = configuration.optionalString("channel");
@@ -62,7 +62,7 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
     }
 
     @Override
-    public void processBatch(List<LogEventGroup> batch) {
+    public void processBatch(LogEventBatch batch) {
         if (slackUrl == null) {
             return;
         }
@@ -77,7 +77,6 @@ public class SlackLogEventBatchProcessor implements LogEventBatchProcessor {
             NetUtils.postJson(slackUrl, JsonUtil.toIndentedJson(slackMessage));
         } catch (IOException e) {
             LogEventStatus.getInstance().addError(this, "Failed to send slack message", e);
-            return;
         }
     }
 

@@ -3,6 +3,7 @@ package org.logevents;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -15,11 +16,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
 
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.*;
+import org.logevents.extend.junit.LogEventRule;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.status.LogEventStatus;
+import org.logevents.status.StatusEvent;
 import org.slf4j.event.Level;
 
 public class DefaultLogEventConfiguratorTest {
@@ -31,6 +32,7 @@ public class DefaultLogEventConfiguratorTest {
     private DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
     private Properties configuration = new Properties();
     private Path propertiesDir = Paths.get("target", "test-data", "properties");
+    private static StatusEvent.StatusLevel oldThreshold;
 
     @Test
     public void shouldSetRootLevelFromProperties() {
@@ -241,10 +243,20 @@ public class DefaultLogEventConfiguratorTest {
         }
     }
 
+    @BeforeClass
+    public static void turnOffStatusLogging() {
+        oldThreshold = LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
+    }
+
+    @AfterClass
+    public static void restoreStatusLogging() {
+        LogEventStatus.getInstance().setThreshold(oldThreshold);
+    }
+
     @After
     public void deleteConfigFiles() throws IOException {
         if (Files.isDirectory(propertiesDir)) {
-            Files.list(propertiesDir).map(Path::toFile).forEach(file -> file.delete());
+            Files.list(propertiesDir).map(Path::toFile).forEach(File::delete);
         }
     }
 

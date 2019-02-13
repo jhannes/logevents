@@ -33,7 +33,7 @@ public class SlackLogEventBatchProcessorTest {
 
     public static class Formatter extends SlackLogEventsFormatter {
         @Override
-        protected List<Map<String, Object>> createAttachments(LogEventGroup mainGroup, List<LogEventGroup> batch) {
+        protected List<Map<String, Object>> createAttachments(LogEventBatch batch) {
             return null;
         }
 
@@ -62,7 +62,7 @@ public class SlackLogEventBatchProcessorTest {
         processor.setUsername("loguser");
 
         LogEvent logEvent = new LogEvent("org.example", Level.WARN, "Nothing");
-        processor.processBatch(Arrays.asList(new LogEventGroup(logEvent)));
+        processor.processBatch(new LogEventBatch().add(logEvent));
 
         assertEquals(Arrays.asList("{\n"
                 + "  \"username\": \"loguser\",\n" + "  \"channel\": \"general\",\n"
@@ -84,7 +84,7 @@ public class SlackLogEventBatchProcessorTest {
         URL url = new URL("http://localhost:" + port);
         SlackLogEventBatchProcessor processor = new SlackLogEventBatchProcessor(url, Optional.empty(), Optional.empty());
         LogEvent logEvent = new LogEvent("org.example", Level.WARN, "Nothing");
-        processor.processBatch(Arrays.asList(new LogEventGroup(logEvent)));
+        processor.processBatch(new LogEventBatch().add(logEvent));
 
         List<StatusEvent> events = LogEventStatus.getInstance().getHeadMessages(processor, StatusLevel.ERROR);
         assertTrue("Expected 1 event, was " + events, events.size() == 1);
@@ -98,7 +98,6 @@ public class SlackLogEventBatchProcessorTest {
         Properties properties = new Properties();
         properties.put("observer.slack.slackUrl", "http://localhost:1234");
         properties.put("observer.slack.channel", "general");
-        properties.put("observer.slack.username", "MyTestApp");
         properties.put("observer.slack.username", "MyTestApp");
         properties.put("observer.slack.sourceCode.0.package", "org.logevents");
         properties.put("observer.slack.sourceCode.0.maven", "org.logevents/logevents");

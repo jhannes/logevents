@@ -14,6 +14,10 @@ public class LogEventGroup {
         logEvents.add(logEvent);
     }
 
+    public LogEventGroup(List<LogEvent> events) {
+        logEvents.addAll(events);
+    }
+
     public void add(LogEvent logEvent) {
         this.logEvents.add(logEvent);
     }
@@ -40,4 +44,12 @@ public class LogEventGroup {
         return logEvents.size();
     }
 
+    public String getMessage() {
+        return headMessage().getMessage();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + "{" + size() + " x '" + headMessage() + "'}";
+    }
 }

@@ -16,18 +16,18 @@ import java.util.concurrent.TimeoutException;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
-import org.logevents.observers.batch.LogEventGroup;
 import org.slf4j.event.Level;
 
 public class BatchingLogEventObserverTest {
 
 
     public static class Processor implements LogEventBatchProcessor {
-        List<List<LogEventGroup>> batches = new ArrayList<>();
+        List<LogEventBatch> batches = new ArrayList<>();
 
         @Override
-        public void processBatch(List<LogEventGroup> batch) {
+        public void processBatch(LogEventBatch batch) {
             batches.add(batch);
         }
     }
@@ -40,11 +40,11 @@ public class BatchingLogEventObserverTest {
         observer.addToBatch(sampleMessage(messageFormat, Level.INFO, "cheese"), Instant.now());
         observer.addToBatch(sampleMessage(messageFormat, Level.INFO, "ham"), Instant.now());
 
-        List<LogEventGroup> batch = observer.takeCurrentBatch();
-        assertEquals(1, batch.size());
-        assertEquals(messageFormat, batch.get(0).headMessage().getMessage());
-        assertArrayEquals(new Object[] { "cheese" }, batch.get(0).headMessage().getArgumentArray());
-        assertEquals(2, batch.get(0).size());
+        LogEventBatch batch = observer.takeCurrentBatch();
+        assertEquals(1, batch.groups().size());
+        assertEquals(messageFormat, batch.firstHighestLevelLogEventGroup().getMessage());
+        assertArrayEquals(new Object[] { "cheese" }, batch.firstHighestLevelLogEventGroup().headMessage().getArgumentArray());
+        assertEquals(2, batch.firstHighestLevelLogEventGroup().size());
 
         assertEquals(0, observer.takeCurrentBatch().size());
     }
@@ -66,7 +66,7 @@ public class BatchingLogEventObserverTest {
     }
 
     @Test
-    public void shouldProcessMessages() throws InterruptedException, TimeoutException {
+    public void shouldProcessMessages() throws InterruptedException {
         Processor processor = new Processor();
         BatchingLogEventObserver observer = new BatchingLogEventObserver(processor);
         Duration maximumWaitTime = Duration.ofMinutes(10);

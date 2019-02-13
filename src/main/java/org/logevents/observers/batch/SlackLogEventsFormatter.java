@@ -16,25 +16,13 @@ public class SlackLogEventsFormatter {
 
     private SlackExceptionFormatter exceptionFormatter = new SlackExceptionFormatter();
 
-    public Map<String, Object> createSlackMessage(List<LogEventGroup> batch, Optional<String> username, Optional<String> channel) {
-        LogEventGroup mainGroup = firstHighestLevelLogEventGroup(batch);
-
+    public Map<String, Object> createSlackMessage(LogEventBatch batch, Optional<String> username, Optional<String> channel) {
         Map<String, Object> message = new LinkedHashMap<>();
         username.ifPresent(u -> message.put("username", u));
         channel.ifPresent(c -> message.put("channel", c));
-        message.put("attachments", createAttachments(mainGroup, batch));
-        message.put("text", createText(mainGroup));
+        message.put("attachments", createAttachments(batch));
+        message.put("text", createText(batch.firstHighestLevelLogEventGroup()));
         return message;
-    }
-
-    protected LogEventGroup firstHighestLevelLogEventGroup(List<LogEventGroup> batch) {
-        LogEventGroup result = batch.get(0);
-        for (LogEventGroup group : batch) {
-            if (group.headMessage().getLevel().toInt() > result.headMessage().getLevel().toInt()) {
-                result = group;
-            }
-        }
-        return result;
     }
 
     protected String createText(LogEventGroup mainGroup) {
@@ -51,36 +39,35 @@ public class SlackLogEventsFormatter {
             + (mainGroup.size() > 1 ? " (" + mainGroup.size() + " repetitions)" : "");
     }
 
-    protected List<Map<String, Object>> createAttachments(LogEventGroup mainGroup, List<LogEventGroup> batch) {
-        LogEvent event = mainGroup.headMessage();
+    protected List<Map<String, Object>> createAttachments(LogEventBatch batch) {
+        LogEvent event = batch.firstHighestLevelLogEventGroup().headMessage();
         ArrayList<Map<String, Object>> result = new ArrayList<>();
         result.add(createDetailsAttachment(event));
         if (event.getThrowable() != null) {
             result.add(createStackTraceAttachment(event));
         }
         if (batch.size() > 1) {
-            result.add(createSupressedEventsAttachment(mainGroup, batch));
+            result.add(createSuppressedEventsAttachment(batch));
         }
         return result;
     }
 
-    protected Map<String, Object> createSupressedEventsAttachment(LogEventGroup mainGroup, List<LogEventGroup> batch) {
+    protected Map<String, Object> createSuppressedEventsAttachment(LogEventBatch batch) {
         Map<String, Object> attachment = new HashMap<>();
         attachment.put("title", "Suppressed log events");
         attachment.put("color", "danger");
         attachment.put("mrkdwn_in", Arrays.asList("text"));
 
         StringBuilder text = new StringBuilder();
-        for (LogEventGroup group : batch) {
+        for (LogEventGroup group : batch.groups()) {
             String message = group.headMessage().formatMessage();
-            if (group == mainGroup) {
+            if (batch.isMainGroup(group)) {
                 message = bold(message);
             }
             if (group.size() > 1) {
                 message += " (" + group.size() + " repetitions)";
             }
-            text.append("*")
-                .append(" _" + group.headMessage().getZonedDateTime().toLocalTime() + "_: ")
+            text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ")
                 .append(message)
                 .append("\n");
         }
@@ -107,9 +94,10 @@ public class SlackLogEventsFormatter {
         String hostname = "unknown host";
         try {
             hostname = Optional.ofNullable(System.getenv("HOSTNAME"))
+                        .orElse(Optional.ofNullable(System.getenv("HTTP_HOST"))
                         .orElse(Optional.ofNullable(System.getenv("COMPUTERNAME"))
-                        .orElse(InetAddress.getLocalHost().getHostName()));
-        } catch (UnknownHostException e) {
+                        .orElse(InetAddress.getLocalHost().getHostName())));
+        } catch (UnknownHostException ignored) {
         }
 
         String username = System.getProperty("user.name");

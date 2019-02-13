@@ -17,7 +17,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import org.junit.After;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 import org.logevents.observers.FileDestination;
 import org.logevents.status.LogEventStatus;
@@ -25,6 +27,8 @@ import org.logevents.status.StatusEvent;
 import org.logevents.status.StatusEvent.StatusLevel;
 
 public class FileDestinationTest {
+
+    private StatusLevel oldThreshold;
 
     @Test
     public void shouldOutputToFile() throws IOException {
@@ -136,12 +140,22 @@ public class FileDestinationTest {
         assertEquals(Arrays.asList("Test message"), Files.readAllLines(path));
     }
 
+    @Before
+    public void turnOffStatusLogging() {
+        oldThreshold = LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
+    }
+
+    @After
+    public void restoreStatusLogging() {
+        LogEventStatus.getInstance().setThreshold(oldThreshold);
+    }
+
+
     private FileDestination createFileDestination(Path path) throws IOException {
         Files.deleteIfExists(path);
         Properties properties = new Properties();
         properties.setProperty("observer.file.destination.filename", path.toString());
-        FileDestination file = new FileDestination(path.getParent());
-        return file;
+        return new FileDestination(path.getParent());
     }
 
     private boolean isWindows() {

@@ -248,4 +248,8 @@ public class LogEvent implements LoggingEvent {
     }
 
 
+    public int compareTo(LogEvent other) {
+        int compared = getLevel().compareTo(other.getLevel());
+        return compared != 0 ? -compared : -getInstant().compareTo(other.getInstant());
+    }
 }

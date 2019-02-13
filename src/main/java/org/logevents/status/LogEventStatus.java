@@ -22,8 +22,10 @@ public class LogEventStatus {
         return StatusLevel.valueOf(System.getProperty("logevents.status", StatusLevel.ERROR.toString()));
     }
 
-    public void setThreshold(StatusLevel threshold) {
+    public StatusLevel setThreshold(StatusLevel threshold) {
+        StatusLevel oldThreshold = getThreshold();
         System.setProperty("logevents.status", threshold.toString());
+        return oldThreshold;
     }
 
     public void addFatal(Object location, String message, Throwable throwable) {
