@@ -3,7 +3,7 @@
     <groupId>org.logevents</groupId>
     <artifactId>logevents-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.1.10-SNAPSHOT</version>
+    <version>0.1.11-SNAPSHOT</version>
     <name>logevents for Java</name>
     <description>Simple implementation of slf4j</description>
 
