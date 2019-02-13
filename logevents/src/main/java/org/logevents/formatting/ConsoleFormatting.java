@@ -22,7 +22,7 @@ public class ConsoleFormatting {
 
     public synchronized static ConsoleFormatting getInstance() {
         if (instance == null) {
-            if (!isWindows() || isUnixShell()) {
+            if (!isWindows() || isUnixShell() || isRunningInIdea()) {
                 instance = new ConsoleFormatting();
             } else {
                 try {
@@ -36,6 +36,10 @@ public class ConsoleFormatting {
             }
         }
         return instance;
+    }
+
+    private static boolean isRunningInIdea() {
+        return System.getProperty("java.class.path").contains("idea_rt.jar");
     }
 
     private static ConsoleFormatting nullConsoleFormatting() {

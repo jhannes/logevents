@@ -42,7 +42,7 @@ public class ConfigurationTest {
     public void shouldGiveGoodErrorMessageOnPrivateClass() {
         properties.put("observer.foo.thread", PrivateClass.class.getName());
         assertConfigurationErrorContains(() -> configuration.createInstance("thread", Thread.class),
-                "Can't create observer.foo.thread", "not access a member of class", "with modifiers \"private\"", "PrivateClass");
+                "Can't create observer.foo.thread", "NoSuchMethodException", "PrivateClass");
     }
 
     public static class ClassWithoutValidConstructor extends Thread {
@@ -54,7 +54,7 @@ public class ConfigurationTest {
     public void shouldGiveGoodErrorMessageOnClassWithoutConstructor() {
         properties.put("observer.foo.thread", ClassWithoutValidConstructor.class.getName());
         assertConfigurationErrorContains(() -> configuration.createInstance("thread", Thread.class),
-                "Can't create observer.foo.thread", "InstantiationException");
+                "Can't create observer.foo.thread", "NoSuchMethodException");
     }
 
     public static class ClassWhichThrowsExceptionInConstructor extends Thread {

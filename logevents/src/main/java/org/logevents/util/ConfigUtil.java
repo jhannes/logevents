@@ -33,10 +33,10 @@ public class ConfigUtil {
             try {
                 return (T) clazz.getConstructor(Properties.class, String.class).newInstance(properties, prefix);
             } catch (NoSuchMethodException e) {
-                return (T) clazz.newInstance();
+                return (T) clazz.getConstructor().newInstance();
             }
         } catch (LogEventConfigurationException e) {
-            throw e;
+            throw new LogEventConfigurationException(e.getMessage());
         } catch (RuntimeException e) {
             throw new LogEventConfigurationException("Exception when creating " + prefix + "=" + clazz.getName(), e);
         } catch (InvocationTargetException e) {
@@ -46,8 +46,8 @@ public class ConfigUtil {
             if (e.getTargetException() instanceof RuntimeException) {
                 throw new LogEventConfigurationException("Exception when creating " + prefix + "=" + clazz.getName() + ": " + e.getTargetException(), e.getTargetException());
             }
-            throw new LogEventConfigurationException("Exception when creating " + prefix + e);
-        } catch (InstantiationException|IllegalAccessException e) {
+            throw new LogEventConfigurationException("Exception when creating " + prefix + ": " + e.getTargetException());
+        } catch (InstantiationException|IllegalAccessException|NoSuchMethodException e) {
             throw new LogEventConfigurationException("Can't create " + prefix + "=" + clazz.getName() + ": " + e);
         }
     }
