@@ -8,7 +8,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.logevents.LogEvent;
@@ -119,7 +118,11 @@ public class BatchingLogEventObserver implements LogEventObserver {
     private void execute() {
         LogEventBatch batch = takeCurrentBatch();
         if (!batch.isEmpty()) {
-            batchProcessor.processBatch(batch);
+            try {
+                batchProcessor.processBatch(batch);
+            } catch (Exception e) {
+                LogEventStatus.getInstance().addFatal(this, "Failed to process batch", e);
+            }
         }
     }
 
