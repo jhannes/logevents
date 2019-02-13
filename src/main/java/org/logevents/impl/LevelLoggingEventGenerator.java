@@ -81,7 +81,6 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
     }
 
     private void log(LogEvent logEvent) {
-        // TODO: Error handling
         observer.logEvent(logEvent);
     }
 

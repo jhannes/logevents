@@ -124,6 +124,8 @@ public class ExceptionFormatter {
             URL resource = getClass().getResource("/" + classFile);
             if (resource == null) {
                 return "na";
+            } else if (resource.getProtocol().equals("jrt")) {
+                return "rt.jar";
             } else if (!resource.getProtocol().equals("jar")) {
                 Path classFileFullPath = Paths.get(resource.toURI());
                 Path classFileRelativePath = Paths.get(classFile);
@@ -141,6 +143,13 @@ public class ExceptionFormatter {
 
     protected String getVersion(String className) {
         try {
+            String classFile = String.join("/", className.split("\\.")) + ".class";
+            URL resource = getClass().getResource("/" + classFile);
+
+            if (resource != null && resource.getProtocol().equals("jrt")) {
+                return System.getProperty("java.version");
+            }
+
             return Optional.ofNullable(Class.forName(className).getPackage().getImplementationVersion())
                     .orElse("na");
         } catch (ClassNotFoundException e) {

@@ -42,7 +42,7 @@ public class ConfigurationTest {
     public void shouldGiveGoodErrorMessageOnPrivateClass() {
         properties.put("observer.foo.thread", PrivateClass.class.getName());
         assertConfigurationErrorContains(() -> configuration.createInstance("thread", Thread.class),
-                "Can't create observer.foo.thread", "can not access a member of class", "with modifiers \"private\"", "PrivateClass");
+                "Can't create observer.foo.thread", "not access a member of class", "with modifiers \"private\"", "PrivateClass");
     }
 
     public static class ClassWithoutValidConstructor extends Thread {

@@ -260,7 +260,7 @@ com.example.myapp.MyAppConfigurator
 The default `LogEventConfigurator` will try to determine the current profile,
 using the system properties `profiles`, `profile`, `spring.profiles.active` or
 the environment variables `PROFILES`, `PROFILE` or `SPRING_PROFILES_ACTIVE`.
-If running in JUnit, the profile `test` will be active by default (TODO).
+If running in JUnit, the profile `test` will be active by default.
 
 `DefaultLogEventConfiguration` will try to load `logevents.properties` and
 `logevents-<profile>.properties` for any properties set in one of the profile

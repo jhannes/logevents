@@ -50,7 +50,7 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
             int testMethod = -1;
             for (int i = invokePos; i >= 0; i--) {
                 StackTraceElement stackTraceElement = stackTrace[i];
-                if (!stackTraceElement.getClassName().startsWith("java.") && !stackTraceElement.getClassName().startsWith("sun.")) {
+                if (!stackTraceElement.getClassName().startsWith("java.") &&!stackTraceElement.getClassName().startsWith("jdk.") && !stackTraceElement.getClassName().startsWith("sun.")) {
                     testMethod = i;
                     break;
                 }
