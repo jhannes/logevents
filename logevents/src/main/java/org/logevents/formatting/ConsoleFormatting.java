@@ -22,7 +22,7 @@ public class ConsoleFormatting {
 
     public synchronized static ConsoleFormatting getInstance() {
         if (instance == null) {
-            if (!isWindows() || isUnixShell() || isRunningInIdea()) {
+            if (!isRunningInCmd()) {
                 instance = new ConsoleFormatting();
             } else {
                 try {
@@ -38,10 +38,6 @@ public class ConsoleFormatting {
         return instance;
     }
 
-    private static boolean isRunningInIdea() {
-        return System.getProperty("java.class.path").contains("idea_rt.jar");
-    }
-
     private static ConsoleFormatting nullConsoleFormatting() {
         return new ConsoleFormatting() {
             @Override
@@ -51,8 +47,13 @@ public class ConsoleFormatting {
         };
     }
 
+    private static boolean isRunningInCmd() {
+        return isWindows() && System.getenv("PROMPT") != null && !isUnixShell();
+    }
+
     private static boolean isUnixShell() {
-        return System.getenv("PWD") != null && System.getenv("PWD").startsWith("/");
+        return System.getenv("PWD") != null && System.getenv("PWD").startsWith("/") ||
+                System.getenv("PATH") != null && System.getenv("PATH").startsWith("/");
     }
 
     private static boolean isWindows() {
