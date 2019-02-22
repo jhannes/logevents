@@ -73,11 +73,10 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
     }
 
     @Override
-    protected void setDefaultLogging(LogEventFactory factory) {
-        factory.setLevel(factory.getRootLogger(), Level.WARN);
-        factory.setObserver(factory.getRootLogger(),
-                new ConsoleLogEventObserver(createFormatter()),
-                false);
+    protected void reset(LogEventFactory factory) {
+        super.reset(factory);
+        factory.setRootLevel(Level.WARN);
+        factory.setRootObserver(new ConsoleLogEventObserver(createFormatter()));
     }
 
     LogEventFormatter createFormatter() {

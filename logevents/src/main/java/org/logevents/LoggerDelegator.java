@@ -16,6 +16,7 @@ import org.slf4j.event.Level;
  * @author Johannes Brodwall
  *
  */
+@SuppressWarnings("JavaDoc")
 abstract class LoggerDelegator implements LoggerConfiguration {
 
     private final String name;
@@ -401,7 +402,7 @@ abstract class LoggerDelegator implements LoggerConfiguration {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + name + ",level=" + levelThreshold + "}";
+        return getClass().getSimpleName() + "{" + name + ",level=" + levelThreshold + ",ownObserver=" + ownObserver + "}";
     }
 
 }

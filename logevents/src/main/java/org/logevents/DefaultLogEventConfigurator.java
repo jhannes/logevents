@@ -113,12 +113,11 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @param factory The LogEventFactory that this configurator should configure
      */
     protected synchronized void resetConfigurationFromFiles(LogEventFactory factory) {
-        setDefaultLogging(factory);
         try {
             loadConfiguration(factory, loadPropertiesFromFiles(getConfigurationFileNames()));
         } catch (Exception e) {
             LogEventStatus.getInstance().addFatal(this, "Failed to load " + getConfigurationFileNames(), e);
-            setDefaultLogging(factory);
+            reset(factory);
         }
     }
 
@@ -145,18 +144,6 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         } catch (ClassNotFoundException ignored) {
 
         }
-    }
-
-    /**
-     * Logs to the console at level INFO, or level WARN if running in JUnit.
-     *
-     * @param factory The LogEventFactory that this configurator should configure
-     */
-    protected void setDefaultLogging(LogEventFactory factory) {
-        factory.setLevel(factory.getRootLogger(), Level.INFO);
-        factory.setObserver(factory.getRootLogger(),
-                new ConsoleLogEventObserver(),
-                false);
     }
 
     /**
@@ -232,7 +219,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @param factory The LogEventFactory that this configurator should configure
      * @param configuration The merged configuration that should be applied to the factory
      */
-    protected void loadConfiguration(LogEventFactory factory, Properties configuration) {
+    public void loadConfiguration(LogEventFactory factory, Properties configuration) {
         observers.clear();
         for (Object key : configuration.keySet()) {
             if (key.toString().matches("observer\\.\\w+")) {
@@ -242,6 +229,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         observers.putIfAbsent("console", new ConsoleLogEventObserver(configuration, "observer.console"));
         observers.putIfAbsent("file", new FileLogEventObserver(configuration, "observer.file"));
 
+        reset(factory);
         configureLogger(factory, factory.getRootLogger(), configuration.getProperty("root"), false);
 
         for (Object key : configuration.keySet()) {
@@ -253,6 +241,10 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                         includeParent);
             }
         }
+    }
+
+    protected void reset(LogEventFactory factory) {
+        factory.reset();
     }
 
     private void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, boolean includeParent) {

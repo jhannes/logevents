@@ -54,14 +54,14 @@ public class LogEventFactory implements ILoggerFactory {
         public RootLoggerDelegator() {
             super("ROOT");
             ownObserver = new NullLogEventObserver();
-            levelThreshold = Level.WARN;
+            levelThreshold = Level.INFO;
             refresh();
         }
 
         @Override
         void reset() {
             super.reset();
-            levelThreshold = Level.WARN;
+            levelThreshold = Level.INFO;
         }
 
         @Override
@@ -186,7 +186,19 @@ public class LogEventFactory implements ILoggerFactory {
     }
 
     public void setObserver(String loggerName, LogEventObserver observer) {
-        setObserver(getLogger(loggerName), observer, true);
+        setObserver(getLogger(loggerName), observer);
+    }
+
+    /**
+     * Sets the observer that should be used to receive LogEvents for this logger
+     * and children. Keep the inheritParentObserver field value
+     *
+     * @param logger The logger to set
+     * @param observer The nullable observer. Use {@link CompositeLogEventObserver} to register more than one observer
+     * @return The previous observer. Useful if you want to temporarily set the observer
+     */
+    public LogEventObserver setObserver(Logger logger, LogEventObserver observer) {
+        return setObserver(logger, observer, ((LoggerDelegator)logger).inheritParentObserver);
     }
 
     /**
@@ -224,8 +236,10 @@ public class LogEventFactory implements ILoggerFactory {
      */
     public void addObserver(Logger logger, LogEventObserver observer) {
         LogEventObserver oldObserver = ((LoggerDelegator)logger).ownObserver;
+        LogEventObserver combinedObservers = CompositeLogEventObserver.combine(observer, oldObserver);
+        setObserver(logger, combinedObservers);
         ((LoggerDelegator)logger).setOwnObserver(
-                CompositeLogEventObserver.combine(observer, oldObserver),
+                combinedObservers,
                 ((LoggerDelegator)logger).inheritParentObserver);
         refreshLoggers((LoggerDelegator)logger);
     }
@@ -236,9 +250,7 @@ public class LogEventFactory implements ILoggerFactory {
      * This method is called the first time {@link #getInstance()} is called.
      */
     public void configure() {
-        rootLogger.reset();
-        loggerCache.values().forEach(LoggerDelegator::reset);
-        rootLogger.setOwnObserver(new ConsoleLogEventObserver(), false);
+        reset();
         ServiceLoader<LogEventConfigurator> serviceLoader = ServiceLoader.load(LogEventConfigurator.class);
 
         if (!serviceLoader.iterator().hasNext()) {
@@ -254,6 +266,16 @@ public class LogEventFactory implements ILoggerFactory {
                 c.configure(this);
             });
         }
+    }
+
+    /**
+     * Logs to the console at level INFO, or level WARN if running in JUnit.
+     */
+    void reset() {
+        rootLogger.reset();
+        loggerCache.values().forEach(LoggerDelegator::reset);
+        rootLogger.setOwnObserver(new ConsoleLogEventObserver(), false);
+        refreshLoggers(rootLogger);
     }
 
     /**
