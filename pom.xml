@@ -96,6 +96,7 @@
     </distributionManagement>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <slf4j.version>1.8.0-beta2</slf4j.version>
     </properties>
     <profiles>
         <profile>

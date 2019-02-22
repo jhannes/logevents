@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import junit.framework.TestCase;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
@@ -52,7 +53,7 @@ public class FileLogEventObserverTest {
         assertEquals(CWD + "-test.log", observer.getFilename(new LogEvent("", Level.DEBUG, "hello")));
 
         assertEquals(CWD, FileLogEventObserver.currentWorkingDirectory());
-        assertEquals("slf4j-api", FileLogEventObserver.determineJarName(Logger.class.getName()));
+        assertEquals("junit", FileLogEventObserver.determineJarName(TestCase.class.getName()));
         assertEquals(CWD, FileLogEventObserver.determineJarName(String.class.getName()));
         assertEquals(CWD, FileLogEventObserver.determineJarName(getClass().getName()));
     }

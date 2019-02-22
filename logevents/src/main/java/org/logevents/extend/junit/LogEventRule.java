@@ -11,6 +11,7 @@ import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 import org.slf4j.impl.StaticLoggerBinder;
 
@@ -77,7 +78,7 @@ public class LogEventRule implements TestRule, LogEventObserver {
 
             @Override
             public void evaluate() throws Throwable {
-                LogEventFactory loggerFactory = StaticLoggerBinder.getSingleton().getLoggerFactory();
+                LogEventFactory loggerFactory = (LogEventFactory) LoggerFactory.getILoggerFactory();
                 logger = loggerFactory.getLogger(logName);
 
                 Level oldLevel = loggerFactory.setLevel(logger, level);

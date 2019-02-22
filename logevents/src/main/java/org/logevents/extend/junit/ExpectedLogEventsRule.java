@@ -13,6 +13,7 @@ import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 import org.slf4j.impl.StaticLoggerBinder;
 
@@ -59,7 +60,7 @@ public class ExpectedLogEventsRule implements TestRule, LogEventObserver {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                LogEventFactory loggerFactory = StaticLoggerBinder.getSingleton().getLoggerFactory();
+                LogEventFactory loggerFactory = (LogEventFactory) LoggerFactory.getILoggerFactory();
                 logger = loggerFactory.getRootLogger();
 
                 Level oldLevel = loggerFactory.setLevel(logger, Level.TRACE);
