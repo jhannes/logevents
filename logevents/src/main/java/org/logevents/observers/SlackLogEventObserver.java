@@ -1,14 +1,14 @@
 package org.logevents.observers;
 
-import java.net.MalformedURLException;
-import java.util.Optional;
-import java.util.Properties;
-
 import org.logevents.observers.batch.SlackLogEventBatchProcessor;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.util.Configuration;
 import org.logevents.util.LogEventConfigurationException;
 import org.slf4j.event.Level;
+
+import java.net.URL;
+import java.util.Optional;
+import java.util.Properties;
 
 public class SlackLogEventObserver extends BatchingLogEventObserver {
 
@@ -24,8 +24,11 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
         cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
         maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
 
-
         configuration.checkForUnknownFields();
+    }
+
+    public SlackLogEventObserver(URL slackUrl, Optional<String> username, Optional<String> channel) {
+        super(new SlackLogEventBatchProcessor(slackUrl, username, channel));
     }
 
     private static SlackLogEventBatchProcessor createBatchProcessor(Configuration configuration) {

@@ -1,15 +1,5 @@
 package org.logevents.observers;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Properties;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.observers.batch.LogEventBatch;
@@ -17,6 +7,12 @@ import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Properties;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Used to gather up a number of log event to process as a batch. This is useful
@@ -168,6 +164,10 @@ public class BatchingLogEventObserver implements LogEventObserver {
 
     public void setIdleThreshold(Duration idleThreshold) {
         this.idleThreshold = idleThreshold;
+    }
+
+    public void setThreshold(Level threshold) {
+        this.threshold = threshold;
     }
 
     @Override

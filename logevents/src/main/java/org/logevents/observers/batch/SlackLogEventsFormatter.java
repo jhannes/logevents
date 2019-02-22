@@ -1,16 +1,11 @@
 package org.logevents.observers.batch;
 
+import org.logevents.LogEvent;
+import org.slf4j.event.Level;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.logevents.LogEvent;
+import java.util.*;
 
 public class SlackLogEventsFormatter {
 
@@ -36,7 +31,8 @@ public class SlackLogEventsFormatter {
             + exceptionInfo
             + event.formatMessage()
             + " [" + event.getAbbreviatedLoggerName(10) + "]"
-            + (mainGroup.size() > 1 ? " (" + mainGroup.size() + " repetitions)" : "");
+            + (mainGroup.size() > 1 ? " (" + mainGroup.size() + " repetitions)" : "")
+            + (event.getLevel() == Level.ERROR ? " <!channel>" : "");
     }
 
     protected List<Map<String, Object>> createAttachments(LogEventBatch batch) {
@@ -55,7 +51,8 @@ public class SlackLogEventsFormatter {
     protected Map<String, Object> createSuppressedEventsAttachment(LogEventBatch batch) {
         Map<String, Object> attachment = new HashMap<>();
         attachment.put("title", "Suppressed log events");
-        attachment.put("color", "danger");
+        Level level = batch.firstHighestLevelLogEventGroup().headMessage().getLevel();
+        attachment.put("color", getColor(level));
         attachment.put("mrkdwn_in", Arrays.asList("text"));
 
         StringBuilder text = new StringBuilder();
@@ -75,10 +72,14 @@ public class SlackLogEventsFormatter {
         return attachment;
     }
 
+    private String getColor(Level level) {
+        return level == Level.ERROR ? "danger" : (level == Level.WARN ? "warning" : "good");
+    }
+
     protected Map<String, Object> createDetailsAttachment(LogEvent event) {
         Map<String, Object> attachment = new HashMap<>();
         attachment.put("title", "Details");
-        attachment.put("color", "danger");
+        attachment.put("color", getColor(event.getLevel()));
         List<Map<String, Object>> fields = new ArrayList<>();
         fields.add(slackMessageField("Level", event.getLevel().toString(), true));
         fields.add(slackMessageField("Source", getMessageSource(), true));
@@ -107,7 +108,7 @@ public class SlackLogEventsFormatter {
     protected Map<String, Object> createStackTraceAttachment(LogEvent event) {
         HashMap<String, Object> attachment = new LinkedHashMap<>();
         attachment.put("title", "Stack Trace");
-        attachment.put("color", "danger");
+        attachment.put("color", getColor(event.getLevel()));
         attachment.put("fields", Arrays.asList(
                 slackMessageField("Exception", event.getThrowable().getClass().getSimpleName(), true),
                 slackMessageField("Message", event.getThrowable().getMessage(), false)

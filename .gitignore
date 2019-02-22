@@ -8,3 +8,4 @@ release.properties
 .idea
 *.iml
 logs
+logevents-config-demo/logevents-*.properties

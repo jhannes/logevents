@@ -1,45 +1,42 @@
 package org.logeventsdemo;
 
+import org.logevents.LogEventFactory;
+import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.observers.ConsoleLogEventObserver;
+import org.logevents.observers.SlackLogEventObserver;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+import org.slf4j.event.Level;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Optional;
 
-import org.logevents.LogEventFactory;
-import org.logevents.observers.BatchingLogEventObserver;
-import org.logevents.observers.CompositeLogEventObserver;
-import org.logevents.observers.ConsoleLogEventObserver;
-import org.logevents.observers.LevelThresholdConditionalObserver;
-import org.logevents.observers.batch.SlackLogEventBatchProcessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-import org.slf4j.event.Level;
-
 public class DemoSlack {
 
     public static void main(String[] args) throws InterruptedException, MalformedURLException {
         LogEventFactory factory = LogEventFactory.getInstance();
 
-        factory.setRootLevel(Level.INFO);
-
         // Get yours at https://www.slack.com/apps/manage/custom-integrations
-        URL slackUrl = new URL("https://hooks.slack.com/services/....");
-        SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor(slackUrl,
-                Optional.of("LogEvents"), Optional.of("testChannel"));
+        URL slackUrl = new URL("https://hooks.slack.com/services/XXXX/XXX/XXX");
 
-        BatchingLogEventObserver batchEventObserver = new BatchingLogEventObserver(slackLogEventBatchProcessor);
-        batchEventObserver.setCooldownTime(Duration.ofSeconds(5));
-        batchEventObserver.setMaximumWaitTime(Duration.ofMinutes(3));
-        batchEventObserver.setIdleThreshold(Duration.ofSeconds(3));
+        SlackLogEventObserver slackObserver = new SlackLogEventObserver(slackUrl,
+                Optional.of("LogEvents"), Optional.empty());
+        slackObserver.setThreshold(Level.INFO);
+        slackObserver.setCooldownTime(Duration.ofSeconds(5));
+        slackObserver.setMaximumWaitTime(Duration.ofMinutes(3));
+        slackObserver.setIdleThreshold(Duration.ofSeconds(3));
+
+        factory.setRootLevel(Level.INFO);
         factory.setRootObserver(CompositeLogEventObserver.combine(
-                new LevelThresholdConditionalObserver(Level.WARN, batchEventObserver),
+                slackObserver,
                 new ConsoleLogEventObserver()));
 
         MDC.put("User", System.getProperty("user.name"));
 
-        Logger logger = LoggerFactory.getLogger(DemoSlack.class);
+        Logger logger = factory.getLogger(DemoSlack.class.getName());
         logger.info("This message should not go to slack");
 
         logger.warn("This message should go to slack after 3 seconds idle delay");
