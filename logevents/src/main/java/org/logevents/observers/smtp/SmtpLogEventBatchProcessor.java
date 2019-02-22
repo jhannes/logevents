@@ -14,22 +14,27 @@ import java.util.Optional;
 import java.util.Properties;
 
 public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
-    private final String smtpPort;
     private String fromAddress;
     private String recipients;
     private Optional<String> applicationName;
-    private String smtpHost;
     private String smtpUsername;
     private String smtpPassword;
+    private Properties props;
 
     public SmtpLogEventBatchProcessor(Configuration configuration) {
         this.fromAddress = configuration.getString("fromAddress");
         this.recipients = configuration.getString("recipients");
         this.applicationName = configuration.optionalString("applicationName");
-        this.smtpHost = configuration.getString("host");
-        this.smtpPort = configuration.optionalString("port").orElse("587");
         this.smtpUsername = configuration.optionalString("username").orElse(fromAddress);
         this.smtpPassword = configuration.getString("password");
+
+        props = new Properties();
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", configuration.getString("host"));
+        props.put("mail.smtp.port", configuration.optionalString("port").orElse("587"));
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.user", configuration.getString("host"));
+        props.put("mail.smtp.password", smtpPassword);
 
         try {
             Class.forName("com.sun.mail.util.MailLogger");
@@ -42,14 +47,6 @@ public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
 
     @Override
     public void processBatch(LogEventBatch batch) {
-        Properties props = new Properties();
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.host", smtpHost);
-        props.put("mail.smtp.port", smtpPort);
-
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.user", smtpUsername);
-        props.put("mail.smtp.password", smtpPassword);
         Session session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
@@ -58,16 +55,19 @@ public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
         });
 
         try {
-            MimeMessage message = new MimeMessage(session);
-            message.setFrom(fromAddress);
-            message.setRecipients(Message.RecipientType.TO, recipients);
-            message.setSubject("[" + getApplicationName() + "] " + batch.firstHighestLevelLogEventGroup().headMessage().formatMessage());
-            message.setText(formatMessageBatch(batch));
-
-            Transport.send(message);
+            Transport.send(formatMessage(batch, session));
         } catch (MessagingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public MimeMessage formatMessage(LogEventBatch batch, Session session) throws MessagingException {
+        MimeMessage message = new MimeMessage(session);
+        message.setFrom(fromAddress);
+        message.setRecipients(Message.RecipientType.TO, recipients);
+        message.setSubject("[" + getApplicationName() + "] " + batch.firstHighestLevelLogEventGroup().headMessage().formatMessage());
+        message.setText(formatMessageBatch(batch));
+        return message;
     }
 
     private String formatMessageBatch(LogEventBatch batch) {
@@ -102,5 +102,10 @@ public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
 
         String username = System.getProperty("user.name");
         return username + "@" + hostname;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{smtpHost=" + props.getProperty("mail.smtp.host") + "}";
     }
 }

@@ -170,4 +170,8 @@ public class BatchingLogEventObserver implements LogEventObserver {
         this.idleThreshold = idleThreshold;
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{batchProcessor=" + this.batchProcessor + "}";
+    }
 }
