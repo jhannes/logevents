@@ -36,8 +36,9 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldSetRootLevelFromProperties() {
-        configuration.setProperty("root", "TRACE");
+        configurator.loadConfiguration(factory, configuration);
         String oldObserver = factory.getRootLogger().getObserver();
+        configuration.setProperty("root", "TRACE");
 
         configurator.loadConfiguration(factory, configuration);
 
@@ -231,7 +232,10 @@ public class DefaultLogEventConfiguratorTest {
     public void shouldFindTestMethod() {
         LogEvent logEvent = new LogEvent("test", Level.INFO, "Testing");
 
-        String formattedMessage = new DefaultTestLogEventConfigurator().createFormatter().apply(logEvent);
+        String formattedMessage = new DefaultTestLogEventConfigurator()
+                .createConsoleLogEventObserver(new Properties())
+                .getFormatter()
+                .apply(logEvent);
         assertTrue(formattedMessage + " should start with test name",
                 formattedMessage.startsWith("TEST(DefaultLogEventConfiguratorTest.shouldFindTestMethod)"));
     }

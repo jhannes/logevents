@@ -250,7 +250,7 @@ public class LogEventFactory implements ILoggerFactory {
      * This method is called the first time {@link #getInstance()} is called.
      */
     public void configure() {
-        reset();
+        reset(new ConsoleLogEventObserver());
         ServiceLoader<LogEventConfigurator> serviceLoader = ServiceLoader.load(LogEventConfigurator.class);
 
         if (!serviceLoader.iterator().hasNext()) {
@@ -270,11 +270,13 @@ public class LogEventFactory implements ILoggerFactory {
 
     /**
      * Logs to the console at level INFO, or level WARN if running in JUnit.
+     * @param rootObserver The observer used for {@see getRootLogger}
      */
-    void reset() {
+    void reset(LogEventObserver rootObserver) {
         rootLogger.reset();
         loggerCache.values().forEach(LoggerDelegator::reset);
-        rootLogger.setOwnObserver(new ConsoleLogEventObserver(), false);
+        rootLogger.setOwnObserver(rootObserver, false);
+        rootLogger.setLevelThreshold(Level.INFO);
         refreshLoggers(rootLogger);
     }
 

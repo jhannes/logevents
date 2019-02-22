@@ -58,7 +58,7 @@ public class LogEventConfiguratorTest {
         LogEventFactory.getInstance().setRootLevel(Level.DEBUG);
         LogEventFactory.getInstance().configure();
 
-        assertEquals(Level.INFO, LogEventFactory.getInstance().getRootLogger().getLevelThreshold());
+        assertEquals(Level.WARN, LogEventFactory.getInstance().getRootLogger().getLevelThreshold());
     }
 
     @After

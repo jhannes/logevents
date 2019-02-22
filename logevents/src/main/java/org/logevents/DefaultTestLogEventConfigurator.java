@@ -2,6 +2,7 @@ package org.logevents;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import org.logevents.formatting.ConsoleLogEventFormatter;
 import org.logevents.formatting.LogEventFormatter;
@@ -76,10 +77,11 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
     protected void reset(LogEventFactory factory) {
         super.reset(factory);
         factory.setRootLevel(Level.WARN);
-        factory.setRootObserver(new ConsoleLogEventObserver(createFormatter()));
+        factory.setRootObserver(getObserver("console"));
     }
 
-    LogEventFormatter createFormatter() {
-        return new ConsoleLogEventTestFormatter();
+    @Override
+    protected ConsoleLogEventObserver createConsoleLogEventObserver(Properties configuration) {
+        return new ConsoleLogEventObserver(new ConsoleLogEventTestFormatter());
     }
 }

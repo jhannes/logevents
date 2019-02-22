@@ -226,7 +226,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                 configureObserver(key.toString(), configuration);
             }
         }
-        observers.putIfAbsent("console", new ConsoleLogEventObserver(configuration, "observer.console"));
+        observers.putIfAbsent("console", createConsoleLogEventObserver(configuration));
         observers.putIfAbsent("file", new FileLogEventObserver(configuration, "observer.file"));
 
         reset(factory);
@@ -243,8 +243,12 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
+    protected ConsoleLogEventObserver createConsoleLogEventObserver(Properties configuration) {
+        return new ConsoleLogEventObserver(configuration, "observer.console");
+    }
+
     protected void reset(LogEventFactory factory) {
-        factory.reset();
+        factory.reset(getObserver("console"));
     }
 
     private void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, boolean includeParent) {

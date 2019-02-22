@@ -46,6 +46,10 @@ public class ConsoleLogEventObserver implements LogEventObserver {
         this(new Configuration(properties, prefix));
     }
 
+    public LogEventFormatter getFormatter() {
+        return formatter;
+    }
+
     @Override
     public void logEvent(LogEvent event) {
         if (threshold.toInt() <= event.getLevel().toInt()) {
