@@ -3,6 +3,8 @@ package org.logevents.observers.batch;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +16,9 @@ import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 public class SlackLogMessageFactoryTest {
 
@@ -107,7 +112,21 @@ public class SlackLogMessageFactoryTest {
                 builder.toString());
         assertContains("src/main/java/com/atlassian/labs/hipchat/action/Configuration.java?at=hipchat-for-jira-plugin-1.3.7#35",
                 builder.toString());
+    }
 
+    @Test
+    public void shouldReadSourceLinkFromPomFile() throws IOException, ParserConfigurationException, SAXException {
+        SlackExceptionFormatter formatter = new SlackExceptionFormatter();
+        try (FileInputStream pomResource = new FileInputStream("../pom.xml")) {
+            formatter.addPackageMavenLocation("org.logevents", pomResource);
+        }
+        StringBuilder builder = new StringBuilder();
+        StackTraceElement frame = new StackTraceElement(SlackExceptionFormatter.class.getName(),
+                "addPackageMavenLocation", "SlackExceptionFormatter.java", 35);
+        formatter.outputStackFrame(frame , 0, "", builder);
+
+        assertContains("https://github.com/jhannes/logevents/",
+                builder.toString());
     }
 
     private void assertContains(String expected, String actual) {

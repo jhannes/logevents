@@ -70,28 +70,32 @@ public class SlackExceptionFormatter extends CauseFirstExceptionFormatter {
                 return;
             }
 
-            Document pom = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(pomResource);
-            NodeList scmElements = pom.getDocumentElement().getElementsByTagName("scm");
-            if (scmElements.getLength() == 1) {
-                NodeList urlElements = ((Element) scmElements.item(0)).getElementsByTagName("url");
-                NodeList tagsElements = ((Element) scmElements.item(0)).getElementsByTagName("tag");
-
-                if (urlElements.getLength() == 1) {
-                    String url = ((Element) urlElements.item(0)).getTextContent().trim();
-
-                    String tag = "master";
-                    if (tagsElements.getLength() == 1) {
-                        tag = tagsElements.item(0).getTextContent().trim();
-                        if (tag.equals("HEAD")) tag = "master";
-                    }
-
-                    if (url.startsWith("https://github.com/")) {
-                        addPackageGithubLocation(sourcePackages, url, Optional.of(tag));
-                    }
-                }
-            }
+            addPackageMavenLocation(sourcePackages, pomResource);
         } catch (SAXException | ParserConfigurationException | IOException e) {
             LogEventStatus.getInstance().addError(this, "Failed to read " + mavenLocation + "/pom.xml", e);
+        }
+    }
+
+    void addPackageMavenLocation(String sourcePackages, InputStream pomResource) throws SAXException, IOException, ParserConfigurationException {
+        Document pom = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(pomResource);
+        NodeList scmElements = pom.getDocumentElement().getElementsByTagName("scm");
+        if (scmElements.getLength() == 1) {
+            NodeList urlElements = ((Element) scmElements.item(0)).getElementsByTagName("url");
+            NodeList tagsElements = ((Element) scmElements.item(0)).getElementsByTagName("tag");
+
+            if (urlElements.getLength() == 1) {
+                String url = ((Element) urlElements.item(0)).getTextContent().trim();
+
+                String tag = "master";
+                if (tagsElements.getLength() == 1) {
+                    tag = tagsElements.item(0).getTextContent().trim();
+                    if (tag.equals("HEAD")) tag = "master";
+                }
+
+                if (url.startsWith("https://github.com/")) {
+                    addPackageGithubLocation(sourcePackages, url, Optional.of(tag));
+                }
+            }
         }
     }
 
