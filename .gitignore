@@ -2,7 +2,7 @@ target
 .classpath
 .project
 .settings
-/dependency-reduced-pom.xml
+dependency-reduced-pom.xml
 pom.xml.releaseBackup
 release.properties
 .idea
