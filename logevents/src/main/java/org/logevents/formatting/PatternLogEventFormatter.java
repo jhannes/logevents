@@ -1,21 +1,22 @@
 package org.logevents.formatting;
 
+import org.logevents.LogEvent;
+import org.logevents.util.Configuration;
+import org.logevents.util.pattern.PatternConverterSpec;
+import org.logevents.util.pattern.PatternReader;
+
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Properties;
 
-import org.logevents.LogEvent;
-import org.logevents.util.Configuration;
-import org.logevents.util.pattern.PatternConverterSpec;
-import org.logevents.util.pattern.PatternReader;
-
 /**
  * This class represents a {@link LogEventFormatter} which outputs the
  * {@link LogEvent} based on a configured pattern. The pattern consists of
- * constant parts and conversion parts, which starts with %-signs. Conversion
- * parts are handled with {@link PatternConverterSpec}. A conversion
+ * constant parts and conversion parts, which starts with %-signs. The general format for conversion parts
+ * is %[&lt;minlength&gt;][.&lt;maxlength&gt;]&lt;conversion word&gt;[(&lt;conversion subpattern&gt;)][{&lt;parameter&gt;,&lt;parameter&gt;}].
+ * Conversion parts are handled with {@link PatternConverterSpec}. A conversion
  * is specified with a conversion word, and you can extend {@link PatternLogEventFormatter}
  * with your own conversion words by adding them to the ConverterBuilderFactory.
  *
@@ -58,8 +59,19 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         });
         factory.putAliases("date", new String[] { "d" });
 
+        factory.put("time", spec -> {
+            DateTimeFormatter formatter = spec.getParameter(0)
+                    .map(DateTimeFormatter::ofPattern)
+                    .orElse(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+            ZoneId zone = spec.getParameter(1)
+                    .map(ZoneId::of)
+                    .orElse(ZoneId.systemDefault());
+            return e -> formatter.format(e.getInstant().atZone(zone));
+        });
+
 
         factory.put("level", spec -> e -> e.getLevel().toString());
+        factory.put("coloredLevel", spec -> e -> e.getLevel().toString());
         factory.put("message", spec -> LogEvent::formatMessage);
         factory.putAliases("message", new String[] { "m", "msg" });
         factory.put("thread", spec -> LogEvent::getThreadName);
@@ -82,6 +94,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
                 return e -> e.getMdc(key, defaultValue);
             }
         });
+        factory.putAliases("mdc", new String[] { "X" });
 
         factory.putTransformer("replace", spec -> {
             String regex = spec.getParameters().get(0);
@@ -120,6 +133,8 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.putTransformer("boldMagenta", spec -> s -> ansiFormat.boldMagenta(s));
         factory.putTransformer("boldCyan", spec -> s -> ansiFormat.boldCyan(s));
         factory.putTransformer("boldWhite", spec -> s -> ansiFormat.boldWhite(s));
+
+        factory.putTransformer("bold", spec -> s -> ansiFormat.bold(s));
     }
 
     private String pattern;

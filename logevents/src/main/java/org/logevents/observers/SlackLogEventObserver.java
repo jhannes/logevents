@@ -4,7 +4,6 @@ import org.logevents.observers.batch.SlackLogEventBatchProcessor;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.util.Configuration;
 import org.logevents.util.LogEventConfigurationException;
-import org.slf4j.event.Level;
 
 import java.net.URL;
 import java.util.Optional;
@@ -19,7 +18,7 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
     public SlackLogEventObserver(Configuration configuration) {
         super(createBatchProcessor(configuration));
 
-        threshold = configuration.optionalString("threshold").map(Level::valueOf).orElse(Level.DEBUG);
+        configureFilter(configuration);
         idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);
         cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
         maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);

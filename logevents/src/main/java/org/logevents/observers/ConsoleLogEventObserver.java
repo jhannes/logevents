@@ -1,14 +1,12 @@
 package org.logevents.observers;
 
-import java.util.Properties;
-
 import org.logevents.LogEvent;
-import org.logevents.LogEventObserver;
 import org.logevents.formatting.ConsoleLogEventFormatter;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
-import org.slf4j.event.Level;
+
+import java.util.Properties;
 
 /**
  * Log messages to the system out with suitable formatter.
@@ -18,14 +16,12 @@ import org.slf4j.event.Level;
  *
  * @author Johannes Brodwall
  */
-public class ConsoleLogEventObserver implements LogEventObserver {
+public class ConsoleLogEventObserver extends FilteredLogEventObserver {
 
     private final LogEventFormatter formatter;
-    private final Level threshold;
 
     public ConsoleLogEventObserver(LogEventFormatter formatter) {
         this.formatter = formatter;
-        this.threshold = Level.TRACE;
     }
 
     public ConsoleLogEventObserver() {
@@ -35,7 +31,7 @@ public class ConsoleLogEventObserver implements LogEventObserver {
     public ConsoleLogEventObserver(Configuration configuration) {
         this.formatter = configuration.createInstanceWithDefault("formatter",
                 LogEventFormatter.class, ConsoleLogEventFormatter.class);
-        this.threshold = configuration.optionalString("threshold").map(Level::valueOf).orElse(Level.TRACE);
+        configureFilter(configuration);
         formatter.getExceptionFormatter().ifPresent(
                 exceptionFormatter -> exceptionFormatter.setPackageFilter(configuration.getStringList("packageFilter")));
         configuration.checkForUnknownFields();
@@ -50,12 +46,11 @@ public class ConsoleLogEventObserver implements LogEventObserver {
         return formatter;
     }
 
+
     @Override
-    public void logEvent(LogEvent event) {
-        if (threshold.toInt() <= event.getLevel().toInt()) {
-            System.out.print(formatter.apply(event));
-            System.out.flush();
-        }
+    protected void doLogEvent(LogEvent logEvent) {
+        System.out.print(formatter.apply(logEvent));
+        System.out.flush();
     }
 
     @Override

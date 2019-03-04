@@ -1,9 +1,5 @@
 package org.logevents.extend.junit;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -13,7 +9,10 @@ import org.logevents.LogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
-import org.slf4j.impl.StaticLoggerBinder;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -27,6 +26,10 @@ public class LogEventRule implements TestRule, LogEventObserver {
     public LogEventRule(Level level, String logName) {
         this.logName = logName;
         this.level = level;
+    }
+
+    public LogEventRule(Level level, Class<?> category) {
+        this(level, category.getName());
     }
 
     public void setLevel(Level level) {

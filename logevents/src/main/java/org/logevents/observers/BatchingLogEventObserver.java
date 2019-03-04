@@ -1,12 +1,10 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
-import org.logevents.LogEventObserver;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
-import org.slf4j.event.Level;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -31,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Johannes Brodwall
  */
-public class BatchingLogEventObserver implements LogEventObserver {
+public class BatchingLogEventObserver extends FilteredLogEventObserver {
 
     private static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
             new ThreadFactory() {
@@ -49,8 +47,6 @@ public class BatchingLogEventObserver implements LogEventObserver {
     protected final LogEventBatchProcessor batchProcessor;
     private final ScheduledExecutorService executor;
 
-    protected Level threshold = Level.TRACE;
-
     protected Duration cooldownTime = Duration.ofSeconds(15);
     protected Duration maximumWaitTime = Duration.ofMinutes(1);
     protected Duration idleThreshold = Duration.ofSeconds(5);
@@ -63,7 +59,7 @@ public class BatchingLogEventObserver implements LogEventObserver {
     public BatchingLogEventObserver(Properties properties, String prefix) {
         Configuration configuration = new Configuration(properties, prefix);
 
-        threshold = configuration.optionalString("threshold").map(Level::valueOf).orElse(Level.DEBUG);
+        configureFilter(configuration);
         idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);
         cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
         maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
@@ -88,22 +84,18 @@ public class BatchingLogEventObserver implements LogEventObserver {
     }
 
     @Override
-    public synchronized void logEvent(LogEvent logEvent) {
+    protected void doLogEvent(LogEvent logEvent) {
         logEvent(logEvent, Instant.now());
     }
 
     Instant logEvent(LogEvent logEvent, Instant now) {
-        if (threshold.toInt() <= logEvent.getLevel().toInt()) {
-            if (scheduledTask != null) {
-                scheduledTask.cancel(false);
-            }
-            Instant sendTime = addToBatch(logEvent, now);
-            Duration duration = Duration.between(now, sendTime);
-            scheduledTask = executor.schedule(this::execute, duration.toMillis(), TimeUnit.MILLISECONDS);
-            return sendTime;
-        } else {
-            return null;
+        if (scheduledTask != null) {
+            scheduledTask.cancel(false);
         }
+        Instant sendTime = addToBatch(logEvent, now);
+        Duration duration = Duration.between(now, sendTime);
+        scheduledTask = executor.schedule(this::execute, duration.toMillis(), TimeUnit.MILLISECONDS);
+        return sendTime;
     }
 
     Instant addToBatch(LogEvent logEvent, Instant now) {
@@ -164,10 +156,6 @@ public class BatchingLogEventObserver implements LogEventObserver {
 
     public void setIdleThreshold(Duration idleThreshold) {
         this.idleThreshold = idleThreshold;
-    }
-
-    public void setThreshold(Level threshold) {
-        this.threshold = threshold;
     }
 
     @Override

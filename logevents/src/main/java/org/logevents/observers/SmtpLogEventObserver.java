@@ -3,7 +3,6 @@ package org.logevents.observers;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.smtp.SmtpLogEventBatchProcessor;
 import org.logevents.util.Configuration;
-import org.slf4j.event.Level;
 
 import java.util.Properties;
 
@@ -15,7 +14,7 @@ public class SmtpLogEventObserver extends BatchingLogEventObserver {
     public SmtpLogEventObserver(Configuration configuration) {
         super(createBatchProcessor(configuration));
 
-        threshold = configuration.optionalString("threshold").map(Level::valueOf).orElse(Level.DEBUG);
+        configureFilter(configuration);
         idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);
         cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
         maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
