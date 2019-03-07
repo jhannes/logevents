@@ -1,5 +1,12 @@
 package org.logevents;
 
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+import org.slf4j.Marker;
+import org.slf4j.event.Level;
+import org.slf4j.event.LoggingEvent;
+import org.slf4j.helpers.MessageFormatter;
+
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -7,13 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.MDC;
-import org.slf4j.Marker;
-import org.slf4j.event.Level;
-import org.slf4j.event.LoggingEvent;
-import org.slf4j.helpers.MessageFormatter;
 
 /**
  * The representation of a log event. This class is passed to all
@@ -45,7 +45,7 @@ public class LogEvent implements LoggingEvent {
     private StackTraceElement callerLocation;
     private StackTraceElement[] stackTrace;
 
-    public LogEvent(String loggerName, Level level, Instant timestamp, Marker marker, String format, Object... args) {
+    public LogEvent(String loggerName, Level level, Instant timestamp, Marker marker, String format, Object[] args) {
         this.loggerName = loggerName;
         this.level = level;
         this.marker = marker;

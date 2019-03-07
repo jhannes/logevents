@@ -1,11 +1,11 @@
 package org.logevents.status;
 
+import org.logevents.status.StatusEvent.StatusLevel;
+import org.logevents.util.CircularBuffer;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import org.logevents.status.StatusEvent.StatusLevel;
-import org.logevents.util.CircularBuffer;
 
 public class LogEventStatus {
 
@@ -48,7 +48,7 @@ public class LogEventStatus {
         }
 
         if (this.getThreshold().toInt() <= statusEvent.getLevel().toInt()) {
-            System.err.println(statusEvent.formatMessage());
+            System.err.println("LogEvent configuration " + statusEvent.getLevel() + ": " + statusEvent.formatMessage());
             if (statusEvent.getThrowable() != null) {
                 statusEvent.getThrowable().printStackTrace();
             }

@@ -1,7 +1,14 @@
 package org.logevents;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.logevents.observers.CircularBufferLogEventObserver;
+import org.logevents.status.LogEventStatus;
+import org.logevents.status.StatusEvent;
+import org.slf4j.event.Level;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -16,12 +23,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
 
-import org.junit.*;
-import org.logevents.extend.junit.LogEventRule;
-import org.logevents.observers.CircularBufferLogEventObserver;
-import org.logevents.status.LogEventStatus;
-import org.logevents.status.StatusEvent;
-import org.slf4j.event.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class DefaultLogEventConfiguratorTest {
 
