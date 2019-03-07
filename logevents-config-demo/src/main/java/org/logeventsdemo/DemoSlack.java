@@ -1,5 +1,6 @@
 package org.logeventsdemo;
 
+import org.logevents.DefaultLogEventConfigurator;
 import org.logevents.LogEventFactory;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
@@ -9,21 +10,20 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.time.Duration;
-import java.util.Optional;
+import java.util.Properties;
 
 public class DemoSlack {
 
-    public static void main(String[] args) throws InterruptedException, MalformedURLException {
+    public static void main(String[] args) throws InterruptedException {
         LogEventFactory factory = LogEventFactory.getInstance();
 
-        // Get yours at https://www.slack.com/apps/manage/custom-integrations
-        URL slackUrl = new URL("https://hooks.slack.com/services/XXXX/XXX/XXX");
+        // Get yours webhook at https://www.slack.com/apps/manage/custom-integrations
+        //  and put in logevents.properties as observers.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
+        DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
+        Properties properties = configurator.loadConfiguration();
 
-        SlackLogEventObserver slackObserver = new SlackLogEventObserver(slackUrl,
-                Optional.of("LogEvents"), Optional.empty());
+        SlackLogEventObserver slackObserver = new SlackLogEventObserver(properties, "observer.slack");
         slackObserver.setThreshold(Level.INFO);
         slackObserver.setCooldownTime(Duration.ofSeconds(5));
         slackObserver.setMaximumWaitTime(Duration.ofMinutes(3));

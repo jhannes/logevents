@@ -1,8 +1,13 @@
 package org.logevents;
 
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.observers.ConsoleLogEventObserver;
+import org.logevents.observers.FileLogEventObserver;
+import org.logevents.status.LogEventStatus;
+import org.logevents.util.ConfigUtil;
+import org.logevents.util.LogEventConfigurationException;
+import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.slf4j.event.Level;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -24,14 +29,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.logevents.observers.CompositeLogEventObserver;
-import org.logevents.observers.ConsoleLogEventObserver;
-import org.logevents.observers.FileLogEventObserver;
-import org.logevents.status.LogEventStatus;
-import org.logevents.util.ConfigUtil;
-import org.logevents.util.LogEventConfigurationException;
-import org.slf4j.bridge.SLF4JBridgeHandler;
-import org.slf4j.event.Level;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 /**
  * Default implementation of {@link LogEventConfigurator} suitable for override.
@@ -114,11 +114,15 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      */
     protected synchronized void resetConfigurationFromFiles(LogEventFactory factory) {
         try {
-            loadConfiguration(factory, loadPropertiesFromFiles(getConfigurationFileNames()));
+            loadConfiguration(factory, loadConfiguration());
         } catch (Exception e) {
             LogEventStatus.getInstance().addFatal(this, "Failed to load " + getConfigurationFileNames(), e);
             reset(factory);
         }
+    }
+
+    public Properties loadConfiguration() {
+        return loadPropertiesFromFiles(getConfigurationFileNames());
     }
 
     /**
@@ -258,10 +262,10 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
             factory.setLevel(logger, level);
 
             if (spacePos > 0) {
-                Set<LogEventObserver> observers = new LinkedHashSet<>(
+                Set<LogEventObserver> observers =
                         Stream.of(configuration.substring(spacePos+1).trim().split(","))
                         .map(s -> getObserver(s.trim()))
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
                 LogEventObserver observer = CompositeLogEventObserver.combineList(observers);
                 factory.setObserver(logger, observer, includeParent);
             }
