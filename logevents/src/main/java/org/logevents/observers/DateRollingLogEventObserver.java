@@ -1,14 +1,14 @@
 package org.logevents.observers;
 
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.util.Properties;
-
 import org.logevents.LogEvent;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.TTLLEventLogFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
+
+import java.time.LocalDate;
+import java.util.Optional;
+import java.util.Properties;
 
 /**
  * Log events to a file with the date appended to the fileName pattern.
@@ -18,7 +18,7 @@ import org.logevents.util.Configuration;
 public class DateRollingLogEventObserver extends FileLogEventObserver {
 
     public DateRollingLogEventObserver(String fileName, LogEventFormatter formatter) {
-        super(formatter, Paths.get(fileName));
+        super(Optional.of(formatter), Optional.of(fileName));
     }
 
     public DateRollingLogEventObserver(String fileName) {
@@ -32,6 +32,7 @@ public class DateRollingLogEventObserver extends FileLogEventObserver {
         LogEventStatus.getInstance().addInfo(this, "Configured " + configuration.getPrefix());
     }
 
+    @SuppressWarnings("unused")
     public DateRollingLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
     }

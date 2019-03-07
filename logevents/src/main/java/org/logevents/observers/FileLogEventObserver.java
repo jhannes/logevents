@@ -1,5 +1,13 @@
 package org.logevents.observers;
 
+import org.logevents.LogEvent;
+import org.logevents.LogEventObserver;
+import org.logevents.formatting.LogEventFormatter;
+import org.logevents.formatting.LogEventFormatterBuilderFactory;
+import org.logevents.formatting.TTLLEventLogFormatter;
+import org.logevents.util.Configuration;
+import org.logevents.util.pattern.PatternReader;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSource;
@@ -11,14 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
-import org.logevents.LogEvent;
-import org.logevents.LogEventObserver;
-import org.logevents.formatting.LogEventFormatter;
-import org.logevents.formatting.LogEventFormatterBuilderFactory;
-import org.logevents.formatting.TTLLEventLogFormatter;
-import org.logevents.util.Configuration;
-import org.logevents.util.pattern.PatternReader;
-
 public class FileLogEventObserver implements LogEventObserver {
 
     protected final Path path;
@@ -26,7 +26,11 @@ public class FileLogEventObserver implements LogEventObserver {
     private final LogEventFormatter formatter;
     private final FileDestination destination;
 
-    private static String defaultFilename() {
+    public static LogEventFormatter createFormatter(Configuration configuration) {
+        return configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class);
+    }
+
+    public static String defaultFilename() {
         Optional<String> filename = Thread.getAllStackTraces().entrySet().stream()
                 .filter(pair -> pair.getKey().getName().equals("main"))
                 .map(Map.Entry::getValue)
@@ -57,11 +61,9 @@ public class FileLogEventObserver implements LogEventObserver {
         }
     }
 
-
     static String currentWorkingDirectory() {
         return Paths.get("").toAbsolutePath().getFileName().toString();
     }
-
 
     private static boolean isRunningInTest(StackTraceElement[] stackTrace) {
         return Arrays.stream(stackTrace)
@@ -74,17 +76,16 @@ public class FileLogEventObserver implements LogEventObserver {
     }
 
     public FileLogEventObserver(Configuration configuration) {
-        this(configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class),
-                Paths.get(configuration.optionalString("filename").orElseGet(FileLogEventObserver::defaultFilename)));
+        this(Optional.of(createFormatter(configuration)), configuration.optionalString("filename"));
         configuration.checkForUnknownFields();
     }
 
-    public FileLogEventObserver(LogEventFormatter formatter, Path path) {
-        this.formatter = formatter;
-        this.path = path;
+    public FileLogEventObserver(Optional<LogEventFormatter> formatter, Optional<String> path) {
+        this.formatter = formatter.orElse(new TTLLEventLogFormatter());
+        this.path = Paths.get(path.orElseGet(FileLogEventObserver::defaultFilename));
 
-        this.filenameGenerator = new PatternReader<>(factory).readPattern(path.getFileName().toString());
-        this.destination = new FileDestination(path.getParent());
+        this.filenameGenerator = new PatternReader<>(factory).readPattern(this.path.getFileName().toString());
+        this.destination = new FileDestination(this.path.getParent());
     }
 
     @Override
