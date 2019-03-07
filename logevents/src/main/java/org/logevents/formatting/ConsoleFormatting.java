@@ -1,10 +1,10 @@
 package org.logevents.formatting;
 
-import java.util.Locale;
-
 import org.fusesource.jansi.AnsiConsole;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
+
+import java.util.Locale;
 
 /**
  * Returns ANSI colored strings unless unsupported. This
@@ -71,7 +71,7 @@ public class ConsoleFormatting {
     }
 
     enum Format {
-        BOLD(1), UNDERLINE(4);
+        BOLD(1), ITALIC(3), UNDERLINE(4);
 
         private final int code;
 
@@ -114,6 +114,14 @@ public class ConsoleFormatting {
 
     public String bold(String s) {
         return ansi(s, null, Format.BOLD);
+    }
+
+    public String italic(String s) {
+        return ansi(s, null, Format.ITALIC);
+    }
+
+    public String underline(String s) {
+        return ansi(s, null, Format.UNDERLINE);
     }
 
     public String boldBlack(String s) {

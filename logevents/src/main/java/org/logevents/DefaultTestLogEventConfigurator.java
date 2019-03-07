@@ -1,13 +1,12 @@
 package org.logevents;
 
+import org.logevents.formatting.ConsoleLogEventFormatter;
+import org.logevents.observers.ConsoleLogEventObserver;
+import org.slf4j.event.Level;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
-import org.logevents.formatting.ConsoleLogEventFormatter;
-import org.logevents.formatting.LogEventFormatter;
-import org.logevents.observers.ConsoleLogEventObserver;
-import org.slf4j.event.Level;
 
 public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator {
 
@@ -15,8 +14,8 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
 
         @Override
         public String apply(LogEvent e) {
-            return String.format("TEST(%s) %s [%s] [%s] [%s]: %s\n",
-                    getTestMethod(e),
+            return String.format("%s %s [%s] [%s] [%s]: %s\n",
+                    format.underline("TEST(" + getTestMethod(e) + ")"),
                     e.getZonedDateTime().toLocalTime(),
                     e.getThreadName(),
                     colorizedLevel(e),

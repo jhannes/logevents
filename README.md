@@ -507,4 +507,8 @@ less code to implement with Logevents.
 
 * MDC-based batching
 * JMX
-
+* Logback features that logevents is missing:
+  * SMTP table formatting and discriminator
+  * DBAppender
+  * SiftingAppender
+  * SocketAppender

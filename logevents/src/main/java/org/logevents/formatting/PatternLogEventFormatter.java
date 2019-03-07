@@ -4,6 +4,7 @@ import org.logevents.LogEvent;
 import org.logevents.util.Configuration;
 import org.logevents.util.pattern.PatternConverterSpec;
 import org.logevents.util.pattern.PatternReader;
+import org.slf4j.Marker;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -76,13 +77,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.putAliases("message", new String[] { "m", "msg" });
         factory.put("thread", spec -> LogEvent::getThreadName);
         factory.putAliases("thread", new String[] { "t" });
-
-//        factory.putExceptionHandler("exception", spec -> {
-//            BiFunction<Throwable, Optional<Integer>, String> throwableFormatter = spec.getThrowableFormatter();
-//            Optional<Integer> length = spec.getIntParameter(0);
-//            return e -> e.getThrowable() != null ? throwableFormatter.apply(e.getThrowable(), length) : "";
-//        });
-//        factory.putAliases("exception", new String[] { "ex", "throwable" });
+        factory.put("marker", spec -> e -> Optional.ofNullable(e.getMarker()).map(Marker::toString).orElse(""));
 
         factory.put("mdc", spec -> {
             if (spec.getParameters().isEmpty()) {
@@ -107,7 +102,6 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
         //  relative / r - Outputs the number of milliseconds elapsed since the start of the application until the creation of the logging event.
 
-        //  marker
         //  caller
         //  ?? property
 
@@ -135,6 +129,8 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.putTransformer("boldWhite", spec -> s -> ansiFormat.boldWhite(s));
 
         factory.putTransformer("bold", spec -> s -> ansiFormat.bold(s));
+        factory.putTransformer("italic", spec -> s -> ansiFormat.italic(s));
+        factory.putTransformer("underline", spec -> s -> ansiFormat.underline(s));
     }
 
     private String pattern;

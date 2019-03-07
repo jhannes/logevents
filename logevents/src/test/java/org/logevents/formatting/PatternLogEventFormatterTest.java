@@ -1,7 +1,14 @@
 package org.logevents.formatting;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import org.logevents.LogEvent;
+import org.logevents.LogEventFactory;
+import org.logevents.observers.CircularBufferLogEventObserver;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+import org.slf4j.event.Level;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -15,19 +22,15 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
-import org.logevents.LogEvent;
-import org.logevents.LogEventFactory;
-import org.logevents.observers.CircularBufferLogEventObserver;
-import org.slf4j.Logger;
-import org.slf4j.MDC;
-import org.slf4j.event.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PatternLogEventFormatterTest {
 
+    private Marker MARKER = MarkerFactory.getMarker("MY_MARKER");
     private Instant time = Instant.ofEpochMilli(1535056492088L);
     private PatternLogEventFormatter formatter = new PatternLogEventFormatter("No pattern");
-    private LogEvent event = new LogEvent("some.logger.name", Level.INFO, time, null, "A message from {} to {}",
+    private LogEvent event = new LogEvent("some.logger.name", Level.INFO, time, MARKER, "A message from {} to {}",
             new Object[] { "A", "B" });
     private ConsoleFormatting formatting = ConsoleFormatting.getInstance();
 
@@ -71,8 +74,8 @@ public class PatternLogEventFormatterTest {
 
     @Test
     public void shouldOutputColors() {
-        formatter.setPattern("%cyan( [level=%level] ) %logger");
-        assertEquals("\033[36m [level=INFO] \033[m some.logger.name\n",
+        formatter.setPattern("%cyan( [level=%level] ) %underline(%marker) %logger");
+        assertEquals("\033[36m [level=INFO] \033[m \033[4;mMY_MARKER\033[m some.logger.name\n",
                 formatter.apply(event));
     }
 
@@ -99,7 +102,7 @@ public class PatternLogEventFormatterTest {
         LogEvent event = buffer.getEvents().get(0);
 
         formatter.setPattern("%file:%line - %class#%method");
-        assertEquals("PatternLogEventFormatterTest.java:98 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
+        assertEquals("PatternLogEventFormatterTest.java:101 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
                 formatter.apply(event));
     }
 
@@ -207,9 +210,9 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals("ERROR some.logger.name - An error happened", lines[0]);
         assertEquals(ex.toString(), lines[1]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:198)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:201)",
                 lines[2]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:204)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:207)",
                 lines[3]);
     }
 
@@ -222,7 +225,7 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(2+2, lines.length);
         assertEquals("ERROR some.logger.name - An error happened", lines[0]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:198)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:201)",
                 lines[2]);
     }
 

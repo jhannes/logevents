@@ -25,7 +25,7 @@ public class Main {
         Properties configuration = new Properties();
         //configuration.setProperty("observer.console", "ConsoleLogEventObserver");
         configuration.setProperty("observer.console.formatter", "PatternLogEventFormatter");
-        configuration.setProperty("observer.console.formatter.pattern", "%time [%mdc] [%thread] [%-5coloredLevel] [%bold(%logger)]: %msg");
+        configuration.setProperty("observer.console.formatter.pattern", "%italic(%time) [%mdc] [%underline(thread)] [%-5coloredLevel] [%bold(%logger)]: %msg");
         configuration.setProperty("observer.console.packageFilter", "org.logeventsdemo,java.io");
         configuration.setProperty("observer.console.threshold", "INFO");
         configuration.setProperty("observer.console.requireMarker", "PERSONDATA");
