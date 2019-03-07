@@ -9,7 +9,11 @@ import org.logevents.util.Configuration;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Properties;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -44,7 +48,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
                 }
             });
 
-    protected final LogEventBatchProcessor batchProcessor;
+    private final LogEventBatchProcessor batchProcessor;
     private final ScheduledExecutorService executor;
 
     protected Duration cooldownTime = Duration.ofSeconds(15);
@@ -56,13 +60,16 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
     private LogEventBatch currentBatch = new LogEventBatch();
     private ScheduledFuture<?> scheduledTask;
 
+    public BatchingLogEventObserver(LogEventBatchProcessor batchProcessor) {
+        this.batchProcessor = batchProcessor;
+        executor = scheduledExecutorService;
+    }
+
     public BatchingLogEventObserver(Properties properties, String prefix) {
         Configuration configuration = new Configuration(properties, prefix);
 
         configureFilter(configuration);
-        idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);
-        cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
-        maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
+        configureBatching(configuration);
         batchProcessor = configuration.createInstance("batchProcessor", LogEventBatchProcessor.class);
         configuration.checkForUnknownFields();
 
@@ -70,9 +77,14 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
         LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
     }
 
-    public BatchingLogEventObserver(LogEventBatchProcessor batchProcessor) {
-        this.batchProcessor = batchProcessor;
-        executor = scheduledExecutorService;
+    /**
+     * Read <code>idleThreshold</code>, <code>cooldownTime</code> and <code>maximumWaitTime</code>
+     * from configuration
+     */
+    protected void configureBatching(Configuration configuration) {
+        idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);
+        cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
+        maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
     }
 
     /**
@@ -156,6 +168,10 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
 
     public void setIdleThreshold(Duration idleThreshold) {
         this.idleThreshold = idleThreshold;
+    }
+
+    public LogEventBatchProcessor getBatchProcessor() {
+        return batchProcessor;
     }
 
     @Override

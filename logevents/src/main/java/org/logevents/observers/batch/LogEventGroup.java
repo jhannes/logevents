@@ -1,10 +1,11 @@
 package org.logevents.observers.batch;
 
+import org.logevents.LogEvent;
+import org.slf4j.event.Level;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.logevents.LogEvent;
 
 public class LogEventGroup {
 
@@ -51,5 +52,9 @@ public class LogEventGroup {
     @Override
     public String toString() {
         return getClass().getName() + "{" + size() + " x '" + headMessage() + "'}";
+    }
+
+    public Level getLevel() {
+        return headMessage().getLevel();
     }
 }

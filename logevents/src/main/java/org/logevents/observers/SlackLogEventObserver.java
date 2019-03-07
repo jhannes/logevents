@@ -1,6 +1,7 @@
 package org.logevents.observers;
 
-import org.logevents.observers.batch.SlackLogEventBatchProcessor;
+import org.logevents.observers.batch.HttpPostJsonBatchProcessor;
+import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.util.Configuration;
 import org.logevents.util.LogEventConfigurationException;
@@ -19,25 +20,27 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
         super(createBatchProcessor(configuration));
 
         configureFilter(configuration);
-        idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);
-        cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
-        maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
+        configureBatching(configuration);
 
         configuration.checkForUnknownFields();
     }
 
     public SlackLogEventObserver(URL slackUrl, Optional<String> username, Optional<String> channel) {
-        super(new SlackLogEventBatchProcessor(slackUrl, username, channel));
+        super(new HttpPostJsonBatchProcessor(slackUrl, new SlackLogEventsFormatter(username, channel)));
     }
 
-    private static SlackLogEventBatchProcessor createBatchProcessor(Configuration configuration) {
-        SlackLogEventBatchProcessor slackLogEventBatchProcessor = new SlackLogEventBatchProcessor(
-                configuration.getUrl("slackUrl"),
-                configuration.optionalString("username"),
-                configuration.optionalString("channel")
+    private static LogEventBatchProcessor createBatchProcessor(Configuration configuration) {
+        return new HttpPostJsonBatchProcessor(
+                configuration.optionalUrl("slackUrl").orElse(null),
+                createFormatter(configuration)
         );
+    }
+
+    private static SlackLogEventsFormatter createFormatter(Configuration configuration) {
         SlackLogEventsFormatter formatter = configuration.createInstanceWithDefault("slackLogEventsFormatter", SlackLogEventsFormatter.class);
         formatter.setPackageFilter(configuration.getStringList("packageFilter"));
+        formatter.setUsername(configuration.optionalString("username"));
+        formatter.setChannel(configuration.optionalString("channel"));
 
         configuration.optionalString("sourceCode");
 
@@ -59,22 +62,12 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
             }
             index++;
         }
-        slackLogEventBatchProcessor.setSlackLogEventsFormatter(formatter);
 
-
-        return slackLogEventBatchProcessor;
+        return formatter;
     }
 
     @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{"
-                + "username=" + getProcessor().getUsername().orElse("") + ","
-                + "channel=" + getProcessor().getChannel().orElse("") + ","
-                + "slackUrl=" + getProcessor().getSlackUrl()
-                + "}";
-    }
-
-    private SlackLogEventBatchProcessor getProcessor() {
-        return (SlackLogEventBatchProcessor) batchProcessor;
+    public HttpPostJsonBatchProcessor getBatchProcessor() {
+        return (HttpPostJsonBatchProcessor) super.getBatchProcessor();
     }
 }

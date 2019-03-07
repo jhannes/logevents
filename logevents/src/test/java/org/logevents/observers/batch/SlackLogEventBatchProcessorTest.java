@@ -1,7 +1,14 @@
 package org.logevents.observers.batch;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.junit.Test;
+import org.logevents.LogEvent;
+import org.logevents.observers.SlackLogEventObserver;
+import org.logevents.status.LogEventStatus;
+import org.logevents.status.StatusEvent;
+import org.logevents.status.StatusEvent.StatusLevel;
+import org.slf4j.event.Level;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,15 +25,8 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import org.junit.Test;
-import org.logevents.LogEvent;
-import org.logevents.observers.SlackLogEventObserver;
-import org.logevents.status.LogEventStatus;
-import org.logevents.status.StatusEvent;
-import org.logevents.status.StatusEvent.StatusLevel;
-import org.slf4j.event.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("restriction")
 public class SlackLogEventBatchProcessorTest {
@@ -55,14 +55,15 @@ public class SlackLogEventBatchProcessorTest {
         int port = server.getAddress().getPort();
 
         Properties properties = new Properties();
-        properties.setProperty("observer.slack.processor.slackUrl", "http://localhost:" + port);
-        properties.setProperty("observer.slack.processor.slackLogEventsFormatter", Formatter.class.getName());
-        SlackLogEventBatchProcessor processor = new SlackLogEventBatchProcessor(properties, "observer.slack.processor");
-        processor.setChannel("general");
-        processor.setUsername("loguser");
+        properties.setProperty("observer.slack.slackUrl", "http://localhost:" + port);
+        properties.setProperty("observer.slack.slackLogEventsFormatter", Formatter.class.getName());
+        properties.setProperty("observer.slack.username", "loguser");
+        properties.setProperty("observer.slack.channel", "general");
+
+        SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack");
 
         LogEvent logEvent = new LogEvent("org.example", Level.WARN, "Nothing");
-        processor.processBatch(new LogEventBatch().add(logEvent));
+        observer.getBatchProcessor().processBatch(new LogEventBatch().add(logEvent));
 
         assertEquals(Arrays.asList("{\n"
                 + "  \"username\": \"loguser\",\n" + "  \"channel\": \"general\",\n"
@@ -82,11 +83,11 @@ public class SlackLogEventBatchProcessorTest {
         int port = server.getAddress().getPort();
 
         URL url = new URL("http://localhost:" + port);
-        SlackLogEventBatchProcessor processor = new SlackLogEventBatchProcessor(url, Optional.empty(), Optional.empty());
+        SlackLogEventObserver observer = new SlackLogEventObserver(url, Optional.empty(), Optional.empty());
         LogEvent logEvent = new LogEvent("org.example", Level.WARN, "Nothing");
-        processor.processBatch(new LogEventBatch().add(logEvent));
+        observer.getBatchProcessor().processBatch(new LogEventBatch().add(logEvent));
 
-        List<StatusEvent> events = LogEventStatus.getInstance().getHeadMessages(processor, StatusLevel.ERROR);
+        List<StatusEvent> events = LogEventStatus.getInstance().getHeadMessages(observer.getBatchProcessor(), StatusLevel.ERROR);
         assertTrue("Expected 1 event, was " + events, events.size() == 1);
         assertEquals("Failed to send slack message", events.get(0).getMessage());
         assertEquals("Failed to POST to " + url + ", status code: 400: A detailed error message",
@@ -106,7 +107,7 @@ public class SlackLogEventBatchProcessorTest {
 
         SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack");
 
-        assertEquals("SlackLogEventObserver{username=MyTestApp,channel=general,slackUrl=http://localhost:1234}",
+        assertEquals("SlackLogEventObserver{batchProcessor=HttpPostJsonBatchProcessor{jsonMessageFormatter=SlackLogEventsFormatter{username=MyTestApp,channel=general},url=http://localhost:1234}}",
                 observer.toString());
     }
 

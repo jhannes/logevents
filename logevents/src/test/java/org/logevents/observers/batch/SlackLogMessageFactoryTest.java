@@ -1,16 +1,5 @@
 package org.logevents.observers.batch;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-
 import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
@@ -19,6 +8,15 @@ import org.slf4j.event.Level;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SlackLogMessageFactoryTest {
 
@@ -36,7 +34,7 @@ public class SlackLogMessageFactoryTest {
 
         LogEventBatch batch = new LogEventBatch().add(new LogEvent(loggerName, level, format));
 
-        Map<String, Object> slackMessage = new SlackLogEventsFormatter().createSlackMessage(batch, Optional.of(userName), Optional.of(channelName));
+        Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.of(userName), Optional.of(channelName)).createMessage(batch);
         assertEquals(channelName, JsonUtil.getField(slackMessage, "channel"));
         assertContains(format, JsonUtil.getField(slackMessage, "text").toString());
 
@@ -56,7 +54,8 @@ public class SlackLogMessageFactoryTest {
         batch.add(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
         batch.add(new LogEvent(loggerName, Level.ERROR, "Yet another message"));
 
-        Map<String, Object> slackMessage = new SlackLogEventsFormatter().createSlackMessage(batch, Optional.empty(), Optional.empty());
+        Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.empty(), Optional.empty())
+                .createMessage(batch);
 
         Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);
         assertEquals("Suppressed log events", JsonUtil.getField(suppressedEventsAttachment, "title"));
@@ -71,7 +70,7 @@ public class SlackLogMessageFactoryTest {
         Exception exception = new IOException("Something went wrong with " + randomString());
         LogEventBatch batch = new LogEventBatch();
         batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message", exception));
-        Map<String, Object> slackMessage = new SlackLogEventsFormatter().createSlackMessage(batch, Optional.empty(), Optional.empty());
+        Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.empty(), Optional.empty()).createMessage(batch);
 
         Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);
         assertEquals("Stack Trace", JsonUtil.getField(suppressedEventsAttachment, "title"));

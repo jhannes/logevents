@@ -5,13 +5,30 @@ import org.slf4j.event.Level;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-public class SlackLogEventsFormatter {
+public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
     private SlackExceptionFormatter exceptionFormatter = new SlackExceptionFormatter();
+    private Optional<String> username = Optional.empty();
+    private Optional<String> channel = Optional.empty();
 
-    public Map<String, Object> createSlackMessage(LogEventBatch batch, Optional<String> username, Optional<String> channel) {
+    public SlackLogEventsFormatter() {
+    }
+
+    public SlackLogEventsFormatter(Optional<String> username, Optional<String> channel) {
+        this.username = username;
+        this.channel = channel;
+    }
+
+    @Override
+    public Map<String, Object> createMessage(LogEventBatch batch) {
         Map<String, Object> message = new LinkedHashMap<>();
         username.ifPresent(u -> message.put("username", u));
         channel.ifPresent(c -> message.put("channel", c));
@@ -145,5 +162,18 @@ public class SlackLogEventsFormatter {
 
     public void setPackageFilter(String[] packageFilter) {
         exceptionFormatter.setPackageFilter(packageFilter);
+    }
+
+    public void setUsername(Optional<String> username) {
+        this.username = username;
+    }
+
+    public void setChannel(Optional<String> channel) {
+        this.channel = channel;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{username=" + username.orElse("") + ",channel=" + channel.orElse("") + "}";
     }
 }
