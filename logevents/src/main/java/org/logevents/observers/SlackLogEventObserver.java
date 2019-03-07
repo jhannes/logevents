@@ -4,7 +4,6 @@ import org.logevents.observers.batch.HttpPostJsonBatchProcessor;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.util.Configuration;
-import org.logevents.util.LogEventConfigurationException;
 
 import java.net.URL;
 import java.util.Optional;
@@ -41,27 +40,7 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
         formatter.setPackageFilter(configuration.getStringList("packageFilter"));
         formatter.setUsername(configuration.optionalString("username"));
         formatter.setChannel(configuration.optionalString("channel"));
-
-        configuration.optionalString("sourceCode");
-
-        int index = 1;
-        Optional<String> sourcePackages;
-        while ((sourcePackages = configuration.optionalString("sourceCode." + index + ".package")).isPresent()) {
-            Optional<String> githubLocation = configuration.optionalString("sourceCode." + index + ".github");
-            Optional<String> mavenLocation = configuration.optionalString("sourceCode." + index + ".maven");
-            Optional<String> bitbucketLocation = configuration.optionalString("sourceCode." + index + ".bitbucket");
-
-            if (githubLocation.isPresent()) {
-                formatter.addPackageGithubLocation(sourcePackages.get(), githubLocation.get(), configuration.optionalString("sourceCode." + index + ".tag"));
-            } else if (bitbucketLocation.isPresent()) {
-                formatter.addPackageBitbucket5Location(sourcePackages.get(), bitbucketLocation.get(), configuration.optionalString("sourceCode." + index + ".tag"));
-            } else if (mavenLocation.isPresent()) {
-                formatter.addPackageMavenLocation(sourcePackages.get(), mavenLocation.get());
-            } else {
-                throw new LogEventConfigurationException("Can't find source code location for " + sourcePackages);
-            }
-            index++;
-        }
+        formatter.configureSourceCode(configuration);
 
         return formatter;
     }

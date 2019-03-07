@@ -1,6 +1,7 @@
 package org.logevents.observers.batch;
 
 import org.logevents.LogEvent;
+import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
 import java.net.InetAddress;
@@ -175,5 +176,9 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{username=" + username.orElse("") + ",channel=" + channel.orElse("") + "}";
+    }
+
+    public void configureSourceCode(Configuration configuration) {
+        exceptionFormatter.configureSourceCode(configuration);
     }
 }
