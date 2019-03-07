@@ -31,7 +31,7 @@ public class Main {
         configuration.setProperty("observer.console.requireMarker", "PERSONDATA");
         //configuration.setProperty("root", "DEBUG console");
 
-        new DefaultLogEventConfigurator().loadConfiguration(
+        new DefaultLogEventConfigurator().configureLogEventFactory(
                 (LogEventFactory) LoggerFactory.getILoggerFactory(), configuration);
 
 

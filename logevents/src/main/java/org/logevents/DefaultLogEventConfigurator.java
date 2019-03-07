@@ -114,14 +114,14 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      */
     protected synchronized void resetConfigurationFromFiles(LogEventFactory factory) {
         try {
-            loadConfiguration(factory, loadConfiguration());
+            configureLogEventFactory(factory, configureLogEventFactory());
         } catch (Exception e) {
             LogEventStatus.getInstance().addFatal(this, "Failed to load " + getConfigurationFileNames(), e);
             reset(factory);
         }
     }
 
-    public Properties loadConfiguration() {
+    public Properties configureLogEventFactory() {
         return loadPropertiesFromFiles(getConfigurationFileNames());
     }
 
@@ -223,7 +223,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @param factory The LogEventFactory that this configurator should configure
      * @param configuration The merged configuration that should be applied to the factory
      */
-    public void loadConfiguration(LogEventFactory factory, Properties configuration) {
+    public void configureLogEventFactory(LogEventFactory factory, Properties configuration) {
         observers.clear();
         for (Object key : configuration.keySet()) {
             if (key.toString().matches("observer\\.\\w+")) {

@@ -21,7 +21,7 @@ public class DemoSlack {
         // Get yours webhook at https://www.slack.com/apps/manage/custom-integrations
         //  and put in logevents.properties as observers.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
-        Properties properties = configurator.loadConfiguration();
+        Properties properties = configurator.configureLogEventFactory();
 
         SlackLogEventObserver slackObserver = new SlackLogEventObserver(properties, "observer.slack");
         slackObserver.setThreshold(Level.INFO);
