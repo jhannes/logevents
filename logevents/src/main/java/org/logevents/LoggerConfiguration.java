@@ -2,6 +2,7 @@ package org.logevents;
 
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
+import org.slf4j.spi.LocationAwareLogger;
 
 /**
  * The configuration information of a Logger. Used for
@@ -10,7 +11,7 @@ import org.slf4j.event.Level;
  * @author Johannes Brodwall
  *
  */
-public interface LoggerConfiguration extends Logger {
+public interface LoggerConfiguration extends Logger, LocationAwareLogger {
 
     Level getLevelThreshold();
 

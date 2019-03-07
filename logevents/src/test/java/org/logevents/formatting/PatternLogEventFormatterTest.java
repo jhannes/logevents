@@ -35,7 +35,7 @@ public class PatternLogEventFormatterTest {
     private ConsoleFormatting formatting = ConsoleFormatting.getInstance();
 
     @Test(expected = IllegalArgumentException.class)
-    public void shouldRejectIllegalConvertion() {
+    public void shouldRejectIllegalConversion() {
         formatter.setPattern("%nosuchconversion");
         formatter.apply(event);
     }
@@ -108,10 +108,10 @@ public class PatternLogEventFormatterTest {
 
     @Test
     public void shouldHighlightMessage() {
-        LogEvent errorEvent = new LogEvent("some.logger.name", Level.ERROR, "Error message");
-        LogEvent warnEvent = new LogEvent("some.logger.name", Level.WARN, "Warning message");
-        LogEvent infoEvent = new LogEvent("some.logger.name", Level.INFO, "Info message");
-        LogEvent debugEvent = new LogEvent("some.logger.name", Level.DEBUG, "Debug message");
+        LogEvent errorEvent = new LogEvent("some.logger.name", Level.ERROR, "Error message", new Object[0]);
+        LogEvent warnEvent = new LogEvent("some.logger.name", Level.WARN, "Warning message", new Object[0]);
+        LogEvent infoEvent = new LogEvent("some.logger.name", Level.INFO, "Info message", new Object[0]);
+        LogEvent debugEvent = new LogEvent("some.logger.name", Level.DEBUG, "Debug message", new Object[0]);
 
         formatter.setPattern("%highlight(%thread)");
         String s = Thread.currentThread().getName();
@@ -125,7 +125,7 @@ public class PatternLogEventFormatterTest {
     public void shouldOutputMdc() {
         MDC.put("user", "Super User");
         MDC.put("role", "admin");
-        LogEvent event = new LogEvent("some.logger.name", Level.WARN, "Warning message");
+        LogEvent event = new LogEvent("some.logger.name", Level.WARN, "Warning message", new Object[0]);
 
         formatter.setPattern("%boldGreen(role=%mdc{role})");
         assertEquals(formatting.boldGreen("role=admin") + "\n", formatter.apply(event));
@@ -205,7 +205,7 @@ public class PatternLogEventFormatterTest {
     public void shouldIncludeExceptionByDefault() {
         formatter.setPattern("%-5level %logger{36} - %msg");
         IllegalArgumentException ex = createException();
-        LogEvent event = new LogEvent("some.logger.name", Level.ERROR, "An error happened", ex);
+        LogEvent event = new LogEvent("some.logger.name", Level.ERROR, "An error happened", new Object[] { ex });
 
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals("ERROR some.logger.name - An error happened", lines[0]);
@@ -219,8 +219,8 @@ public class PatternLogEventFormatterTest {
     @Test
     public void shouldSpecifyStackLength() {
         formatter.setPattern("%-5level %logger{36} - %msg");
-        formatter.getExceptionFormatter().get().setMaxLength(2);
-        LogEvent event = new LogEvent("some.logger.name", Level.ERROR, "An error happened", createException());
+        formatter.getExceptionFormatter().ifPresent(f -> f.setMaxLength(2));
+        LogEvent event = new LogEvent("some.logger.name", Level.ERROR, "An error happened", new Object[] { createException() });
 
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(2+2, lines.length);

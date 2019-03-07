@@ -14,18 +14,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class LogEventRule implements TestRule, LogEventObserver {
 
-    private String logName;
-    private Logger logger;
+    private final Logger logger;
     private Level level;
     private List<LogEvent> events = new ArrayList<>();
 
     public LogEventRule(Level level, String logName) {
-        this.logName = logName;
         this.level = level;
+        this.logger = LoggerFactory.getLogger(logName);
     }
 
     public LogEventRule(Level level, Class<?> category) {
@@ -40,7 +42,7 @@ public class LogEventRule implements TestRule, LogEventObserver {
     }
 
     public void assertNoMessages() {
-        assertTrue("Expected no log messages to " + logName + " was " + events,
+        assertTrue("Expected no log messages to " + logger + " was " + events,
                 events.isEmpty());
     }
 
@@ -66,6 +68,19 @@ public class LogEventRule implements TestRule, LogEventObserver {
         fail("Could not find <" + message + "> in logged messages: " + events);
     }
 
+    public void assertContainsMessage(Level level, String message, Throwable throwable) {
+        assertFalse("Expected <" + message + "> but no messages were logged",
+                events.isEmpty());
+        for (LogEvent event : events) {
+            if (event.formatMessage().equals(message)) {
+                assertEquals("Log level for " + message, level, event.getLevel());
+                assertEquals("Exception for " + message, throwable, event.getThrowable());
+                return;
+            }
+        }
+        fail("Could not find <" + message + "> in logged messages: " + events);
+    }
+
     public void assertDoesNotContainMessage(String message) {
         for (LogEvent event : events) {
             if (event.formatMessage().equals(message)) {
@@ -82,7 +97,6 @@ public class LogEventRule implements TestRule, LogEventObserver {
             @Override
             public void evaluate() throws Throwable {
                 LogEventFactory loggerFactory = (LogEventFactory) LoggerFactory.getILoggerFactory();
-                logger = loggerFactory.getLogger(logName);
 
                 Level oldLevel = loggerFactory.setLevel(logger, level);
                 LogEventObserver oldObserver = loggerFactory.setObserver(logger, LogEventRule.this, false);

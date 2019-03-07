@@ -45,6 +45,17 @@ public class LogEvent implements LoggingEvent {
     private StackTraceElement callerLocation;
     private StackTraceElement[] stackTrace;
 
+    public LogEvent(String loggerName, Level level, String format, Throwable throwable, Object[] args) {
+        this.loggerName = loggerName;
+        this.level = level;
+        this.marker = null;
+        this.format = format;
+        this.args = args;
+        this.throwable = throwable;
+        this.timestamp = Instant.now().toEpochMilli();
+        this.mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
+    }
+
     public LogEvent(String loggerName, Level level, Instant timestamp, Marker marker, String format, Object[] args) {
         this.loggerName = loggerName;
         this.level = level;
@@ -62,12 +73,16 @@ public class LogEvent implements LoggingEvent {
         this.mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
     }
 
-    public LogEvent(String loggerName, Level level, Marker marker, String format, Object... args) {
+    public LogEvent(String loggerName, Level level, Marker marker, String format, Object[] args) {
         this(loggerName, level, Instant.now(), marker, format, args);
     }
 
-    public LogEvent(String loggerName, Level level, String format, Object... args) {
+    public LogEvent(String loggerName, Level level, String format, Object[] args) {
         this(loggerName, level, Instant.now(), null, format, args);
+    }
+
+    public LogEvent(String loggerName, Level level, String format) {
+        this(loggerName, level, Instant.now(), null, format, new Object[0]);
     }
 
     /**

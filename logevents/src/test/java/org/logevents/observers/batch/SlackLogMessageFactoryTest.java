@@ -32,7 +32,7 @@ public class SlackLogMessageFactoryTest {
         Level level = pickOne(Level.values());
         String format = randomString();
 
-        LogEventBatch batch = new LogEventBatch().add(new LogEvent(loggerName, level, format));
+        LogEventBatch batch = new LogEventBatch().add(new LogEvent(loggerName, level, format, new Object[0]));
 
         Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.of(userName), Optional.of(channelName)).createMessage(batch);
         assertEquals(channelName, JsonUtil.getField(slackMessage, "channel"));
@@ -49,10 +49,10 @@ public class SlackLogMessageFactoryTest {
     @Test
     public void shouldCollectMessagesInBatch() {
         LogEventBatch batch = new LogEventBatch();
-        batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message"));
+        batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message", new Object[0]));
         batch.add(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
         batch.add(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
-        batch.add(new LogEvent(loggerName, Level.ERROR, "Yet another message"));
+        batch.add(new LogEvent(loggerName, Level.ERROR, "Yet another message", new Object[0]));
 
         Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.empty(), Optional.empty())
                 .createMessage(batch);
@@ -69,7 +69,7 @@ public class SlackLogMessageFactoryTest {
     public void shouldOutputStackTrace() {
         Exception exception = new IOException("Something went wrong with " + randomString());
         LogEventBatch batch = new LogEventBatch();
-        batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message", exception));
+        batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message", exception, new Object[0]));
         Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.empty(), Optional.empty()).createMessage(batch);
 
         Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);

@@ -1,8 +1,13 @@
 package org.logevents.observers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import junit.framework.TestCase;
+import org.junit.Test;
+import org.logevents.LogEvent;
+import org.logevents.LogEventFactory;
+import org.logevents.LogEventObserver;
+import org.logevents.LoggerConfiguration;
+import org.logevents.formatting.PatternLogEventFormatter;
+import org.slf4j.event.Level;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,15 +19,9 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import junit.framework.TestCase;
-import org.junit.Test;
-import org.logevents.LogEvent;
-import org.logevents.LogEventFactory;
-import org.logevents.LogEventObserver;
-import org.logevents.LoggerConfiguration;
-import org.logevents.formatting.PatternLogEventFormatter;
-import org.slf4j.Logger;
-import org.slf4j.event.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class FileLogEventObserverTest {
 
@@ -50,7 +49,7 @@ public class FileLogEventObserverTest {
         Properties properties = new Properties();
         FileLogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
 
-        assertEquals(CWD + "-test.log", observer.getFilename(new LogEvent("", Level.DEBUG, "hello")));
+        assertEquals(CWD + "-test.log", observer.getFilename(new LogEvent("", Level.DEBUG, "hello", new Object[0])));
 
         assertEquals(CWD, FileLogEventObserver.currentWorkingDirectory());
         assertEquals("junit", FileLogEventObserver.determineJarName(TestCase.class.getName()));

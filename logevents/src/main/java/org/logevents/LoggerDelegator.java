@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
+import java.util.stream.Stream;
+
 /**
  * Internal implementation of SLF4J {@link Logger}. Uses
  * {@link #levelThreshold}, {@link #ownObserver} and {@link #inheritParentObserver}
@@ -369,6 +371,16 @@ abstract class LoggerDelegator implements LoggerConfiguration {
     @Override
     public String getObserver() {
         return observer.toString();
+    }
+
+    @Override
+    public void log(Marker marker, String fqcn, int levelInt, String message, Object[] argArray, Throwable t) {
+        if (levelInt >= effectiveThreshold.toInt()) {
+            Level level = Stream.of(Level.TRACE, Level.DEBUG, Level.INFO, Level.WARN, Level.ERROR)
+                    .filter(l -> l.toInt() >= levelInt)
+                    .findFirst().orElse(Level.ERROR);
+            observer.logEvent(new LogEvent(this.name, level, message, t, argArray));
+        }
     }
 
     public void setLevelThreshold(Level levelThreshold) {

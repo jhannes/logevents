@@ -6,7 +6,6 @@ import org.logevents.observers.FileLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.ConfigUtil;
 import org.logevents.util.LogEventConfigurationException;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.event.Level;
 
 import java.io.FileInputStream;
@@ -60,7 +59,6 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      */
     @Override
     public void configure(LogEventFactory factory) {
-        installJavaUtilLoggingBridge();
         resetConfigurationFromFiles(factory);
         startConfigurationFileWatcher(factory);
     }
@@ -135,19 +133,6 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     protected List<String> getProfiles() {
         String profilesString = System.getProperty("profiles", System.getProperty("spring.profiles.active", ""));
         return Arrays.asList(profilesString.split(","));
-    }
-
-    /**
-     * Ensures that logging to {@link java.util.logging.Logger} is intercepted.
-     */
-    protected void installJavaUtilLoggingBridge() {
-        try {
-            Class.forName("org.slf4j.bridge.SLF4JBridgeHandler");
-            SLF4JBridgeHandler.removeHandlersForRootLogger();
-            SLF4JBridgeHandler.install();
-        } catch (ClassNotFoundException ignored) {
-
-        }
     }
 
     /**

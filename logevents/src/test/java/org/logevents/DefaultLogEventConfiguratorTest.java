@@ -80,7 +80,7 @@ public class DefaultLogEventConfiguratorTest {
     }
 
     @Test
-    public void shouldParticallyConfigureDefaultObserver() {
+    public void shouldPartiallyConfigureDefaultObserver() {
         configuration.setProperty("observer.file.formatter", "ConsoleLogEventFormatter");
         configuration.setProperty("observer.console.threshold", "WARN");
         configuration.setProperty("root", "DEBUG console,file");
@@ -233,7 +233,7 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldFindTestMethod() {
-        LogEvent logEvent = new LogEvent("test", Level.INFO, "Testing");
+        LogEvent logEvent = new LogEvent("test", Level.INFO, "Testing", new Object[0]);
 
         String formattedMessage = new DefaultTestLogEventConfigurator()
                 .createConsoleLogEventObserver(new Properties())

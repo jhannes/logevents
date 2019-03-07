@@ -1,11 +1,5 @@
 package org.logevents;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.ServiceLoader;
-
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
@@ -13,6 +7,12 @@ import org.logevents.status.LogEventStatus;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.ServiceLoader;
 
 /**
  * LogEventFactory holds all active loggers and lets you set the
@@ -45,6 +45,7 @@ public class LogEventFactory implements ILoggerFactory {
     public synchronized static LogEventFactory getInstance() {
         if (instance == null) {
             instance = new LogEventFactory();
+            JavaUtilLoggingAdapter.install(instance);
         }
         return instance;
     }

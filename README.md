@@ -351,21 +351,8 @@ simply need to include a dependency in your `pom.xml`:
 
 **For java.util.logging**
 
-```xml
-<dependency>
-    <groupId>org.slf4j</groupId>
-    <artifactId>jul-to-slf4j</artifactId>
-    <version>1.7.25</version>
-</dependency>
-```
-
-java.util.logging is slightly more involved: In addition, you have
-to call `SLF4JBridgeHandler.install()` from your own code. However,
-with Logevents, this step isn't needed as Logevents will call this
-for you at the earliest possibility (usually at the moment when you
-first call `LoggerFactory.getLogger`). 
- 
-
+LogEvents will intercept java.util.logging by default. It will override
+the current Handlers the first time `LoggerFactory.getLogger()` is called.
 
 
 ## Advanced usage patterns

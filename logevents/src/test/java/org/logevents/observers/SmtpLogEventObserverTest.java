@@ -33,8 +33,8 @@ public class SmtpLogEventObserverTest {
 
         LogEventBatch batch = new LogEventBatch();
         Instant eventTime = Instant.ofEpochMilli(1529655082000L);
-        batch.add(new LogEvent("org.example", Level.INFO, eventTime, null, "Some less important info"));
-        batch.add(new LogEvent("org.example", Level.WARN, eventTime, null, "Something went wrong"));
+        batch.add(new LogEvent("org.example", Level.INFO, eventTime, null, "Some less important info", new Object[0]));
+        batch.add(new LogEvent("org.example", Level.WARN, eventTime, null, "Something went wrong", new Object[0]));
 
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Colombo"));
         MimeMessage message = batchProcessor.formatMessage(batch, null);
