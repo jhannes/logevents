@@ -2,7 +2,11 @@ package org.logeventsdemo;
 
 import org.logevents.DefaultLogEventConfigurator;
 import org.logevents.LogEventFactory;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,7 +28,7 @@ public class Main {
         configuration.setProperty("observer.console.formatter.pattern", "%time [%mdc] [%thread] [%-5coloredLevel] [%bold(%logger)]: %msg");
         configuration.setProperty("observer.console.packageFilter", "org.logeventsdemo,java.io");
         configuration.setProperty("observer.console.threshold", "INFO");
-        configuration.setProperty("observer.console.requireMarkers", "PERSONDATA");
+        configuration.setProperty("observer.console.requireMarker", "PERSONDATA");
         //configuration.setProperty("root", "DEBUG console");
 
         new DefaultLogEventConfigurator().loadConfiguration(
@@ -48,7 +52,7 @@ public class Main {
                 logger2.error("Sometime went wrong ", e);
             }
 
-            Thread.sleep(1 * 60 * 1000);
+            Thread.sleep(60 * 1000);
         }
     }
 

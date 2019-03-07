@@ -1,10 +1,11 @@
 package org.logevents.formatting;
 
-import java.util.Optional;
-
 import org.logevents.LogEvent;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.slf4j.event.Level;
+
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 /**
  * A simple formatter used by {@link ConsoleLogEventObserver} by default.
@@ -18,6 +19,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     protected final ConsoleFormatting format = ConsoleFormatting.getInstance();
 
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
+    private DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
 
     @Override
     public Optional<ExceptionFormatter> getExceptionFormatter() {
@@ -27,7 +29,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     @Override
     public String apply(LogEvent e) {
         return String.format("%s [%s] [%s] [%s]: %s\n",
-                e.getZonedDateTime().toLocalTime(),
+                e.getZonedDateTime().format(timeOnlyFormatter),
                 e.getThreadName(),
                 colorizedLevel(e),
                 format.bold(e.getLoggerName()),
