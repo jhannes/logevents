@@ -12,6 +12,16 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
 
     private static class ConsoleLogEventTestFormatter extends ConsoleLogEventFormatter {
 
+        public ConsoleLogEventTestFormatter() {
+            exceptionFormatter.setPackageFilter(new String[] {
+                    "org.junit.runners",
+                    "org.junit.internal.runners",
+                    "jdk.internal.reflect",
+                    "com.intellij.junit4",
+                    "com.intellij.rt.execution.junit"
+            });
+        }
+
         @Override
         public String apply(LogEvent e) {
             return String.format("%s %s [%s] [%s] [%s]: %s\n",
