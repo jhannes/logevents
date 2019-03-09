@@ -10,7 +10,7 @@ import java.net.URL;
 
 public class NetUtils {
 
-    public static void postJson(URL url, String json) throws IOException {
+    public static String postJson(URL url, String json) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         connection.setRequestMethod("POST");
@@ -25,6 +25,7 @@ public class NetUtils {
             throw new IOException("Failed to POST to " + url + ", status code: " + statusCode
                     + ": " + readAsString(connection.getErrorStream()));
         }
+        return readAsString(connection.getInputStream());
     }
 
     private static String readAsString(InputStream inputStream) throws IOException {

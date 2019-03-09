@@ -30,9 +30,10 @@ public class HttpPostJsonBatchProcessor implements LogEventBatchProcessor {
             return;
         }
         try {
-            NetUtils.postJson(url, JsonUtil.toIndentedJson(jsonMessage));
+            String response = NetUtils.postJson(url, JsonUtil.toIndentedJson(jsonMessage));
+            LogEventStatus.getInstance().addTrace(this, "Sent message to " + url + ": " + response);
         } catch (IOException e) {
-            LogEventStatus.getInstance().addError(this, "Failed to send slack message", e);
+            LogEventStatus.getInstance().addError(this, "Failed to send message to " + url, e);
         }
     }
 

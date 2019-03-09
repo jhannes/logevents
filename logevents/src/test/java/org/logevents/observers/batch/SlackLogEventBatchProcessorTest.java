@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,13 +88,13 @@ public class SlackLogEventBatchProcessorTest {
 
         List<StatusEvent> events = LogEventStatus.getInstance().getHeadMessages(observer.getBatchProcessor(), StatusLevel.ERROR);
         assertTrue("Expected 1 event, was " + events, events.size() == 1);
-        assertEquals("Failed to send slack message", events.get(0).getMessage());
+        assertEquals("Failed to send message to " + url, events.get(0).getMessage());
         assertEquals("Failed to POST to " + url + ", status code: 400: A detailed error message",
                 events.get(0).getThrowable().getMessage());
     }
 
     @Test
-    public void shouldConfigureSlackObserver() throws MalformedURLException {
+    public void shouldConfigureSlackObserver() {
         Properties properties = new Properties();
         properties.put("observer.slack.slackUrl", "http://localhost:1234");
         properties.put("observer.slack.channel", "general");

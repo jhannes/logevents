@@ -40,6 +40,10 @@ public class LogEventStatus {
         add(new StatusEvent(location, message, StatusEvent.StatusLevel.INFO, null));
     }
 
+    public void addTrace(Object location, String message) {
+        add(new StatusEvent(location, message, StatusEvent.StatusLevel.TRACE, null));
+    }
+
     void add(StatusEvent statusEvent) {
         if (headMessages.size() < 200) {
             headMessages.add(statusEvent);

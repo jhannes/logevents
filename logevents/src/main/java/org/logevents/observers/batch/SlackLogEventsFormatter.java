@@ -45,7 +45,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         if (throwable != null) {
             exceptionInfo = throwable.getMessage() + " <" + throwable.getClass().getName() + "> ";
         }
-        return event.getLevel().toString().substring(0, 1) + " "
+        return emojiiForLevel(event.getLevel()) + " "
             + exceptionInfo
             + event.formatMessage()
             + " [" + event.getAbbreviatedLoggerName(10) + "]"
