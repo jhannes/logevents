@@ -18,7 +18,7 @@ import java.util.Random;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class SlackLogMessageFactoryTest {
+public class SlackLogMessageFormatterTest {
 
     private String loggerName = getClass().getName();
     private Random random = new Random();
@@ -74,7 +74,7 @@ public class SlackLogMessageFactoryTest {
 
         Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);
         assertEquals("Stack Trace", JsonUtil.getField(suppressedEventsAttachment, "title"));
-        assertContains("org.logevents.observers.batch.SlackLogMessageFactoryTest",
+        assertContains("org.logevents.observers.batch.SlackLogMessageFormatterTest",
                 JsonUtil.getField(suppressedEventsAttachment, "text").toString());
     }
 
