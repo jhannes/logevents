@@ -53,12 +53,18 @@ public class FileLogEventObserver implements LogEventObserver {
             if (path.endsWith("/")) {
                 return currentWorkingDirectory();
             }
-            int lastSlash = path.lastIndexOf('/');
-            return path.substring(lastSlash+1)
-                    .replaceAll("(-?(\\d+\\.)*\\d+)\\.jar$", "");
+            return toApplicationName(path);
         } catch (ClassNotFoundException e) {
             return currentWorkingDirectory();
         }
+    }
+
+    /** Remove directory name, .jar suffix and semver version from file path */
+    static String toApplicationName(String jarPath) {
+        int lastSlash = jarPath.lastIndexOf('/');
+        String filename = jarPath.substring(lastSlash + 1);
+        return filename
+                .replaceAll("(-\\d+(\\.\\d+)*(-[0-9A-Za-z-.]+)?)?\\.jar$", "");
     }
 
     static String currentWorkingDirectory() {

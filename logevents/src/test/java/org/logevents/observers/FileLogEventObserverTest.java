@@ -58,6 +58,16 @@ public class FileLogEventObserverTest {
     }
 
     @Test
+    public void shouldCalculateApplicationNameFromJarName() {
+        String prefix = "/usr/local/apps/myApp/";
+        assertEquals("my-little-app", FileLogEventObserver.toApplicationName(prefix + "my-little-app.jar"));
+        assertEquals("random-app", FileLogEventObserver.toApplicationName(prefix + "random-app-1.2.jar"));
+        assertEquals("random-app", FileLogEventObserver.toApplicationName(prefix + "random-app-1.2.11.jar"));
+        assertEquals("logevents-demo", FileLogEventObserver.toApplicationName(prefix + "logevents-demo-1.2.11-SNAPSHOT.jar"));
+        assertEquals("logevents-demo", FileLogEventObserver.toApplicationName(prefix + "logevents-demo-1.2.11-alfa2.jar"));
+    }
+
+    @Test
     public void shouldLogToFile() throws IOException {
         Path path = Paths.get("target", "test", "log", getClass().getSimpleName() + ".log");
         Files.deleteIfExists(path);
