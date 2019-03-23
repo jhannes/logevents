@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class BatchingLogEventObserver extends FilteredLogEventObserver {
 
-    private static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
+    protected static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
             new ThreadFactory() {
                 private final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
                 private final AtomicInteger threadNumber = new AtomicInteger(1);
@@ -54,7 +54,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
             });
 
     private final LogEventBatchProcessor batchProcessor;
-    protected final ScheduledExecutorService executor;
+    protected final ExecutorScheduler scheduler;
 
     protected Duration cooldownTime = Duration.ofSeconds(15);
     protected Duration maximumWaitTime = Duration.ofMinutes(1);
@@ -68,7 +68,8 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
 
     public BatchingLogEventObserver(LogEventBatchProcessor batchProcessor) {
         this.batchProcessor = batchProcessor;
-        executor = scheduledExecutorService;
+        scheduler = new ExecutorScheduler(scheduledExecutorService);
+        scheduler.setAction(this::execute);
     }
 
     public BatchingLogEventObserver(Properties properties, String prefix) {
@@ -79,7 +80,8 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
         batchProcessor = configuration.createInstance("batchProcessor", LogEventBatchProcessor.class);
         configuration.checkForUnknownFields();
 
-        executor = scheduledExecutorService;
+        scheduler = new ExecutorScheduler(scheduledExecutorService);
+        scheduler.setAction(this::execute);
         LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
     }
 
@@ -98,7 +100,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
      * Especially useful for testing.
      */
     public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        scheduledExecutorService.awaitTermination(timeout, unit);
+        scheduler.awaitTermination(timeout, unit);
     }
 
     @Override
@@ -115,12 +117,9 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
     }
 
     Instant logEvent(LogEvent logEvent, Instant now) {
-        if (scheduledTask != null && !scheduledTask.isDone()) {
-            scheduledTask.cancel(false);
-        }
         Instant sendTime = addToBatch(logEvent, now);
         Duration duration = Duration.between(now, sendTime);
-        scheduledTask = executor.schedule(this::execute, duration.toMillis(), TimeUnit.MILLISECONDS);
+        scheduler.schedule(duration);
         return sendTime;
     }
 
@@ -209,7 +208,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
 
     protected BatchThrottler createBatcher(Configuration configuration, String markerName) {
         String throttle = configuration.getString("markers." + markerName + ".throttle");
-        return new BatchThrottler(new ExecutorScheduler(executor), batchProcessor)
+        return new BatchThrottler(new ExecutorScheduler(scheduledExecutorService), batchProcessor)
                 .setThrottle(throttle);
     }
 

@@ -50,6 +50,9 @@ public class LogEventStatus {
         add(new StatusEvent(location, message, StatusEvent.StatusLevel.TRACE, null));
     }
 
+    // TODO: We should probably detect duplicates (same location, level and message)
+    //   and just record repeat count and last timestamp. System.err should not happen on duplicates
+    //   (or perhaps, not on duplicates within 10 minutes)
     void add(StatusEvent statusEvent) {
         if (headMessages.size() < 200) {
             headMessages.add(statusEvent);

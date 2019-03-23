@@ -71,7 +71,7 @@ public class BatchingLogEventObserverTest {
 
     @Test
     public void shouldProcessMessages() throws InterruptedException {
-        Processor processor = new Processor();
+        LogEventBatchProcessor processor = Mockito.mock(LogEventBatchProcessor.class);
         BatchingLogEventObserver observer = new BatchingLogEventObserver(processor);
         Duration maximumWaitTime = Duration.ofMinutes(10);
         observer.setMaximumWaitTime(maximumWaitTime);
@@ -90,8 +90,7 @@ public class BatchingLogEventObserverTest {
         assertTrue(secondMessageSend + " should not be after " + secondMessage.getInstant(), !secondMessageSend.isAfter(secondMessage.getInstant()));
 
         observer.awaitTermination(50, TimeUnit.MILLISECONDS);
-        assertEquals(1, processor.batches.size());
-        assertEquals(2, processor.batches.get(0).size());
+        verify(processor).processBatch(new LogEventBatch().add(firstMessage).add(secondMessage));
     }
 
     @Test

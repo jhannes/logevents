@@ -56,7 +56,7 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
                 .ifPresent(channel -> formatter.setChannel(Optional.of(channel)));
         String throttle = configuration.getString("markers." + markerName + ".throttle");
         return new BatchThrottler(
-                new ExecutorScheduler(executor), createBatchProcessor(configuration, formatter))
+                new ExecutorScheduler(scheduledExecutorService), createBatchProcessor(configuration, formatter))
                 .setThrottle(throttle);
     }
 }
