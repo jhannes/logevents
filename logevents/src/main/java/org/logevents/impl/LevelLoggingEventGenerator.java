@@ -2,6 +2,7 @@ package org.logevents.impl;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.status.LogEventStatus;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
@@ -81,7 +82,11 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
     }
 
     private void log(LogEvent logEvent) {
-        observer.logEvent(logEvent);
+        try {
+            observer.logEvent(logEvent);
+        } catch (Exception e) {
+            LogEventStatus.getInstance().addError(observer, "Failed to log to observer", e);
+        }
     }
 
 }

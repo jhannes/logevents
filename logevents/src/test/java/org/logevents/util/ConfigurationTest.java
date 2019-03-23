@@ -1,12 +1,14 @@
 package org.logevents.util;
 
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Properties;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import java.util.Properties;
-
-import org.junit.Test;
 
 public class ConfigurationTest {
     private Properties properties = new Properties();
@@ -98,6 +100,19 @@ public class ConfigurationTest {
 
         assertConfigurationError(() -> configuration.checkForUnknownFields(),
                 "Unknown configuration options: [also, unknown] for observer.foo. Expected options: [amount, name, value]");
+    }
+
+    @Test
+    public void shouldListProperties() {
+        properties.put("observer.test.markers.foo.name", "ignored");
+        properties.put("observer.test.markers.foo.value", "ignored");
+        properties.put("observer.test.markers.bar.name", "ignored");
+        properties.put("observer.test.markers.baz", "ignored");
+        Configuration configuration = new Configuration(properties, "observer.test");
+
+        assertEquals(new HashSet<>(Arrays.asList("foo", "bar", "baz")),
+                configuration.listProperties("markers"));
+
     }
 
     private void assertConfigurationError(Runnable r, String expected) {

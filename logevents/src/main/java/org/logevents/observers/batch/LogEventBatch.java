@@ -5,9 +5,11 @@ import org.logevents.LogEvent;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
-public class LogEventBatch {
+public class LogEventBatch implements Iterable<LogEvent> {
     private List<LogEvent> batch = new ArrayList<>();
 
     public LogEventBatch add(LogEvent logEvent) {
@@ -25,6 +27,11 @@ public class LogEventBatch {
 
     public int size() {
         return batch.size();
+    }
+
+    @Override
+    public Iterator<LogEvent> iterator() {
+        return batch.iterator();
     }
 
     public LogEventGroup firstHighestLevelLogEventGroup() {
@@ -51,5 +58,18 @@ public class LogEventBatch {
 
     public Instant latestEventTime() {
         return batch.get(batch.size()-1).getInstant();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LogEventBatch logEvents = (LogEventBatch) o;
+        return Objects.equals(batch, logEvents.batch);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(batch);
     }
 }

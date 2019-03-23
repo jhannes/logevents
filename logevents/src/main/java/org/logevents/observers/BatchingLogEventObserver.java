@@ -1,13 +1,18 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
+import org.logevents.observers.batch.BatchThrottler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -49,7 +54,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
             });
 
     private final LogEventBatchProcessor batchProcessor;
-    private final ScheduledExecutorService executor;
+    protected final ScheduledExecutorService executor;
 
     protected Duration cooldownTime = Duration.ofSeconds(15);
     protected Duration maximumWaitTime = Duration.ofMinutes(1);
@@ -58,6 +63,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
     private Instant lastSendTime = Instant.ofEpochMilli(0);
 
     private LogEventBatch currentBatch = new LogEventBatch();
+    private Map<Marker, BatchThrottler> markerBatchers = new HashMap<>();
     private ScheduledFuture<?> scheduledTask;
 
     public BatchingLogEventObserver(LogEventBatchProcessor batchProcessor) {
@@ -97,11 +103,19 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
 
     @Override
     protected void doLogEvent(LogEvent logEvent) {
+        if (logEvent.getMarker() != null) {
+            for (Marker marker : markerBatchers.keySet()) {
+                if (marker.contains(logEvent.getMarker())) {
+                    markerBatchers.get(marker).logEvent(logEvent);
+                    return;
+                }
+            }
+        }
         logEvent(logEvent, Instant.now());
     }
 
     Instant logEvent(LogEvent logEvent, Instant now) {
-        if (scheduledTask != null) {
+        if (scheduledTask != null && !scheduledTask.isDone()) {
             scheduledTask.cancel(false);
         }
         Instant sendTime = addToBatch(logEvent, now);
@@ -126,7 +140,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
         }
     }
 
-    public synchronized LogEventBatch takeCurrentBatch() {
+    synchronized LogEventBatch takeCurrentBatch() {
         lastSendTime = Instant.now();
         LogEventBatch returnedBatch = this.currentBatch;
         currentBatch = new LogEventBatch();
@@ -177,5 +191,29 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{batchProcessor=" + this.batchProcessor + "}";
+    }
+
+    /**
+     * Configure throttling for the provided marker. Throttling is a string like <code>PT10M PT30M</code>
+     * indicating a list of periods (PT). In this example, after one message is sent, all messages
+     * with this marker will be batched up for the next ten minutes (PT10M). If any messages were collected,
+     * the next batch will be sent after 30 minutes (PT30M). The last throttling period will repeat
+     * until a period passes with no batched messages.
+     */
+    public void configureMarkers(Configuration configuration) {
+        for (String markerName : configuration.listProperties("markers")) {
+            markerBatchers.put(MarkerFactory.getMarker(markerName),
+                    createBatcher(configuration, markerName));
+        }
+    }
+
+    protected BatchThrottler createBatcher(Configuration configuration, String markerName) {
+        String throttle = configuration.getString("markers." + markerName + ".throttle");
+        return new BatchThrottler(new ExecutorScheduler(executor), batchProcessor)
+                .setThrottle(throttle);
+    }
+
+    BatchThrottler getMarker(Marker marker) {
+        return markerBatchers.get(marker);
     }
 }

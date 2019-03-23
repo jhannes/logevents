@@ -18,12 +18,18 @@ public class LogEventStatus {
     private List<StatusEvent> headMessages = new ArrayList<>();
     private CircularBuffer<StatusEvent> tailMessages = new CircularBuffer<>();
 
-    public StatusEvent.StatusLevel getThreshold() {
+    public StatusEvent.StatusLevel getThreshold(Object location) {
+        if (location != null) {
+            String locationStatus = System.getProperty("logevents.status." + location.getClass().getSimpleName());
+            if (locationStatus != null) {
+                return StatusLevel.valueOf(locationStatus);
+            }
+        }
         return StatusLevel.valueOf(System.getProperty("logevents.status", StatusLevel.ERROR.toString()));
     }
 
     public StatusLevel setThreshold(StatusLevel threshold) {
-        StatusLevel oldThreshold = getThreshold();
+        StatusLevel oldThreshold = getThreshold(null);
         System.setProperty("logevents.status", threshold.toString());
         return oldThreshold;
     }
@@ -51,7 +57,7 @@ public class LogEventStatus {
             tailMessages.add(statusEvent);
         }
 
-        if (this.getThreshold().toInt() <= statusEvent.getLevel().toInt()) {
+        if (this.getThreshold(statusEvent.getLocation()).toInt() <= statusEvent.getLevel().toInt()) {
             System.err.println("LogEvent configuration " + statusEvent.getLevel() + ": " + statusEvent.formatMessage());
             if (statusEvent.getThrowable() != null) {
                 statusEvent.getThrowable().printStackTrace();

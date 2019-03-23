@@ -10,7 +10,6 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Properties;
 
 public class DemoSlack {
@@ -18,16 +17,18 @@ public class DemoSlack {
     public static void main(String[] args) throws InterruptedException {
         LogEventFactory factory = LogEventFactory.getInstance();
 
-        // Get yours webhook at https://www.slack.com/apps/manage/custom-integrations
+        // Get your webhook at https://www.slack.com/apps/manage/custom-integrations
         //  and put in logevents.properties as observers.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
+
         Properties properties = configurator.configureLogEventFactory();
+        properties.put("observer.slack", SlackLogEventObserver.class.getName());
+        properties.put("observer.slack.threshold", Level.INFO.name());
+        properties.put("observer.slack.cooldownTime", "PT5S");
+        properties.put("observer.slack.maximumWaitTime", "PT3M");
+        properties.put("observer.slack.idleThreshold", "PT3S");
 
         SlackLogEventObserver slackObserver = new SlackLogEventObserver(properties, "observer.slack");
-        slackObserver.setThreshold(Level.INFO);
-        slackObserver.setCooldownTime(Duration.ofSeconds(5));
-        slackObserver.setMaximumWaitTime(Duration.ofMinutes(3));
-        slackObserver.setIdleThreshold(Duration.ofSeconds(3));
 
         factory.setRootLevel(Level.INFO);
         factory.setRootObserver(CompositeLogEventObserver.combine(

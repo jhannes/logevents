@@ -19,6 +19,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     private SlackExceptionFormatter exceptionFormatter = new SlackExceptionFormatter();
     private Optional<String> username = Optional.empty();
     private Optional<String> channel = Optional.empty();
+    private boolean showRepeatsIndividually;
 
     public SlackLogEventsFormatter() {
     }
@@ -61,30 +62,41 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
             result.add(createStackTraceAttachment(event));
         }
         if (batch.size() > 1) {
-            result.add(createSuppressedEventsAttachment(batch));
+            result.add(createThrottledEventsAttachment(batch));
         }
         return result;
     }
 
-    protected Map<String, Object> createSuppressedEventsAttachment(LogEventBatch batch) {
+    protected Map<String, Object> createThrottledEventsAttachment(LogEventBatch batch) {
         Map<String, Object> attachment = new HashMap<>();
-        attachment.put("title", "Suppressed log events");
+        attachment.put("title", "Throttled log events");
         Level level = batch.firstHighestLevelLogEventGroup().headMessage().getLevel();
         attachment.put("color", getColor(level));
         attachment.put("mrkdwn_in", Arrays.asList("text"));
 
         StringBuilder text = new StringBuilder();
-        for (LogEventGroup group : batch.groups()) {
-            String message = group.headMessage().formatMessage();
-            if (batch.isMainGroup(group)) {
-                message = bold(message);
+        if (showRepeatsIndividually) {
+            for (LogEvent logEvent : batch) {
+                String message = logEvent.formatMessage();
+                text.append(emojiiForLevel(logEvent.getLevel()))
+                        .append(" _").append(logEvent.getZonedDateTime().toLocalTime()).append("_: ");
+                text.append(message);
+                text.append("\n");
             }
-            if (group.size() > 1) {
-                message += " (" + group.size() + " repetitions)";
+        } else {
+            for (LogEventGroup group : batch.groups()) {
+                if (group.size() > 1) {
+                    String message = group.headMessage().getMessage();
+                    text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ");
+                    text.append(batch.isMainGroup(group) ? bold(message) : message);
+                    text.append(" (").append(group.size()).append(" repetitions)\n");
+                } else {
+                    String message = group.headMessage().formatMessage();
+                    text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ");
+                    text.append(batch.isMainGroup(group) ? bold(message) : message);
+                    text.append("\n");
+                }
             }
-            text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ")
-                .append(message)
-                .append("\n");
         }
         attachment.put("text", text);
         return attachment;
@@ -102,6 +114,9 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         fields.add(slackMessageField("Level", event.getLevel().toString(), true));
         fields.add(slackMessageField("Source", getMessageSource(), true));
         fields.add(slackMessageField("Main", System.getProperty("sun.java.command"), true));
+        if (event.getMarker() != null) {
+            fields.add(slackMessageField("Marker", event.getMarker().getName(), true));
+        }
         for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()){
             fields.add(slackMessageField(entry.getKey(), entry.getValue(), false));
         }
@@ -171,6 +186,10 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
     public void setChannel(Optional<String> channel) {
         this.channel = channel;
+    }
+
+    public void setShowRepeatsIndividually(boolean showRepeatsIndividually) {
+        this.showRepeatsIndividually = showRepeatsIndividually;
     }
 
     @Override

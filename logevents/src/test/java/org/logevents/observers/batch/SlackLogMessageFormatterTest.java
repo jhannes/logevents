@@ -58,7 +58,7 @@ public class SlackLogMessageFormatterTest {
                 .createMessage(batch);
 
         Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);
-        assertEquals("Suppressed log events", JsonUtil.getField(suppressedEventsAttachment, "title"));
+        assertEquals("Throttled log events", JsonUtil.getField(suppressedEventsAttachment, "title"));
         assertContains(": A lesser important message",
                 JsonUtil.getField(suppressedEventsAttachment, "text").toString());
         assertContains(": *A more important message* (2 repetitions)",

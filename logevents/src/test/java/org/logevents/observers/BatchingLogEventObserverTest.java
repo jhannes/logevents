@@ -1,8 +1,14 @@
 package org.logevents.observers;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import org.logevents.LogEvent;
+import org.logevents.observers.batch.LogEventBatch;
+import org.logevents.observers.batch.LogEventBatchProcessor;
+import org.logevents.util.Configuration;
+import org.mockito.Mockito;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+import org.slf4j.event.Level;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -12,13 +18,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import org.junit.Test;
-import org.logevents.LogEvent;
-import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.observers.batch.LogEventBatchProcessor;
-import org.slf4j.event.Level;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 
 public class BatchingLogEventObserverTest {
 
@@ -89,6 +93,25 @@ public class BatchingLogEventObserverTest {
         assertEquals(1, processor.batches.size());
         assertEquals(2, processor.batches.get(0).size());
     }
+
+    @Test
+    public void shouldSendSeparateBatchesForThrottledMarkers() throws InterruptedException {
+        Marker myMarker = MarkerFactory.getMarker("MY_MARKER");
+
+        LogEventBatchProcessor processor = Mockito.mock(LogEventBatchProcessor.class);
+        BatchingLogEventObserver observer = new BatchingLogEventObserver(processor);
+
+        Properties properties = new Properties();
+        properties.put("observer.test.markers.MY_MARKER.throttle", "PT0.1S PT0.3S");
+        observer.configureMarkers(new Configuration(properties, "observer.test"));
+        observer.getMarker(myMarker).setBatchProcessor(processor);
+
+        LogEvent event = new LogEvent(getClass().getName(), Level.INFO, myMarker, "test", new Object[]{});
+        observer.logEvent(event);
+        observer.awaitTermination(100, TimeUnit.MILLISECONDS);
+        verify(processor).processBatch(new LogEventBatch().add(event));
+    }
+
 
     private LogEvent sampleMessage(String messageFormat, Level level, Object... objects) {
         return new LogEvent(getClass().getName(), level, messageFormat, objects);

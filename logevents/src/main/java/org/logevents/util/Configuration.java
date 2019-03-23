@@ -130,5 +130,20 @@ public class Configuration {
 
     }
 
-
+    /**
+     * List all direct property names under the specified key. For example,
+     * if a Configuration with prefix "observer.test" has properties
+     * "observer.test.markers.a.foo", "observer.test.markers.a.bar" and
+     * "observer.test.markers.b", <code>listProperties("markers")</code>
+     * will return ["a", "b"].
+     */
+    public Set<String> listProperties(String key) {
+        expectedFields.add(key);
+        String keyPrefix = prefix + "."  + key;
+        return properties.stringPropertyNames().stream()
+                .filter(n -> n.startsWith(keyPrefix))
+                .map(n -> n.substring(keyPrefix.length() + 1))
+                .map(n -> n.split("\\.")[0])
+                .collect(Collectors.toSet());
+    }
 }
