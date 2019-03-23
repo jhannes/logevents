@@ -33,8 +33,32 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 /**
- * Default implementation of {@link LogEventConfigurator} suitable for override.
- * When overriding, {@link #configure(LogEventFactory)} should probably be overloaded
+ * Default implementation of {@link LogEventConfigurator} which reads the
+ * logging configuration from <code>logevents.properties</code>-files.
+ * This class will by default load <code>logevents-<em>profile</em>.properties</code>
+ * and <code>logevents.properties</code>, where based on {@link #getProfiles()}.
+ * <code>logevents.properties</code> files in profile takes precedence over default
+ * <code>logevents.properties</code> files. Files on current working directory takes
+ * precedence over files in classpath and are automatically scanned for changes.
+ * <p>
+ * <code>logevents.properties</code> should look like this ({@link #applyConfigurationProperties}):
+ *
+ * <pre>
+ * root=LEVEL [observer1,observer2,observer2]
+ *
+ * logger.com.example=LEVEL [observer]
+ * includeParent.com.example=true|false
+ *
+ * observer.name=ObserverClass
+ * observer.name.property=value
+ * </pre>
+ * By default, observers named <code>observer.console</code> {@link ConsoleLogEventObserver} and
+ * <code>observer.file</code> {@link FileLogEventObserver} are created. By default, the <code>root</code>
+ * root logger is set to <code>INFO console</code>.
+ *
+ * <p>
+ * This class is designed with subclassing in mind. When subclassing,
+ * {@link #configure(LogEventFactory)} should probably be overridden
  *
  * @author Johannes Brodwall
  *
@@ -112,21 +136,29 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      */
     protected synchronized void resetConfigurationFromFiles(LogEventFactory factory) {
         try {
-            configureLogEventFactory(factory, configureLogEventFactory());
+            applyConfigurationProperties(factory, loadConfigurationProperties());
         } catch (Exception e) {
             LogEventStatus.getInstance().addFatal(this, "Failed to load " + getConfigurationFileNames(), e);
             reset(factory);
         }
     }
 
-    public Properties configureLogEventFactory() {
+    /**
+     * Reads <code>logevents.properties</code> from classpath and filesystem.
+     * {@link #getProfiles()} is used to determine <code>logevents-<em>profile</em>.properties</code>
+     * files names. Files from profile take precedence over default <code>logevents.properties</code>
+     * and files from filesystem takes precedence over files from classpath.
+     *
+     * @return A merged Properties object with all relevant files merged together
+     */
+    public Properties loadConfigurationProperties() {
         return loadPropertiesFromFiles(getConfigurationFileNames());
     }
 
     /**
-     * Used system properties and environment variables 'profiles', 'profile' and
-     * 'spring.profiles.active' to determine which profiles are active in the
-     * current environment.
+     * Uses system properties 'profiles', 'profile' and 'spring.profiles.active'
+     * (in order of preference) to determine which profiles
+     * are active in the current environment. The profiles are split on ","
      *
      * @return the activated profiles for the current JVM as a list of strings
      */
@@ -201,14 +233,18 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     }
 
     /**
-     * Loads observers and loggers from the configuration. Observerers have
-     * properties on the format 'observers.prefix=ClassName' and loggers have
-     * properties on the format 'logger.log.name=LEVEL observer1,observer2'.
+     * Configures observers and loggers from properties. Observers have
+     * properties on the format <code>observers.prefix=ClassName</code> and loggers have
+     * properties on the format <code>logger.log.name=LEVEL observer1,observer2</code>.
+     * {@link LogEventObserver} class names must be fully qualified
+     * (e.g. <code>observer.mine=com.example.MyObserver</code>)
+     * unless the observer is in <code>org.logevents.observers</code> package
+     * (e.g. <code>observer.slack=SlackLogEventObserver</code>).
      *
      * @param factory The LogEventFactory that this configurator should configure
      * @param configuration The merged configuration that should be applied to the factory
      */
-    public void configureLogEventFactory(LogEventFactory factory, Properties configuration) {
+    public void applyConfigurationProperties(LogEventFactory factory, Properties configuration) {
         observers.clear();
         for (Object key : configuration.keySet()) {
             if (key.toString().matches("observer\\.\\w+")) {

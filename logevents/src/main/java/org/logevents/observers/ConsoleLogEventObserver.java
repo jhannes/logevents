@@ -10,9 +10,17 @@ import java.util.Properties;
 
 /**
  * Log messages to the system out with suitable formatter.
- * By default, {@link ConsoleLogEventObserver}
- * will log with ANSI colors if supported (on Linux, Mac and when
- * <a href="https://github.com/fusesource/jansi">JANSI</a> is in the classpath on Windows).
+ * Ansi colors will be used if running on a non-Windows shell or if
+ * <a href="https://github.com/fusesource/jansi">JANSI</a> is in class path.
+ * (Color on Windows is supported in IntelliJ, Cygwin and Ubuntu for Windows).
+ * <p>
+ * Example configuration
+ *
+ * <pre>
+ * observer.console.threshold=WARN
+ * observer.suppressMarkers=UNINTERESTING, PERSONAL_DATA
+ * observer.packageFilter=sun.www, com.example.uninteresting
+ * </pre>
  *
  * @author Johannes Brodwall
  */

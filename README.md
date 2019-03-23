@@ -9,18 +9,19 @@
 
 
 Setting up and configuring logging should be *easy*, whether you want to do it with
-configuration files or in code. Log Events is a tiny logging framework built on top of
-SLF4J - the logging lingua franka for Java.
+configuration files or in code. Log Events is a small logging framework built on top of
+SLF4J - the logging lingua franka for Java which include nice formatting, file observers,
+as well as logging to Slack, Microsoft Teams, and SMTP out of the box.
 
 ## Quick start:
 
-1. Add `org.logevents:logevents:0.1.11` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
-2. Add `logevents.properties` to your current working directory or `src/main/java` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level.
-3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to the file `logs/<your-app-name>-%date.log` and warning events to console.
-4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See PatternEventLogFormatter for more details.
-5. You can simply add a Slack observer as well. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`.
+1. Add `org.logevents:logevents:0.1.13` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
+2. Add `logevents.properties` to your current working directory or `src/main/java` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level. Read more about [logevents.properties](https://jhannes.github.io/logevents/apidocs/org/logevents/DefaultLogEventConfigurator.html)
+3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to [the file](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) `logs/<your-app-name>-%date.log` and warning events to [console](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html).
+4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html">PatternEventLogFormatter</a> for more details.
+5. You can simply add a [Slack observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html) as well. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`.
 
-Here is a simple, but powerful `logevent.properties`:
+Here is a simple, but powerful [`logevent.properties`](https://jhannes.github.io/logevents/apidocs/org/logevents/DefaultLogEventConfigurator.html):
 
 ```
 observer.slack=SlackLogEventObserver
@@ -49,7 +50,8 @@ logEventFactory.addObserver("org.logevents", new DateRollingLogEventObserver("ta
 
 Logevents tries to make concrete improvements compared to Logback:
 
-* Simpler programmatic configuration by dropping the `LifeCycle` concept
+* Most useful observers are included in the core packages without extra dependencies
+* Simpler programmatic configuration by dropping logback's `LifeCycle` concept
 * More navigable code base with less indirection
 * Fewer architectural concepts: Log Events is build almost exclusively
   around an observer pattern.
@@ -200,7 +202,7 @@ Include Logevents maven dependency:
 <dependency>
     <groupId>org.logevents</groupId>
     <artifactId>logevents</artifactId>
-    <version>0.1.11</version>
+    <version>0.1.13</version>
 </dependency>
 ```
 
@@ -215,7 +217,7 @@ LogEventFactory factory = LogEventFactory.getInstance();
 factory.setRootLevel(Level.WARN);
 factory.setRootObserver(CompositeLogEventObserver.combine(
         new ConsoleLogEventObserver(),
-        new DateRollingLogEventObserver("logs/application.log")
+        new FileLogEventObserver()
         ));
 factory.setLevel("org.myapp", Level.INFO);
 factory.setObserver("org.myapp",
@@ -230,8 +232,8 @@ factory.setObserver("org.logevents",
 If you want to ensure that your configuration is loaded before anything
 else happens, you can use the Java Service Loader framework.
 
-1. Create a class that implements `LogeventsConfigurator`
-2. Create a file in `META-INF/services/org.logevents.Configurator`
+1. Create a class that implements <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/LogEventConfigurator.html">`LogeventsConfigurator`</a>
+2. Create a file in `META-INF/services/org.logevents.LogEventConfigurator`
    containing the qualified class name of your configurator.
 
 For example:
@@ -239,9 +241,9 @@ For example:
 ```java
 package com.example.myapp;
 
-import org.logevents.Configurator;
+import org.logevents.LogEventConfigurator;
 
-public class MyAppConfigurator implements Configurator {
+public class MyAppConfigurator implements LogEventConfigurator {
     @Override
     public void configure(LogEventFactory factory) {
         factory.setRootLevel(Level.WARN);
@@ -250,7 +252,7 @@ public class MyAppConfigurator implements Configurator {
 }
 ```
 
-This is loaded with the following `META-INF/services/org.logevents.Configurator`:
+This is loaded with the following `META-INF/services/org.logevents.LogEventConfigurator`:
 
 ```
 com.example.myapp.MyAppConfigurator
@@ -259,7 +261,8 @@ com.example.myapp.MyAppConfigurator
 
 ### Configuring Log Events with a properties file
 
-The default `LogEventConfigurator` will try to determine the current profile,
+The <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/DefaultLogEventConfigurator.html">
+default `LogEventConfigurator`</a> will try to determine the current profile,
 using the system properties `profiles`, `profile`, `spring.profiles.active` or
 the environment variables `PROFILES`, `PROFILE` or `SPRING_PROFILES_ACTIVE`.
 If running in JUnit, the profile `test` will be active by default.
@@ -284,17 +287,17 @@ root=[<LEVEL> ]<observerName>
 ```
 
 For observers in `org.logevents.observers` package, the package name
-can be omitted - so `TextLogEventObserver` and be used instead of
-`org.logevents.TextLogEventObserver`.
+can be omitted - so `ConsoleEventObserver` and be used instead of
+`org.logevents.ConsoleEventObserver`.
 
 
 ### PatternLogEventFormatter and ExceptionFormatter
 
 If you do programmatic configuration, the recommended approach is to implement
-message formatting in code. See `ConsoleLogEventFormatter` as an example.
+message formatting in code. See <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html">`ConsoleLogEventFormatter`</a> as an example.
 
 However, if you use properties files for configuration, you will probably
-want to use `PatternLogEventFormatter` to format the log events. Here
+want to use <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html">`PatternLogEventFormatter`</a> to format the log events. Here
 is an example:
 
 ```

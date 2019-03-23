@@ -19,6 +19,22 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
+/**
+ * Logs events to file. By default, FileLogEventObserver will log to the file
+ * <code>logs/<em>your-app-name</em>-%date.log</code> as determined by
+ * {@link #defaultFilename}. By default, each log event is logged with time,
+ * thread, level and logger. Example configuration:
+ *
+ * <pre>
+ * observer.file.filename=logs/my-file-name-%date.log
+ * observer.file.formatter=PatternLogEventFormatter
+ * observer.file.formatter.pattern=%date %coloredLevel: %msg
+ * observer.file.formatter.exceptionFormatter=CauseFirstExceptionFormatter
+ * observer.file.formatter.exceptionFormatter.packageFilter=sun.www,uninterestingPackage
+ * </pre>
+ *
+ * @see org.logevents.formatting.PatternLogEventFormatter
+ */
 public class FileLogEventObserver implements LogEventObserver {
 
     protected final Path path;
@@ -30,6 +46,12 @@ public class FileLogEventObserver implements LogEventObserver {
         return configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class);
     }
 
+    /**
+     * Determines default log file name. If the main class of the application
+     * was loaded from a jar-file, the name of the jar-file, without version number,
+     * will be used. If the main class of the application was loaded from a directory,
+     * the current working directory base name will be used.
+     */
     public static String defaultFilename() {
         Optional<String> filename = Thread.getAllStackTraces().entrySet().stream()
                 .filter(pair -> pair.getKey().getName().equals("main"))

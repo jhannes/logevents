@@ -32,7 +32,7 @@ public class DemoSlackMarkers {
         //  and put in logevents.properties as observers.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
 
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
-        Properties properties = configurator.configureLogEventFactory();
+        Properties properties = configurator.loadConfigurationProperties();
         properties.put("observer.slack.threshold", "INFO");
         properties.put("observer.slack.showRepeatsIndividually", "true");
         properties.put("observer.slack.markers.SECURITY.throttle", "PT3S PT5S PT10S");

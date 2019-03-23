@@ -15,7 +15,7 @@ import java.util.Properties;
  * determine when to flush the batch. It support {@link FilteredLogEventObserver} properties
  * <code>threshold</code>, <code>suppressMarkers</code> and <code>requireMarker</code> to filter sent messages
  *
- * State: Preview.
+ * <p><strong>State: Preview.</strong></p>
  */
 public class MicrosoftTeamsLogEventObserver extends BatchingLogEventObserver {
 

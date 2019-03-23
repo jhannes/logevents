@@ -14,6 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Formats log event batches for suitable display on Slack. Writes the most important
+ * log event as messages text and creates attachments for MDCs, Markers, Level etc.
+ * Inherit to create your own slack experience.
+ */
 public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
     private SlackExceptionFormatter exceptionFormatter = new SlackExceptionFormatter();

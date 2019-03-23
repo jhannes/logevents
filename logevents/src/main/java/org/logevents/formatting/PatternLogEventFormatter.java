@@ -20,9 +20,36 @@ import java.util.Properties;
  * Conversion parts are handled with {@link PatternConverterSpec}. A conversion
  * is specified with a conversion word, and you can extend {@link PatternLogEventFormatter}
  * with your own conversion words by adding them to the ConverterBuilderFactory.
+ * <p>
+ * The following conversion words are supported:
+ * <ul>
+ *     <li><code>%logger</code></li>
+ *     <li><code>%class</code>: The logging class</li>
+ *     <li><code>%file</code>: The logging class filename</li>
+ *     <li><code>%line</code>: The line number of the logging call</li>
+ *     <li>
+ *         <code>%date</code>: The date and time of the log event.
+ *         Optionally supports a date formatting pattern from {@link DateTimeFormatter#ofPattern}
+ *         e.g. %date{DD-MMM HH:mm:ss}. Default format is <code>yyyy-MM-dd HH:mm:ss.SSS</code>.
+ *     </li>
+ *     <li><code>%time</code>: As %date, but with default format <code>HH:mm:ss.SSS</code></li>
+ *     <li><code>%level</code></li>
+ *     <li><code>%coloredLevel</code>: As level, but ERROR is bold red, WARN is red, and INFO is blue</li>
+ *     <li><code>%message</code>: Message with arguments merged in</li>
+ *     <li><code>%thread</code></li>
+ *     <li><code>%marker</code>: {@link Marker} (if any)</li>
+ *     <li>
+ *         <code>%mdc</code>: will print all {@link org.slf4j.MDC} variables.
+ *          Use %mdc{key:-default} to display a single mdc variable (or default if not set)
+ *     </li>
+ *     <li>Colors: E.g. %boldGreen{%thread}</li>
+ * </ul>
+ *
+ * Ansi colors will be used if running on a non-Windows shell or if
+ * <a href="https://github.com/fusesource/jansi">JANSI</a> is in class path.
+ * (Color on Windows is supported in IntelliJ, Cygwin and Ubuntu for Windows)
  *
  * @author Johannes Brodwall
- *
  */
 public class PatternLogEventFormatter implements LogEventFormatter {
 

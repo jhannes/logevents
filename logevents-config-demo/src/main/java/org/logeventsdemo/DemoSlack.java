@@ -21,7 +21,7 @@ public class DemoSlack {
         //  and put in logevents.properties as observers.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
 
-        Properties properties = configurator.configureLogEventFactory();
+        Properties properties = configurator.loadConfigurationProperties();
         properties.put("observer.slack", SlackLogEventObserver.class.getName());
         properties.put("observer.slack.threshold", Level.INFO.name());
         properties.put("observer.slack.cooldownTime", "PT5S");

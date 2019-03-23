@@ -76,6 +76,7 @@
                 <version>3.0.1</version>
                 <configuration>
                     <reportOutputDirectory>${project.basedir}/../docs</reportOutputDirectory>
+                    <detectLinks>true</detectLinks>
                 </configuration>
             </plugin>
             <plugin>

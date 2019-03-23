@@ -10,6 +10,32 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.Properties;
 
+/**
+ * Writes log events as asynchronous batches to Slack. Slack is a great destination for logging as it
+ * provides great notification support on mobile and desktop platforms. Requires
+ * a Slack Web Hook, which you can create as a <a href="https://www.slack.com/apps/manage/custom-integrations">
+ * Slack Custom Integration</a>.
+ * <p>
+ * Example configuration:
+ * <pre>
+ * observer.slack=SlackLogEventObserver
+ * observer.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
+ * observer.slack.threshold=WARN
+ * observer.slack.slackLogEventsFormatter={@link org.logevents.observers.batch.SlackLogEventsFormatter}
+ * observer.slack.showRepeatsIndividually=false
+ * observer.slack.channel=alertChannel
+ * observer.slack.cooldownTime=PT10S
+ * observer.slack.maximumWaitTime=PT5M
+ * observer.slack.idleThreshold=PT5S
+ * observer.slack.suppressMarkers=BORING_MARKER
+ * observer.slack.requireMarker=MY_MARKER, MY_OTHER_MARKER
+ * observer.slack.markers.MY_MARKER.throttle=PT1M PT10M PT30M
+ * </pre>
+ *
+ * @see BatchingLogEventObserver
+ * @see MicrosoftTeamsLogEventObserver
+ * @see BatchThrottler
+ */
 public class SlackLogEventObserver extends BatchingLogEventObserver {
 
     public SlackLogEventObserver(Properties properties, String prefix) {

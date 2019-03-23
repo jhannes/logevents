@@ -1,6 +1,7 @@
 package org.logevents.observers.batch;
 
 import org.logevents.LogEvent;
+import org.logevents.LogEventObserver;
 import org.logevents.status.LogEventStatus;
 
 import java.time.Duration;
@@ -9,7 +10,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class BatchThrottler {
+/**
+ * Batches up received messages to limit noise. Will throttle the processing speed
+ * according to a list of throttles. E.g. PT1M PT10M PT30M will process the first log event
+ * immediately, then batch up any log events for the next minute. If any log events
+ * were received during this interval, then all log events for the next ten minutes will
+ * be batched. Resets back to processing immediately if there were no log events in an
+ * interval.
+ */
+public class BatchThrottler implements LogEventObserver {
     private final Scheduler executor;
     private List<Duration> throttle = new ArrayList<>();
     private int throttleIndex = 0;
@@ -44,6 +53,7 @@ public class BatchThrottler {
         this.batchProcessor = batchProcessor;
     }
 
+    @Override
     public void logEvent(LogEvent logEvent) {
         doLogEvent(logEvent, Instant.now());
     }

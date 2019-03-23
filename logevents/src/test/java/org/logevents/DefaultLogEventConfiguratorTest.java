@@ -39,11 +39,11 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldSetRootLevelFromProperties() {
-        configurator.configureLogEventFactory(factory, configuration);
+        configurator.applyConfigurationProperties(factory, configuration);
         String oldObserver = factory.getRootLogger().getObserver();
         configuration.setProperty("root", "TRACE");
 
-        configurator.configureLogEventFactory(factory, configuration);
+        configurator.applyConfigurationProperties(factory, configuration);
 
         assertTrue(factory.getLoggers() + " should be empty", factory.getLoggers().isEmpty());
         assertEquals(Level.TRACE, factory.getRootLogger().getLevelThreshold());
@@ -57,7 +57,7 @@ public class DefaultLogEventConfiguratorTest {
         configuration.setProperty("observer.file", "DateRollingLogEventObserver");
         configuration.setProperty("observer.file.filename", logFile.toString());
 
-        configurator.configureLogEventFactory(factory, configuration);
+        configurator.applyConfigurationProperties(factory, configuration);
         assertEquals(Level.DEBUG, factory.getRootLogger().getLevelThreshold());
         assertEquals(
                 "DateRollingLogEventObserver{"
@@ -70,7 +70,7 @@ public class DefaultLogEventConfiguratorTest {
     public void shouldIncludeDefaultObservers() {
         configuration.setProperty("root", "DEBUG console,file");
 
-        configurator.configureLogEventFactory(factory, configuration);
+        configurator.applyConfigurationProperties(factory, configuration);
 
         assertEquals(
                 "CompositeLogEventObserver{["
@@ -85,7 +85,7 @@ public class DefaultLogEventConfiguratorTest {
         configuration.setProperty("observer.console.threshold", "WARN");
         configuration.setProperty("root", "DEBUG console,file");
 
-        configurator.configureLogEventFactory(factory, configuration);
+        configurator.applyConfigurationProperties(factory, configuration);
 
         assertEquals(
                 "CompositeLogEventObserver{["
@@ -103,7 +103,7 @@ public class DefaultLogEventConfiguratorTest {
         configuration.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
         configuration.setProperty("observer.buffer2", "CircularBufferLogEventObserver");
 
-        configurator.configureLogEventFactory(factory, configuration);
+        configurator.applyConfigurationProperties(factory, configuration);
         assertEquals(Level.ERROR, factory.getLogger("org.example").getLevelThreshold());
         assertEquals(
                 "CompositeLogEventObserver{"
@@ -121,7 +121,7 @@ public class DefaultLogEventConfiguratorTest {
         configuration.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
         configuration.setProperty("observer.buffer2", "CircularBufferLogEventObserver");
 
-        configurator.configureLogEventFactory(factory, configuration);
+        configurator.applyConfigurationProperties(factory, configuration);
 
         factory.getLogger("org.example").error("Hello");
         assertEquals("Hello",

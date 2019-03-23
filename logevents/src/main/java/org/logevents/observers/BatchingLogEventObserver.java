@@ -36,6 +36,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * the same message pattern and log level are grouped together so the processor
  * can easily ignore duplicate messages.
  *
+ * @see SlackLogEventObserver
+ * @see MicrosoftTeamsLogEventObserver
+ * @see SmtpLogEventObserver
+ *
  * @author Johannes Brodwall
  */
 public class BatchingLogEventObserver extends FilteredLogEventObserver {
