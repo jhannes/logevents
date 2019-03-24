@@ -51,7 +51,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         if (throwable != null) {
             exceptionInfo = throwable.getMessage() + " <" + throwable.getClass().getName() + "> ";
         }
-        return emojiiForLevel(event.getLevel()) + " "
+        return JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()) + " "
             + exceptionInfo
             + event.formatMessage()
             + " [" + event.getAbbreviatedLoggerName(10) + "]"
@@ -83,7 +83,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         if (showRepeatsIndividually) {
             for (LogEvent logEvent : batch) {
                 String message = logEvent.formatMessage();
-                text.append(emojiiForLevel(logEvent.getLevel()))
+                text.append(JsonLogEventsBatchFormatter.emojiiForLevel(logEvent.getLevel()))
                         .append(" _").append(logEvent.getZonedDateTime().toLocalTime()).append("_: ");
                 text.append(message);
                 text.append("\n");

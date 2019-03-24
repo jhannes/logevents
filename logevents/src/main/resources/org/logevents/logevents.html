@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Log Event Viewer | logevents</title>
+    <style>
+        nav form {
+            display: flex;
+        }
+        main {
+            height: 75%;
+            overflow-y: scroll;
+        }
+
+        .expanded {
+            background-color: pink;
+            border: 1px solid red;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>LogEvents</h1>
+    </header>
+    <nav>
+        <form>
+            <fieldset>
+                <input type="time">
+                <select>
+                    <option>+/- 1 minute</option>
+                    <option>+/- 10 minutes</option>
+                    <option>+/- 1 hour</option>
+                </select>
+                <select>
+                    <option>TRACE</option>
+                    <option>DEBUG</option>
+                    <option>INFO</option>
+                    <option>WARN</option>
+                    <option>ERROR</option>
+                </select>
+            </fieldset>
+            <fieldset id="markers">
+                <div><label><input type="checkbox" name="marker" value="<none>">No marker</label></div>
+                <div><label><input type="checkbox" name="marker" value="marker1">Marker 1</label></div>
+            </fieldset>
+            <fieldset>
+                MDC
+                <div>
+                    <label>
+                        User
+                        <select>
+                            <option>all</option>
+                            <option>user 1</option>
+                        </select>
+                    </label>
+
+                </div>
+            </fieldset>
+        </form>
+    </nav>
+    <main id="main">
+
+    </main>
+</body>
+<script>
+function tableCell(textContent) {
+    const td = document.createElement("td");
+    td.innerHTML = textContent;
+    return td;
+}
+
+let logEvents = [];
+
+function showLogEventTable() {
+    console.log({logEvents});
+    const table = document.createElement("table");
+    for (const index in logEvents) {
+        const logEvent = logEvents[index];
+        const tr = document.createElement("tr");
+        tr.dataset.eventIndex = index;
+
+        const time = logEvent.time.split("T")[1];
+
+        const td = document.createElement("td");
+        td.innerHTML = "<button>" + logEvent.levelIcon + "</button>";
+        tr.appendChild(td);
+
+        tr.appendChild(tableCell(logEvent.levelIcon));
+        tr.appendChild(tableCell(time));
+        tr.appendChild(tableCell(logEvent.abbreviatedLogger));
+        tr.appendChild(tableCell(logEvent.formattedMessage));
+
+        table.appendChild(tr);
+    }
+    const main = document.getElementById("main");
+    main.innerHTML = "";
+    main.appendChild(table);
+}
+
+function showFacets(facets) {
+    const markersFieldset = document.createElement("fieldset");
+
+    const noMarkerCheckbox = document.createElement("div");
+    noMarkerCheckbox.innerHTML = '<label><input type="checkbox" name="marker" value="<none>">No marker</label>';
+    markersFieldset.appendChild(noMarkerCheckbox);
+
+    for (const marker of facets.markers) {
+        const markerCheckbox = document.createElement("div");
+        markerCheckbox.innerHTML = '<label><input type="checkbox" name="marker" value="' + marker + '">' + marker + '</label>';
+        markersFieldset.appendChild(markerCheckbox);
+    }
+
+    const markers = document.getElementById("markers");
+    markers.innerHTML = "";
+    markers.appendChild(markersFieldset);
+}
+
+function listItem(header, text) {
+    const li = document.createElement("li");
+    li.innerHTML = "<strong>" + header + ":</strong> " + text;
+    return li;
+}
+
+function detailRow(event) {
+    const expandedRow = document.createElement("tr");
+    expandedRow.dataset.isDetail = true;
+
+    const td = document.createElement("td");
+    td.setAttribute("colspan", "100%");
+
+    const ul = document.createElement("ul");
+    ul.appendChild(listItem("Logger", event.logger));
+    ul.appendChild(listItem("Thread", event.thread));
+    if (event.marker) {
+        ul.appendChild(listItem("Marker", event.marker));
+    }
+
+    if (event.throwable) {
+        ul.appendChild(listItem("Exception", event.throwable));
+
+        const stackTrace = document.createElement("pre");
+        for (const element of event.stackTrace) {
+            stackTrace.innerHTML += element.className + "#" + element.methodName + "\n";
+        }
+        ul.appendChild(stackTrace);
+    }
+    td.appendChild(ul);
+    expandedRow.appendChild(td);
+
+    return expandedRow;
+}
+
+
+function expandCollapseEventRow(targetRow) {
+    const eventIndex = targetRow.dataset.eventIndex;
+
+    if (targetRow.nextSibling && targetRow.nextSibling.dataset.isDetail) {
+        targetRow.classList.remove("expanded");
+        targetRow.parentElement.removeChild(targetRow.nextSibling);
+    } else {
+        targetRow.classList.add("expanded");
+
+        targetRow.parentElement.insertBefore(detailRow(logEvents[eventIndex]), targetRow.nextSibling);
+    }
+}
+
+
+async function fetchEvents() {
+    const response = await fetch("logs/events");
+    if (response.ok) {
+        console.log(response);
+        const json = await response.json();
+        logEvents = json.events;
+        showLogEventTable();
+        showFacets(json.facets);
+    } else {
+        console.log(response);
+    }
+}
+
+const main = document.getElementById("main");
+main.addEventListener("click", e => {
+    if (e.target.tagName === "BUTTON") {
+        const targetRow = e.target.parentElement.parentElement;
+        expandCollapseEventRow(targetRow);
+    }
+});
+
+
+fetchEvents();
+</script>
+</html>

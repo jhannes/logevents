@@ -2,9 +2,12 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.logeventdemo</groupId>
+    <parent>
+        <groupId>org.logevents</groupId>
+        <artifactId>logevents-parent</artifactId>
+        <version>0.1.13-SNAPSHOT</version>
+    </parent>
     <artifactId>logevents-servlets-demo</artifactId>
-    <version>0.1.7-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -17,14 +20,14 @@
             <version>1.7.25</version>
         </dependency>
         <dependency>
-            <groupId>org.logevents</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>logevents</artifactId>
-            <version>0.1.9</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-core</artifactId>
-            <version>8.5.38</version>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-webapp</artifactId>
+            <version>9.4.15.v20190215</version>
         </dependency>
     </dependencies>
     <build>
