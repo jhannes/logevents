@@ -114,6 +114,9 @@
                                 <version>2.2</version>
                             </dependency>
                         </dependencies>
+                        <configuration>
+                            <preparationGoals>install javadoc:javadoc</preparationGoals>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <artifactId>maven-source-plugin</artifactId>
