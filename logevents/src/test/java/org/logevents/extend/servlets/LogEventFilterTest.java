@@ -2,7 +2,7 @@ package org.logevents.extend.servlets;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
-import org.slf4j.MDC;
+import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,6 +24,8 @@ import static org.junit.Assert.assertTrue;
 
 public class LogEventFilterTest {
 
+    private final Marker MY_MARKER = MarkerFactory.getMarker("MY_MARKER");
+    private final Marker OTHER_MARKER = MarkerFactory.getMarker("OTHER_MARKER");
     private Map<Level, List<LogEvent>> logsByLevel = new HashMap<>();
 
     @Test
@@ -39,10 +42,10 @@ public class LogEventFilterTest {
     @Test
     public void shouldFilterByMarkers() {
         LogEvent matchingEvent = new LogEventSampler()
-                .withMarker(MarkerFactory.getMarker("MY_MARKER"))
+                .withMarker(MY_MARKER)
                 .build();
         LogEvent nonMatchingEvent = new LogEventSampler()
-                .withMarker(MarkerFactory.getMarker("OTHER_MARKER"))
+                .withMarker(OTHER_MARKER)
                 .build();
         LogEvent eventWithNoMarker = new LogEventSampler()
                 .withMarker(null)
@@ -63,23 +66,9 @@ public class LogEventFilterTest {
         LogEventFilter filter = new LogEventFilter(parameters);
 
         assertDoesNotMatch(new LogEventSampler().build(), filter);
-        try (
-                MDC.MDCCloseable ignored = MDC.putCloseable("user", "adminUser");
-                MDC.MDCCloseable ignored2 = MDC.putCloseable("operation", "remove")
-        ) {
-            assertMatches(new LogEventSampler().build(), filter);
-        }
-        try (
-                MDC.MDCCloseable ignored = MDC.putCloseable("user", "randomUser");
-                MDC.MDCCloseable ignored2 = MDC.putCloseable("operation", "remove")
-        ) {
-            assertDoesNotMatch(new LogEventSampler().build(), filter);
-        }
-        try (
-                MDC.MDCCloseable ignored = MDC.putCloseable("user", "adminUser")
-        ) {
-            assertDoesNotMatch(new LogEventSampler().build(), filter);
-        }
+        assertMatches(new LogEventSampler().withMdc("user", "adminUser").withMdc("operation", "remove").build(), filter);
+        assertDoesNotMatch(new LogEventSampler().withMdc("user", "randomUser").withMdc("operation", "remove").build(), filter);
+        assertDoesNotMatch(new LogEventSampler().withMdc("user", "adminUser").build(), filter);
     }
 
     @Test
@@ -170,6 +159,66 @@ public class LogEventFilterTest {
                 Arrays.asList(earlyMessage.getInstant(), lateMessage.getInstant()),
                 logEvents
         );
+    }
+
+    @Test
+    public void shouldExcludeMessagesOutsideTimeWindowInFacets() {
+        LogEvent oldEvent = new LogEventSampler()
+                .withThread("OldThread")
+                .withTime(Instant.now().minusSeconds(6000)).build();
+
+        record(new LogEventSampler().withThread("main").build());
+        record(new LogEventSampler().withThread("main").withTime(Instant.now().minusSeconds(6000)).build());
+        record(oldEvent);
+        record(new LogEventSampler().withThread("TimeThread-8").build());
+
+        LogEventFilter filter = new LogEventFilter(parameters("interval", "PT1M"));
+
+        Map<String, Object> facets = filter.collectFacets(logsByLevel);
+        assertEquals(new HashSet<>(Arrays.asList("main", "TimeThread-8")),
+                facets.get("threads"));
+    }
+
+    @Test
+    public void shouldIncludeNonSelectedThreadsInFacets() {
+        record(new LogEventSampler().withThread("main").build());
+        record(new LogEventSampler().withThread("TimeThread-8").build());
+
+        LogEventFilter filter = new LogEventFilter(parameters("thread", "main"));
+
+        Map<String, Object> facets = filter.collectFacets(logsByLevel);
+        assertEquals(new HashSet<>(Arrays.asList("main", "TimeThread-8")),
+                facets.get("threads"));
+    }
+
+    @Test
+    public void shouldIncludeMarkersInFacets() {
+        record(new LogEventSampler().withMarker(MY_MARKER).build());
+        record(new LogEventSampler().withMarker(MY_MARKER).build());
+        record(new LogEventSampler().withMarker(OTHER_MARKER).build());
+
+        LogEventFilter filter = new LogEventFilter(parameters("marker", "my_marker"));
+        Map<String, Object> facets = filter.collectFacets(logsByLevel);
+        assertEquals(new HashSet<>(Arrays.asList(MY_MARKER.getName(), OTHER_MARKER.getName())),
+                facets.get("markers"));
+    }
+
+    @Test
+    public void shouldIncludeMdcInFacets() {
+        record(new LogEventSampler().withMdc("ip", "127.0.0.1").withMdc("url", "/api/op").build());
+        record(new LogEventSampler().withMdc("ip", "127.0.0.1").build());
+        record(new LogEventSampler().withMdc("ip", "10.0.0.4").build());
+
+        Map<String, Object> facets = new LogEventFilter(new HashMap<>()).collectFacets(logsByLevel);
+        List<Map<String, Object>> mdc = (List<Map<String, Object>>) facets.get("mdc");
+
+        Map<String, Object> ipMdc = mdc.stream().filter(m -> m.get("name").equals("ip")).findAny()
+                .orElseThrow(() -> new IllegalArgumentException("missing ip in " + mdc));
+        Map<String, Object> urlMdc = mdc.stream().filter(m -> m.get("name").equals("url")).findAny()
+                .orElseThrow(() -> new IllegalArgumentException("missing ip in " + mdc));
+
+        assertEquals(new HashSet<>(Arrays.asList("127.0.0.1", "10.0.0.4")), ipMdc.get("values"));
+        assertEquals(new HashSet<>(Arrays.asList("/api/op")), urlMdc.get("values"));
     }
 
     private LogEvent record(LogEvent event) {

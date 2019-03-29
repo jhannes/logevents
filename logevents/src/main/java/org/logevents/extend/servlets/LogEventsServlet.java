@@ -20,12 +20,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 public class LogEventsServlet extends HttpServlet {
 
@@ -73,44 +72,18 @@ public class LogEventsServlet extends HttpServlet {
             resp.setContentType("application/json");
             copyResource(resp, logeventsApi);
         } else if (req.getPathInfo().equals("/events") || req.getPathInfo().equals("/logs/events")) {
-            Map<String, Object> result = new LinkedHashMap<>();
 
             LogEventFilter filter = new LogEventFilter(req.getParameterMap());
-            List<LogEvent> events = filter.collect(messages);
 
-            Set<String> markers = new HashSet<>();
-            Set<String> threads = new HashSet<>();
-            Map<String, Set<String>> mdcMap = new HashMap<>();
+            Collection<LogEvent> allEvents = filter.collectMessages(messages);
+            List<Map<String, Object>> events = allEvents.stream()
+                    .filter(filter)
+                    .map(this::formatAsJson)
+                    .collect(Collectors.toList());
 
-            for (LogEvent event : events) {
-                if (event.getMarker() != null) {
-                    markers.add(event.getMarker().getName());
-                }
-                threads.add(event.getThreadName());
-                for (String mdcKey : event.getMdcProperties().keySet()) {
-                    mdcMap.computeIfAbsent(mdcKey, k -> new HashSet<>()).add(event.getMdcProperties().get(mdcKey));
-                }
-            }
-            List<Map<String, Object>> mdc = new ArrayList<>();
-            for (Map.Entry<String, Set<String>> entry : mdcMap.entrySet()) {
-                Map<String, Object> mdcEntry = new HashMap<>();
-                mdcEntry.put("name", entry.getKey());
-                mdcEntry.put("values", entry.getValue());
-            }
-
-
-            HashMap<Object, Object> facets = new HashMap<>();
-            facets.put("markers", markers);
-            facets.put("threads", threads);
-            facets.put("mdc", mdc);
-
-            List<Map<String, Object>> jsonEvents = new ArrayList<>();
-            for (LogEvent event : events) {
-                jsonEvents.add(formatAsJson(event));
-            }
-
-            result.put("facets", facets);
-            result.put("events", jsonEvents);
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("facets", filter.collectFacets(allEvents));
+            result.put("events", events);
 
             resp.setContentType("application/json");
             resp.getWriter().write(JsonUtil.toIndentedJson(result));

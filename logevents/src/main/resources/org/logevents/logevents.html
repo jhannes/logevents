@@ -25,7 +25,7 @@
     <nav>
         <form id="logEventsFilter" method="post">
             <fieldset>
-                <input type="time" name="time" value="12:00:00">
+                <input type="time" name="time" id="time">
                 <select name="interval">
                     <option value="PT5S">+/- 5 seconds</option>
                     <option value="PT1M">+/- 1 minute</option>
@@ -34,11 +34,11 @@
                     <option value="PT1H">+/- 1 hour</option>
                 </select>
                 <select name="level">
-                    <option>TRACE</option>
-                    <option>DEBUG</option>
-                    <option>INFO</option>
-                    <option>WARN</option>
-                    <option>ERROR</option>
+                    <option value="TRACE">TRACE</option>
+                    <option value="DEBUG">DEBUG</option>
+                    <option value="INFO">INFO</option>
+                    <option value="WARN">WARN</option>
+                    <option value="ERROR">ERROR</option>
                 </select>
             </fieldset>
             <fieldset id="threads">
@@ -55,6 +55,9 @@
                         </select>
                     </label>
                 </div>
+            </fieldset>
+            <fieldset>
+                <button id="clearButton">Clear</button>
             </fieldset>
         </form>
     </nav>
@@ -105,15 +108,27 @@ function showLogEventTable() {
 
 function showFacets(facets) {
     const markersFieldset = document.getElementById("markers");
+    const currentFilter = new URLSearchParams(window.location.hash.substr(1));
+
+    document.getElementById("time").value = currentFilter.get("time");
+    document.querySelector("[name=interval] [value=" + currentFilter.get("interval") + "]").selected = true;
+    document.querySelector("[name=level] [value=" + currentFilter.get("level") + "]").selected = true;
+
     markersFieldset.innerHTML = "";
 
-    const noMarkerCheckbox = document.createElement("div");
-    noMarkerCheckbox.innerHTML = '<label><input type="checkbox" name="marker" value="<none>">No marker</label>';
-    markersFieldset.appendChild(noMarkerCheckbox);
+    {
+        const noMarkerCheckbox = document.createElement("div");
+        const checked = (currentFilter.getAll("marker").indexOf("") >= 0) ? ' checked="checked"' : "";
+        noMarkerCheckbox.innerHTML =
+            '<label><input type="checkbox" name="marker" value=""' + checked + '>No marker</label>';
+        markersFieldset.appendChild(noMarkerCheckbox);
+    }
 
     for (const marker of facets.markers) {
         const markerCheckbox = document.createElement("div");
-        markerCheckbox.innerHTML = '<label><input type="checkbox" name="marker" value="' + marker + '">' + marker + '</label>';
+        const checked = (currentFilter.getAll("marker").indexOf(marker) >= 0) ? ' checked="checked"' : "";
+
+        markerCheckbox.innerHTML = `<label><input type="checkbox" name="marker" value="${marker}" ${checked}>${marker}</label>`;
         markersFieldset.appendChild(markerCheckbox);
     }
 
@@ -124,6 +139,9 @@ function showFacets(facets) {
     threadsSelect.appendChild(emptyOption);
     for (const thread of facets.threads) {
         const threadOption = document.createElement("option");
+        if (currentFilter.getAll("thread").indexOf(thread) >= 0) {
+            threadOption.setAttribute("selected", "selected");
+        }
         threadOption.innerHTML = thread;
         threadsSelect.appendChild(threadOption);
     }
@@ -132,18 +150,21 @@ function showFacets(facets) {
 
     const mdcFilter = document.getElementById("mdcFilter");
     mdcFilter.innerHTML = "";
-    for (const mdcKey in facets.mdc) {
+    for (const mdcEntry of facets.mdc) {
         const mdcLabel = document.createElement("label");
-        mdcLabel.innerText = mdcKey + ": ";
+        mdcLabel.innerText = mdcEntry.name + ": ";
 
         const mdcSelect = document.createElement("select");
-        mdcSelect.setAttribute("name", "mdc[" + mdcKey + "]");
+        mdcSelect.setAttribute("name", "mdc[" + mdcEntry.name + "]");
 
         const emptyMdcOption = document.createElement("option");
         mdcSelect.appendChild(emptyMdcOption);
 
-        for (const alternative of facets.mdc[mdcKey]) {
+        for (const alternative of mdcEntry.values) {
             const mdcOption = document.createElement("option");
+            if (currentFilter.getAll("mdc[" + mdcEntry.name + "]").indexOf(alternative) >= 0) {
+                mdcOption.setAttribute("selected", "selected");
+            }
             mdcOption.innerText = alternative;
             mdcSelect.appendChild(mdcOption);
         }
@@ -182,9 +203,9 @@ function detailRow(event) {
         const mdcUl = document.createElement("ul");
         mdcList.appendChild(mdcUl);
 
-        for (const mdcKey in event.mdc) {
+        for (const mdc of event.mdc) {
             const mdcKeyLi = document.createElement("li");
-            mdcKeyLi.innerHTML = "<strong>" + mdcKey + ":</strong> " + event.mdc[mdcKey];
+            mdcKeyLi.innerHTML = "<strong>" + mdc.name + ":</strong> " + mdc.value;
             mdcUl.appendChild(mdcKeyLi);
         }
 
@@ -243,15 +264,38 @@ main.addEventListener("click", e => {
 });
 
 const logEventsFilter = document.getElementById("logEventsFilter");
+const clearButton = document.getElementById("clearButton");
+const timeInput = document.getElementById("time");
+
 logEventsFilter.addEventListener("change", e => {
-    console.log(new FormData(logEventsFilter));
     window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
 });
+
+clearButton.addEventListener("click", e => {
+    logEventsFilter.reset();
+    const d = new Date(),
+        h = (d.getHours()<10?'0':'') + d.getHours(),
+        m = (d.getMinutes()<10?'0':'') + d.getMinutes();
+    timeInput.value = h + ':' + m;
+    window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
+    e.preventDefault();
+});
+
 
 window.addEventListener("hashchange", e => {
     fetchEvents();
 });
 
-fetchEvents();
+
+const d = new Date(),
+    h = (d.getHours()<10?'0':'') + d.getHours(),
+    m = (d.getMinutes()<10?'0':'') + d.getMinutes();
+timeInput.value = h + ':' + m;
+
+if (!window.location.hash) {
+    window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
+} else {
+    fetchEvents();
+}
 </script>
 </html>

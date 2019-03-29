@@ -59,7 +59,8 @@
             "name": "level",
             "description": "Level threshold to include",
             "schema": {
-              "$ref": "#/components/schema/Level"
+              "type": "string",
+              "enum": ["ERROR", "WARN", "INFO", "DEBUG", "TRACE"]
             }
           },
           {

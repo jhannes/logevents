@@ -16,9 +16,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -112,9 +116,35 @@ public class LogEventFilter implements Predicate<LogEvent> {
         return logEvents;
     }
 
-    public List<LogEvent> collect(Map<Level, ? extends Collection<LogEvent>> messages) {
-        return collectMessages(messages).stream()
-                .filter(this)
-                .collect(Collectors.toList());
+    public Map<String, Object> collectFacets(Map<Level, List<LogEvent>> logsByLevel) {
+        return collectFacets(collectMessages(logsByLevel));
+    }
+
+    Map<String, Object> collectFacets(Collection<LogEvent> events) {
+        Set<String> threads = new TreeSet<>();
+        Set<String> markers = new TreeSet<>();
+        Map<String, Set<String>> mdcMap = new TreeMap<>();
+        for (LogEvent event : events) {
+            threads.add(event.getThreadName());
+            if (event.getMarker() != null) {
+                markers.add(event.getMarker().getName());
+            }
+            for (String mdcKey : event.getMdcProperties().keySet()) {
+                mdcMap.computeIfAbsent(mdcKey, k -> new TreeSet<>()).add(event.getMdcProperties().get(mdcKey));
+            }
+        }
+        List<Map<String, Object>> mdc = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : mdcMap.entrySet()) {
+            Map<String, Object> mdcEntry = new LinkedHashMap<>();
+            mdcEntry.put("name", entry.getKey());
+            mdcEntry.put("values", entry.getValue());
+            mdc.add(mdcEntry);
+        }
+
+        Map<String, Object> facets = new LinkedHashMap<>();
+        facets.put("threads", threads);
+        facets.put("markers", markers);
+        facets.put("mdc", mdc);
+        return facets;
     }
 }

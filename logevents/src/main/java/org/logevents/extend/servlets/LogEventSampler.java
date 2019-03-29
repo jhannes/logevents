@@ -6,6 +6,8 @@ import org.slf4j.event.Level;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -20,10 +22,11 @@ public class LogEventSampler {
     private Marker marker = null;
     private Optional<String> format = Optional.empty();
     private Object[] args = sampleArgs();
+    private Map<String, String> mdc = new HashMap<>();
 
     public LogEvent build() {
-        return new LogEvent(loggerName, level, threadName, timestamp, marker,
-                format.orElseGet(() -> sampleMessage(args)), args);
+        String format = this.format.orElseGet(() -> sampleMessage(args));
+        return new LogEvent(loggerName, level, threadName, timestamp, marker, format, args, mdc);
     }
 
     private Object[] sampleArgs() {
@@ -58,6 +61,21 @@ public class LogEventSampler {
 
     public LogEventSampler withTime(ZonedDateTime time) {
         this.timestamp = time.toInstant();
+        return this;
+    }
+
+    public LogEventSampler withThread(String thread) {
+        this.threadName = thread;
+        return this;
+    }
+
+    public LogEventSampler withTime(Instant instant) {
+        this.timestamp = instant;
+        return this;
+    }
+
+    public LogEventSampler withMdc(String name, String value) {
+        mdc.put(name, value);
         return this;
     }
 }

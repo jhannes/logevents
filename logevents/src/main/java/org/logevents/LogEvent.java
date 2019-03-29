@@ -59,7 +59,16 @@ public class LogEvent implements LoggingEvent {
     }
 
     public LogEvent(String loggerName, Level level, Instant timestamp, Marker marker, String format, Object[] args) {
-        this(loggerName, level, Thread.currentThread().getName(), timestamp, marker, format, args);
+        this(
+                loggerName,
+                level,
+                Thread.currentThread().getName(),
+                timestamp,
+                marker,
+                format,
+                args,
+                Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>())
+        );
     }
 
     public LogEvent(String loggerName, Level level, Marker marker, String format, Object[] args) {
@@ -74,7 +83,16 @@ public class LogEvent implements LoggingEvent {
         this(loggerName, level, Instant.now(), null, format, new Object[0]);
     }
 
-    public LogEvent(String loggerName, Level level, String threadName, Instant timestamp, Marker marker, String format, Object[] args) {
+    public LogEvent(
+            String loggerName,
+            Level level,
+            String threadName,
+            Instant timestamp,
+            Marker marker,
+            String format,
+            Object[] args,
+            Map<String, String> mdcProperties
+    ) {
         this.loggerName = loggerName;
         this.level = level;
         this.threadName = threadName;
@@ -89,7 +107,7 @@ public class LogEvent implements LoggingEvent {
             this.throwable = null;
         }
         this.timestamp = timestamp.toEpochMilli();
-        this.mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
+        this.mdcProperties = mdcProperties;
     }
 
     /**
