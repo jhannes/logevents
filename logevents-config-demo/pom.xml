@@ -13,11 +13,6 @@
             <version>1.7.25</version>
         </dependency>
         <dependency>
-            <groupId>org.fusesource.jansi</groupId>
-            <artifactId>jansi</artifactId>
-            <version>1.17.1</version>
-        </dependency>
-        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>logevents</artifactId>
             <version>${project.version}</version>

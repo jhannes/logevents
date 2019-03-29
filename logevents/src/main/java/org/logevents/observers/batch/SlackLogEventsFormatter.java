@@ -51,7 +51,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         if (throwable != null) {
             exceptionInfo = throwable.getMessage() + " <" + throwable.getClass().getName() + "> ";
         }
-        return emojiiForLevel(event.getLevel()) + " "
+        return JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()) + " "
             + exceptionInfo
             + event.formatMessage()
             + " [" + event.getAbbreviatedLoggerName(10) + "]"
@@ -83,21 +83,24 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         if (showRepeatsIndividually) {
             for (LogEvent logEvent : batch) {
                 String message = logEvent.formatMessage();
-                text.append(emojiiForLevel(logEvent.getLevel()))
+                text.append(JsonLogEventsBatchFormatter.emojiiForLevel(logEvent.getLevel()))
                         .append(" _").append(logEvent.getZonedDateTime().toLocalTime()).append("_: ");
                 text.append(message);
                 text.append("\n");
             }
         } else {
             for (LogEventGroup group : batch.groups()) {
+                LogEvent logEvent = group.headMessage();
                 if (group.size() > 1) {
-                    String message = group.headMessage().getMessage();
-                    text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ");
+                    String message = logEvent.getMessage();
+                    text.append(JsonLogEventsBatchFormatter.emojiiForLevel(logEvent.getLevel()))
+                            .append(" _").append(logEvent.getLoggerName()).append("_: ");
                     text.append(batch.isMainGroup(group) ? bold(message) : message);
                     text.append(" (").append(group.size()).append(" repetitions)\n");
                 } else {
-                    String message = group.headMessage().formatMessage();
-                    text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ");
+                    String message = logEvent.formatMessage();
+                    text.append(JsonLogEventsBatchFormatter.emojiiForLevel(logEvent.getLevel()))
+                            .append(" _").append(logEvent.getLoggerName()).append("_: ");
                     text.append(batch.isMainGroup(group) ? bold(message) : message);
                     text.append("\n");
                 }

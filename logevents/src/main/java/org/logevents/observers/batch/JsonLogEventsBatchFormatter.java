@@ -8,7 +8,7 @@ public interface JsonLogEventsBatchFormatter {
     Map<String, Object> createMessage(LogEventBatch batch);
 
 
-    default String emojiiForLevel(Level level) {
+    static String emojiiForLevel(Level level) {
         switch (level) {
             case ERROR: return "\uD83D\uDED1"; // 🛑
             case WARN: return "\u26a0\ufe0f"; // ⚠️
