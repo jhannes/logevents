@@ -23,15 +23,17 @@
         <h1>LogEvents</h1>
     </header>
     <nav>
-        <form>
+        <form id="logEventsFilter" method="post">
             <fieldset>
-                <input type="time">
-                <select>
-                    <option>+/- 1 minute</option>
-                    <option>+/- 10 minutes</option>
-                    <option>+/- 1 hour</option>
+                <input type="time" name="time" value="12:00:00">
+                <select name="interval">
+                    <option value="PT5S">+/- 5 seconds</option>
+                    <option value="PT1M">+/- 1 minute</option>
+                    <option value="PT5M" selected>+/- 5 minutes</option>
+                    <option value="PT15M">+/- 15 minutes</option>
+                    <option value="PT1H">+/- 1 hour</option>
                 </select>
-                <select>
+                <select name="level">
                     <option>TRACE</option>
                     <option>DEBUG</option>
                     <option>INFO</option>
@@ -39,21 +41,19 @@
                     <option>ERROR</option>
                 </select>
             </fieldset>
-            <fieldset id="markers">
-                <div><label><input type="checkbox" name="marker" value="<none>">No marker</label></div>
-                <div><label><input type="checkbox" name="marker" value="marker1">Marker 1</label></div>
+            <fieldset id="threads">
             </fieldset>
-            <fieldset>
-                MDC
+            <fieldset id="markers">
+            </fieldset>
+            <fieldset id="mdcFilter">
                 <div>
                     <label>
                         User
-                        <select>
-                            <option>all</option>
-                            <option>user 1</option>
+                        <select name="mdc.user">
+                            <option value="">all</option>
+                            <option value="user 1">user 1</option>
                         </select>
                     </label>
-
                 </div>
             </fieldset>
         </form>
@@ -83,6 +83,12 @@ function showLogEventTable() {
 
         const td = document.createElement("td");
         td.innerHTML = "<button>" + logEvent.levelIcon + "</button>";
+        if (logEvent.throwable) {
+            td.innerHTML += " ❗";
+        }
+        if (logEvent.mdc && Object.entries(logEvent.mdc).length) {
+            td.innerHTML += " 🖋️";
+        }
         tr.appendChild(td);
 
         tr.appendChild(tableCell(logEvent.levelIcon));
@@ -98,7 +104,8 @@ function showLogEventTable() {
 }
 
 function showFacets(facets) {
-    const markersFieldset = document.createElement("fieldset");
+    const markersFieldset = document.getElementById("markers");
+    markersFieldset.innerHTML = "";
 
     const noMarkerCheckbox = document.createElement("div");
     noMarkerCheckbox.innerHTML = '<label><input type="checkbox" name="marker" value="<none>">No marker</label>';
@@ -110,9 +117,43 @@ function showFacets(facets) {
         markersFieldset.appendChild(markerCheckbox);
     }
 
-    const markers = document.getElementById("markers");
-    markers.innerHTML = "";
-    markers.appendChild(markersFieldset);
+    const threads = document.getElementById("threads");
+    const threadsSelect = document.createElement("select");
+    threadsSelect.setAttribute("name", "thread");
+    const emptyOption = document.createElement("option");
+    threadsSelect.appendChild(emptyOption);
+    for (const thread of facets.threads) {
+        const threadOption = document.createElement("option");
+        threadOption.innerHTML = thread;
+        threadsSelect.appendChild(threadOption);
+    }
+    threads.innerHTML = "";
+    threads.appendChild(threadsSelect);
+
+    const mdcFilter = document.getElementById("mdcFilter");
+    mdcFilter.innerHTML = "";
+    for (const mdcKey in facets.mdc) {
+        const mdcLabel = document.createElement("label");
+        mdcLabel.innerText = mdcKey + ": ";
+
+        const mdcSelect = document.createElement("select");
+        mdcSelect.setAttribute("name", "mdc[" + mdcKey + "]");
+
+        const emptyMdcOption = document.createElement("option");
+        mdcSelect.appendChild(emptyMdcOption);
+
+        for (const alternative of facets.mdc[mdcKey]) {
+            const mdcOption = document.createElement("option");
+            mdcOption.innerText = alternative;
+            mdcSelect.appendChild(mdcOption);
+        }
+
+        mdcLabel.appendChild(mdcSelect);
+        const mdcDiv = document.createElement("div");
+        mdcDiv.appendChild(mdcLabel);
+
+        mdcFilter.appendChild(mdcDiv);
+    }
 }
 
 function listItem(header, text) {
@@ -133,6 +174,21 @@ function detailRow(event) {
     ul.appendChild(listItem("Thread", event.thread));
     if (event.marker) {
         ul.appendChild(listItem("Marker", event.marker));
+    }
+
+    if (event.mdc && Object.entries(event.mdc).length) {
+        const mdcList = document.createElement("li");
+        mdcList.innerHTML = "<strong>MDC</strong>";
+        const mdcUl = document.createElement("ul");
+        mdcList.appendChild(mdcUl);
+
+        for (const mdcKey in event.mdc) {
+            const mdcKeyLi = document.createElement("li");
+            mdcKeyLi.innerHTML = "<strong>" + mdcKey + ":</strong> " + event.mdc[mdcKey];
+            mdcUl.appendChild(mdcKeyLi);
+        }
+
+        ul.appendChild(mdcList);
     }
 
     if (event.throwable) {
@@ -166,7 +222,7 @@ function expandCollapseEventRow(targetRow) {
 
 
 async function fetchEvents() {
-    const response = await fetch("logs/events");
+    const response = await fetch("logs/events?" + window.location.hash.substring(1));
     if (response.ok) {
         console.log(response);
         const json = await response.json();
@@ -186,6 +242,15 @@ main.addEventListener("click", e => {
     }
 });
 
+const logEventsFilter = document.getElementById("logEventsFilter");
+logEventsFilter.addEventListener("change", e => {
+    console.log(new FormData(logEventsFilter));
+    window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
+});
+
+window.addEventListener("hashchange", e => {
+    fetchEvents();
+});
 
 fetchEvents();
 </script>

@@ -6,7 +6,12 @@ import org.logevents.observers.batch.LogEventGroup;
 import org.logevents.util.Configuration;
 import org.logevents.util.LogEventConfigurationException;
 
-import javax.mail.*;
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
 import javax.mail.internet.MimeMessage;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -78,7 +83,7 @@ public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
                 message += " (" + group.size() + " repetitions)";
             }
             text.append("* ")
-                    .append(group.headMessage().getZonedDateTime().toLocalTime())
+                    .append(group.headMessage().getLocalTime())
                     .append(" ").append(group.headMessage().getLevel()).append(": ")
                     .append(message)
                     .append("\n");

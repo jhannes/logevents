@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -32,11 +31,9 @@ public class LogEventsServlet extends HttpServlet {
 
     private LogEventFormatter formatter = new TTLLEventLogFormatter();
 
-    private CircularBufferLogEventObserver debugObserver = new CircularBufferLogEventObserver();
-    private CircularBufferLogEventObserver infoObserver = new CircularBufferLogEventObserver();
-    private CircularBufferLogEventObserver warnObserver = new CircularBufferLogEventObserver();
-    private CircularBufferLogEventObserver errorObserver = new CircularBufferLogEventObserver();
+    private Map<Level, CircularBufferLogEventObserver> messages = new HashMap<>();
     private String logeventsHtml = "/org/logevents/logevents.html";
+    private String logeventsApi = "/org/logevents/swagger.json";
 
     @Override
     public void init(ServletConfig config) {
@@ -44,10 +41,11 @@ public class LogEventsServlet extends HttpServlet {
     }
 
     void attachLogEventObservers(LogEventFactory factory) {
-        factory.addRootObserver(levelObserver(debugObserver, Level.DEBUG));
-        factory.addRootObserver(levelObserver(infoObserver, Level.INFO));
-        factory.addRootObserver(levelObserver(warnObserver, Level.WARN));
-        factory.addRootObserver(levelObserver(errorObserver, Level.ERROR));
+        for (Level level : Level.values()) {
+            CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
+            this.messages.put(level, observer);
+            factory.addRootObserver(levelObserver(observer, level));
+        }
     }
 
     private LogEventObserver levelObserver(LogEventObserver delegate, Level level) {
@@ -69,74 +67,50 @@ public class LogEventsServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         if (req.getPathInfo() == null) {
-            try (InputStream html = getClass().getResourceAsStream(logeventsHtml)) {
-                int c;
-                while ((c = html.read()) != -1) {
-                    resp.getOutputStream().write((byte) c);
-                }
-            }
             resp.setContentType("text/html");
+            copyResource(resp, logeventsHtml);
+        } else if (req.getPathInfo().equals("/swagger.json")) {
+            resp.setContentType("application/json");
+            copyResource(resp, logeventsApi);
         } else if (req.getPathInfo().equals("/events") || req.getPathInfo().equals("/logs/events")) {
-            Map<String, Object> result = new HashMap<>();
+            Map<String, Object> result = new LinkedHashMap<>();
 
-
-            Level level = Optional.ofNullable(req.getParameter("level")).map(Level::valueOf).orElse(Level.INFO);
-
-            List<LogEvent> events = new ArrayList<>();
-            events.addAll(infoObserver.getEvents());
-            events.addAll(warnObserver.getEvents());
-            events.addAll(errorObserver.getEvents());
-            events.sort(Comparator.comparing(LogEvent::getInstant));
+            LogEventFilter filter = new LogEventFilter(req.getParameterMap());
+            List<LogEvent> events = filter.collect(messages);
 
             Set<String> markers = new HashSet<>();
+            Set<String> threads = new HashSet<>();
+            Map<String, Set<String>> mdcMap = new HashMap<>();
 
             for (LogEvent event : events) {
                 if (event.getMarker() != null) {
                     markers.add(event.getMarker().getName());
                 }
+                threads.add(event.getThreadName());
+                for (String mdcKey : event.getMdcProperties().keySet()) {
+                    mdcMap.computeIfAbsent(mdcKey, k -> new HashSet<>()).add(event.getMdcProperties().get(mdcKey));
+                }
             }
+            List<Map<String, Object>> mdc = new ArrayList<>();
+            for (Map.Entry<String, Set<String>> entry : mdcMap.entrySet()) {
+                Map<String, Object> mdcEntry = new HashMap<>();
+                mdcEntry.put("name", entry.getKey());
+                mdcEntry.put("values", entry.getValue());
+            }
+
 
             HashMap<Object, Object> facets = new HashMap<>();
             facets.put("markers", markers);
+            facets.put("threads", threads);
+            facets.put("mdc", mdc);
 
             List<Map<String, Object>> jsonEvents = new ArrayList<>();
             for (LogEvent event : events) {
-                Map<String, Object> jsonEvent = new HashMap<>();
-
-                jsonEvent.put("thread", event.getThreadName());
-                jsonEvent.put("time", event.getInstant().toString());
-                jsonEvent.put("logger", event.getLoggerName());
-                jsonEvent.put("abbreviatedLogger", event.getAbbreviatedLoggerName(0));
-                jsonEvent.put("level", event.getLevel().name());
-                jsonEvent.put("levelIcon", JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()));
-                jsonEvent.put("formattedMessage", event.formatMessage());
-                jsonEvent.put("messageTemplate", event.getMessage());
-                jsonEvent.put("marker", Optional.ofNullable(event.getMarker()).map(Marker::getName).orElse(null));
-
-                if (event.getThrowable() != null) {
-                    jsonEvent.put("throwable", event.getThrowable().toString());
-                    ArrayList<Map<String, String>> stackTrace = new ArrayList<>();
-                    for (StackTraceElement element : event.getThrowable().getStackTrace()) {
-                        Map<String, String> jsonElement = new HashMap<>();
-                        jsonElement.put("className", element.getClassName());
-                        jsonElement.put("methodName", element.getMethodName());
-                        jsonElement.put("lineNumber", String.valueOf(element.getLineNumber()));
-                        jsonElement.put("fileName", element.getFileName());
-                        stackTrace.add(jsonElement);
-                    }
-                    jsonEvent.put("stackTrace", stackTrace);
-                }
-
-                jsonEvent.put("mdc", event.getMdcProperties());
-
-                jsonEvents.add(jsonEvent);
+                jsonEvents.add(formatAsJson(event));
             }
 
-
             result.put("facets", facets);
-            result.put("eventsText", convert(events));
             result.put("events", jsonEvents);
-
 
             resp.setContentType("application/json");
             resp.getWriter().write(JsonUtil.toIndentedJson(result));
@@ -147,12 +121,58 @@ public class LogEventsServlet extends HttpServlet {
         }
     }
 
+    private void copyResource(HttpServletResponse resp, String resource) throws IOException {
+        try (InputStream html = getClass().getResourceAsStream(resource)) {
+            int c;
+            while ((c = html.read()) != -1) {
+                resp.getOutputStream().write((byte) c);
+            }
+        }
+    }
+
+    private Map<String, Object> formatAsJson(LogEvent event) {
+        Map<String, Object> jsonEvent = new HashMap<>();
+
+        jsonEvent.put("thread", event.getThreadName());
+        jsonEvent.put("time", event.getInstant().toString());
+        jsonEvent.put("logger", event.getLoggerName());
+        jsonEvent.put("abbreviatedLogger", event.getAbbreviatedLoggerName(0));
+        jsonEvent.put("level", event.getLevel().name());
+        jsonEvent.put("levelIcon", JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()));
+        jsonEvent.put("formattedMessage", event.formatMessage());
+        jsonEvent.put("messageTemplate", event.getMessage());
+        jsonEvent.put("marker", Optional.ofNullable(event.getMarker()).map(Marker::getName).orElse(null));
+
+        if (event.getThrowable() != null) {
+            jsonEvent.put("throwable", event.getThrowable().toString());
+            ArrayList<Map<String, Object>> stackTrace = new ArrayList<>();
+            for (StackTraceElement element : event.getThrowable().getStackTrace()) {
+                Map<String, Object> jsonElement = new HashMap<>();
+                jsonElement.put("className", element.getClassName());
+                jsonElement.put("methodName", element.getMethodName());
+                jsonElement.put("lineNumber", String.valueOf(element.getLineNumber()));
+                jsonElement.put("fileName", element.getFileName());
+                stackTrace.add(jsonElement);
+            }
+            jsonEvent.put("stackTrace", stackTrace);
+        }
+
+        List<Object> mdc = new ArrayList<>();
+        for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
+            Map<String, String> mdcEntry = new HashMap<>();
+            mdcEntry.put("name", entry.getKey());
+            mdcEntry.put("value", entry.getValue());
+            mdc.add(mdcEntry);
+        }
+        jsonEvent.put("mdc", mdc);
+        return jsonEvent;
+    }
+
     Map<String, Object> getLogEvents() {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("debug", convert(debugObserver.getEvents()));
-        result.put("info", convert(infoObserver.getEvents()));
-        result.put("warn", convert(warnObserver.getEvents()));
-        result.put("error", convert(errorObserver.getEvents()));
+        for (Map.Entry<Level, CircularBufferLogEventObserver> entry : messages.entrySet()) {
+            result.put(entry.getKey().name().toLowerCase(), convert(entry.getValue().getEvents()));
+        }
         return result;
     }
 

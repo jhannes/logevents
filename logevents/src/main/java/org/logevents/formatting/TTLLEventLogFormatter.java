@@ -15,7 +15,7 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
     @Override
     public String apply(LogEvent e) {
         return String.format("%s [%s] [%s] [%s]: %s\n",
-                e.getZonedDateTime().toLocalTime(),
+                e.getLocalTime(),
                 e.getThreadName(),
                 LogEventFormatter.rightPad(e.getLevel(), 5, ' '),
                 e.getLoggerName(),

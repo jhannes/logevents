@@ -84,7 +84,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
             for (LogEvent logEvent : batch) {
                 String message = logEvent.formatMessage();
                 text.append(JsonLogEventsBatchFormatter.emojiiForLevel(logEvent.getLevel()))
-                        .append(" _").append(logEvent.getZonedDateTime().toLocalTime()).append("_: ");
+                        .append(" _").append(logEvent.getLocalTime()).append("_: ");
                 text.append(message);
                 text.append("\n");
             }
@@ -92,12 +92,12 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
             for (LogEventGroup group : batch.groups()) {
                 if (group.size() > 1) {
                     String message = group.headMessage().getMessage();
-                    text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ");
+                    text.append("*").append(" _").append(group.headMessage().getLocalTime()).append("_: ");
                     text.append(batch.isMainGroup(group) ? bold(message) : message);
                     text.append(" (").append(group.size()).append(" repetitions)\n");
                 } else {
                     String message = group.headMessage().formatMessage();
-                    text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ");
+                    text.append("*").append(" _").append(group.headMessage().getLoggerName()).append("_: ");
                     text.append(batch.isMainGroup(group) ? bold(message) : message);
                     text.append("\n");
                 }
