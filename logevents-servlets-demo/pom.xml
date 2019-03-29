@@ -29,6 +29,11 @@
             <artifactId>jetty-webapp</artifactId>
             <version>9.4.15.v20190215</version>
         </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>swagger-ui</artifactId>
+            <version>3.20.5</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

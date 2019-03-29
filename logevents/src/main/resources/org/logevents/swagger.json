@@ -1,0 +1,279 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "description": "Log Events - a simple Java Logging library",
+    "version": "1.0.0-draft",
+    "title": "logevents",
+    "termsOfService": "http://logevents.org",
+    "contact": {
+      "email": "jhannes@gmail.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "logsController",
+      "description": "Logs"
+    }
+  ],
+  "paths": {
+    "/logs/events": {
+      "get": {
+        "tags": [
+          "logsController"
+        ],
+        "summary": "List log events",
+        "description": "List log events which matches the specified filter",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "time",
+            "description": "Point of time to center search around",
+            "schema": {
+              "type": "string",
+              "format": "time",
+              "example": "13:37"
+            }
+          },
+          {
+            "in": "query",
+            "name": "interval",
+            "description": "ISO8601 time duration value around the time to include",
+            "schema": {
+              "type": "string",
+              "example": "PT6H30M"
+            }
+          },
+          {
+            "in": "query",
+            "name": "thread",
+            "description": "Limit to log events logged in this thread (may be repeated)",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "description": "Level threshold to include",
+            "schema": {
+              "$ref": "#/components/schema/Level"
+            }
+          },
+          {
+            "in": "query",
+            "name": "marker",
+            "description": "The markers of your log events to include",
+            "collectionFormat": "multi",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "example": "MY_MARKER"
+              }
+            }
+          },
+          {
+            "in": "query",
+            "name": "mdc",
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching Log Events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LogEventQueryResult"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/logs"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "LogEventQueryResult": {
+        "type": "object",
+        "properties": {
+          "facets": {
+            "$ref": "#/components/schemas/LogEventsQueryFacets"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LogEvent"
+            }
+          }
+        }
+      },
+      "LogEventsQueryFacets": {
+        "type": "object",
+        "properties": {
+          "markers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["MY_MARKER", "AUDIT"]
+          },
+          "threads": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["main", "TimerThread-1"]
+          },
+          "mdc": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "example": [
+              { "name":  "clientIp", "values": ["127.0.0.1", "10.0.0.4", "10.0.0.8"] },
+              { "name":  "request", "values": ["/api/operation", "/api/resources"] }
+            ]
+          }
+        }
+      },
+      "LogEvent": {
+        "type": "object",
+        "properties": {
+          "thread": {
+            "type": "string",
+            "example": "object"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "logger": {
+            "type": "string",
+            "example": "org.example.myapp.MyClass"
+          },
+          "abbreviatedLogger": {
+            "type": "string",
+            "example": "o.e.m.MyClass"
+          },
+          "level": {
+            "$ref": "#/components/schemas/Level"
+          },
+          "levelIcon": {
+            "type": "string",
+            "example": "\uD83D\uDD0E",
+            "enum": ["\uD83D\uDED1", "\u26a0\ufe0f", "\u2139\ufe0f", "\uD83D\uDD0E", "\ud83d\udd2c"],
+            "description": "An emoji appropriate for presenting this log level"
+          },
+          "formattedMessage": {
+            "type": "string",
+            "example": "There was a disturbance in the force"
+          },
+          "messageTemplate": {
+            "type": "string",
+            "example": "There was a {} in the {}"
+          },
+          "marker": {
+            "type": "string",
+            "example": "MY_MARKER"
+          },
+          "throwable": {
+            "type": "string",
+            "example": "java.io.IOException: Write failed"
+          },
+          "stackTrace": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "className": {
+                  "type": "string"
+                },
+                "methodName": {
+                  "type": "string"
+                },
+                "lineNumber": {
+                  "type": "number"
+                },
+                "filename": {
+                  "type": "string"
+                }
+              }
+            },
+            "example": [
+              {
+                "className": "org.example.MyClass",
+                "methodName": "doSomething",
+                "filename": "MyClass.java",
+                "lineNumber": 42
+              },
+              {
+                "className": "org.example.MyClass",
+                "methodName": "main",
+                "filename": "MyClass.java",
+                "lineNumber": 12
+              }
+            ]
+          },
+          "mdc": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              }
+            },
+            "example": [
+              {"name":  "clientIp", "value": "127.0.0.1"},
+              {"name":  "request", "value": "/api/operation"}
+            ]
+          }
+        },
+        "required": [
+          "thread",{},
+          "time",
+          "logger",
+          "level",
+          "levelIcon",
+          "abbreviatedLogger",
+          "formattedMessage",
+          "messageTemplate"
+        ]
+      },
+      "Level": {
+        "type": "string",
+        "enum": ["ERROR", "WARN", "INFO", "DEBUG", "TRACE"]
+      }
+    }
+  }
+}
