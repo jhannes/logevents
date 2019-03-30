@@ -1,17 +1,17 @@
 package org.logevents.extend.servlets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import org.junit.Test;
 import org.logevents.LogEventFactory;
 import org.logevents.observers.NullLogEventObserver;
 import org.logevents.util.JsonUtil;
 import org.slf4j.Logger;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class LogEventsServletTest extends LogEventsServlet {
 
@@ -46,4 +46,8 @@ public class LogEventsServletTest extends LogEventsServlet {
         assertEquals(Collections.emptyList(), JsonUtil.getList(logEvents, "debug"));
     }
 
+    @Test
+    public void usersShouldBeAuthenticated() {
+
+    }
 }

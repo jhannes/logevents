@@ -7,21 +7,32 @@ import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.TTLLEventLogFormatter;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
+import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.NetUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
-import javax.servlet.ServletConfig;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -31,6 +42,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Example configuration:
@@ -46,6 +58,9 @@ import java.util.stream.Collectors;
  */
 public class LogEventsServlet extends HttpServlet {
 
+    private final static Logger logger = LoggerFactory.getLogger(LogEventsServlet.class);
+    private static final Marker AUDIT = MarkerFactory.getMarker("AUDIT");
+
     private LogEventFormatter formatter = new TTLLEventLogFormatter();
 
     private Map<Level, CircularBufferLogEventObserver> messages = new HashMap<>();
@@ -56,9 +71,11 @@ public class LogEventsServlet extends HttpServlet {
     private String clientSecret;
     private String openIdIssuer;
     private Optional<String> scopes;
+    private Cipher encryptCipher;
+    private Cipher decryptCipher;
 
     @Override
-    public void init(ServletConfig config) {
+    public void init() {
         attachLogEventObservers(LogEventFactory.getInstance());
         Properties properties = LogEventFactory.getInstance().getConfigurators().get(0).loadConfigurationProperties();
         Configuration configuration = new Configuration(properties, "observer.servlet");
@@ -68,6 +85,17 @@ public class LogEventsServlet extends HttpServlet {
         this.openIdIssuer = configuration.getString("openIdIssuer");
         this.scopes = configuration.optionalString("scopes");
         configuration.checkForUnknownFields();
+
+        String secretKey = randomString(40);
+        try {
+            SecretKeySpec keySpec=new SecretKeySpec(secretKey.getBytes(),"Blowfish");
+            encryptCipher = Cipher.getInstance("Blowfish");
+            encryptCipher.init(Cipher.ENCRYPT_MODE, keySpec);
+            decryptCipher = Cipher.getInstance("Blowfish");
+            decryptCipher.init(Cipher.DECRYPT_MODE, keySpec);
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     void attachLogEventObservers(LogEventFactory factory) {
@@ -113,31 +141,25 @@ public class LogEventsServlet extends HttpServlet {
                 return;
             }
 
-            Map<String, String> formPayload = new HashMap<>();
-            formPayload.put("client_id", getClientId());
-            formPayload.put("client_secret", getClientSecret());
-            formPayload.put("redirect_uri", getRedirectUri(req));
-            formPayload.put("grant_type", "authorization_code");
-            formPayload.put("code", req.getParameter("code"));
+            Map<String, Object> idToken = fetchIdToken(req);
 
-            Map<String, Object> response = NetUtils.postFormForJson(getTokenUri(), formPayload);
-            String idToken = response.get("id_token").toString();
-            resp.getWriter().write(JsonParser.parseFromBase64encodedString(idToken.split("\\.")[1]).toString());
-        } else if (!authenticated(req)) {
+            logger.warn(AUDIT, "User logged in {}", idToken);
+            LogEventStatus.getInstance().addInfo(this, "User logged in " + idToken);
+
+            String session = "subject=" + idToken.get("sub") + "\n" + "sessionTime=" + Instant.now();
+            resp.addCookie(new Cookie("logevents.session", encrypt(session)));
+
+            resp.sendRedirect(req.getContextPath() + req.getServletPath());
+        } else if (!authenticated(resp, req.getCookies())) {
             resp.sendError(401, "Please log in");
         } else if (req.getPathInfo().equals("/events") || req.getPathInfo().equals("/logs/events")) {
 
             LogEventFilter filter = new LogEventFilter(req.getParameterMap());
-
             Collection<LogEvent> allEvents = filter.collectMessages(messages);
-            List<Map<String, Object>> events = allEvents.stream()
-                    .filter(filter)
-                    .map(this::formatAsJson)
-                    .collect(Collectors.toList());
 
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("facets", filter.collectFacets(allEvents));
-            result.put("events", events);
+            result.put("events", findEvents(filter, allEvents));
 
             resp.setContentType("application/json");
             resp.getWriter().write(JsonUtil.toIndentedJson(result));
@@ -146,6 +168,43 @@ public class LogEventsServlet extends HttpServlet {
             resp.setContentType("application/json");
             resp.getWriter().write(JsonUtil.toIndentedJson(result));
         }
+    }
+
+    private Map<String, Object> fetchIdToken(HttpServletRequest req) throws IOException {
+        Map<String, String> formPayload = new HashMap<>();
+        formPayload.put("client_id", getClientId());
+        formPayload.put("client_secret", getClientSecret());
+        formPayload.put("redirect_uri", getRedirectUri(req));
+        formPayload.put("grant_type", "authorization_code");
+        formPayload.put("code", req.getParameter("code"));
+
+        Map<String, Object> response = NetUtils.postFormForJson(getTokenUri(), formPayload);
+        return getIdToken(response);
+    }
+
+    private List<Map<String, Object>> findEvents(LogEventFilter filter, Collection<LogEvent> allEvents) {
+        return allEvents.stream()
+                .filter(filter)
+                .map(this::formatAsJson)
+                .collect(Collectors.toList());
+    }
+
+    private String encrypt(String session) {
+        try {
+            return Base64.getEncoder().encodeToString(encryptCipher.doFinal(session.getBytes()));
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String decrypt(String value) throws BadPaddingException, IllegalBlockSizeException {
+        return new String(decryptCipher.doFinal(Base64.getDecoder().decode(value)));
+    }
+
+
+    private Map<String, Object> getIdToken(Map<String, Object> response) throws IOException {
+        String idToken = response.get("id_token").toString();
+        return (Map<String, Object>) JsonParser.parseFromBase64encodedString(idToken.split("\\.")[1]);
     }
 
     private URL getTokenUri() throws IOException {
@@ -201,7 +260,30 @@ public class LogEventsServlet extends HttpServlet {
         return sb.toString();
     }
 
-    private boolean authenticated(HttpServletRequest req) {
+    boolean authenticated(HttpServletResponse resp, Cookie[] cookies) {
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("logevents.session")) {
+                    try {
+                        Map<String, String> session = Stream.of(decrypt(cookie.getValue()).split("\n"))
+                                .collect(Collectors.toMap(
+                                        s -> s.split("=")[0],
+                                        s -> s.split("=")[1]
+                                ));
+                        if (session.containsKey("sessionTime")) {
+                            Instant sessionTime = Instant.parse(session.get("sessionTime"));
+                            return Instant.now().isBefore(sessionTime.plusSeconds(60*60));
+                        }
+                    } catch (GeneralSecurityException e) {
+                        LogEventStatus.getInstance().addError(this, "Decoding session failed", e);
+                    }
+                    cookie.setValue("");
+                    cookie.setMaxAge(0);
+                    resp.addCookie(cookie);
+                    return false;
+                }
+            }
+        }
         return false;
     }
 
