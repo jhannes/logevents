@@ -8,8 +8,10 @@ import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
@@ -251,22 +253,26 @@ public class LogEventFactory implements ILoggerFactory {
      * This method is called the first time {@link #getInstance()} is called.
      */
     public void configure() {
+        List<LogEventConfigurator> configurators = getConfigurators();
         reset(new ConsoleLogEventObserver());
-        ServiceLoader<LogEventConfigurator> serviceLoader = ServiceLoader.load(LogEventConfigurator.class);
+        for (LogEventConfigurator configurator : configurators) {
+            LogEventStatus.getInstance().addInfo(this, "Loading service loader " + configurator);
+            configurator.configure(this);
+        }
+    }
 
-        if (!serviceLoader.iterator().hasNext()) {
+    public List<LogEventConfigurator> getConfigurators() {
+        List<LogEventConfigurator> configurators = new ArrayList<>();
+        ServiceLoader.load(LogEventConfigurator.class).forEach(configurators::add);
+        if (configurators.isEmpty()) {
             LogEventStatus.getInstance().addInfo(this, "No configuration found - using default");
             if (isRunningInsideJunit()) {
-                new DefaultTestLogEventConfigurator().configure(this);
+                configurators.add(new DefaultTestLogEventConfigurator());
             } else {
-                new DefaultLogEventConfigurator().configure(this);
+                configurators.add(new DefaultLogEventConfigurator());
             }
-        } else {
-            serviceLoader.forEach(c -> {
-                LogEventStatus.getInstance().addInfo(this, "Loading service loader " + c);
-                c.configure(this);
-            });
         }
+        return configurators;
     }
 
     /**

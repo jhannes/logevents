@@ -1,5 +1,6 @@
 package org.logevents;
 
+import java.util.Properties;
 import java.util.ServiceLoader;
 
 /**
@@ -15,4 +16,5 @@ public interface LogEventConfigurator {
 
     void configure(LogEventFactory factory);
 
+    Properties loadConfigurationProperties();
 }

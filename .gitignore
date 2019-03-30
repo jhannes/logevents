@@ -9,3 +9,4 @@ release.properties
 *.iml
 logs
 logevents-config-demo/logevents-*.properties
+logevents-servlets-demo/logevents*.properties

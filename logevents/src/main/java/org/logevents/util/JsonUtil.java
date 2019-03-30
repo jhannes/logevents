@@ -102,7 +102,7 @@ public class JsonUtil {
     }
 
     private static void toJson(CharSequence value, StringBuilder result) {
-        result.append("\"").append(jsonEscape(value)).append("\"");
+        result.append('"').append(jsonEscape(value)).append('"');
     }
 
     private static String jsonEscape(CharSequence key) {

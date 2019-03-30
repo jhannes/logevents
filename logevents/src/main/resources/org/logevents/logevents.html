@@ -236,7 +236,6 @@ function expandCollapseEventRow(targetRow) {
         targetRow.parentElement.removeChild(targetRow.nextSibling);
     } else {
         targetRow.classList.add("expanded");
-
         targetRow.parentElement.insertBefore(detailRow(logEvents[eventIndex]), targetRow.nextSibling);
     }
 }
@@ -250,6 +249,8 @@ async function fetchEvents() {
         logEvents = json.events;
         showLogEventTable();
         showFacets(json.facets);
+    } else if (response.status === 401) {
+        window.location = "logs/login";
     } else {
         console.log(response);
     }
