@@ -38,7 +38,11 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     public Map<String, Object> createMessage(LogEventBatch batch) {
         Map<String, Object> message = new LinkedHashMap<>();
         username.ifPresent(u -> message.put("username", u));
+        if (!username.isPresent()) {
+            getHostname().ifPresent(h -> message.put("username", h));
+        }
         channel.ifPresent(c -> message.put("channel", c));
+
         message.put("attachments", createAttachments(batch));
         message.put("text", createText(batch.firstHighestLevelLogEventGroup()));
         return message;
@@ -130,17 +134,20 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     }
 
     private String getMessageSource() {
-        String hostname = "unknown host";
+        String username = System.getProperty("user.name");
+        return username + "@" + getHostname().orElse("unknown host");
+    }
+
+    private Optional<String> getHostname() {
         try {
-            hostname = Optional.ofNullable(System.getenv("HOSTNAME"))
+            String hostname = Optional.ofNullable(System.getenv("HOSTNAME"))
                         .orElse(Optional.ofNullable(System.getenv("HTTP_HOST"))
                         .orElse(Optional.ofNullable(System.getenv("COMPUTERNAME"))
                         .orElse(InetAddress.getLocalHost().getHostName())));
+            return Optional.of(hostname);
         } catch (UnknownHostException ignored) {
+            return Optional.empty();
         }
-
-        String username = System.getProperty("user.name");
-        return username + "@" + hostname;
     }
 
     protected Map<String, Object> createStackTraceAttachment(LogEvent event) {

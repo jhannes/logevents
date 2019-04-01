@@ -2,6 +2,7 @@ package org.logevents.extend.servlets;
 
 import org.logevents.LogEvent;
 import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
 import java.time.Instant;
@@ -54,6 +55,10 @@ public class LogEventSampler {
         return this;
     }
 
+    public LogEventSampler withMarker() {
+        return withMarker(MarkerFactory.getMarker(pickOne("FIRST", "SECOND", "THIRD")));
+    }
+
     public LogEventSampler withLevel(Level level) {
         this.level = level;
         return this;
@@ -76,6 +81,11 @@ public class LogEventSampler {
 
     public LogEventSampler withMdc(String name, String value) {
         mdc.put(name, value);
+        return this;
+    }
+
+    public LogEventSampler withThrowable(Throwable throwable) {
+        this.args = new Object[] { throwable };
         return this;
     }
 }

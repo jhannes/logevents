@@ -2,6 +2,7 @@ package org.logevents.extend.servlets;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.observers.InMemoryBufferLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -9,7 +10,6 @@ import org.slf4j.event.Level;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,7 +26,7 @@ public class LogEventFilterTest {
 
     private final Marker MY_MARKER = MarkerFactory.getMarker("MY_MARKER");
     private final Marker OTHER_MARKER = MarkerFactory.getMarker("OTHER_MARKER");
-    private Map<Level, List<LogEvent>> logsByLevel = new HashMap<>();
+    private InMemoryBufferLogEventObserver logsByLevel = new InMemoryBufferLogEventObserver();
 
     @Test
     public void shouldFilterByThread() {
@@ -222,7 +222,7 @@ public class LogEventFilterTest {
     }
 
     private LogEvent record(LogEvent event) {
-        logsByLevel.computeIfAbsent(event.getLevel(), l -> new ArrayList<>()).add(event);
+        logsByLevel.logEvent(event);
         return event;
     }
 

@@ -1,6 +1,7 @@
 package org.logevents.extend.servlets;
 
 import org.logevents.LogEvent;
+import org.logevents.observers.InMemoryBufferLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -14,7 +15,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -100,23 +100,13 @@ public class LogEventFilter implements Predicate<LogEvent> {
                 "}";
     }
 
-    public Collection<LogEvent> collectMessages(Map<Level, ? extends Collection<LogEvent>> logsByLevel) {
+    public Collection<LogEvent> collectMessages(InMemoryBufferLogEventObserver logsByLevel) {
         Instant start = time.minus(interval);
         Instant end = time.plus(interval);
-        List<LogEvent> logEvents = new ArrayList<>();
-        for (Map.Entry<Level, ? extends Collection<LogEvent>> entry : logsByLevel.entrySet()) {
-            if (entry.getKey().compareTo(level) <= 0) {
-                // TODO It may be worth the effort to implement a binary search here
-                entry.getValue().stream()
-                        .filter(event -> event.getInstant().isAfter(start) && event.getInstant().isBefore(end))
-                        .forEach(logEvents::add);
-            }
-        }
-        logEvents.sort(Comparator.comparing(LogEvent::getInstant));
-        return logEvents;
+        return logsByLevel.filter(level, start, end);
     }
 
-    public Map<String, Object> collectFacets(Map<Level, List<LogEvent>> logsByLevel) {
+    public Map<String, Object> collectFacets(InMemoryBufferLogEventObserver logsByLevel) {
         return collectFacets(collectMessages(logsByLevel));
     }
 

@@ -5,7 +5,7 @@ import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.TTLLEventLogFormatter;
-import org.logevents.observers.CircularBufferLogEventObserver;
+import org.logevents.observers.InMemoryBufferLogEventObserver;
 import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
@@ -63,7 +63,8 @@ public class LogEventsServlet extends HttpServlet {
 
     private LogEventFormatter formatter = new TTLLEventLogFormatter();
 
-    private Map<Level, CircularBufferLogEventObserver> messages = new HashMap<>();
+    //private Map<Level, CircularBufferLogEventObserver> messages = new HashMap<>();
+    private InMemoryBufferLogEventObserver observer = new InMemoryBufferLogEventObserver();
     private String logeventsHtml = "/org/logevents/logevents.html";
     private String logeventsApi = "/org/logevents/swagger.json";
     private Optional<String> redirectUri;
@@ -76,16 +77,22 @@ public class LogEventsServlet extends HttpServlet {
 
     @Override
     public void init() {
-        attachLogEventObservers(LogEventFactory.getInstance());
+        LogEventFactory.getInstance().addRootObserver(observer);
         Properties properties = LogEventFactory.getInstance().getConfigurators().get(0).loadConfigurationProperties();
-        Configuration configuration = new Configuration(properties, "observer.servlet");
+        configure(new Configuration(properties, "observer.servlet"));
+        setupEncryption();
+    }
+
+    public void configure(Configuration configuration) {
         this.redirectUri = configuration.optionalString("redirectUri");
         this.clientId = configuration.getString("clientId");
         this.clientSecret = configuration.getString("clientSecret");
         this.openIdIssuer = configuration.getString("openIdIssuer");
         this.scopes = configuration.optionalString("scopes");
         configuration.checkForUnknownFields();
+    }
 
+    void setupEncryption() {
         String secretKey = randomString(40);
         try {
             SecretKeySpec keySpec=new SecretKeySpec(secretKey.getBytes(),"Blowfish");
@@ -95,14 +102,6 @@ public class LogEventsServlet extends HttpServlet {
             decryptCipher.init(Cipher.DECRYPT_MODE, keySpec);
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    void attachLogEventObservers(LogEventFactory factory) {
-        for (Level level : Level.values()) {
-            CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
-            this.messages.put(level, observer);
-            factory.addRootObserver(levelObserver(observer, level));
         }
     }
 
@@ -146,8 +145,7 @@ public class LogEventsServlet extends HttpServlet {
             logger.warn(AUDIT, "User logged in {}", idToken);
             LogEventStatus.getInstance().addInfo(this, "User logged in " + idToken);
 
-            String session = "subject=" + idToken.get("sub") + "\n" + "sessionTime=" + Instant.now();
-            resp.addCookie(new Cookie("logevents.session", encrypt(session)));
+            resp.addCookie(createSessionCookie(idToken));
 
             resp.sendRedirect(req.getContextPath() + req.getServletPath());
         } else if (!authenticated(resp, req.getCookies())) {
@@ -155,7 +153,7 @@ public class LogEventsServlet extends HttpServlet {
         } else if (req.getPathInfo().equals("/events") || req.getPathInfo().equals("/logs/events")) {
 
             LogEventFilter filter = new LogEventFilter(req.getParameterMap());
-            Collection<LogEvent> allEvents = filter.collectMessages(messages);
+            Collection<LogEvent> allEvents = filter.collectMessages(observer);
 
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("facets", filter.collectFacets(allEvents));
@@ -164,10 +162,14 @@ public class LogEventsServlet extends HttpServlet {
             resp.setContentType("application/json");
             resp.getWriter().write(JsonUtil.toIndentedJson(result));
         } else {
-            Map<String, Object> result = getLogEvents();
-            resp.setContentType("application/json");
-            resp.getWriter().write(JsonUtil.toIndentedJson(result));
+            resp.sendError(404, "Not found " + req.getPathInfo());
         }
+    }
+
+    Cookie createSessionCookie(Map<String, Object> idToken) {
+        String session = "subject=" + idToken.get("sub") + "\n"
+                + "sessionTime=" + Instant.ofEpochSecond(Long.parseLong(idToken.get("iat").toString()));
+        return new Cookie("logevents.session", encrypt(session));
     }
 
     private Map<String, Object> fetchIdToken(HttpServletRequest req) throws IOException {
@@ -272,9 +274,11 @@ public class LogEventsServlet extends HttpServlet {
                                 ));
                         if (session.containsKey("sessionTime")) {
                             Instant sessionTime = Instant.parse(session.get("sessionTime"));
-                            return Instant.now().isBefore(sessionTime.plusSeconds(60*60));
+                            if (Instant.now().isBefore(sessionTime.plusSeconds(60*60))) {
+                                return true;
+                            }
                         }
-                    } catch (GeneralSecurityException e) {
+                    } catch (GeneralSecurityException|IllegalArgumentException e) {
                         LogEventStatus.getInstance().addError(this, "Decoding session failed", e);
                     }
                     cookie.setValue("");
@@ -296,7 +300,7 @@ public class LogEventsServlet extends HttpServlet {
         }
     }
 
-    private Map<String, Object> formatAsJson(LogEvent event) {
+    Map<String, Object> formatAsJson(LogEvent event) {
         Map<String, Object> jsonEvent = new HashMap<>();
 
         jsonEvent.put("thread", event.getThreadName());
@@ -334,22 +338,6 @@ public class LogEventsServlet extends HttpServlet {
         return jsonEvent;
     }
 
-    Map<String, Object> getLogEvents() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        for (Map.Entry<Level, CircularBufferLogEventObserver> entry : messages.entrySet()) {
-            result.put(entry.getKey().name().toLowerCase(), convert(entry.getValue().getEvents()));
-        }
-        return result;
-    }
-
-    private List<String> convert(Collection<LogEvent> events) {
-        ArrayList<String> result = new ArrayList<>();
-        for (LogEvent event : events) {
-            result.add(formatter.apply(event));
-        }
-        return result;
-    }
-
     private String getServerUrl(HttpServletRequest req) {
         String scheme = Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
         int port = Optional.ofNullable(req.getHeader("X-Forwarded-Port")).map(Integer::parseInt).orElse(req.getServerPort());
@@ -362,5 +350,9 @@ public class LogEventsServlet extends HttpServlet {
             url.append(":").append(port);
         }
         return url.toString();
+    }
+
+    protected LogEventObserver getObserver() {
+        return observer;
     }
 }
