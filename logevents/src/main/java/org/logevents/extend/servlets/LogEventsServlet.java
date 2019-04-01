@@ -45,6 +45,27 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * A servlet that exposes log information to administrative users. To use, you need:
+ * <ul>
+ *     <li>
+ *         To run your application in a servlet container. Add LogEventsServlet as a servlet in <code>web.xml</code>,
+ *         or add in a ServletContextListener
+ *     </li>
+ *     <li>
+ *         You need an Identity Provider that supports OpenID Connect to authorize administrative users.
+ *         If you don't have any existing options, I suggest creating a (free!) Azure Active Directory
+ *         and adding users that should have access as guest users.
+ *     </li>
+ *     <li>
+ *         In order to run LogEventsServlet needs security configuration in your logevents*.properties.
+ *         You need to set <code>observer.servlet.openIdIssuer</code>, <code>observer.servlet.clientId</code>
+ *         and <code>observer.servlet.clientSecret</code>.
+ *     </li>
+ *     <li>
+ *         If you mount LogEventsServlet on "/logs", the API will be at "/logs/events", the OpenAPI documentation
+ *         will be at "/logs/swagger.json" and a simple client web page will be at "/logs/"".
+ *     </li>
+ * </ul>
  * Example configuration:
  *
  * <pre>
