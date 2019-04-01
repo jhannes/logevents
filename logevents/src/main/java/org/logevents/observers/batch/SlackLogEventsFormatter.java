@@ -38,7 +38,11 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     public Map<String, Object> createMessage(LogEventBatch batch) {
         Map<String, Object> message = new LinkedHashMap<>();
         username.ifPresent(u -> message.put("username", u));
+        if (!username.isPresent()) {
+            getHostname().ifPresent(h -> message.put("username", h));
+        }
         channel.ifPresent(c -> message.put("channel", c));
+
         message.put("attachments", createAttachments(batch));
         message.put("text", createText(batch.firstHighestLevelLogEventGroup()));
         return message;
@@ -84,7 +88,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
             for (LogEvent logEvent : batch) {
                 String message = logEvent.formatMessage();
                 text.append(JsonLogEventsBatchFormatter.emojiiForLevel(logEvent.getLevel()))
-                        .append(" _").append(logEvent.getZonedDateTime().toLocalTime()).append("_: ");
+                        .append(" _").append(logEvent.getLocalTime()).append("_: ");
                 text.append(message);
                 text.append("\n");
             }
@@ -92,15 +96,13 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
             for (LogEventGroup group : batch.groups()) {
                 LogEvent logEvent = group.headMessage();
                 if (group.size() > 1) {
-                    String message = logEvent.getMessage();
-                    text.append(JsonLogEventsBatchFormatter.emojiiForLevel(logEvent.getLevel()))
-                            .append(" _").append(logEvent.getLoggerName()).append("_: ");
+                    String message = group.headMessage().getMessage();
+                    text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ");
                     text.append(batch.isMainGroup(group) ? bold(message) : message);
                     text.append(" (").append(group.size()).append(" repetitions)\n");
                 } else {
-                    String message = logEvent.formatMessage();
-                    text.append(JsonLogEventsBatchFormatter.emojiiForLevel(logEvent.getLevel()))
-                            .append(" _").append(logEvent.getLoggerName()).append("_: ");
+                    String message = group.headMessage().formatMessage();
+                    text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ");
                     text.append(batch.isMainGroup(group) ? bold(message) : message);
                     text.append("\n");
                 }
@@ -133,17 +135,20 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     }
 
     private String getMessageSource() {
-        String hostname = "unknown host";
+        String username = System.getProperty("user.name");
+        return username + "@" + getHostname().orElse("unknown host");
+    }
+
+    private Optional<String> getHostname() {
         try {
-            hostname = Optional.ofNullable(System.getenv("HOSTNAME"))
+            String hostname = Optional.ofNullable(System.getenv("HOSTNAME"))
                         .orElse(Optional.ofNullable(System.getenv("HTTP_HOST"))
                         .orElse(Optional.ofNullable(System.getenv("COMPUTERNAME"))
                         .orElse(InetAddress.getLocalHost().getHostName())));
+            return Optional.of(hostname);
         } catch (UnknownHostException ignored) {
+            return Optional.empty();
         }
-
-        String username = System.getProperty("user.name");
-        return username + "@" + hostname;
     }
 
     protected Map<String, Object> createStackTraceAttachment(LogEvent event) {

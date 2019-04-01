@@ -1,16 +1,17 @@
 package org.logevents;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.Test;
+import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 
-import org.junit.After;
-import org.junit.Test;
-import org.slf4j.event.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class LogEventConfiguratorTest {
     private static boolean configurator1Called = false;
@@ -20,6 +21,12 @@ public class LogEventConfiguratorTest {
         public void configure(LogEventFactory factory) {
             configurator1Called = true;
         }
+
+        @Override
+        public Properties loadConfigurationProperties() {
+            return null;
+        }
+
     }
 
     private static boolean configurator2Called = false;
@@ -30,6 +37,11 @@ public class LogEventConfiguratorTest {
         @Override
         public void configure(LogEventFactory factory) {
             configurator2Called = true;
+        }
+
+        @Override
+        public Properties loadConfigurationProperties() {
+            return null;
         }
     }
 

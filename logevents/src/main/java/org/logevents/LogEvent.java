@@ -8,6 +8,7 @@ import org.slf4j.event.LoggingEvent;
 import org.slf4j.helpers.MessageFormatter;
 
 import java.time.Instant;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -36,9 +37,9 @@ public class LogEvent implements LoggingEvent {
     private final Marker marker;
     private final String format;
     private final Object[] args;
-    private Throwable throwable;
+    private final Throwable throwable;
     private final long threadId = Thread.currentThread().getId();
-    private final String threadName = Thread.currentThread().getName();
+    private final String threadName;
     private final long timestamp;
     private final Map<String, String> mdcProperties;
 
@@ -52,25 +53,22 @@ public class LogEvent implements LoggingEvent {
         this.format = format;
         this.args = args;
         this.throwable = throwable;
+        this.threadName = Thread.currentThread().getName();
         this.timestamp = Instant.now().toEpochMilli();
         this.mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
     }
 
     public LogEvent(String loggerName, Level level, Instant timestamp, Marker marker, String format, Object[] args) {
-        this.loggerName = loggerName;
-        this.level = level;
-        this.marker = marker;
-        this.format = format;
-        if (args.length > 0 && args[args.length-1] instanceof Throwable) {
-            this.args = new Object[args.length-1];
-            System.arraycopy(args, 0, this.args, 0, this.args.length);
-            this.throwable = (Throwable) args[args.length-1];
-        } else {
-            this.args = args;
-        }
-        this.timestamp = timestamp.toEpochMilli();
-
-        this.mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
+        this(
+                loggerName,
+                level,
+                Thread.currentThread().getName(),
+                timestamp,
+                marker,
+                format,
+                args,
+                Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>())
+        );
     }
 
     public LogEvent(String loggerName, Level level, Marker marker, String format, Object[] args) {
@@ -83,6 +81,33 @@ public class LogEvent implements LoggingEvent {
 
     public LogEvent(String loggerName, Level level, String format) {
         this(loggerName, level, Instant.now(), null, format, new Object[0]);
+    }
+
+    public LogEvent(
+            String loggerName,
+            Level level,
+            String threadName,
+            Instant timestamp,
+            Marker marker,
+            String format,
+            Object[] args,
+            Map<String, String> mdcProperties
+    ) {
+        this.loggerName = loggerName;
+        this.level = level;
+        this.threadName = threadName;
+        this.marker = marker;
+        this.format = format;
+        if (args.length > 0 && args[args.length-1] instanceof Throwable) {
+            this.args = new Object[args.length-1];
+            System.arraycopy(args, 0, this.args, 0, this.args.length);
+            this.throwable = (Throwable) args[args.length-1];
+        } else {
+            this.args = args;
+            this.throwable = null;
+        }
+        this.timestamp = timestamp.toEpochMilli();
+        this.mdcProperties = mdcProperties;
     }
 
     /**
@@ -179,6 +204,10 @@ public class LogEvent implements LoggingEvent {
         return Instant.ofEpochMilli(timestamp);
     }
 
+    public LocalTime getLocalTime() {
+        return getZonedDateTime().toLocalTime();
+    }
+
     public Throwable getRootThrowable() {
         Throwable throwable = this.throwable;
         if (throwable != null) {
@@ -267,4 +296,5 @@ public class LogEvent implements LoggingEvent {
         int compared = getLevel().compareTo(other.getLevel());
         return compared != 0 ? -compared : -getInstant().compareTo(other.getInstant());
     }
+
 }

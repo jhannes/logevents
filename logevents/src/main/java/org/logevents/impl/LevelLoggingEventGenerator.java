@@ -30,31 +30,28 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
 
     @Override
     public void log(String msg) {
-        log(createEvent(msg, new Object[0]));
+        Object[] arg = new Object[0];
+        log(createEvent(msg, null, arg));
     }
 
     @Override
     public void log(String format, Object arg) {
-        log(createEvent(format, new Object[] { arg }));
+        log(createEvent(format, null, new Object[]{arg}));
     }
 
     @Override
     public void log(String format, Throwable t) {
-        log(createEvent(format, new Object[] { t }));
+        log(createEvent(format, null, new Object[]{t}));
     }
 
     @Override
     public void log(String format, Object arg1, Object arg2) {
-        log(createEvent(format, new Object[] { arg1, arg2 }));
+        log(createEvent(format, null, new Object[]{arg1, arg2}));
     }
 
     @Override
     public void log(String format, Object... arg) {
-        log(createEvent(format, arg));
-    }
-
-    LogEvent createEvent(String format, Object[] arg) {
-        return new LogEvent(this.loggerName, this.level, format, arg);
+        log(createEvent(format, null, arg));
     }
 
     @Override

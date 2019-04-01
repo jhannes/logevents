@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Log Event Viewer | logevents</title>
+    <style>
+        nav form {
+            display: flex;
+        }
+        main {
+            height: 75%;
+            overflow-y: scroll;
+        }
+
+        .expanded {
+            background-color: pink;
+            border: 1px solid red;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>LogEvents</h1>
+    </header>
+    <nav>
+        <form id="logEventsFilter" method="post">
+            <fieldset>
+                <input type="time" name="time" id="time">
+                <select name="interval">
+                    <option value="PT5S">+/- 5 seconds</option>
+                    <option value="PT1M">+/- 1 minute</option>
+                    <option value="PT5M" selected>+/- 5 minutes</option>
+                    <option value="PT15M">+/- 15 minutes</option>
+                    <option value="PT1H">+/- 1 hour</option>
+                </select>
+                <select name="level">
+                    <option value="TRACE">TRACE</option>
+                    <option value="DEBUG">DEBUG</option>
+                    <option value="INFO">INFO</option>
+                    <option value="WARN">WARN</option>
+                    <option value="ERROR">ERROR</option>
+                </select>
+            </fieldset>
+            <fieldset id="threads">
+            </fieldset>
+            <fieldset id="markers">
+            </fieldset>
+            <fieldset id="mdcFilter">
+                <div>
+                    <label>
+                        User
+                        <select name="mdc.user">
+                            <option value="">all</option>
+                            <option value="user 1">user 1</option>
+                        </select>
+                    </label>
+                </div>
+            </fieldset>
+            <fieldset>
+                <button id="clearButton">Clear</button>
+            </fieldset>
+        </form>
+    </nav>
+    <main id="main">
+
+    </main>
+</body>
+<script>
+function tableCell(textContent) {
+    const td = document.createElement("td");
+    td.innerHTML = textContent;
+    return td;
+}
+
+let logEvents = [];
+
+function showLogEventTable() {
+    console.log({logEvents});
+    const table = document.createElement("table");
+    for (const index in logEvents) {
+        const logEvent = logEvents[index];
+        const tr = document.createElement("tr");
+        tr.dataset.eventIndex = index;
+
+        const time = logEvent.time.split("T")[1];
+
+        const td = document.createElement("td");
+        td.innerHTML = "<button>" + logEvent.levelIcon + "</button>";
+        if (logEvent.throwable) {
+            td.innerHTML += " ❗";
+        }
+        if (logEvent.mdc && Object.entries(logEvent.mdc).length) {
+            td.innerHTML += " 🖋️";
+        }
+        tr.appendChild(td);
+
+        tr.appendChild(tableCell(logEvent.levelIcon));
+        tr.appendChild(tableCell(time));
+        tr.appendChild(tableCell(logEvent.abbreviatedLogger));
+        tr.appendChild(tableCell(logEvent.formattedMessage));
+
+        table.appendChild(tr);
+    }
+    const main = document.getElementById("main");
+    main.innerHTML = "";
+    main.appendChild(table);
+}
+
+function showFacets(facets) {
+    const markersFieldset = document.getElementById("markers");
+    const currentFilter = new URLSearchParams(window.location.hash.substr(1));
+
+    document.getElementById("time").value = currentFilter.get("time");
+    document.querySelector("[name=interval] [value=" + currentFilter.get("interval") + "]").selected = true;
+    document.querySelector("[name=level] [value=" + currentFilter.get("level") + "]").selected = true;
+
+    markersFieldset.innerHTML = "";
+
+    {
+        const noMarkerCheckbox = document.createElement("div");
+        const checked = (currentFilter.getAll("marker").indexOf("") >= 0) ? ' checked="checked"' : "";
+        noMarkerCheckbox.innerHTML =
+            '<label><input type="checkbox" name="marker" value=""' + checked + '>No marker</label>';
+        markersFieldset.appendChild(noMarkerCheckbox);
+    }
+
+    for (const marker of facets.markers) {
+        const markerCheckbox = document.createElement("div");
+        const checked = (currentFilter.getAll("marker").indexOf(marker) >= 0) ? ' checked="checked"' : "";
+
+        markerCheckbox.innerHTML = `<label><input type="checkbox" name="marker" value="${marker}" ${checked}>${marker}</label>`;
+        markersFieldset.appendChild(markerCheckbox);
+    }
+
+    const threads = document.getElementById("threads");
+    const threadsSelect = document.createElement("select");
+    threadsSelect.setAttribute("name", "thread");
+    const emptyOption = document.createElement("option");
+    threadsSelect.appendChild(emptyOption);
+    for (const thread of facets.threads) {
+        const threadOption = document.createElement("option");
+        if (currentFilter.getAll("thread").indexOf(thread) >= 0) {
+            threadOption.setAttribute("selected", "selected");
+        }
+        threadOption.innerHTML = thread;
+        threadsSelect.appendChild(threadOption);
+    }
+    threads.innerHTML = "";
+    threads.appendChild(threadsSelect);
+
+    const mdcFilter = document.getElementById("mdcFilter");
+    mdcFilter.innerHTML = "";
+    for (const mdcEntry of facets.mdc) {
+        const mdcLabel = document.createElement("label");
+        mdcLabel.innerText = mdcEntry.name + ": ";
+
+        const mdcSelect = document.createElement("select");
+        mdcSelect.setAttribute("name", "mdc[" + mdcEntry.name + "]");
+
+        const emptyMdcOption = document.createElement("option");
+        mdcSelect.appendChild(emptyMdcOption);
+
+        for (const alternative of mdcEntry.values) {
+            const mdcOption = document.createElement("option");
+            if (currentFilter.getAll("mdc[" + mdcEntry.name + "]").indexOf(alternative) >= 0) {
+                mdcOption.setAttribute("selected", "selected");
+            }
+            mdcOption.innerText = alternative;
+            mdcSelect.appendChild(mdcOption);
+        }
+
+        mdcLabel.appendChild(mdcSelect);
+        const mdcDiv = document.createElement("div");
+        mdcDiv.appendChild(mdcLabel);
+
+        mdcFilter.appendChild(mdcDiv);
+    }
+}
+
+function listItem(header, text) {
+    const li = document.createElement("li");
+    li.innerHTML = "<strong>" + header + ":</strong> " + text;
+    return li;
+}
+
+function detailRow(event) {
+    const expandedRow = document.createElement("tr");
+    expandedRow.dataset.isDetail = true;
+
+    const td = document.createElement("td");
+    td.setAttribute("colspan", "100%");
+
+    const ul = document.createElement("ul");
+    ul.appendChild(listItem("Logger", event.logger));
+    ul.appendChild(listItem("Thread", event.thread));
+    if (event.marker) {
+        ul.appendChild(listItem("Marker", event.marker));
+    }
+
+    if (event.mdc && Object.entries(event.mdc).length) {
+        const mdcList = document.createElement("li");
+        mdcList.innerHTML = "<strong>MDC</strong>";
+        const mdcUl = document.createElement("ul");
+        mdcList.appendChild(mdcUl);
+
+        for (const mdc of event.mdc) {
+            const mdcKeyLi = document.createElement("li");
+            mdcKeyLi.innerHTML = "<strong>" + mdc.name + ":</strong> " + mdc.value;
+            mdcUl.appendChild(mdcKeyLi);
+        }
+
+        ul.appendChild(mdcList);
+    }
+
+    if (event.throwable) {
+        ul.appendChild(listItem("Exception", event.throwable));
+
+        const stackTrace = document.createElement("pre");
+        for (const element of event.stackTrace) {
+            stackTrace.innerHTML += element.className + "#" + element.methodName + "\n";
+        }
+        ul.appendChild(stackTrace);
+    }
+    td.appendChild(ul);
+    expandedRow.appendChild(td);
+
+    return expandedRow;
+}
+
+
+function expandCollapseEventRow(targetRow) {
+    const eventIndex = targetRow.dataset.eventIndex;
+
+    if (targetRow.nextSibling && targetRow.nextSibling.dataset.isDetail) {
+        targetRow.classList.remove("expanded");
+        targetRow.parentElement.removeChild(targetRow.nextSibling);
+    } else {
+        targetRow.classList.add("expanded");
+        targetRow.parentElement.insertBefore(detailRow(logEvents[eventIndex]), targetRow.nextSibling);
+    }
+}
+
+
+async function fetchEvents() {
+    const response = await fetch("logs/events?" + window.location.hash.substring(1));
+    if (response.ok) {
+        console.log(response);
+        const json = await response.json();
+        logEvents = json.events;
+        showLogEventTable();
+        showFacets(json.facets);
+    } else if (response.status === 401) {
+        window.location = "logs/login";
+    } else {
+        console.log(response);
+    }
+}
+
+const main = document.getElementById("main");
+main.addEventListener("click", e => {
+    if (e.target.tagName === "BUTTON") {
+        const targetRow = e.target.parentElement.parentElement;
+        expandCollapseEventRow(targetRow);
+    }
+});
+
+const logEventsFilter = document.getElementById("logEventsFilter");
+const clearButton = document.getElementById("clearButton");
+const timeInput = document.getElementById("time");
+
+logEventsFilter.addEventListener("change", e => {
+    window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
+});
+
+clearButton.addEventListener("click", e => {
+    logEventsFilter.reset();
+    const d = new Date(),
+        h = (d.getHours()<10?'0':'') + d.getHours(),
+        m = (d.getMinutes()<10?'0':'') + d.getMinutes();
+    timeInput.value = h + ':' + m;
+    window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
+    e.preventDefault();
+});
+
+
+window.addEventListener("hashchange", e => {
+    fetchEvents();
+});
+
+
+const d = new Date(),
+    h = (d.getHours()<10?'0':'') + d.getHours(),
+    m = (d.getMinutes()<10?'0':'') + d.getMinutes();
+timeInput.value = h + ':' + m;
+
+if (!window.location.hash) {
+    window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
+} else {
+    fetchEvents();
+}
+</script>
+</html>

@@ -64,7 +64,7 @@ public class JsonUtil {
     private void objectToJson(Object value, StringBuilder result, String currentIndent) {
         if (value instanceof Map) {
             toJson((Map<String,Object>)value, result, currentIndent);
-        } else if (value instanceof List) {
+        } else if (value instanceof Iterable) {
             toJson((Iterable<?>)value, result, currentIndent);
         } else if (value instanceof CharSequence) {
             toJson((CharSequence)value, result);
@@ -102,7 +102,7 @@ public class JsonUtil {
     }
 
     private static void toJson(CharSequence value, StringBuilder result) {
-        result.append("\"").append(jsonEscape(value)).append("\"");
+        result.append('"').append(jsonEscape(value)).append('"');
     }
 
     private static String jsonEscape(CharSequence key) {

@@ -36,6 +36,10 @@ observer.console.packageFilter=sun.reflect
 root=DEBUG file,console,slack
 ```
 
+![cmd screenshot](doc/cmd-with-bash-cropped.png)
+![Slack screenshot](doc/slack-notification-tray-cropped.jpg)
+
+
 You can also set up environment specific logging with a file named `logevents-<profile>.properties` or you can configure Logevents programatically:
 
 ```java

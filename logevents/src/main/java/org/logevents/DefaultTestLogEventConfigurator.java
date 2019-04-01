@@ -26,7 +26,7 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
         public String apply(LogEvent e) {
             return String.format("%s %s [%s] [%s] [%s]: %s\n",
                     format.underline("TEST(" + getTestMethod(e) + ")"),
-                    e.getZonedDateTime().toLocalTime(),
+                    e.getLocalTime(),
                     e.getThreadName(),
                     colorizedLevel(e),
                     format.bold(e.getLoggerName()),

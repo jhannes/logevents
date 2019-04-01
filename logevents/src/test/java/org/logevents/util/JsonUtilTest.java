@@ -1,12 +1,14 @@
 package org.logevents.util;
 
+import org.junit.Test;
+
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class JsonUtilTest {
 
@@ -16,14 +18,17 @@ public class JsonUtilTest {
     }
 
     @Test
-    public void shouldOutputSimpleFields() {
+    public void shouldOutputSimpleFields() throws IOException {
         Map<String, Object> jsonObject = new LinkedHashMap<>();
         jsonObject.put("firstName", "Darth");
         jsonObject.put("lastName", "Vader");
-        jsonObject.put("age", 29);
+        jsonObject.put("age", 29L);
         jsonObject.put("sith", true);
         jsonObject.put("weakness", null);
         assertJsonOutput("{\"firstName\": \"Darth\",\"lastName\": \"Vader\",\"age\": 29,\"sith\": true,\"weakness\": null}", jsonObject);
+
+        String s = new JsonUtil("", "").toJson(jsonObject);
+        assertEquals(JsonParser.parse(s), jsonObject);
     }
 
     @Test
@@ -34,17 +39,20 @@ public class JsonUtilTest {
     }
 
     @Test
-    public void shouldOutputLists() {
+    public void shouldOutputLists() throws IOException {
         Map<String, Object> jsonObject = new LinkedHashMap<>();
-        jsonObject.put("numbers", Arrays.asList(1, 2, 3));
+        jsonObject.put("numbers", Arrays.asList(1L, 2L, 3L));
         assertJsonOutput("{\"numbers\": [1,2,3]}", jsonObject);
+
+        String s = new JsonUtil("", "").toJson(jsonObject);
+        assertEquals(JsonParser.parse(s), new HashMap<>(jsonObject));
     }
 
     @Test
     public void shouldIndentOutput() {
         Map<String, Object> jsonObject = new LinkedHashMap<>();
         jsonObject.put("numbers", Arrays.asList(1, 2));
-        Assert.assertEquals("{\n  \"numbers\": [\n    1,\n    2\n  ]\n}",
+        assertEquals("{\n  \"numbers\": [\n    1,\n    2\n  ]\n}",
                 JsonUtil.toIndentedJson(jsonObject));
     }
 
@@ -56,7 +64,7 @@ public class JsonUtilTest {
     }
 
     private void assertJsonOutput(String expected, Map<String, Object> jsonObject) {
-        Assert.assertEquals(expected, new JsonUtil("", "").toJson(jsonObject));
+        assertEquals(expected, new JsonUtil("", "").toJson(jsonObject));
     }
 
 }
