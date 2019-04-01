@@ -9,26 +9,38 @@ import org.slf4j.MarkerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
+import java.net.NoRouteToHostException;
 
 public class Main {
 
     private static Marker PERSONDATA = MarkerFactory.getMarker("PERSONDATA");
+    private static Marker SECURITY = MarkerFactory.getMarker("SECURITY");
+    private static Marker AUDIT = MarkerFactory.getMarker("AUDIT");
+
+    static {
+        PERSONDATA.add(AUDIT);
+        SECURITY.add(AUDIT);
+    }
+
 
 
     public static void main(String[] args) throws InterruptedException {
         Logger logger = LoggerFactory.getLogger(Main.class);
 
         try (MDC.MDCCloseable mdcCloseable = MDC.putCloseable("Context", "The context of the thread")) {
-            logger.debug("Hello world - debug", new IOException(new RuntimeException()));
-            logger.warn("Hello world - warning", new IOException());
-            logger.error("A message without exception");
+            logger.info("While connecting to database", new NoRouteToHostException("Connection refused"));
+            logger.warn("Database failure with error message: {}", "AA39111");
 
-            Logger logger2 = LoggerFactory.getLogger("something-else");
-            logger2.debug("Hello world - debug", new IOException(new RuntimeException()));
-            logger2.warn("Hello world - warning", new IOException());
-            logger2.error(PERSONDATA, "A message without exception - persondata");
-            logger2.info("A message");
+            Logger logger2 = LoggerFactory.getLogger("com.example.myapp.DatabaseActionController");
+            logger2.info("Action={} caseNumber={}", "Delete case", 2311);
+            logger2.error(AUDIT, "Unauthorized action: user={} action={}", "Alice", "Delete case");
+            Thread.sleep(100);
+            logger2.info("Action={} caseNumber={}", "Remove logs", 2311);
+            logger2.error(AUDIT, "Unauthorized action: user={} action={}", "Alice", "Remove logs");
+            Thread.sleep(100);
+            logger2.info("Action={} caseNumber={}", "Remove logs", 2311);
+            logger2.error(AUDIT, "Unauthorized action: user={} action={}", "Alice", "Remove logs");
+            Thread.sleep(100);
 
             try {
                 new FileReader(new File("this/file/does/not/exist"));
