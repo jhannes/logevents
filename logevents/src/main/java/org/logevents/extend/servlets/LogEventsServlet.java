@@ -34,6 +34,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -84,7 +85,6 @@ public class LogEventsServlet extends HttpServlet {
 
     private LogEventFormatter formatter = new TTLLEventLogFormatter();
 
-    //private Map<Level, CircularBufferLogEventObserver> messages = new HashMap<>();
     private InMemoryBufferLogEventObserver observer = new InMemoryBufferLogEventObserver();
     private String logeventsHtml = "/org/logevents/logevents.html";
     private String logeventsApi = "/org/logevents/swagger.json";
@@ -144,13 +144,19 @@ public class LogEventsServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-
         if (req.getPathInfo() == null) {
+            resp.sendRedirect(req.getContextPath() + req.getServletPath() + "/" +
+                    (req.getQueryString() != null ? "?" + req.getQueryString() : ""));
+        } else if (req.getPathInfo().equals("/")) {
             resp.setContentType("text/html");
             copyResource(resp, logeventsHtml);
         } else if (req.getPathInfo().equals("/swagger.json")) {
             resp.setContentType("application/json");
-            copyResource(resp, logeventsApi);
+            Map<String, Object> api = (Map<String, Object>) JsonParser.parse(getClass().getResourceAsStream(logeventsApi));
+            HashMap<Object, Object> localServer = new HashMap<>();
+            localServer.put("url", req.getContextPath() + req.getServletPath());
+            api.put("servers", Collections.singletonList(localServer));
+            resp.getWriter().write(JsonUtil.toIndentedJson(api));
         } else if (req.getPathInfo().equals("/login")) {
             String state = randomString(50);
             resp.sendRedirect(getAuthorizationUrl(state, req));

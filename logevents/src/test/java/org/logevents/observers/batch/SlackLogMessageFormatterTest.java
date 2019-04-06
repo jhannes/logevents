@@ -69,7 +69,7 @@ public class SlackLogMessageFormatterTest {
     public void shouldOutputStackTrace() {
         Exception exception = new IOException("Something went wrong with " + randomString());
         LogEventBatch batch = new LogEventBatch();
-        batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message", exception, new Object[0]));
+        batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message", null, exception, new Object[0]));
         Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.empty(), Optional.empty()).createMessage(batch);
 
         Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);

@@ -32,19 +32,25 @@ public class LogEventFilter implements Predicate<LogEvent> {
     private final Instant time;
     private final Duration interval;
     private final Optional<List<String>> threadName;
+    private final Optional<List<String>> logger;
     private final Level level;
     private final Optional<List<Marker>> markers;
     private final Optional<Map<String, List<String>>> mdcFilter;
 
     public LogEventFilter(Map<String, String[]> parameters) {
-        this.time = Optional.ofNullable(parameters.get("time"))
+        Optional<Instant> instant = Optional.ofNullable(parameters.get("instant"))
+                .map(t -> Instant.parse(t[0]));
+
+        this.time = instant.orElseGet(() -> Optional.ofNullable(parameters.get("time"))
                 .map(t -> LocalTime.parse(t[0]))
                 .map(time -> LocalDateTime.of(LocalDate.now(), time))
                 .map(dateTime -> dateTime.toInstant(ZoneId.systemDefault().getRules().getOffset(dateTime)))
-                .orElse(Instant.now());
+                .orElse(Instant.now()));
+
         this.interval = Optional.ofNullable(parameters.get("interval"))
                 .map(t -> Duration.parse(t[0]))
                 .orElse(Duration.ofMinutes(10));
+        this.logger = getParameter(parameters, "logger");
         this.threadName = getParameter(parameters, "thread");
         this.level = getParameter(parameters, "level").map(list -> Level.valueOf(list.get(0))).orElse(Level.INFO);
         this.markers = getParameter(parameters,"marker")
@@ -75,6 +81,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
     @Override
     public boolean test(LogEvent logEvent) {
         return threadName.map(names -> names.contains(logEvent.getThreadName())).orElse(true) &&
+                logger.map(l -> l.contains(logEvent.getLoggerName())).orElse(true) &&
                 markers.map(m -> m.contains(logEvent.getMarker())).orElse(true) &&
                 mdcFilter.map(mdc -> matchesMdc(logEvent, mdc)).orElse(true);
     }
@@ -112,10 +119,12 @@ public class LogEventFilter implements Predicate<LogEvent> {
 
     Map<String, Object> collectFacets(Collection<LogEvent> events) {
         Set<String> threads = new TreeSet<>();
+        Set<String> loggers = new TreeSet<>();
         Set<String> markers = new TreeSet<>();
         Map<String, Set<String>> mdcMap = new TreeMap<>();
         for (LogEvent event : events) {
             threads.add(event.getThreadName());
+            loggers.add(event.getLoggerName());
             if (event.getMarker() != null) {
                 markers.add(event.getMarker().getName());
             }
@@ -133,6 +142,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
 
         Map<String, Object> facets = new LinkedHashMap<>();
         facets.put("threads", threads);
+        facets.put("loggers", loggers);
         facets.put("markers", markers);
         facets.put("mdc", mdc);
         return facets;

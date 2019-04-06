@@ -25,6 +25,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     private Optional<String> username = Optional.empty();
     private Optional<String> channel = Optional.empty();
     private boolean showRepeatsIndividually;
+    private Optional<String> detailUrl;
 
     public SlackLogEventsFormatter() {
     }
@@ -119,6 +120,8 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     protected Map<String, Object> createDetailsAttachment(LogEvent event) {
         Map<String, Object> attachment = new HashMap<>();
         attachment.put("title", "Details");
+        detailUrl.ifPresent(url -> attachment.put("title_link",
+                url + "#instant=" + event.getInstant() + "&thread=" + event.getThreadName() + "&interval=PT10S"));
         attachment.put("color", getColor(event.getLevel()));
         List<Map<String, Object>> fields = new ArrayList<>();
         fields.add(slackMessageField("Level", event.getLevel().toString(), true));
@@ -212,5 +215,9 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
     public void configureSourceCode(Configuration configuration) {
         exceptionFormatter.configureSourceCode(configuration);
+    }
+
+    public void setDetailUrl(Optional<String> detailUrl) {
+        this.detailUrl = detailUrl;
     }
 }

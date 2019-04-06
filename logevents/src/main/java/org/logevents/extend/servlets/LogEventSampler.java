@@ -16,7 +16,16 @@ import java.util.stream.IntStream;
 
 public class LogEventSampler {
     private static Random random = new Random();
-    private String loggerName = LogEventSampler.class.getName();
+    private String loggerName = sampleLoggerName();
+
+    public static String sampleLoggerName() {
+        return pickOne("com", "org", "net")
+                + ".example."
+                + pickOne("myapp", "app", "superapp")
+                + "."
+                + pickOne("Customer", "Order", "Person") + pickOne("Controller", "Service", "Repository");
+    }
+
     private Level level = Level.WARN;
     private String threadName = sampleThreadName();
     private Instant timestamp = Instant.now();
@@ -86,6 +95,11 @@ public class LogEventSampler {
 
     public LogEventSampler withThrowable(Throwable throwable) {
         this.args = new Object[] { throwable };
+        return this;
+    }
+
+    public LogEventSampler withLoggerName(String loggerName) {
+        this.loggerName = loggerName;
         return this;
     }
 }

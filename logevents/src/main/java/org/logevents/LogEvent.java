@@ -46,10 +46,10 @@ public class LogEvent implements LoggingEvent {
     private StackTraceElement callerLocation;
     private StackTraceElement[] stackTrace;
 
-    public LogEvent(String loggerName, Level level, String format, Throwable throwable, Object[] args) {
+    public LogEvent(String loggerName, Level level, String format, Marker marker, Throwable throwable, Object[] args) {
         this.loggerName = loggerName;
         this.level = level;
-        this.marker = null;
+        this.marker = marker;
         this.format = format;
         this.args = args;
         this.throwable = throwable;

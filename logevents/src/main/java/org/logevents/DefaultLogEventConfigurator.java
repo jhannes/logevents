@@ -300,10 +300,14 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     }
 
     private void configureObserver(String key, Properties configuration) {
-        String name = key.split("\\.")[1];
-        String prefix = "observer." + name;
-        if (!observers.containsKey(name)) {
-            observers.put(name, ConfigUtil.create(prefix, "org.logevents.observers", configuration));
+        try {
+            String name = key.split("\\.")[1];
+            String prefix = "observer." + name;
+            if (!observers.containsKey(name)) {
+                observers.put(name, ConfigUtil.create(prefix, "org.logevents.observers", configuration));
+            }
+        } catch (RuntimeException e) {
+            LogEventStatus.getInstance().addError(this, "Failed to create " + key, e);
         }
     }
 

@@ -4,18 +4,30 @@
     <meta charset="UTF-8">
     <title>Log Event Viewer | logevents</title>
     <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            height: 100vh;
+        }
+
+        main {
+            overflow: auto;
+        }
+
         nav form {
             display: flex;
         }
-        main {
-            height: 75%;
-            overflow-y: scroll;
+        main td button {
+            width: 3em;
+            text-align: center;
+            margin: auto;
         }
 
         .expanded {
-            background-color: pink;
             border: 1px solid red;
-        }
+        }'
+
     </style>
 </head>
 <body>
@@ -42,6 +54,8 @@
                 </select>
             </fieldset>
             <fieldset id="threads">
+            </fieldset>
+            <fieldset id="loggers">
             </fieldset>
             <fieldset id="markers">
             </fieldset>
@@ -84,17 +98,15 @@ function showLogEventTable() {
 
         const time = logEvent.time.split("T")[1];
 
-        const td = document.createElement("td");
-        td.innerHTML = "<button>" + logEvent.levelIcon + "</button>";
+        const buttonTd = document.createElement("td");
+        buttonTd.innerHTML = "<button>" + logEvent.levelIcon + "</button>";
+        tr.appendChild(buttonTd);
+        const tdIcon = document.createElement("td");
         if (logEvent.throwable) {
-            td.innerHTML += " ❗";
+            tdIcon.innerHTML += " ❗";
         }
-        if (logEvent.mdc && Object.entries(logEvent.mdc).length) {
-            td.innerHTML += " 🖋️";
-        }
-        tr.appendChild(td);
+        tr.appendChild(tdIcon);
 
-        tr.appendChild(tableCell(logEvent.levelIcon));
         tr.appendChild(tableCell(time));
         tr.appendChild(tableCell(logEvent.abbreviatedLogger));
         tr.appendChild(tableCell(logEvent.formattedMessage));
@@ -106,30 +118,32 @@ function showLogEventTable() {
     main.appendChild(table);
 }
 
+function checkbox(name, value, currentFilter) {
+    const checkboxDiv = document.createElement("div");
+    const checked = (currentFilter.getAll(name).indexOf(value) >= 0) ? ' checked="checked"' : "";
+    checkboxDiv.innerHTML = `<label><input type="checkbox" name=${name} value="${value}" ${checked}>${value}</label>`;
+    return checkboxDiv;
+}
+
 function showFacets(facets) {
+    const loggersFieldset = document.getElementById("loggers");
     const markersFieldset = document.getElementById("markers");
     const currentFilter = new URLSearchParams(window.location.hash.substr(1));
 
     document.getElementById("time").value = currentFilter.get("time");
-    document.querySelector("[name=interval] [value=" + currentFilter.get("interval") + "]").selected = true;
-    document.querySelector("[name=level] [value=" + currentFilter.get("level") + "]").selected = true;
+    const selectedInterval = document.querySelector("[name=interval] [value=" + currentFilter.get("interval") + "]");
+    if (selectedInterval) {
+        selectedInterval.selected = true;
+    }
+    const selectedLevel = document.querySelector("[name=level] [value=" + currentFilter.get("level") + "]");
+    if (selectedLevel) {
+        selectedLevel.selected = true;
+    }
 
     markersFieldset.innerHTML = "";
 
-    {
-        const noMarkerCheckbox = document.createElement("div");
-        const checked = (currentFilter.getAll("marker").indexOf("") >= 0) ? ' checked="checked"' : "";
-        noMarkerCheckbox.innerHTML =
-            '<label><input type="checkbox" name="marker" value=""' + checked + '>No marker</label>';
-        markersFieldset.appendChild(noMarkerCheckbox);
-    }
-
     for (const marker of facets.markers) {
-        const markerCheckbox = document.createElement("div");
-        const checked = (currentFilter.getAll("marker").indexOf(marker) >= 0) ? ' checked="checked"' : "";
-
-        markerCheckbox.innerHTML = `<label><input type="checkbox" name="marker" value="${marker}" ${checked}>${marker}</label>`;
-        markersFieldset.appendChild(markerCheckbox);
+        markersFieldset.appendChild(checkbox("marker", marker, currentFilter));
     }
 
     const threads = document.getElementById("threads");
@@ -142,11 +156,16 @@ function showFacets(facets) {
         if (currentFilter.getAll("thread").indexOf(thread) >= 0) {
             threadOption.setAttribute("selected", "selected");
         }
-        threadOption.innerHTML = thread;
+        threadOption.innerText = thread;
         threadsSelect.appendChild(threadOption);
     }
     threads.innerHTML = "";
     threads.appendChild(threadsSelect);
+
+    loggersFieldset.innerHTML = "";
+    for (const logger of facets.loggers) {
+        loggersFieldset.appendChild(checkbox("logger", logger, currentFilter));
+    }
 
     const mdcFilter = document.getElementById("mdcFilter");
     mdcFilter.innerHTML = "";
@@ -177,9 +196,19 @@ function showFacets(facets) {
     }
 }
 
-function listItem(header, text) {
+function listItem(header, text, filter) {
     const li = document.createElement("li");
-    li.innerHTML = "<strong>" + header + ":</strong> " + text;
+    if (filter) {
+        const currentFilter = new URLSearchParams(window.location.hash.substr(1));
+        const time = currentFilter.get("time");
+        const interval = currentFilter.get("interval");
+        const level = currentFilter.get("level");
+        li.innerHTML = `<strong>${header}:</strong>
+            <a href="#time=${time}&interval=${interval}&level=${level}&${filter}=${text}"
+            >${text}</a>`;
+    } else {
+        li.innerHTML = `<strong>${header}:</strong> ${text}`;
+    }
     return li;
 }
 
@@ -191,10 +220,10 @@ function detailRow(event) {
     td.setAttribute("colspan", "100%");
 
     const ul = document.createElement("ul");
-    ul.appendChild(listItem("Logger", event.logger));
-    ul.appendChild(listItem("Thread", event.thread));
+    ul.appendChild(listItem("Logger", event.logger, "logger"));
+    ul.appendChild(listItem("Thread", event.thread, "thread"));
     if (event.marker) {
-        ul.appendChild(listItem("Marker", event.marker));
+        ul.appendChild(listItem("Marker", event.marker, "marker"));
     }
 
     if (event.mdc && Object.entries(event.mdc).length) {
@@ -204,9 +233,7 @@ function detailRow(event) {
         mdcList.appendChild(mdcUl);
 
         for (const mdc of event.mdc) {
-            const mdcKeyLi = document.createElement("li");
-            mdcKeyLi.innerHTML = "<strong>" + mdc.name + ":</strong> " + mdc.value;
-            mdcUl.appendChild(mdcKeyLi);
+            mdcUl.appendChild(listItem(mdc.name, mdc.value, "mdc[" + mdc.name + "]"));
         }
 
         ul.appendChild(mdcList);
@@ -242,7 +269,7 @@ function expandCollapseEventRow(targetRow) {
 
 
 async function fetchEvents() {
-    const response = await fetch("logs/events?" + window.location.hash.substring(1));
+    const response = await fetch("events?" + window.location.hash.substring(1));
     if (response.ok) {
         console.log(response);
         const json = await response.json();
@@ -250,7 +277,7 @@ async function fetchEvents() {
         showLogEventTable();
         showFacets(json.facets);
     } else if (response.status === 401) {
-        window.location = "logs/login";
+        window.location = "login";
     } else {
         console.log(response);
     }
@@ -273,12 +300,10 @@ logEventsFilter.addEventListener("change", e => {
 });
 
 clearButton.addEventListener("click", e => {
-    logEventsFilter.reset();
     const d = new Date(),
         h = (d.getHours()<10?'0':'') + d.getHours(),
         m = (d.getMinutes()<10?'0':'') + d.getMinutes();
-    timeInput.value = h + ':' + m;
-    window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
+    window.location.hash = "time=" + h + ':' + m + "&interval=PT5M&level=TRACE";
     e.preventDefault();
 });
 

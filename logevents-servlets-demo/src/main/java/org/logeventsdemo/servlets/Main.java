@@ -1,7 +1,6 @@
 package org.logeventsdemo.servlets;
 
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.logevents.LogEventFactory;
@@ -38,12 +37,7 @@ public class Main {
         new Thread(Main::makeNoise).start();
 
         Server server = new Server(4000);
-
-        HandlerList handlers = new HandlerList();
-
-        handlers.addHandler(demoContext());
-
-        server.setHandler(handlers);
+        server.setHandler(demoContext());
 
         server.start();
         logger.warn(LIFECYCLE, "Started server {}", server.getURI());
@@ -51,7 +45,7 @@ public class Main {
 
     private static WebAppContext demoContext() {
         WebAppContext context = new WebAppContext();
-        context.setContextPath("/");
+        context.setContextPath("/myDemo");
         context.setBaseResource(Resource.newClassPathResource("/webapp-logevents"));
         context.addEventListener(new ApplicationContext());
         return context;
@@ -68,10 +62,16 @@ public class Main {
             while (true) {
                 Thread.sleep(random.nextInt(10000));
 
-                try (MDC.MDCCloseable mdcCloseable = MDC.putCloseable(
-                        pickOne("one", "two", "three"),
-                        pickOne("a", "b", "c", "d", "e", "f", "g", "h"))
-                ) {
+                try {
+                    if (random.nextInt(100) < 80) {
+                        MDC.put("clientIp", pickOne("127.0.0.1", "10.10.0." + random.nextInt(255)));
+                    }
+                    if (random.nextInt(100) < 50) {
+                        MDC.put("request", pickOne("/api/operation", "/api/resources", "/orders", "/customer/orders"));
+                    }
+                    if (random.nextInt(100) < 30) {
+                        MDC.put("user", pickOne("alice", "bob", "charlie", "diana") + "@example." + pickOne("com", "org", "net"));
+                    }
                     logger.log(
                             pickOne(OPS, SECRET, HTTP, null),
                             null,
@@ -79,6 +79,8 @@ public class Main {
                             pickOne("Test message {}", "Other {} test message", "Even more"),
                             new Object[] { random.nextInt(100)},
                             random.nextInt(100) < 20 ? new IOException("Some error") : null);
+                } finally {
+                    MDC.clear();
                 }
             }
         } catch (InterruptedException ignore) {
@@ -89,7 +91,7 @@ public class Main {
     private static class ApplicationContext implements ServletContextListener {
         @Override
         public void contextInitialized(ServletContextEvent sce) {
-            sce.getServletContext().addServlet("logs", new LogEventsServlet()).addMapping("/logs/*");
+            sce.getServletContext().addServlet("logs", new LogEventsServlet()).addMapping("/logs/demo/*");
 
             sce.getServletContext().addServlet("swagger", new WebJarServlet("swagger-ui"))
                     .addMapping("/swagger/*");

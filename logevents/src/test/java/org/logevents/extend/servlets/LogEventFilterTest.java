@@ -59,6 +59,20 @@ public class LogEventFilterTest {
     }
 
     @Test
+    public void shouldFilterByLogger() {
+        LogEvent matchingEvent = new LogEventSampler().build();
+        LogEvent secondMatchingEvent = new LogEventSampler().build();
+        LogEvent nonMatchingEvent = new LogEventSampler()
+                .withLoggerName(LogEventSampler.sampleLoggerName() + "Foo")
+                .build();
+
+        LogEventFilter filter = new LogEventFilter(parameters("logger", matchingEvent.getLoggerName(), secondMatchingEvent.getLoggerName()));
+        assertMatches(matchingEvent, filter);
+        assertMatches(secondMatchingEvent, filter);
+        assertDoesNotMatch(nonMatchingEvent, filter);
+    }
+
+    @Test
     public void filterByMdc() {
         Map<String, String[]> parameters = new HashMap<>();
         parameters.put("mdc[user]", new String[] { "adminUser", "limitedUser" });
@@ -201,6 +215,20 @@ public class LogEventFilterTest {
         Map<String, Object> facets = filter.collectFacets(logsByLevel);
         assertEquals(new HashSet<>(Arrays.asList(MY_MARKER.getName(), OTHER_MARKER.getName())),
                 facets.get("markers"));
+    }
+
+    @Test
+    public void shouldIncludeLoggersInFacets() {
+        String firstLogger = "com.example.ClassOne";
+        String secondLogger = "com.example.ClassTwo";
+        record(new LogEventSampler().withLoggerName(firstLogger).build());
+        record(new LogEventSampler().withLoggerName(firstLogger).build());
+        record(new LogEventSampler().withLoggerName(secondLogger).build());
+
+        LogEventFilter filter = new LogEventFilter(parameters("logger", firstLogger));
+        Map<String, Object> facets = filter.collectFacets(logsByLevel);
+        assertEquals(new HashSet<>(Arrays.asList(firstLogger, secondLogger)),
+                facets.get("loggers"));
     }
 
     @Test

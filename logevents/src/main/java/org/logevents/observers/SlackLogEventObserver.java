@@ -70,6 +70,7 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
         formatter.setUsername(configuration.optionalString("username"));
         formatter.setChannel(configuration.optionalString("channel"));
         formatter.setShowRepeatsIndividually(configuration.getBoolean("showRepeatsIndividually"));
+        formatter.setDetailUrl(configuration.optionalString("detailUrl"));
         formatter.configureSourceCode(configuration);
 
         return formatter;

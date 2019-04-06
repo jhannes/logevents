@@ -16,7 +16,7 @@
     }
   ],
   "paths": {
-    "/logs/events": {
+    "/events": {
       "get": {
         "tags": [
           "logsController"
@@ -51,6 +51,18 @@
               "type": "array",
               "items": {
                 "type": "string"
+              }
+            }
+          },
+          {
+            "in": "query",
+            "name": "logger",
+            "description": "Limit to log events logged in logger category (may be repeated)",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "example": "org.example.MyFineClass"
               }
             }
           },

@@ -379,7 +379,7 @@ abstract class LoggerDelegator implements LoggerConfiguration {
             Level level = Stream.of(Level.TRACE, Level.DEBUG, Level.INFO, Level.WARN, Level.ERROR)
                     .filter(l -> l.toInt() >= levelInt)
                     .findFirst().orElse(Level.ERROR);
-            observer.logEvent(new LogEvent(this.name, level, message, t, argArray));
+            observer.logEvent(new LogEvent(this.name, level, message, marker, t, argArray));
         }
     }
 
