@@ -121,7 +121,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         Map<String, Object> attachment = new HashMap<>();
         attachment.put("title", "Details");
         detailUrl.ifPresent(url -> attachment.put("title_link",
-                url + "#instant=" + event.getInstant() + "&thread=" + event.getThreadName() + "&interval=PT10S"));
+                url + "?instant=" + event.getInstant() + "&thread=" + event.getThreadName() + "&interval=PT10S"));
         attachment.put("color", getColor(event.getLevel()));
         List<Map<String, Object>> fields = new ArrayList<>();
         fields.add(slackMessageField("Level", event.getLevel().toString(), true));

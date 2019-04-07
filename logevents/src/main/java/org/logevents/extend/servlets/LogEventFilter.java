@@ -41,9 +41,13 @@ public class LogEventFilter implements Predicate<LogEvent> {
         Optional<Instant> instant = Optional.ofNullable(parameters.get("instant"))
                 .map(t -> Instant.parse(t[0]));
 
+        LocalDate date = Optional.ofNullable(parameters.get("date"))
+                .map(p -> LocalDate.parse(p[0]))
+                .orElse(LocalDate.now());
+
         this.time = instant.orElseGet(() -> Optional.ofNullable(parameters.get("time"))
                 .map(t -> LocalTime.parse(t[0]))
-                .map(time -> LocalDateTime.of(LocalDate.now(), time))
+                .map(time -> LocalDateTime.of(date, time))
                 .map(dateTime -> dateTime.toInstant(ZoneId.systemDefault().getRules().getOffset(dateTime)))
                 .orElse(Instant.now()));
 

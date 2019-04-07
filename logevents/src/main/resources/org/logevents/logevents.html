@@ -35,9 +35,10 @@
         <h1>LogEvents</h1>
     </header>
     <nav>
-        <form id="logEventsFilter" method="post">
-            <fieldset>
+        <form id="logEventsFilter" method="get">
+            <fieldset id="dateTime">
                 <input type="time" name="time" id="time">
+                <button>Update</button>
                 <select name="interval">
                     <option value="PT5S">+/- 5 seconds</option>
                     <option value="PT1M">+/- 1 minute</option>
@@ -126,18 +127,37 @@ function checkbox(name, value, currentFilter) {
 }
 
 function showFacets(facets) {
+    const dateTimeFieldset = document.getElementById("dateTime");
     const loggersFieldset = document.getElementById("loggers");
     const markersFieldset = document.getElementById("markers");
-    const currentFilter = new URLSearchParams(window.location.hash.substr(1));
+    const currentFilter = new URLSearchParams(window.location.search.substr(1));
 
     document.getElementById("time").value = currentFilter.get("time");
     const selectedInterval = document.querySelector("[name=interval] [value=" + currentFilter.get("interval") + "]");
     if (selectedInterval) {
         selectedInterval.selected = true;
+    } else {
+        const intervalSelect = document.querySelector("[name=interval]");
+        const separator = document.createElement("option");
+        separator.innerText = "--------------";
+        separator.setAttribute("disabled", "disable");
+        intervalSelect.insertBefore(separator, intervalSelect.firstChild);
+        const option = document.createElement("option");
+        option.innerText = currentFilter.get("interval");
+        option.setAttribute("selected", "selected");
+        intervalSelect.insertBefore(option, intervalSelect.firstChild);
     }
     const selectedLevel = document.querySelector("[name=level] [value=" + currentFilter.get("level") + "]");
     if (selectedLevel) {
         selectedLevel.selected = true;
+    }
+
+    if (currentFilter.get("date")) {
+        const dateInput = document.createElement("input");
+        dateInput.setAttribute("type", "hidden");
+        dateInput.setAttribute("name", "date");
+        dateInput.setAttribute("value", currentFilter.get("date"));
+        dateTimeFieldset.appendChild(dateInput);
     }
 
     markersFieldset.innerHTML = "";
@@ -199,12 +219,12 @@ function showFacets(facets) {
 function listItem(header, text, filter) {
     const li = document.createElement("li");
     if (filter) {
-        const currentFilter = new URLSearchParams(window.location.hash.substr(1));
+        const currentFilter = new URLSearchParams(window.location.search.substr(1));
         const time = currentFilter.get("time");
         const interval = currentFilter.get("interval");
         const level = currentFilter.get("level");
         li.innerHTML = `<strong>${header}:</strong>
-            <a href="#time=${time}&interval=${interval}&level=${level}&${filter}=${text}"
+            <a href="?time=${time}&interval=${interval}&level=${level}&${filter}=${text}"
             >${text}</a>`;
     } else {
         li.innerHTML = `<strong>${header}:</strong> ${text}`;
@@ -269,7 +289,7 @@ function expandCollapseEventRow(targetRow) {
 
 
 async function fetchEvents() {
-    const response = await fetch("events?" + window.location.hash.substring(1));
+    const response = await fetch("events" + window.location.search);
     if (response.ok) {
         console.log(response);
         const json = await response.json();
@@ -296,30 +316,26 @@ const clearButton = document.getElementById("clearButton");
 const timeInput = document.getElementById("time");
 
 logEventsFilter.addEventListener("change", e => {
-    window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
+    if (e.target.tagName === "SELECT" || (e.target.tagName === "INPUT" && e.target.type === "checkbox")) {
+        window.location.search = new URLSearchParams(new FormData(logEventsFilter)).toString();
+    }
 });
 
 clearButton.addEventListener("click", e => {
     const d = new Date(),
         h = (d.getHours()<10?'0':'') + d.getHours(),
         m = (d.getMinutes()<10?'0':'') + d.getMinutes();
-    window.location.hash = "time=" + h + ':' + m + "&interval=PT5M&level=TRACE";
+    window.location.search = "time=" + h + ':' + m + "&interval=PT5M&level=TRACE";
     e.preventDefault();
 });
 
 
-window.addEventListener("hashchange", e => {
-    fetchEvents();
-});
-
-
-const d = new Date(),
-    h = (d.getHours()<10?'0':'') + d.getHours(),
-    m = (d.getMinutes()<10?'0':'') + d.getMinutes();
-timeInput.value = h + ':' + m;
-
-if (!window.location.hash) {
-    window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
+if (!window.location.search) {
+    const d = new Date(),
+        h = (d.getHours()<10?'0':'') + d.getHours(),
+        m = (d.getMinutes()<10?'0':'') + d.getMinutes();
+    timeInput.value = h + ':' + m;
+    window.location.search = new URLSearchParams(new FormData(logEventsFilter)).toString();
 } else {
     fetchEvents();
 }

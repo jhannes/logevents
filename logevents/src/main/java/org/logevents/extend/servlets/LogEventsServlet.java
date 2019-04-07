@@ -31,6 +31,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -98,7 +101,7 @@ public class LogEventsServlet extends HttpServlet {
 
     @Override
     public void init() {
-        LogEventFactory.getInstance().addRootObserver(observer);
+        LogEventFactory.getInstance().addRootObserver(observer); // TODO: Must be persistent after reload!
         Properties properties = LogEventFactory.getInstance().getConfigurators().get(0).loadConfigurationProperties();
         configure(new Configuration(properties, "observer.servlet"));
         setupEncryption();
@@ -148,6 +151,17 @@ public class LogEventsServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + req.getServletPath() + "/" +
                     (req.getQueryString() != null ? "?" + req.getQueryString() : ""));
         } else if (req.getPathInfo().equals("/")) {
+            if (req.getParameter("time") == null && req.getParameter("instant") != null) {
+                Instant instant = Instant.parse(req.getParameter("instant"));
+                LocalTime time = instant.atZone(ZoneId.systemDefault()).toLocalTime();
+                LocalDate date = instant.atZone(ZoneId.systemDefault()).toLocalDate();
+
+                resp.sendRedirect(req.getContextPath() + req.getServletPath() + "/?"
+                    + "time=" + time + "&date=" + date + "&" + req.getQueryString());
+                return;
+            }
+
+
             resp.setContentType("text/html");
             copyResource(resp, logeventsHtml);
         } else if (req.getPathInfo().equals("/swagger.json")) {
@@ -167,7 +181,7 @@ public class LogEventsServlet extends HttpServlet {
                 return;
             }
 
-            Map<String, Object> idToken = fetchIdToken(req);
+            Map<String, Object> idToken = fetchIdToken(req.getParameter("code"), getServletUrl(req) + "/oauth2callback");
 
             logger.warn(AUDIT, "User logged in {}", idToken);
             LogEventStatus.getInstance().addInfo(this, "User logged in " + idToken);
@@ -177,7 +191,7 @@ public class LogEventsServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + req.getServletPath());
         } else if (!authenticated(resp, req.getCookies())) {
             resp.sendError(401, "Please log in");
-        } else if (req.getPathInfo().equals("/events") || req.getPathInfo().equals("/logs/events")) {
+        } else if (req.getPathInfo().equals("/events")) {
 
             LogEventFilter filter = new LogEventFilter(req.getParameterMap());
             Collection<LogEvent> allEvents = filter.collectMessages(observer);
@@ -193,19 +207,23 @@ public class LogEventsServlet extends HttpServlet {
         }
     }
 
+    private String getServletUrl(HttpServletRequest req) {
+        return getServerUrl(req) + req.getContextPath() + req.getServletPath();
+    }
+
     Cookie createSessionCookie(Map<String, Object> idToken) {
         String session = "subject=" + idToken.get("sub") + "\n"
                 + "sessionTime=" + Instant.ofEpochSecond(Long.parseLong(idToken.get("iat").toString()));
         return new Cookie("logevents.session", encrypt(session));
     }
 
-    private Map<String, Object> fetchIdToken(HttpServletRequest req) throws IOException {
+    private Map<String, Object> fetchIdToken(String code, String defaultRedirectUri) throws IOException {
         Map<String, String> formPayload = new HashMap<>();
         formPayload.put("client_id", getClientId());
         formPayload.put("client_secret", getClientSecret());
-        formPayload.put("redirect_uri", getRedirectUri(req));
+        formPayload.put("redirect_uri", getRedirectUri(defaultRedirectUri));
         formPayload.put("grant_type", "authorization_code");
-        formPayload.put("code", req.getParameter("code"));
+        formPayload.put("code", code);
 
         Map<String, Object> response = NetUtils.postFormForJson(getTokenUri(), formPayload);
         return getIdToken(response);
@@ -248,7 +266,7 @@ public class LogEventsServlet extends HttpServlet {
         return getAuthorizationEndpoint() + "?" +
                 "response_type=code" +
                 "&client_id=" + getClientId() +
-                "&redirect_uri=" + getRedirectUri(req) +
+                "&redirect_uri=" + getRedirectUri(getServletUrl(req) + "/oauth2callback") +
                 "&scope=" + getScope() +
                 "&state=" + state;
     }
@@ -257,10 +275,8 @@ public class LogEventsServlet extends HttpServlet {
         return scopes.orElse("openid+email+profile");
     }
 
-    private String getRedirectUri(HttpServletRequest req) {
-        return redirectUri.orElseGet(() ->
-            getServerUrl(req) + req.getContextPath() + req.getServletPath() + "/oauth2callback"
-        );
+    private String getRedirectUri(String defaultValue) {
+        return redirectUri.orElse(defaultValue);
     }
 
     private String getClientId() {
