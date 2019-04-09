@@ -1,7 +1,7 @@
 package org.logevents.observers;
 
 import org.junit.Test;
-import org.logevents.LogEvent;
+import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.smtp.SmtpLogEventBatchProcessor;
 import org.logevents.util.Configuration;
@@ -33,8 +33,8 @@ public class SmtpLogEventObserverTest {
 
         LogEventBatch batch = new LogEventBatch();
         Instant eventTime = Instant.ofEpochMilli(1529655082000L);
-        batch.add(new LogEvent("org.example", Level.INFO, eventTime, null, "Some less important info", new Object[0]));
-        batch.add(new LogEvent("org.example", Level.WARN, eventTime, null, "Something went wrong", new Object[0]));
+        batch.add(new LogEventSampler().withLevel(Level.INFO).withTime(eventTime).withFormat("Some less important info").build());
+        batch.add(new LogEventSampler().withLevel(Level.WARN).withTime(eventTime).withFormat("Something went wrong").build());
 
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Colombo"));
         MimeMessage message = batchProcessor.formatMessage(batch, null);

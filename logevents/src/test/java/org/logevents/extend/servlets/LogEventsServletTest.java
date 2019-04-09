@@ -82,7 +82,6 @@ public class LogEventsServletTest extends LogEventsServlet {
     public void shouldFormatLogEvent() throws IOException {
         LogEventBuffer observer = new LogEventBuffer();
         LogEventFactory.getInstance().setRootObserver(observer);
-        observer.logEvent(new LogEventSampler().build());
         LogEvent logEvent = new LogEventSampler().withMarker().withMdc("clientIp", "127.0.0.1")
                 .withThrowable(new IOException()).build();
         observer.logEvent(logEvent);
@@ -103,7 +102,7 @@ public class LogEventsServletTest extends LogEventsServlet {
         List<Object> events = JsonUtil.getList(object, "events");
         Object classNameOfStacktrace = JsonUtil.getField(
                 JsonUtil.getObject(
-                        JsonUtil.getList(JsonUtil.getObject(events, events.size()-1), "stackTrace"),
+                        JsonUtil.getList(JsonUtil.getObject(events, 0), "stackTrace"),
                 0), "className");
         assertEquals(getClass().getName(), classNameOfStacktrace);
     }

@@ -5,6 +5,7 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
@@ -233,7 +234,7 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldFindTestMethod() {
-        LogEvent logEvent = new LogEvent("test", Level.INFO, "Testing", new Object[0]);
+        LogEvent logEvent = new LogEventSampler().build();
 
         String formattedMessage = new DefaultTestLogEventConfigurator()
                 .createConsoleLogEventObserver(new Properties())

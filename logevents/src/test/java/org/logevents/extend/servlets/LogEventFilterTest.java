@@ -104,19 +104,15 @@ public class LogEventFilterTest {
     public void shouldSortMessages() {
         ZonedDateTime start = ZonedDateTime.now();
         LogEvent earliestMessage = record(new LogEventSampler()
-                .withLevel(Level.ERROR)
                 .withTime(start.minusMinutes(9))
                 .build());
         LogEvent earlyMessage = record(new LogEventSampler()
-                .withLevel(Level.WARN)
                 .withTime(start.minusMinutes(7))
                 .build());
         LogEvent lateMessage = record(new LogEventSampler()
-                .withLevel(Level.ERROR)
                 .withTime(start.minusMinutes(5))
                 .build());
         LogEvent latestMessage = record(new LogEventSampler()
-                .withLevel(Level.INFO)
                 .withTime(start.minusMinutes(2))
                 .build());
 
@@ -133,23 +129,18 @@ public class LogEventFilterTest {
     public void shouldFilterByTime() {
         ZonedDateTime start = ZonedDateTime.now().withHour(12);
         LogEvent ancientMessage = record(new LogEventSampler()
-                .withLevel(Level.ERROR)
                 .withTime(start.minusDays(1).minusMinutes(10))
                 .build());
         LogEvent earliestMessage = record(new LogEventSampler()
-                .withLevel(Level.ERROR)
                 .withTime(start.minusMinutes(90))
                 .build());
         LogEvent earlyMessage = record(new LogEventSampler()
-                .withLevel(Level.WARN)
                 .withTime(start.minusMinutes(15))
                 .build());
         LogEvent lateMessage = record(new LogEventSampler()
-                .withLevel(Level.ERROR)
                 .withTime(start.minusMinutes(5))
                 .build());
         LogEvent latestMessage = record(new LogEventSampler()
-                .withLevel(Level.INFO)
                 .withTime(start.minusMinutes(2))
                 .build());
 

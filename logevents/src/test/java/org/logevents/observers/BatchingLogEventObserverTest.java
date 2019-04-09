@@ -2,6 +2,7 @@ package org.logevents.observers;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.util.Configuration;
@@ -41,8 +42,12 @@ public class BatchingLogEventObserverTest {
         BatchingLogEventObserver observer = new BatchingLogEventObserver(null);
 
         String messageFormat = "This is a message about {}";
-        observer.addToBatch(sampleMessage(messageFormat, Level.INFO, "cheese"), Instant.now());
-        observer.addToBatch(sampleMessage(messageFormat, Level.INFO, "ham"), Instant.now());
+        LogEventSampler sampler = new LogEventSampler()
+                .withLoggerName(getClass().getName())
+                .withLevel(Level.INFO)
+                .withFormat(messageFormat);
+        observer.addToBatch(sampler.withArgs("cheese").build(), Instant.now());
+        observer.addToBatch(sampler.withArgs("ham").build(), Instant.now());
 
         LogEventBatch batch = observer.takeCurrentBatch();
         assertEquals(1, batch.groups().size());
@@ -63,7 +68,7 @@ public class BatchingLogEventObserverTest {
         configuration.setProperty("observers.batch.batchProcessor", Processor.class.getName());
         BatchingLogEventObserver observer = new BatchingLogEventObserver(configuration, "observers.batch");
 
-        LogEvent message = sampleMessage("This is a strange message", Level.INFO);
+        LogEvent message = new LogEventSampler().build();
         Thread.sleep(20);
         Instant sendTime = observer.addToBatch(message, Instant.now());
         assertEquals(message.getInstant().plus(idleThreshold), sendTime);
@@ -78,14 +83,14 @@ public class BatchingLogEventObserverTest {
 
         Instant now = ZonedDateTime.of(2018, 8, 1, 20, 0, 0, 0, ZoneId.systemDefault()).toInstant();
 
-        LogEvent firstMessage = new LogEvent(getClass().getName(), Level.INFO, now.minus(maximumWaitTime).minus(Duration.ofMillis(100)), null, "a",
-                new Object[0]);
+        LogEvent firstMessage = new LogEventSampler()
+                .withTime(now.minus(maximumWaitTime).minus(Duration.ofMillis(100)))
+                .build();
         Instant firstMessageSend = observer.logEvent(firstMessage, firstMessage.getInstant());
         assertTrue(firstMessageSend + " should be after " + firstMessage.getInstant(),
                 firstMessageSend.isAfter(firstMessage.getInstant()));
 
-        LogEvent secondMessage = new LogEvent(getClass().getName(), Level.INFO, now, null, "b",
-                new Object[0]);
+        LogEvent secondMessage = new LogEventSampler().withTime(now).build();
         Instant secondMessageSend = observer.logEvent(secondMessage, secondMessage.getInstant());
         assertTrue(secondMessageSend + " should not be after " + secondMessage.getInstant(), !secondMessageSend.isAfter(secondMessage.getInstant()));
 
@@ -105,15 +110,11 @@ public class BatchingLogEventObserverTest {
         observer.configureMarkers(new Configuration(properties, "observer.test"));
         observer.getMarker(myMarker).setBatchProcessor(processor);
 
-        LogEvent event = new LogEvent(getClass().getName(), Level.INFO, myMarker, "test", new Object[]{});
+        LogEvent event = new LogEventSampler().withMarker(myMarker).build();
         observer.logEvent(event);
         observer.awaitTermination(100, TimeUnit.MILLISECONDS);
         verify(processor).processBatch(new LogEventBatch().add(event));
     }
 
-
-    private LogEvent sampleMessage(String messageFormat, Level level, Object... objects) {
-        return new LogEvent(getClass().getName(), level, messageFormat, objects);
-    }
 
 }

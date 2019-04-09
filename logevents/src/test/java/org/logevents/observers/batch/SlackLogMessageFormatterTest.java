@@ -3,6 +3,7 @@ package org.logevents.observers.batch;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 import org.xml.sax.SAXException;
@@ -28,18 +29,14 @@ public class SlackLogMessageFormatterTest {
         String userName = randomString();
         String channelName = randomString();
 
-        String loggerName = getClass().getName();
-        Level level = pickOne(Level.values());
-        String format = randomString();
+        LogEvent event = new LogEventSampler().build();
 
-        LogEventBatch batch = new LogEventBatch().add(new LogEvent(loggerName, level, format, new Object[0]));
-
-        Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.of(userName), Optional.of(channelName)).createMessage(batch);
+        Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.of(userName), Optional.of(channelName)).createMessage(new LogEventBatch().add(event));
         assertEquals(channelName, JsonUtil.getField(slackMessage, "channel"));
-        assertContains(format, JsonUtil.getField(slackMessage, "text").toString());
+        assertContains(event.getMessage(), JsonUtil.getField(slackMessage, "text").toString());
 
         List<Object> fields = JsonUtil.getList(JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 0), "fields");
-        assertEquals(level.toString(), JsonUtil.getField(JsonUtil.getObject(fields, 0), "value"));
+        assertEquals(event.getLevel().toString(), JsonUtil.getField(JsonUtil.getObject(fields, 0), "value"));
     }
 
     private String randomString() {
@@ -49,10 +46,11 @@ public class SlackLogMessageFormatterTest {
     @Test
     public void shouldCollectMessagesInBatch() {
         LogEventBatch batch = new LogEventBatch();
-        batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message", new Object[0]));
-        batch.add(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
-        batch.add(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
-        batch.add(new LogEvent(loggerName, Level.ERROR, "Yet another message", new Object[0]));
+        batch.add(new LogEventSampler().withLevel(Level.WARN).withFormat("A lesser important message").build());
+        LogEventSampler sampler = new LogEventSampler().withLoggerName(loggerName).withLevel(Level.ERROR).withFormat("A more important message");
+        batch.add(sampler.build());
+        batch.add(sampler.build());
+        batch.add(new LogEventSampler().withLevel(Level.ERROR).build());
 
         Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.empty(), Optional.empty())
                 .createMessage(batch);
@@ -69,7 +67,7 @@ public class SlackLogMessageFormatterTest {
     public void shouldOutputStackTrace() {
         Exception exception = new IOException("Something went wrong with " + randomString());
         LogEventBatch batch = new LogEventBatch();
-        batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message", null, exception, new Object[0]));
+        batch.add(new LogEventSampler().withThrowable(exception).build());
         Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.empty(), Optional.empty()).createMessage(batch);
 
         Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);

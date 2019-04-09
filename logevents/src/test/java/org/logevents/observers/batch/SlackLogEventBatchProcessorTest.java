@@ -4,11 +4,11 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.SlackLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.logevents.status.StatusEvent.StatusLevel;
-import org.slf4j.event.Level;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -61,7 +61,7 @@ public class SlackLogEventBatchProcessorTest {
 
         SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack");
 
-        LogEvent logEvent = new LogEvent("org.example", Level.WARN, "Nothing");
+        LogEvent logEvent = new LogEventSampler().withFormat("Nothing").build();
         observer.getBatchProcessor().processBatch(new LogEventBatch().add(logEvent));
 
         assertEquals(Arrays.asList("{\n"
@@ -83,7 +83,7 @@ public class SlackLogEventBatchProcessorTest {
 
         URL url = new URL("http://localhost:" + port);
         SlackLogEventObserver observer = new SlackLogEventObserver(url, Optional.empty(), Optional.empty());
-        LogEvent logEvent = new LogEvent("org.example", Level.WARN, "Nothing");
+        LogEvent logEvent = new LogEventSampler().build();
         observer.getBatchProcessor().processBatch(new LogEventBatch().add(logEvent));
 
         List<StatusEvent> events = LogEventStatus.getInstance().getHeadMessages(observer.getBatchProcessor(), StatusLevel.ERROR);

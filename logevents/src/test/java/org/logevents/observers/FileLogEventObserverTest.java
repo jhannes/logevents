@@ -2,12 +2,11 @@ package org.logevents.observers;
 
 import junit.framework.TestCase;
 import org.junit.Test;
-import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
+import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.formatting.PatternLogEventFormatter;
-import org.slf4j.event.Level;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +48,7 @@ public class FileLogEventObserverTest {
         Properties properties = new Properties();
         FileLogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
 
-        assertEquals(CWD + "-test.log", observer.getFilename(new LogEvent("", Level.DEBUG, "hello", new Object[0])));
+        assertEquals(CWD + "-test.log", observer.getFilename(new LogEventSampler().build()));
 
         assertEquals(CWD, FileLogEventObserver.currentWorkingDirectory());
         assertEquals("junit", FileLogEventObserver.determineJarName(TestCase.class.getName()));

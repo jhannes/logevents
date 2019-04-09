@@ -3,9 +3,9 @@ package org.logevents.formatting;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
+import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.slf4j.Logger;
-import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -30,8 +30,14 @@ public class PatternLogEventFormatterTest {
     private Marker MARKER = MarkerFactory.getMarker("MY_MARKER");
     private Instant time = Instant.ofEpochMilli(1535056492088L);
     private PatternLogEventFormatter formatter = new PatternLogEventFormatter("No pattern");
-    private LogEvent event = new LogEvent("some.logger.name", Level.INFO, time, MARKER, "A message from {} to {}",
-            new Object[] { "A", "B" });
+    private LogEvent event = new LogEventSampler()
+        .withLevel(Level.INFO)
+        .withLoggerName("some.logger.name")
+        .withTime(time)
+        .withMarker(MARKER)
+        .withFormat("A messages from {} to {}")
+        .withArgs("A", "B")
+        .build();
     private ConsoleFormatting formatting = ConsoleFormatting.getInstance();
 
     @Test(expected = IllegalArgumentException.class)
@@ -102,19 +108,20 @@ public class PatternLogEventFormatterTest {
         LogEvent event = buffer.getEvents().get(0);
 
         formatter.setPattern("%file:%line - %class#%method");
-        assertEquals("PatternLogEventFormatterTest.java:101 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
+        assertEquals("PatternLogEventFormatterTest.java:108 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
                 formatter.apply(event));
     }
 
     @Test
     public void shouldHighlightMessage() {
-        LogEvent errorEvent = new LogEvent("some.logger.name", Level.ERROR, "Error message", new Object[0]);
-        LogEvent warnEvent = new LogEvent("some.logger.name", Level.WARN, "Warning message", new Object[0]);
-        LogEvent infoEvent = new LogEvent("some.logger.name", Level.INFO, "Info message", new Object[0]);
-        LogEvent debugEvent = new LogEvent("some.logger.name", Level.DEBUG, "Debug message", new Object[0]);
+        LogEventSampler sampler = new LogEventSampler();
+        LogEvent errorEvent = sampler.withLevel(Level.ERROR).build();
+        LogEvent warnEvent = sampler.withLevel(Level.WARN).build();
+        LogEvent infoEvent = sampler.withLevel(Level.INFO).build();
+        LogEvent debugEvent = sampler.withLevel(Level.DEBUG).build();
 
         formatter.setPattern("%highlight(%thread)");
-        String s = Thread.currentThread().getName();
+        String s = errorEvent.getThreadName();
         assertEquals(formatting.boldRed(s) + "\n", formatter.apply(errorEvent));
         assertEquals(formatting.red(s) + "\n", formatter.apply(warnEvent));
         assertEquals(formatting.blue(s) + "\n", formatter.apply(infoEvent));
@@ -123,9 +130,9 @@ public class PatternLogEventFormatterTest {
 
     @Test
     public void shouldOutputMdc() {
-        MDC.put("user", "Super User");
-        MDC.put("role", "admin");
-        LogEvent event = new LogEvent("some.logger.name", Level.WARN, "Warning message", new Object[0]);
+        LogEvent event = new LogEventSampler().withMdc("user", "Super User")
+                .withMdc("role", "admin")
+                .build();
 
         formatter.setPattern("%boldGreen(role=%mdc{role})");
         assertEquals(formatting.boldGreen("role=admin") + "\n", formatter.apply(event));
@@ -203,29 +210,29 @@ public class PatternLogEventFormatterTest {
 
     @Test
     public void shouldIncludeExceptionByDefault() {
-        formatter.setPattern("%-5level %logger{36} - %msg");
+        formatter.setPattern("%msg");
         IllegalArgumentException ex = createException();
-        LogEvent event = new LogEvent("some.logger.name", Level.ERROR, "An error happened", new Object[] { ex });
+        LogEvent event = new LogEventSampler().withThrowable(ex).build();
 
         String[] lines = formatter.apply(event).split("\r?\n");
-        assertEquals("ERROR some.logger.name - An error happened", lines[0]);
+        assertEquals(event.getMessage(), lines[0]);
         assertEquals(ex.toString(), lines[1]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:201)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:209)",
                 lines[2]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:207)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:215)",
                 lines[3]);
     }
 
     @Test
     public void shouldSpecifyStackLength() {
-        formatter.setPattern("%-5level %logger{36} - %msg");
+        formatter.setPattern("%msg");
         formatter.getExceptionFormatter().ifPresent(f -> f.setMaxLength(2));
-        LogEvent event = new LogEvent("some.logger.name", Level.ERROR, "An error happened", new Object[] { createException() });
+        LogEvent event = new LogEventSampler().withThrowable(createException()).build();
 
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(2+2, lines.length);
-        assertEquals("ERROR some.logger.name - An error happened", lines[0]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:201)",
+        assertEquals(event.getMessage(), lines[0]);
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:209)",
                 lines[2]);
     }
 

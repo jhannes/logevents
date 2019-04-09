@@ -3,7 +3,7 @@ package org.logevents.observers.batch;
 import org.junit.Before;
 import org.junit.Test;
 import org.logevents.LogEvent;
-import org.slf4j.event.Level;
+import org.logevents.extend.servlets.LogEventSampler;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -27,13 +27,13 @@ public class BatchThrottlerTest {
 
     @Test
     public void shouldScheduleFirstEventForImmediateExecution() {
-        batcher.logEvent(createLogEvent());
+        batcher.logEvent(new LogEventSampler().build());
         verify(mockExecutor).schedule(Duration.ZERO);
     }
 
     @Test
     public void shouldSendOnFlush() {
-        LogEvent logEvent = createLogEvent();
+        LogEvent logEvent = new LogEventSampler().build();
         batcher.logEvent(logEvent);
         batcher.flush();
         verify(mockProcessor).processBatch(new LogEventBatch().add(logEvent));
@@ -41,36 +41,31 @@ public class BatchThrottlerTest {
 
     @Test
     public void shouldDelaySubsequentEvents() {
-        batcher.logEvent(createLogEvent());
+        batcher.logEvent(new LogEventSampler().build());
         verify(mockExecutor).schedule(Duration.ZERO);
         batcher.flush();
 
-        batcher.logEvent(createLogEvent());
+        batcher.logEvent(new LogEventSampler().build());
         verify(mockExecutor).schedule(Duration.ofMinutes(1));
-        batcher.logEvent(createLogEvent());
+        batcher.logEvent(new LogEventSampler().build());
         verifyNoMoreInteractions(mockExecutor);
     }
 
     @Test
     public void shouldIncreaseDelay() {
-        batcher.logEvent(createLogEvent());
+        batcher.logEvent(new LogEventSampler().build());
         verify(mockExecutor).schedule(Duration.ZERO);
 
         batcher.flush();
-        batcher.logEvent(createLogEvent());
+        batcher.logEvent(new LogEventSampler().build());
         verify(mockExecutor).schedule(Duration.ofMinutes(1));
 
         batcher.flush();
-        batcher.logEvent(createLogEvent());
+        batcher.logEvent(new LogEventSampler().build());
         verify(mockExecutor).schedule(Duration.ofMinutes(5));
 
         batcher.flush();
         verify(mockExecutor).schedule(Duration.ofMinutes(5));
-    }
-
-
-    private LogEvent createLogEvent() {
-        return new LogEvent(getClass().getName(), Level.WARN, "Test");
     }
 
 }

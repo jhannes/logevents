@@ -7,7 +7,7 @@ import org.slf4j.event.Level;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -16,7 +16,6 @@ import java.util.stream.IntStream;
 
 public class LogEventSampler {
     private static Random random = new Random();
-    private String loggerName = sampleLoggerName();
 
     public static String sampleLoggerName() {
         return pickOne("com", "org", "net")
@@ -26,17 +25,25 @@ public class LogEventSampler {
                 + pickOne("Customer", "Order", "Person") + pickOne("Controller", "Service", "Repository");
     }
 
-    private Level level = Level.WARN;
     private String threadName = sampleThreadName();
+    private Optional<String> loggerName = Optional.empty();
+    private Optional<Level> level = Optional.empty();
     private Instant timestamp = Instant.now();
     private Marker marker = null;
     private Optional<String> format = Optional.empty();
     private Object[] args = sampleArgs();
-    private Map<String, String> mdc = new HashMap<>();
+    private Map<String, String> mdc = new LinkedHashMap<>();
 
     public LogEvent build() {
-        String format = this.format.orElseGet(() -> sampleMessage(args));
-        return new LogEvent(loggerName, level, threadName, timestamp, marker, format, args, mdc);
+        return new LogEvent(
+                loggerName.orElseGet(LogEventSampler::sampleLoggerName),
+                level.orElseGet(() -> pickOne(Level.INFO, Level.WARN, Level.ERROR)),
+                threadName,
+                timestamp,
+                marker,
+                this.format.orElseGet(() -> sampleMessage(args)),
+                args,
+                mdc);
     }
 
     private Object[] sampleArgs() {
@@ -50,7 +57,6 @@ public class LogEventSampler {
     private static <T> T pickOne(T... alternatives) {
         return alternatives[random.nextInt(alternatives.length)];
     }
-
 
     private String sampleMessage(Object[] args) {
         int length = args.length;
@@ -66,11 +72,6 @@ public class LogEventSampler {
 
     public LogEventSampler withMarker() {
         return withMarker(MarkerFactory.getMarker(pickOne("FIRST", "SECOND", "THIRD")));
-    }
-
-    public LogEventSampler withLevel(Level level) {
-        this.level = level;
-        return this;
     }
 
     public LogEventSampler withTime(ZonedDateTime time) {
@@ -99,7 +100,22 @@ public class LogEventSampler {
     }
 
     public LogEventSampler withLoggerName(String loggerName) {
-        this.loggerName = loggerName;
+        this.loggerName = Optional.ofNullable(loggerName);
+        return this;
+    }
+
+    public LogEventSampler withFormat(String format) {
+        this.format = Optional.of(format);
+        return this;
+    }
+
+    public LogEventSampler withArgs(Object... args) {
+        this.args = args;
+        return this;
+    }
+
+    public LogEventSampler withLevel(Level level) {
+        this.level = Optional.of(level);
         return this;
     }
 }

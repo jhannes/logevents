@@ -2,7 +2,7 @@ package org.logevents.observers.batch;
 
 
 import org.junit.Test;
-import org.logevents.LogEvent;
+import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
@@ -19,10 +19,10 @@ public class MicrosoftTeamsMessageFormatterTest {
     @Test
     public void shouldIncludeLevelInTeamsMessage() {
         LogEventBatch batch = new LogEventBatch();
-        batch.add(new LogEvent(loggerName, Level.WARN, "A lesser important message", new Object[0]));
-        batch.add(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
-        batch.add(new LogEvent(loggerName, Level.ERROR, null, "A more important message", new Object[0]));
-        batch.add(new LogEvent(loggerName, Level.ERROR, "Yet another message", new Object[0]));
+        batch.add(new LogEventSampler().build());
+        batch.add(new LogEventSampler().build());
+        batch.add(new LogEventSampler().withLevel(Level.ERROR).build());
+        batch.add(new LogEventSampler().build());
 
         Map<String, Object> teamsMessage = new MicrosoftTeamsMessageFormatter().createMessage(batch);
         Map<String, Object> detailsSection = JsonUtil.getObject(JsonUtil.getList(teamsMessage, "sections"), 0);

@@ -58,29 +58,17 @@ public class LogEvent implements LoggingEvent {
         this.mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
     }
 
-    public LogEvent(String loggerName, Level level, Instant timestamp, Marker marker, String format, Object[] args) {
-        this(
-                loggerName,
-                level,
-                Thread.currentThread().getName(),
-                timestamp,
-                marker,
-                format,
-                args,
-                Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>())
-        );
-    }
-
     public LogEvent(String loggerName, Level level, Marker marker, String format, Object[] args) {
-        this(loggerName, level, Instant.now(), marker, format, args);
-    }
-
-    public LogEvent(String loggerName, Level level, String format, Object[] args) {
-        this(loggerName, level, Instant.now(), null, format, args);
-    }
-
-    public LogEvent(String loggerName, Level level, String format) {
-        this(loggerName, level, Instant.now(), null, format, new Object[0]);
+        this(
+            loggerName,
+            level,
+            Thread.currentThread().getName(),
+            Instant.now(),
+            marker,
+            format,
+            args,
+            Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>())
+        );
     }
 
     public LogEvent(
@@ -290,7 +278,6 @@ public class LogEvent implements LoggingEvent {
     public String getMdc(String key, String defaultValue) {
         return this.getMdcProperties().getOrDefault(key, defaultValue);
     }
-
 
     public int compareTo(LogEvent other) {
         int compared = getLevel().compareTo(other.getLevel());
