@@ -2,7 +2,7 @@ package org.logevents.extend.servlets;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
-import org.logevents.observers.InMemoryBufferLogEventObserver;
+import org.logevents.observers.LogEventBuffer;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -26,7 +26,7 @@ public class LogEventFilterTest {
 
     private final Marker MY_MARKER = MarkerFactory.getMarker("MY_MARKER");
     private final Marker OTHER_MARKER = MarkerFactory.getMarker("OTHER_MARKER");
-    private InMemoryBufferLogEventObserver logsByLevel = new InMemoryBufferLogEventObserver();
+    private LogEventBuffer logsByLevel = new LogEventBuffer();
 
     @Test
     public void shouldFilterByThread() {

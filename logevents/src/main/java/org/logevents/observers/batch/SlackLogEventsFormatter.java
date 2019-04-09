@@ -25,7 +25,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     private Optional<String> username = Optional.empty();
     private Optional<String> channel = Optional.empty();
     private boolean showRepeatsIndividually;
-    private Optional<String> detailUrl;
+    private Optional<String> detailUrl = Optional.empty();
 
     public SlackLogEventsFormatter() {
     }

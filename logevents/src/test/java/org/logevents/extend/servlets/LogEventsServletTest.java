@@ -1,8 +1,10 @@
 package org.logevents.extend.servlets;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
+import org.logevents.observers.LogEventBuffer;
 import org.logevents.util.Configuration;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
@@ -10,17 +12,17 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -35,9 +37,13 @@ public class LogEventsServletTest extends LogEventsServlet {
     private LogEventsServlet servlet = new LogEventsServlet();
     private Logger logger = LogEventFactory.getInstance().getLogger(getClass().getName());
 
+    @Before
+    public void initServlet() {
+        servlet.setupEncryption(Optional.empty());
+    }
+
     @Test
     public void usersShouldBeAuthenticated() {
-        servlet.setupEncryption();
         HashMap<String, Object> idToken = new HashMap<>();
         idToken.put("sub", "subjectId12345_abc");
         idToken.put("iat", System.currentTimeMillis());
@@ -51,7 +57,6 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     @Test
     public void shouldRemoveExpiredCookie() {
-        servlet.setupEncryption();
         Cookie sessionCookie = createSessionCookie(Instant.now().minusSeconds(2 * 60 * 60));
         assertEquals(-1, sessionCookie.getMaxAge());
 
@@ -64,7 +69,6 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     @Test
     public void shouldRemoveTamperedCookie() {
-        servlet.setupEncryption();
         Cookie sessionCookie = createSessionCookie(Instant.now().minusSeconds(2 * 60 * 60));
         sessionCookie.setValue(sessionCookie.getValue()+"0");
 
@@ -76,11 +80,14 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     @Test
     public void shouldFormatLogEvent() throws IOException {
-        servlet.setupEncryption();
-        LogEventFactory.getInstance().setRootObserver(servlet.getObserver());
+        LogEventBuffer observer = new LogEventBuffer();
+        LogEventFactory.getInstance().setRootObserver(observer);
+        observer.logEvent(new LogEventSampler().build());
         LogEvent logEvent = new LogEventSampler().withMarker().withMdc("clientIp", "127.0.0.1")
                 .withThrowable(new IOException()).build();
-        servlet.getObserver().logEvent(logEvent);
+        observer.logEvent(logEvent);
+
+        servlet.setLogEventBuffer(observer);
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getPathInfo()).thenReturn("/events");
@@ -93,9 +100,10 @@ public class LogEventsServletTest extends LogEventsServlet {
         verify(response).setContentType("application/json");
         Map<String, Object> object = (Map<String, Object>) JsonParser.parse(result.toString());
 
+        List<Object> events = JsonUtil.getList(object, "events");
         Object classNameOfStacktrace = JsonUtil.getField(
                 JsonUtil.getObject(
-                        JsonUtil.getList(JsonUtil.getObject(JsonUtil.getList(object, "events"), 0), "stackTrace"),
+                        JsonUtil.getList(JsonUtil.getObject(events, events.size()-1), "stackTrace"),
                 0), "className");
         assertEquals(getClass().getName(), classNameOfStacktrace);
     }
@@ -131,17 +139,12 @@ public class LogEventsServletTest extends LogEventsServlet {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getPathInfo()).thenReturn("/swagger.json");
         HttpServletResponse response = mock(HttpServletResponse.class);
-        ByteArrayOutputStream result = new ByteArrayOutputStream();
-        when(response.getOutputStream()).thenReturn(new ServletOutputStream() {
-            @Override
-            public void write(int b) throws IOException {
-                result.write(b);
-            }
-        });
+        StringWriter output = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(output));
 
         servlet.doGet(request, response);
         verify(response).setContentType("application/json");
-        Map<String, Object> openApiDefinition = (Map<String, Object>) JsonParser.parse(new String(result.toByteArray()));
+        Map<String, Object> openApiDefinition = (Map<String, Object>) JsonParser.parse(output.toString());
 
 
         assertEquals("Log Events - a simple Java Logging library",

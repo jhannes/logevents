@@ -2,21 +2,20 @@ package org.logevents.extend.servlets;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
-import org.logevents.LogEventObserver;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.TTLLEventLogFormatter;
-import org.logevents.observers.InMemoryBufferLogEventObserver;
+import org.logevents.observers.LogEventBuffer;
+import org.logevents.observers.WebLogEventObserver;
 import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
-import org.logevents.util.NetUtils;
+import org.logevents.util.openid.OpenIdConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
-import org.slf4j.event.Level;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -28,7 +27,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -88,38 +86,36 @@ public class LogEventsServlet extends HttpServlet {
 
     private LogEventFormatter formatter = new TTLLEventLogFormatter();
 
-    private InMemoryBufferLogEventObserver observer = new InMemoryBufferLogEventObserver();
     private String logeventsHtml = "/org/logevents/logevents.html";
     private String logeventsApi = "/org/logevents/swagger.json";
-    private Optional<String> redirectUri;
-    private String clientId;
-    private String clientSecret;
-    private String openIdIssuer;
-    private Optional<String> scopes;
     private Cipher encryptCipher;
     private Cipher decryptCipher;
+    private LogEventBuffer logEventBuffer;
+    private OpenIdConfiguration openIdConfiguration;
 
     @Override
     public void init() {
-        LogEventFactory.getInstance().addRootObserver(observer); // TODO: Must be persistent after reload!
         Properties properties = LogEventFactory.getInstance().getConfigurators().get(0).loadConfigurationProperties();
         configure(new Configuration(properties, "observer.servlet"));
-        setupEncryption();
     }
 
     public void configure(Configuration configuration) {
-        this.redirectUri = configuration.optionalString("redirectUri");
-        this.clientId = configuration.getString("clientId");
-        this.clientSecret = configuration.getString("clientSecret");
-        this.openIdIssuer = configuration.getString("openIdIssuer");
-        this.scopes = configuration.optionalString("scopes");
-        configuration.checkForUnknownFields();
+        WebLogEventObserver eventObserver = new WebLogEventObserver(configuration);
+        setLogEventBuffer(eventObserver.getLogEventBuffer());
+        openIdConfiguration = eventObserver.getOpenIdConfiguration();
+        setupEncryption(eventObserver.getCookieEncryptionKey());
     }
 
-    void setupEncryption() {
-        String secretKey = randomString(40);
+    public void setLogEventBuffer(LogEventBuffer logEventBuffer) {
+        this.logEventBuffer = logEventBuffer;
+    }
+
+    void setupEncryption(Optional<String> cookieEncryptionKey) {
         try {
-            SecretKeySpec keySpec=new SecretKeySpec(secretKey.getBytes(),"Blowfish");
+            SecretKeySpec keySpec=new SecretKeySpec(
+                    cookieEncryptionKey.orElseGet(() -> randomString(40)).getBytes(),
+                    "Blowfish"
+            );
             encryptCipher = Cipher.getInstance("Blowfish");
             encryptCipher.init(Cipher.ENCRYPT_MODE, keySpec);
             decryptCipher = Cipher.getInstance("Blowfish");
@@ -127,22 +123,6 @@ public class LogEventsServlet extends HttpServlet {
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private LogEventObserver levelObserver(LogEventObserver delegate, Level level) {
-        return new LogEventObserver() {
-            @Override
-            public void logEvent(LogEvent e) {
-                if (e.getLevel().equals(level)) {
-                    delegate.logEvent(e);
-                }
-            }
-
-            @Override
-            public String toString() {
-                return "LevelConditionalObserver{level=" + level + ",delegate=" + delegate + "}";
-            }
-        };
     }
 
     @Override
@@ -161,7 +141,6 @@ public class LogEventsServlet extends HttpServlet {
                 return;
             }
 
-
             resp.setContentType("text/html");
             copyResource(resp, logeventsHtml);
         } else if (req.getPathInfo().equals("/swagger.json")) {
@@ -176,7 +155,7 @@ public class LogEventsServlet extends HttpServlet {
             Cookie cookie = new Cookie("logevents.query", req.getQueryString());
             cookie.setMaxAge(300);
             resp.addCookie(cookie);
-            resp.sendRedirect(getAuthorizationUrl(state, req));
+            resp.sendRedirect(openIdConfiguration.getAuthorizationUrl(state, getServletUrl(req)));
         } else if (req.getPathInfo().equals("/oauth2callback")) {
             if (req.getParameter("error_description") != null) {
                 resp.getWriter().write("Login failed\n\n");
@@ -184,7 +163,7 @@ public class LogEventsServlet extends HttpServlet {
                 return;
             }
 
-            Map<String, Object> idToken = fetchIdToken(req.getParameter("code"), getServletUrl(req) + "/oauth2callback");
+            Map<String, Object> idToken = openIdConfiguration.fetchIdToken(req.getParameter("code"), getServletUrl(req) + "/oauth2callback");
 
             logger.warn(AUDIT, "User logged in {}", idToken);
             LogEventStatus.getInstance().addInfo(this, "User logged in " + idToken);
@@ -200,7 +179,7 @@ public class LogEventsServlet extends HttpServlet {
         } else if (req.getPathInfo().equals("/events")) {
 
             LogEventFilter filter = new LogEventFilter(req.getParameterMap());
-            Collection<LogEvent> allEvents = filter.collectMessages(observer);
+            Collection<LogEvent> allEvents = filter.collectMessages(logEventBuffer);
 
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("facets", filter.collectFacets(allEvents));
@@ -232,17 +211,6 @@ public class LogEventsServlet extends HttpServlet {
         return new Cookie("logevents.session", encrypt(session));
     }
 
-    private Map<String, Object> fetchIdToken(String code, String defaultRedirectUri) throws IOException {
-        Map<String, String> formPayload = new HashMap<>();
-        formPayload.put("client_id", getClientId());
-        formPayload.put("client_secret", getClientSecret());
-        formPayload.put("redirect_uri", getRedirectUri(defaultRedirectUri));
-        formPayload.put("grant_type", "authorization_code");
-        formPayload.put("code", code);
-
-        Map<String, Object> response = NetUtils.postFormForJson(getTokenUri(), formPayload);
-        return getIdToken(response);
-    }
 
     private List<Map<String, Object>> findEvents(LogEventFilter filter, Collection<LogEvent> allEvents) {
         return allEvents.stream()
@@ -263,49 +231,6 @@ public class LogEventsServlet extends HttpServlet {
         return new String(decryptCipher.doFinal(Base64.getDecoder().decode(value)));
     }
 
-
-    private Map<String, Object> getIdToken(Map<String, Object> response) throws IOException {
-        String idToken = response.get("id_token").toString();
-        return (Map<String, Object>) JsonParser.parseFromBase64encodedString(idToken.split("\\.")[1]);
-    }
-
-    private URL getTokenUri() throws IOException {
-        return new URL((String) loadOpenIdConfiguration().get("token_endpoint"));
-    }
-
-    private String getClientSecret() {
-        return clientSecret;
-    }
-
-    private String getAuthorizationUrl(String state, HttpServletRequest req) throws IOException {
-        return getAuthorizationEndpoint() + "?" +
-                "response_type=code" +
-                "&client_id=" + getClientId() +
-                "&redirect_uri=" + getRedirectUri(getServletUrl(req) + "/oauth2callback") +
-                "&scope=" + getScope() +
-                "&state=" + state;
-    }
-
-    private String getScope() {
-        return scopes.orElse("openid+email+profile");
-    }
-
-    private String getRedirectUri(String defaultValue) {
-        return redirectUri.orElse(defaultValue);
-    }
-
-    private String getClientId() {
-        return clientId;
-    }
-
-    private String getAuthorizationEndpoint() throws IOException {
-        return (String) loadOpenIdConfiguration().get("authorization_endpoint");
-    }
-
-    private Map<String, Object> loadOpenIdConfiguration() throws IOException {
-        return (Map<String, Object>)
-                JsonParser.parse(new URL(this.openIdIssuer + "/.well-known/openid-configuration"));
-    }
 
     private static final Random random = new Random();
 
@@ -410,7 +335,4 @@ public class LogEventsServlet extends HttpServlet {
         return url.toString();
     }
 
-    protected LogEventObserver getObserver() {
-        return observer;
-    }
 }

@@ -1,7 +1,7 @@
 package org.logevents.extend.servlets;
 
 import org.logevents.LogEvent;
-import org.logevents.observers.InMemoryBufferLogEventObserver;
+import org.logevents.observers.LogEventBuffer;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -111,13 +111,13 @@ public class LogEventFilter implements Predicate<LogEvent> {
                 "}";
     }
 
-    public Collection<LogEvent> collectMessages(InMemoryBufferLogEventObserver logsByLevel) {
+    public Collection<LogEvent> collectMessages(LogEventBuffer logsByLevel) {
         Instant start = time.minus(interval);
         Instant end = time.plus(interval);
         return logsByLevel.filter(level, start, end);
     }
 
-    public Map<String, Object> collectFacets(InMemoryBufferLogEventObserver logsByLevel) {
+    public Map<String, Object> collectFacets(LogEventBuffer logsByLevel) {
         return collectFacets(collectMessages(logsByLevel));
     }
 

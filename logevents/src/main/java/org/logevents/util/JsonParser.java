@@ -143,7 +143,9 @@ public class JsonParser {
     private List<Object> parseArray() throws IOException {
         List<Object> jsonArray = new ArrayList<>();
         while (lastRead != ']') {
-            readNext();
+            do {
+                readNext();
+            } while (Character.isWhitespace(lastRead));
             if (lastRead == ']') {
                 break;
             }
