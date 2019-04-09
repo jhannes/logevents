@@ -145,7 +145,7 @@ public class LogEventsServlet extends HttpServlet {
     public void configure(Configuration configuration) {
         WebLogEventObserver eventObserver = new WebLogEventObserver(configuration);
         setLogEventBuffer(eventObserver.getLogEventBuffer());
-        openIdConfiguration = eventObserver.getOpenIdConfiguration();
+        setOpenIdConfiguration(eventObserver.getOpenIdConfiguration());
         setupEncryption(eventObserver.getCookieEncryptionKey());
     }
 
@@ -270,7 +270,7 @@ public class LogEventsServlet extends HttpServlet {
         }
     }
 
-    private String decrypt(String value) throws BadPaddingException, IllegalBlockSizeException {
+    String decrypt(String value) throws BadPaddingException, IllegalBlockSizeException {
         return new String(decryptCipher.doFinal(Base64.getDecoder().decode(value)));
     }
 
@@ -378,4 +378,7 @@ public class LogEventsServlet extends HttpServlet {
         return url.toString();
     }
 
+    public void setOpenIdConfiguration(OpenIdConfiguration openIdConfiguration) {
+        this.openIdConfiguration = openIdConfiguration;
+    }
 }

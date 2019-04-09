@@ -8,10 +8,12 @@ import org.logevents.observers.LogEventBuffer;
 import org.logevents.util.Configuration;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
+import org.logevents.util.openid.OpenIdConfiguration;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -19,15 +21,21 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,10 +44,21 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     private LogEventsServlet servlet = new LogEventsServlet();
     private Logger logger = LogEventFactory.getInstance().getLogger(getClass().getName());
+    private Random random = new Random();
+    private HttpServletResponse response = mock(HttpServletResponse.class);
+    private HttpServletRequest request = mock(HttpServletRequest.class);
 
     @Before
     public void initServlet() {
         servlet.setupEncryption(Optional.empty());
+    }
+
+    @Before
+    public void setupRequest() {
+        when(request.getScheme()).thenReturn("https");
+        when(request.getServerName()).thenReturn("www.example.com");
+        when(request.getContextPath()).thenReturn("");
+        when(request.getServletPath()).thenReturn("/logs");
     }
 
     @Test
@@ -49,7 +68,7 @@ public class LogEventsServletTest extends LogEventsServlet {
         idToken.put("iat", System.currentTimeMillis());
         Cookie sessionCookie = servlet.createSessionCookie(idToken);
 
-        boolean authenticated = servlet.authenticated(Mockito.mock(HttpServletResponse.class),
+        boolean authenticated = servlet.authenticated(response,
                 new Cookie[]{sessionCookie}
         );
         assertTrue(sessionCookie + " should be authenticated", authenticated);
@@ -60,10 +79,9 @@ public class LogEventsServletTest extends LogEventsServlet {
         Cookie sessionCookie = createSessionCookie(Instant.now().minusSeconds(2 * 60 * 60));
         assertEquals(-1, sessionCookie.getMaxAge());
 
-        HttpServletResponse responseMock = Mockito.mock(HttpServletResponse.class);
-        boolean authenticated = servlet.authenticated(responseMock, new Cookie[] { sessionCookie });
+        boolean authenticated = servlet.authenticated(response, new Cookie[] { sessionCookie });
         assertFalse(sessionCookie + " should be expired", authenticated);
-        verify(responseMock).addCookie(sessionCookie);
+        verify(response).addCookie(sessionCookie);
         assertEquals(0, sessionCookie.getMaxAge());
     }
 
@@ -72,10 +90,9 @@ public class LogEventsServletTest extends LogEventsServlet {
         Cookie sessionCookie = createSessionCookie(Instant.now().minusSeconds(2 * 60 * 60));
         sessionCookie.setValue(sessionCookie.getValue()+"0");
 
-        HttpServletResponse responseMock = Mockito.mock(HttpServletResponse.class);
-        boolean authenticated = servlet.authenticated(responseMock, new Cookie[] { sessionCookie });
+        boolean authenticated = servlet.authenticated(response, new Cookie[] { sessionCookie });
         assertFalse(sessionCookie + " should be expired", authenticated);
-        verify(responseMock).addCookie(sessionCookie);
+        verify(response).addCookie(sessionCookie);
     }
 
     @Test
@@ -88,10 +105,9 @@ public class LogEventsServletTest extends LogEventsServlet {
 
         servlet.setLogEventBuffer(observer);
 
-        HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getPathInfo()).thenReturn("/events");
         when(request.getCookies()).thenReturn(new Cookie[] { createSessionCookie(Instant.now()) });
-        HttpServletResponse response = mock(HttpServletResponse.class);
+
         StringWriter result = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(result));
         servlet.doGet(request, response);
@@ -115,13 +131,8 @@ public class LogEventsServletTest extends LogEventsServlet {
         properties.put("observer.servlet.openIdIssuer", "https://login.microsoftonline.com/common");
         servlet.configure(new Configuration(properties, "observer.servlet"));
 
-        HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getPathInfo()).thenReturn("/login");
-        when(request.getScheme()).thenReturn("https");
-        when(request.getServerName()).thenReturn("www.example.com");
-        when(request.getContextPath()).thenReturn("");
-        when(request.getServletPath()).thenReturn("/logs");
-        HttpServletResponse response = mock(HttpServletResponse.class);
+
 
         servlet.doGet(request, response);
 
@@ -134,10 +145,51 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
+    public void shouldRedirectInstantToLocalTime() throws IOException {
+        LocalTime time = LocalTime.of(0, 0).plusMinutes(random.nextInt(24*60));
+        LocalDate date = LocalDate.of(2019, 1, 1).plusDays(random.nextInt(365));
+
+        Instant instant = ZonedDateTime.of(date, time, ZoneId.systemDefault()).toInstant();
+
+        when(request.getPathInfo()).thenReturn("/");
+        when(request.getParameter("instant")).thenReturn(instant.toString());
+        when(request.getQueryString()).thenReturn("instant=" + instant + "&thread=main");
+
+        servlet.doGet(request, response);
+
+        verify(response).sendRedirect("/logs/" +
+                "?time=" + time + "&date=" + date + "&instant=" + instant + "&thread=main");
+    }
+
+    @Test
+    public void shouldCompleteLogin() throws IOException, BadPaddingException, IllegalBlockSizeException {
+        when(request.getPathInfo()).thenReturn("/oauth2callback");
+        when(request.getParameter("code")).thenReturn(String.valueOf(random.nextInt()));
+
+        OpenIdConfiguration openIdConfiguration = mock(OpenIdConfiguration.class);
+        servlet.setOpenIdConfiguration(openIdConfiguration);
+
+        Instant issueTime = ZonedDateTime.of(2019, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()).plusMinutes(random.nextInt(60 * 24 * 365)).toInstant();
+
+        Map<String, Object> idToken = new HashMap<>();
+        idToken.put("iat", issueTime.toEpochMilli()/1000);
+        idToken.put("sub", random.nextLong());
+        when(openIdConfiguration.fetchIdToken(anyString(), anyString()))
+                .thenReturn(idToken);
+        servlet.doGet(request, response);
+
+        ArgumentCaptor<Cookie> cookieCaptor = ArgumentCaptor.forClass(Cookie.class);
+        verify(response).addCookie(cookieCaptor.capture());
+        String cookieValue = servlet.decrypt(cookieCaptor.getValue().getValue());
+
+        assertEquals("subject=" + idToken.get("sub") + "\nsessionTime=" + issueTime,
+                cookieValue);
+    }
+
+    @Test
     public void shouldReturnOpenApiDefinition() throws IOException {
-        HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getPathInfo()).thenReturn("/swagger.json");
-        HttpServletResponse response = mock(HttpServletResponse.class);
+
         StringWriter output = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(output));
 
