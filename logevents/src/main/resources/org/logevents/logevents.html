@@ -297,7 +297,7 @@ async function fetchEvents() {
         showLogEventTable();
         showFacets(json.facets);
     } else if (response.status === 401) {
-        window.location = "login";
+        window.location = "login" + window.location.search;
     } else {
         console.log(response);
     }

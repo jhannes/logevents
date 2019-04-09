@@ -173,6 +173,9 @@ public class LogEventsServlet extends HttpServlet {
             resp.getWriter().write(JsonUtil.toIndentedJson(api));
         } else if (req.getPathInfo().equals("/login")) {
             String state = randomString(50);
+            Cookie cookie = new Cookie("logevents.query", req.getQueryString());
+            cookie.setMaxAge(300);
+            resp.addCookie(cookie);
             resp.sendRedirect(getAuthorizationUrl(state, req));
         } else if (req.getPathInfo().equals("/oauth2callback")) {
             if (req.getParameter("error_description") != null) {
@@ -187,8 +190,11 @@ public class LogEventsServlet extends HttpServlet {
             LogEventStatus.getInstance().addInfo(this, "User logged in " + idToken);
 
             resp.addCookie(createSessionCookie(idToken));
-
-            resp.sendRedirect(req.getContextPath() + req.getServletPath());
+            String location = req.getContextPath() + req.getServletPath() + "/";
+            String redirectTo = findCookie(req.getCookies(), "logevents.query")
+                .map(query -> location + "?" + query)
+                .orElse(location);
+            resp.sendRedirect(redirectTo);
         } else if (!authenticated(resp, req.getCookies())) {
             resp.sendError(401, "Please log in");
         } else if (req.getPathInfo().equals("/events")) {
@@ -205,6 +211,15 @@ public class LogEventsServlet extends HttpServlet {
         } else {
             resp.sendError(404, "Not found " + req.getPathInfo());
         }
+    }
+
+    private Optional<String> findCookie(Cookie[] reqCookies, String name) {
+        return Optional.ofNullable(reqCookies)
+                .flatMap(cookies -> Stream.of(cookies)
+                        .filter(c -> c.getName().equals(name))
+                        .map(Cookie::getValue)
+                        .findAny()
+                );
     }
 
     private String getServletUrl(HttpServletRequest req) {
