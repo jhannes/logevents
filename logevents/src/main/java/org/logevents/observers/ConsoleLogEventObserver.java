@@ -40,8 +40,7 @@ public class ConsoleLogEventObserver extends FilteredLogEventObserver {
         this.formatter = configuration.createInstanceWithDefault("formatter",
                 LogEventFormatter.class, ConsoleLogEventFormatter.class);
         configureFilter(configuration);
-        formatter.getExceptionFormatter().ifPresent(
-                exceptionFormatter -> exceptionFormatter.setPackageFilter(configuration.getStringList("packageFilter")));
+        formatter.configure(configuration);
         configuration.checkForUnknownFields();
         LogEventStatus.getInstance().addInfo(this, "Configured " + configuration.getPrefix());
     }

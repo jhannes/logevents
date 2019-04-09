@@ -2,6 +2,7 @@ package org.logevents.formatting;
 
 import org.logevents.LogEvent;
 import org.logevents.observers.ConsoleLogEventObserver;
+import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
 import java.time.format.DateTimeFormatter;
@@ -20,6 +21,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
 
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     private DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
+    private String[] includeMdcKeys = new String[0];
 
     @Override
     public Optional<ExceptionFormatter> getExceptionFormatter() {
@@ -28,12 +30,13 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
 
     @Override
     public String apply(LogEvent e) {
-        return String.format("%s [%s] [%s] [%s]: %s\n",
+        return String.format("%s [%s] [%s] [%s]%s: %s\n",
                 e.getZonedDateTime().format(timeOnlyFormatter),
                 e.getThreadName(),
                 colorizedLevel(e),
                 format.bold(e.getLoggerName()),
-                e.formatMessage())
+                mdc(e, includeMdcKeys),
+                formatMessage(e))
                 + exceptionFormatter.format(e.getThrowable());
     }
 
@@ -55,5 +58,11 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     @Override
     public String toString() {
         return getClass().getSimpleName();
+    }
+
+    public void configure(Configuration configuration) {
+        getExceptionFormatter().ifPresent(
+                exceptionFormatter -> exceptionFormatter.setPackageFilter(configuration.getStringList("packageFilter")));
+        includeMdcKeys = configuration.getStringList("includeMdcKeys");
     }
 }

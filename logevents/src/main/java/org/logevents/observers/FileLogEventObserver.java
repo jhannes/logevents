@@ -105,6 +105,7 @@ public class FileLogEventObserver implements LogEventObserver {
 
     public FileLogEventObserver(Configuration configuration) {
         this(Optional.of(createFormatter(configuration)), configuration.optionalString("filename"));
+        formatter.configure(configuration);
         configuration.checkForUnknownFields();
     }
 

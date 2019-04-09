@@ -30,7 +30,7 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
                     e.getThreadName(),
                     colorizedLevel(e),
                     format.bold(e.getLoggerName()),
-                    e.formatMessage())
+                    formatMessage(e))
                     + exceptionFormatter.format(e.getThrowable());
         }
 

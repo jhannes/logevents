@@ -17,7 +17,6 @@ import java.util.Locale;
  */
 public class ConsoleFormatting {
 
-
     private static ConsoleFormatting instance;
 
     public synchronized static ConsoleFormatting getInstance() {

@@ -1,6 +1,7 @@
 package org.logevents.formatting;
 
 import org.logevents.LogEvent;
+import org.logevents.util.Configuration;
 
 /**
  * A simple and convenient {@link LogEventFormatter} which outputs
@@ -12,14 +13,17 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
 
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
 
+    private String[] includeMdcKeys = new String[0];
+
     @Override
     public String apply(LogEvent e) {
-        return String.format("%s [%s] [%s] [%s]: %s\n",
+        return String.format("%s [%s] [%s] [%s]%s: %s\n",
                 e.getLocalTime(),
                 e.getThreadName(),
                 LogEventFormatter.rightPad(e.getLevel(), 5, ' '),
                 e.getLoggerName(),
-                e.formatMessage())
+                mdc(e, includeMdcKeys),
+                formatMessage(e))
                 + exceptionFormatter.format(e.getThrowable());
     }
 
@@ -27,4 +31,11 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
     public String toString() {
         return getClass().getSimpleName();
     }
+
+    public void configure(Configuration configuration) {
+        getExceptionFormatter().ifPresent(
+                exceptionFormatter -> exceptionFormatter.setPackageFilter(configuration.getStringList("packageFilter")));
+        includeMdcKeys = configuration.getStringList("includeMdcKeys");
+    }
+
 }

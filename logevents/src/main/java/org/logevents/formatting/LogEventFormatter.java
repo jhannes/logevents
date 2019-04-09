@@ -1,9 +1,12 @@
 package org.logevents.formatting;
 
+import org.logevents.LogEvent;
+import org.logevents.util.Configuration;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-
-import org.logevents.LogEvent;
 
 /**
  * Represents a strategy for converting a LogEvent to a string.
@@ -33,4 +36,20 @@ public interface LogEventFormatter extends Function<LogEvent, String> {
         return Optional.empty();
     }
 
+    default String mdc(LogEvent e, String[] includeMdcKeys) {
+        List<String> mdcValue = new ArrayList<>();
+        for (String key : includeMdcKeys) {
+            if (e.getMdcProperties().containsKey(key)) {
+                mdcValue.add(key + "=" + e.getMdcProperties().get(key));
+            }
+        }
+        return mdcValue.isEmpty() ? "" : " {" + String.join(", ", mdcValue) + "}";
+    }
+
+    default String formatMessage(LogEvent e) {
+        return e.formatMessage();
+    }
+
+    default void configure(Configuration configuration) {
+    }
 }
