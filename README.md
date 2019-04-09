@@ -11,15 +11,16 @@
 Setting up and configuring logging should be *easy*, whether you want to do it with
 configuration files or in code. Log Events is a small logging framework built on top of
 SLF4J - the logging lingua franka for Java which include nice formatting, file observers,
-as well as logging to Slack, Microsoft Teams, and SMTP out of the box.
+as well as logging to Slack, Microsoft Teams, a web dashboard and SMTP out of the box.
 
 ## Quick start:
 
-1. Add `org.logevents:logevents:0.1.13` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
+1. Add `org.logevents:logevents:0.1.14` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
 2. Add `logevents.properties` to your current working directory or `src/main/java` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level. Read more about [logevents.properties](https://jhannes.github.io/logevents/apidocs/org/logevents/DefaultLogEventConfigurator.html)
 3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to [the file](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) `logs/<your-app-name>-%date.log` and warning events to [console](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html).
 4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html">PatternEventLogFormatter</a> for more details.
 5. You can simply add a [Slack observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html) as well. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`.
+6. If your application is running in a servlet container, you can add the `observer.servlet=[WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)` and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/SlackLogEventObserver.html) to your servlet container. Set `root=DEBUG file,console,slack,servlet` to enable. See [OpenIdConfiguration](https://jhannes.github.io/logevents/apidocs/org/logevents/util/openid/OpenIdConfiguration.html) to learn how to secure your LogEventServlet.
 
 Here is a simple, but powerful [`logevent.properties`](https://jhannes.github.io/logevents/apidocs/org/logevents/DefaultLogEventConfigurator.html):
 
@@ -54,11 +55,10 @@ logEventFactory.addObserver("org.logevents", new DateRollingLogEventObserver("ta
 
 Logevents tries to make concrete improvements compared to Logback:
 
-* Most useful observers are included in the core packages without extra dependencies
+* Most useful observers are included in the core packages without extra dependencies. In addition to the expected [console observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html) and [file observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html), Logevents come with observers for [Slack](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html), [Microsoft Teams](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html), [email](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SmtpLogEventObserver.html) and [web](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html) built in. (With time, Elastic Search and Splunk will also be included out-of-the-box)
 * Simpler programmatic configuration by dropping logback's `LifeCycle` concept
 * More navigable code base with less indirection
-* Fewer architectural concepts: Log Events is build almost exclusively
-  around an observer pattern.
+* Fewer architectural concepts: Log Events is build almost exclusively around an observer pattern.
 * More concise documentation
 * No dependencies
 
@@ -206,7 +206,7 @@ Include Logevents maven dependency:
 <dependency>
     <groupId>org.logevents</groupId>
     <artifactId>logevents</artifactId>
-    <version>0.1.13</version>
+    <version>0.1.14</version>
 </dependency>
 ```
 
@@ -498,13 +498,22 @@ there are probably things Logback can do that Logevents will be unable to handle
 On the other hand, most of the common extension scenarios will probably require
 less code to implement with Logevents.
 
+### How do I migrate from Logback?
+
+If you're using logback today and would like to check out logevents, here's a simple step-by-step guide:
+
+1. Check the expected effort: Remove the `logback` dependencies from your `pom.xml` (or `build.gradle`) and rebuild to see how much code directly references Logback. Chances are that this is nothing or very little.
+   * If you have appenders built with Logback that may have general interest, feel free to <a href="https://github.com/jhannes/logevents/issues">submit an issue</a> to have me create a Log Events observer for the appender
+2. Check your `logback.xml` files (and possibly `logback-spring.xml`). This will let you know what appenders you use. Setting up the equivallent in Logevents should be considerably less configuration.
+   * If you have using appenders from Logback that you miss in Logevents or if the configuration is simpler in Logback, feel free to <a href="https://github.com/jhannes/logevents/issues">submit an issue</a> to have me create a Log Events observer for the appender
+
+
 
 ### TODO
 
 * MDC-based batching
 * JMX
 * Logback features that logevents is missing:
-  * SMTP table formatting and discriminator
   * DBAppender
   * SiftingAppender
   * SocketAppender

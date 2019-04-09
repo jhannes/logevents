@@ -30,6 +30,7 @@ import java.util.Properties;
  * observer.slack.suppressMarkers=BORING_MARKER
  * observer.slack.requireMarker=MY_MARKER, MY_OTHER_MARKER
  * observer.slack.markers.MY_MARKER.throttle=PT1M PT10M PT30M
+ * observer.slack.detailUrl=link to your {@link org.logevents.extend.servlets.LogEventsServlet}
  * </pre>
  *
  * @see BatchingLogEventObserver

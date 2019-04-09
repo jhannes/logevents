@@ -47,16 +47,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A servlet that exposes log information to administrative users. To use, you need:
+ * A servlet that exposes log information to administrative users via a built in web page. To use, you need to:
  * <ul>
  *     <li>
- *         To run your application in a servlet container. Add LogEventsServlet as a servlet in <code>web.xml</code>,
- *         or add in a ServletContextListener
+ *         Run your application in a servlet container: Add LogEventsServlet as a servlet in <code>web.xml</code>, add in a ServletContextListener or in Spring, add a <code>ServletRegistrationBean</code>
  *     </li>
  *     <li>
  *         You need an Identity Provider that supports OpenID Connect to authorize administrative users.
  *         If you don't have any existing options, I suggest creating a (free!) Azure Active Directory
- *         and adding users that should have access as guest users.
+ *         and adding users that should have access as guest users. See {@link OpenIdConfiguration}
+ *         to learn how to set this up.
  *     </li>
  *     <li>
  *         In order to run LogEventsServlet needs security configuration in your logevents*.properties.
@@ -68,9 +68,11 @@ import java.util.stream.Stream;
  *         will be at "/logs/swagger.json" and a simple client web page will be at "/logs/"".
  *     </li>
  * </ul>
- * Example configuration:
+ *
+ * <h2>Example configuration:</h2>
  *
  * <pre>
+ * observer.servlet=WebLogEventObserver
  * observer.servlet.openIdIssuer=https://login.microsoftonline.com/common
  * observer.servlet.clientId=12345678-abcd-pqrs-9876-9abcdef01234
  * observer.servlet.clientSecret=3¤..¤!?qwer
@@ -78,6 +80,47 @@ import java.util.stream.Stream;
  * observer.servlet.requiredClaim.username=johannes@brodwall.com,someone@brodwall.com
  * observer.servlet.requiredClaim.roles=admin
  * </pre>
+ *
+ * <h2>Register LogEventsServlet in your servlet container</h2>
+ *
+ * <h3>Example web.xml-file</h3>
+ *
+ * <pre>
+ * &lt;servlet&gt;
+ *     &lt;servlet-name&gt;LogEvents&lt;/servlet-name&gt;
+ *     &lt;servlet-class&gt;org.logevents.extend.servlets.LogEventsServlet&lt;/servlet-class&gt;
+ * &lt;/servlet&gt;
+ * &lt;servlet-mapping&gt;
+ *   &lt;servlet-name&gt;LogEvents&lt;/servlet-name&gt;
+ *   &lt;url-pattern&gt;/*&lt;/url-pattern&gt;
+ * &lt;/servlet-mapping&gt;
+ * </pre>
+ *
+ * <h3>Example ServletContextListener</h3>
+ *
+ * <pre>
+ * public class ApplicationContext implements ServletContextListener {
+ *     public void contextInitialized(ServletContextEvent sce) {
+ *        sce.getServletContext().addServlet("logs", new LogEventsServlet()).addMapping("/logs/*");
+ *    }
+ *    public void contextDestroyed(ServletContextEvent sce) {
+ *    }
+ * }
+ * </pre>
+ *
+ * <h3>Example Spring ServletRegistrationBean</h3>
+ *
+ * <pre>
+ * &#064;Bean
+ * public ServletRegistrationBean servletRegistrationBean(){
+ *     return new ServletRegistrationBean(new LogEventsServlet(), "/logs/*");
+ * }
+ * </pre>
+ *
+ * @see WebLogEventObserver
+ * @see OpenIdConfiguration
+ * @see LogEventFilter
+ *
  */
 public class LogEventsServlet extends HttpServlet {
 

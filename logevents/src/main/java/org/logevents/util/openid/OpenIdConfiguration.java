@@ -10,6 +10,26 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Supports any standards compliant OpenID Connect provider as identity provider for
+ * {@link org.logevents.extend.servlets.LogEventsServlet}.
+ *
+ * <h2>To set up authorization with Azure Active Directory</h2>
+ *
+ * This description assumes that you are member of an organization that uses Active Directory,
+ * but that you only want some users to have access to the LogEventsServlet.
+ *
+ * <ol>
+ *     <li>Go to <a href="https://portal.azure.com">the Azure portal</a> and log in with your organization account</li>
+ *     <li>Click "Create a resource" and enter "active directory" to create a new directory. You can name the directory what you want.</li>
+ *     <li>You have to wait a little while for the directory to be created, then click the funnel + book icon to switch to your new directory</li>
+ *     <li>Select "Azure Active Directory" from the menu in your new directory to go to directory management</li>
+ *     <li>Select "App Registration (preview)" and "New registration" to create your application</li>
+ *     <li>In the application configuration, you need to find the Application (client) ID, generate a new client secret (under Certificates and secrets) and setup your redirect URI (under Authentication) and use this to configure {@link org.logevents.observers.WebLogEventObserver}</li>
+ *     <li>In the Azure Active Directory menu, you can select "Users" and add a guest user from your organization to add to your limited Active Directory (this feature of Active Directory is known as B2B)</li>
+ *     <li>In the Azure Active Directory menu, you can select "Enterprise Applications" to limited the users that can access the logging application</li>
+ * </ol>
+ */
 public class OpenIdConfiguration {
     private final String clientId;
     private final String clientSecret;
@@ -37,6 +57,10 @@ public class OpenIdConfiguration {
         return scopes.orElse("openid+email+profile");
     }
 
+    /**
+     * Generate a URL to start the login flow with OpenID Connect. Redirect the web
+     * browser to this URL to start the login process.
+     */
     public String getAuthorizationUrl(String state, String baseUrl) throws IOException {
         return getAuthorizationEndpoint() + "?" +
                 "response_type=code" +
@@ -50,6 +74,11 @@ public class OpenIdConfiguration {
         return (String) loadOpenIdConfiguration().get("authorization_endpoint");
     }
 
+    /**
+     * Complete the login process by fetching ID token from the Identity provider.
+     * Call this when the web browser returns to the <code>redirect_uri</code> in
+     * your app with the code query parameter.
+     */
     public Map<String, Object> fetchIdToken(String code, String defaultRedirectUri) throws IOException {
         Map<String, String> formPayload = createTokenRequestPayload(code, defaultRedirectUri);
         Map<String, Object> response = NetUtils.postFormForJson(getTokenUri(), formPayload);

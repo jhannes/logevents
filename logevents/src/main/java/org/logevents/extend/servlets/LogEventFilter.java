@@ -28,6 +28,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * Queries a list of {@link LogEvent} objects by {@link #time},
+ * {@link #interval}, {@link #threadName}, {@link #logger},
+ * {@link #level}, {@link #markers} and {@link #mdcFilter}.
+ * <p>
+ *     Use {@link #test(LogEvent)} to filter a {@link java.util.stream.Stream} of
+ *     {@link LogEvent}s and {@link #collectFacets(Collection)} to return a summary
+ *     of which threads, loggers, markers and mdcs were used in the interval.
+ * </p>
+ *
+ */
 public class LogEventFilter implements Predicate<LogEvent> {
     private final Instant time;
     private final Duration interval;
