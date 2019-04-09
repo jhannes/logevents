@@ -108,7 +108,7 @@ public class PatternLogEventFormatterTest {
         LogEvent event = buffer.getEvents().get(0);
 
         formatter.setPattern("%file:%line - %class#%method");
-        assertEquals("PatternLogEventFormatterTest.java:108 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
+        assertEquals("PatternLogEventFormatterTest.java:107 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
                 formatter.apply(event));
     }
 
@@ -217,9 +217,9 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(event.getMessage(), lines[0]);
         assertEquals(ex.toString(), lines[1]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:209)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:208)",
                 lines[2]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:215)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:214)",
                 lines[3]);
     }
 
@@ -232,7 +232,7 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(2+2, lines.length);
         assertEquals(event.getMessage(), lines[0]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:209)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:208)",
                 lines[2]);
     }
 
