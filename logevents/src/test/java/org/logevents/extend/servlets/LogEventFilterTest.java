@@ -10,6 +10,7 @@ import org.slf4j.event.Level;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -218,7 +219,16 @@ public class LogEventFilterTest {
 
         LogEventFilter filter = new LogEventFilter(parameters("logger", firstLogger));
         Map<String, Object> facets = filter.collectFacets(logsByLevel);
-        assertEquals(new HashSet<>(Arrays.asList(firstLogger, secondLogger)),
+        List<Object> expected = new ArrayList<>();
+        Map<String, String> first = new HashMap<>();
+        first.put("name", firstLogger);
+        first.put("abbreviatedName", "c.e.ClassOne");
+        expected.add(first);
+        Map<String, String> second = new HashMap<>();
+        second.put("name", secondLogger);
+        second.put("abbreviatedName", "c.e.ClassTwo");
+        expected.add(second);
+        assertEquals(expected,
                 facets.get("loggers"));
     }
 

@@ -187,8 +187,17 @@
             "format": "date-time"
           },
           "logger": {
-            "type": "string",
-            "example": "org.example.myapp.MyClass"
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "example": "org.example.myapp.MyClass"
+              },
+              "abbreviatedName": {
+                "type": "string",
+                "example": "o.e.m.MyClass"
+              }
+            },
           },
           "abbreviatedLogger": {
             "type": "string",

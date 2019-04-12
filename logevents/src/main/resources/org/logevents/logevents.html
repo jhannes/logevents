@@ -1,51 +1,122 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Log Event Viewer | logevents</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
             display: flex;
-            flex-direction: column;
             margin: 0;
+            flex-direction: column;
             height: 100vh;
+        }
+
+        main, nav {
+          transition: 0.5s;
         }
 
         main {
             overflow: auto;
         }
 
-        nav form {
-            display: flex;
-        }
-        main td button {
-            width: 3em;
-            text-align: center;
-            margin: auto;
+        nav {
+          height: 100%;
+          width: 0;
+          position: fixed;
+          z-index: 10;
+          top: 0;
+          left: 0;
+          background-color: #fff;
+          overflow-x: hidden;
+          padding-top: 60px;
+          border: 1px solid gray;
         }
 
-        .expanded {
-            border: 1px solid red;
-        }'
+        nav form {
+            overflow-x: hidden;
+            width: 250px;
+        }
+
+        .drawerOpen nav {
+          width: 250px;
+        }
+
+        .pushContent.drawerOpen main {
+          margin-left: 250px;
+        }
+
+        nav a {
+          padding: 8px 8px 8px 32px;
+          text-decoration: none;
+          font-size: 25px;
+          display: block;
+        }
+
+        nav .closeDrawer {
+          position: absolute;
+          top: 0;
+          right: 25px;
+          font-size: 36px;
+          margin-left: 50px;
+        }
+
+        .event {
+            border: 1px solid gray;
+        }
+
+        .event button {
+            width: 3em;
+            margin-right: 0.5em;
+        }
+
+        .event .details {
+            display: none;
+            transition: 0.5s;
+        }
+
+        .displayDetails.event .details {
+            display: block;
+            transition: 0.5s;
+        }
+
+        .displayDetails.event .shortMessage {
+            display: none;
+        }
+
+        @media screen and (max-height: 450px) {
+          nav {padding-top: 15px;}
+          nav a {font-size: 18px;}
+        }
+
+        #overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .drawerOpen #overlay {
+            z-index: 1;
+        }
 
     </style>
 </head>
 <body>
-    <header>
-        <h1>LogEvents</h1>
-    </header>
+
     <nav>
+        <a href="#" class="closeDrawer" onclick="toggleNav(event)">&times;</a>
         <form id="logEventsFilter" method="get">
             <fieldset id="dateTime">
                 <input type="time" name="time" id="time">
-                <button>Update</button>
                 <select name="interval">
-                    <option value="PT5S">+/- 5 seconds</option>
-                    <option value="PT1M">+/- 1 minute</option>
-                    <option value="PT5M" selected>+/- 5 minutes</option>
-                    <option value="PT15M">+/- 15 minutes</option>
-                    <option value="PT1H">+/- 1 hour</option>
+                    <option value="PT5S">+/- 5 sec</option>
+                    <option value="PT1M">+/- 1 min</option>
+                    <option value="PT5M" selected>+/- 5 min</option>
+                    <option value="PT15M">+/- 15 min</option>
+                    <option value="PT1H">+/- 1 hr</option>
                 </select>
+                <button>Update</button>
+            </fieldset>
+            <fieldset>
                 <select name="level">
                     <option value="TRACE">TRACE</option>
                     <option value="DEBUG">DEBUG</option>
@@ -76,61 +147,127 @@
             </fieldset>
         </form>
     </nav>
-    <main id="main">
-
+    <header>
+        <a href="#" onclick="toggleNav(event)">&#9776; Filter</a>
+    </header>
+    <main>
     </main>
+    <div id="overlay" onclick="toggleNav(event)"></div>
 </body>
 <script>
+const body = document.querySelector("body");
+const logEventsFilter = document.getElementById("logEventsFilter");
+
+function toggleNav(e) {
+    body.classList.toggle("drawerOpen");
+    e.preventDefault();
+}
+
 function tableCell(textContent) {
     const td = document.createElement("td");
     td.innerHTML = textContent;
     return td;
 }
 
-let logEvents = [];
-
 function showLogEventTable() {
-    console.log({logEvents});
-    const table = document.createElement("table");
+    function listItem(header, text, filter) {
+        const li = document.createElement("li");
+        if (filter) {
+            const currentFilter = new URLSearchParams(window.location.search.substr(1));
+            const time = currentFilter.get("time");
+            const interval = currentFilter.get("interval");
+            const level = currentFilter.get("level");
+            li.innerHTML = `<strong>${header}:</strong>
+                <a href="?time=${time}&interval=${interval}&level=${level}&${filter}=${text}"
+                >${text}</a>`;
+        } else {
+            li.innerHTML = `<strong>${header}:</strong> ${text}`;
+        }
+        return li;
+    }
+
+    const events = document.createElement("div");
     for (const index in logEvents) {
         const logEvent = logEvents[index];
-        const tr = document.createElement("tr");
-        tr.dataset.eventIndex = index;
+        const eventCard = document.createElement("div");
+        eventCard.classList.add("event");
+        eventCard.dataset.eventIndex = index;
 
-        const time = logEvent.time.split("T")[1];
+        const time = logEvent.time.replace(/^.*T(\d+:\d+:\d+).*/, "$1");
 
-        const buttonTd = document.createElement("td");
-        buttonTd.innerHTML = "<button>" + logEvent.levelIcon + "</button>";
-        tr.appendChild(buttonTd);
-        const tdIcon = document.createElement("td");
+        eventCard.innerHTML = `<button> ${logEvent.levelIcon}</button> ${time} [${logEvent.abbreviatedLogger}]: <span class="shortMessage">${logEvent.formattedMessage.substr(0, 60)}</span>`;
         if (logEvent.throwable) {
-            tdIcon.innerHTML += " ❗";
+            eventCard.innerHTML += " \u2757";
         }
-        tr.appendChild(tdIcon);
 
-        tr.appendChild(tableCell(time));
-        tr.appendChild(tableCell(logEvent.abbreviatedLogger));
-        tr.appendChild(tableCell(logEvent.formattedMessage));
+        const eventDetails = document.createElement("div");
+        eventDetails.classList.add("details");
+        eventDetails.innerText = logEvent.formattedMessage;
+        const ul = document.createElement("ul");
+        ul.appendChild(listItem("Logger", logEvent.logger, "logger"));
+        ul.appendChild(listItem("Thread", logEvent.thread, "thread"));
+        if (logEvent.marker) {
+            ul.appendChild(listItem("Marker", logEvent.marker, "marker"));
+        }
+        if (logEvent.mdc && Object.entries(logEvent.mdc).length) {
+            const mdcList = document.createElement("li");
+            mdcList.innerHTML = "<strong>MDC</strong>";
+            const mdcUl = document.createElement("ul");
+            mdcList.appendChild(mdcUl);
 
-        table.appendChild(tr);
+            for (const mdc of logEvent.mdc) {
+                mdcUl.appendChild(listItem(mdc.name, mdc.value, "mdc[" + mdc.name + "]"));
+            }
+
+            ul.appendChild(mdcList);
+        }
+        if (logEvent.throwable) {
+            ul.appendChild(listItem("Exception", logEvent.throwable));
+
+            const stackTrace = document.createElement("pre");
+            for (const element of logEvent.stackTrace) {
+                if (element.sourceLink) {
+                    stackTrace.innerHTML += "<a href='#" + element.sourceLink + "'>" + element.className + "#" + element.methodName + "</a>\n";
+                }
+            }
+            ul.appendChild(stackTrace);
+        }
+
+        eventDetails.appendChild(ul);
+        eventCard.appendChild(eventDetails);
+
+        events.appendChild(eventCard);
     }
-    const main = document.getElementById("main");
+    const main = document.querySelector("main");
     main.innerHTML = "";
-    main.appendChild(table);
-}
-
-function checkbox(name, value, currentFilter) {
-    const checkboxDiv = document.createElement("div");
-    const checked = (currentFilter.getAll(name).indexOf(value) >= 0) ? ' checked="checked"' : "";
-    checkboxDiv.innerHTML = `<label><input type="checkbox" name=${name} value="${value}" ${checked}>${value}</label>`;
-    return checkboxDiv;
+    main.appendChild(events);
 }
 
 function showFacets(facets) {
+    const currentFilter = new URLSearchParams(window.location.search.substr(1));
+
+    function checkbox(name, value, text) {
+        const checkboxDiv = document.createElement("div");
+        const checked = (currentFilter.getAll(name).indexOf(value) >= 0) ? ' checked="checked"' : "";
+        checkboxDiv.innerHTML = `<label><input type="checkbox" name=${name} value="${value}" ${checked}>${text || value}</label>`;
+        return checkboxDiv;
+    }
+
+    function option(name, value, text) {
+        const option = document.createElement("option");
+        if (value) {
+            option.setAttribute("value", value);
+            if (currentFilter.getAll(name).indexOf(value) >= 0) {
+                option.setAttribute("selected", "selected");
+            }
+            option.innerText = text || value;
+        }
+        return option;
+    }
+
     const dateTimeFieldset = document.getElementById("dateTime");
     const loggersFieldset = document.getElementById("loggers");
     const markersFieldset = document.getElementById("markers");
-    const currentFilter = new URLSearchParams(window.location.search.substr(1));
 
     document.getElementById("time").value = currentFilter.get("time");
     const selectedInterval = document.querySelector("[name=interval] [value=" + currentFilter.get("interval") + "]");
@@ -163,28 +300,22 @@ function showFacets(facets) {
     markersFieldset.innerHTML = "";
 
     for (const marker of facets.markers) {
-        markersFieldset.appendChild(checkbox("marker", marker, currentFilter));
+        markersFieldset.appendChild(checkbox("marker", marker));
     }
 
     const threads = document.getElementById("threads");
     const threadsSelect = document.createElement("select");
     threadsSelect.setAttribute("name", "thread");
-    const emptyOption = document.createElement("option");
-    threadsSelect.appendChild(emptyOption);
+    threadsSelect.appendChild(option("thread"));
     for (const thread of facets.threads) {
-        const threadOption = document.createElement("option");
-        if (currentFilter.getAll("thread").indexOf(thread) >= 0) {
-            threadOption.setAttribute("selected", "selected");
-        }
-        threadOption.innerText = thread;
-        threadsSelect.appendChild(threadOption);
+        threadsSelect.appendChild(option("thread", thread));
     }
     threads.innerHTML = "";
     threads.appendChild(threadsSelect);
 
     loggersFieldset.innerHTML = "";
     for (const logger of facets.loggers) {
-        loggersFieldset.appendChild(checkbox("logger", logger, currentFilter));
+        loggersFieldset.appendChild(checkbox("logger", logger.name, logger.abbreviatedName));
     }
 
     const mdcFilter = document.getElementById("mdcFilter");
@@ -200,12 +331,7 @@ function showFacets(facets) {
         mdcSelect.appendChild(emptyMdcOption);
 
         for (const alternative of mdcEntry.values) {
-            const mdcOption = document.createElement("option");
-            if (currentFilter.getAll("mdc[" + mdcEntry.name + "]").indexOf(alternative) >= 0) {
-                mdcOption.setAttribute("selected", "selected");
-            }
-            mdcOption.innerText = alternative;
-            mdcSelect.appendChild(mdcOption);
+            mdcSelect.appendChild(option("mdc[" + mdcEntry.name + "]", alternative));
         }
 
         mdcLabel.appendChild(mdcSelect);
@@ -213,77 +339,6 @@ function showFacets(facets) {
         mdcDiv.appendChild(mdcLabel);
 
         mdcFilter.appendChild(mdcDiv);
-    }
-}
-
-function listItem(header, text, filter) {
-    const li = document.createElement("li");
-    if (filter) {
-        const currentFilter = new URLSearchParams(window.location.search.substr(1));
-        const time = currentFilter.get("time");
-        const interval = currentFilter.get("interval");
-        const level = currentFilter.get("level");
-        li.innerHTML = `<strong>${header}:</strong>
-            <a href="?time=${time}&interval=${interval}&level=${level}&${filter}=${text}"
-            >${text}</a>`;
-    } else {
-        li.innerHTML = `<strong>${header}:</strong> ${text}`;
-    }
-    return li;
-}
-
-function detailRow(event) {
-    const expandedRow = document.createElement("tr");
-    expandedRow.dataset.isDetail = true;
-
-    const td = document.createElement("td");
-    td.setAttribute("colspan", "100%");
-
-    const ul = document.createElement("ul");
-    ul.appendChild(listItem("Logger", event.logger, "logger"));
-    ul.appendChild(listItem("Thread", event.thread, "thread"));
-    if (event.marker) {
-        ul.appendChild(listItem("Marker", event.marker, "marker"));
-    }
-
-    if (event.mdc && Object.entries(event.mdc).length) {
-        const mdcList = document.createElement("li");
-        mdcList.innerHTML = "<strong>MDC</strong>";
-        const mdcUl = document.createElement("ul");
-        mdcList.appendChild(mdcUl);
-
-        for (const mdc of event.mdc) {
-            mdcUl.appendChild(listItem(mdc.name, mdc.value, "mdc[" + mdc.name + "]"));
-        }
-
-        ul.appendChild(mdcList);
-    }
-
-    if (event.throwable) {
-        ul.appendChild(listItem("Exception", event.throwable));
-
-        const stackTrace = document.createElement("pre");
-        for (const element of event.stackTrace) {
-            stackTrace.innerHTML += element.className + "#" + element.methodName + "\n";
-        }
-        ul.appendChild(stackTrace);
-    }
-    td.appendChild(ul);
-    expandedRow.appendChild(td);
-
-    return expandedRow;
-}
-
-
-function expandCollapseEventRow(targetRow) {
-    const eventIndex = targetRow.dataset.eventIndex;
-
-    if (targetRow.nextSibling && targetRow.nextSibling.dataset.isDetail) {
-        targetRow.classList.remove("expanded");
-        targetRow.parentElement.removeChild(targetRow.nextSibling);
-    } else {
-        targetRow.classList.add("expanded");
-        targetRow.parentElement.insertBefore(detailRow(logEvents[eventIndex]), targetRow.nextSibling);
     }
 }
 
@@ -303,17 +358,13 @@ async function fetchEvents() {
     }
 }
 
-const main = document.getElementById("main");
+const main = document.querySelector("main");
 main.addEventListener("click", e => {
     if (e.target.tagName === "BUTTON") {
-        const targetRow = e.target.parentElement.parentElement;
-        expandCollapseEventRow(targetRow);
+        const targetCard = e.target.parentElement;
+        targetCard.classList.toggle("displayDetails");
     }
 });
-
-const logEventsFilter = document.getElementById("logEventsFilter");
-const clearButton = document.getElementById("clearButton");
-const timeInput = document.getElementById("time");
 
 logEventsFilter.addEventListener("change", e => {
     if (e.target.tagName === "SELECT" || (e.target.tagName === "INPUT" && e.target.type === "checkbox")) {
@@ -321,6 +372,7 @@ logEventsFilter.addEventListener("change", e => {
     }
 });
 
+const clearButton = document.getElementById("clearButton");
 clearButton.addEventListener("click", e => {
     const d = new Date(),
         h = (d.getHours()<10?'0':'') + d.getHours(),
@@ -334,6 +386,7 @@ if (!window.location.search) {
     const d = new Date(),
         h = (d.getHours()<10?'0':'') + d.getHours(),
         m = (d.getMinutes()<10?'0':'') + d.getMinutes();
+    const timeInput = document.getElementById("time");
     timeInput.value = h + ':' + m;
     window.location.search = new URLSearchParams(new FormData(logEventsFilter)).toString();
 } else {

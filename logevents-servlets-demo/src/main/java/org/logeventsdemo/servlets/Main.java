@@ -43,10 +43,12 @@ public class Main {
         logger.warn(LIFECYCLE, "Started server {}", server.getURI());
     }
 
-    private static WebAppContext demoContext() {
+    private static WebAppContext demoContext() throws IOException {
         WebAppContext context = new WebAppContext();
         context.setContextPath("/myDemo");
         context.setBaseResource(Resource.newClassPathResource("/webapp-logevents"));
+        //context.setBaseResource(Resource.newResource("src/main/resources/webapp-logevents"));
+        context.getInitParams().put("org.eclipse.jetty.servlet.Default.useFileMappedBuffer", "false");
         context.addEventListener(new ApplicationContext());
         return context;
     }

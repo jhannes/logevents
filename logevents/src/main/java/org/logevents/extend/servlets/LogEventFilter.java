@@ -134,12 +134,12 @@ public class LogEventFilter implements Predicate<LogEvent> {
 
     Map<String, Object> collectFacets(Collection<LogEvent> events) {
         Set<String> threads = new TreeSet<>();
-        Set<String> loggers = new TreeSet<>();
+        Map<String, String> loggerMap = new TreeMap<>();
         Set<String> markers = new TreeSet<>();
         Map<String, Set<String>> mdcMap = new TreeMap<>();
         for (LogEvent event : events) {
             threads.add(event.getThreadName());
-            loggers.add(event.getLoggerName());
+            loggerMap.put(event.getLoggerName(), event.getAbbreviatedLoggerName(0));
             if (event.getMarker() != null) {
                 markers.add(event.getMarker().getName());
             }
@@ -154,6 +154,14 @@ public class LogEventFilter implements Predicate<LogEvent> {
             mdcEntry.put("values", entry.getValue());
             mdc.add(mdcEntry);
         }
+        List<Map<String,String>> loggers = new ArrayList<>();
+        for (Map.Entry<String, String> entry : loggerMap.entrySet()) {
+            Map<String, String> logger = new HashMap<>();
+            logger.put("name", entry.getKey());
+            logger.put("abbreviatedName", entry.getValue());
+            loggers.add(logger);
+        }
+
 
         Map<String, Object> facets = new LinkedHashMap<>();
         facets.put("threads", threads);
