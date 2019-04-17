@@ -1,6 +1,8 @@
 package org.logevents.observers;
 
+import com.sun.net.httpserver.HttpsServer;
 import org.logevents.LogEvent;
+import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.util.Configuration;
 import org.logevents.util.openid.OpenIdConfiguration;
 
@@ -10,13 +12,13 @@ import java.util.Properties;
 
 /**
  * Used to collect messages in an {@link LogEventBuffer} for use by
- * {@link org.logevents.extend.servlets.LogEventsServlet}. In order to
+ * {@link LogEventsServlet}. In order to
  * set up, you need to:
  *
  * <ol>
  *    <li>Register an OpenID Connect provider to authenticate the users of the servlet (see {@link OpenIdConfiguration})</li>
  *    <li>Set up a WebLogEventObserver named <code>observer.servlet</code>, and</li>
- *    <li>Add a {@link org.logevents.extend.servlets.LogEventsServlet} to your servlet container</li>
+ *    <li>Add a {@link LogEventsServlet} to your servlet container</li>
  * </ol>
  *
  * You can even include a link to the web dashboard for Logevents in {@link SlackLogEventObserver} by setting the <code></code>
@@ -30,10 +32,10 @@ import java.util.Properties;
  * observer.servlet.clientSecret=3¤..¤!?qwer
  * </pre>
  *
- * Possible future improvements: a. Run with {@link com.sun.net.httpserver.HttpsServer},
+ * Possible future improvements: a. Run with {@link HttpsServer},
  * b. Use a database backend, c. post log messages over https to a log concentrator server
  *
- * @see org.logevents.extend.servlets.LogEventsServlet
+ * @see LogEventsServlet
  * @see OpenIdConfiguration
  */
 public class WebLogEventObserver extends FilteredLogEventObserver {
@@ -45,6 +47,7 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
 
     private Optional<String> cookieEncryptionKey = Optional.empty();
     private final OpenIdConfiguration openIdConfiguration;
+    private String[] packageFilter;
 
     public WebLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
@@ -53,6 +56,8 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
     public WebLogEventObserver(Configuration configuration) {
         this(new OpenIdConfiguration(configuration));
         configureFilter(configuration);
+        setPackageFilter(configuration.getStringList("packageFilter"));
+        //formatter.configureSourceCode(configuration);
         this.cookieEncryptionKey = configuration.optionalString("cookieEncryptionKey");
         configuration.checkForUnknownFields();
     }
@@ -76,5 +81,18 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
 
     public LogEventBuffer getLogEventBuffer() {
         return logEventBuffer;
+    }
+
+    protected boolean isIgnored(StackTraceElement frame) {
+        for (String filter : this.packageFilter) {
+            if (frame.getClassName().startsWith(filter)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void setPackageFilter(String[] packageFilter) {
+        this.packageFilter = packageFilter;
     }
 }

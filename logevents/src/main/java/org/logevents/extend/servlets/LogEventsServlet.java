@@ -341,15 +341,7 @@ public class LogEventsServlet extends HttpServlet {
 
         if (event.getThrowable() != null) {
             jsonEvent.put("throwable", event.getThrowable().toString());
-            ArrayList<Map<String, Object>> stackTrace = new ArrayList<>();
-            for (StackTraceElement element : event.getThrowable().getStackTrace()) {
-                Map<String, Object> jsonElement = new HashMap<>();
-                jsonElement.put("className", element.getClassName());
-                jsonElement.put("methodName", element.getMethodName());
-                jsonElement.put("lineNumber", String.valueOf(element.getLineNumber()));
-                jsonElement.put("fileName", element.getFileName());
-                stackTrace.add(jsonElement);
-            }
+            ArrayList<Map<String, Object>> stackTrace = createStackTrace(event);
             jsonEvent.put("stackTrace", stackTrace);
         }
 
@@ -362,6 +354,19 @@ public class LogEventsServlet extends HttpServlet {
         }
         jsonEvent.put("mdc", mdc);
         return jsonEvent;
+    }
+
+    private ArrayList<Map<String, Object>> createStackTrace(LogEvent event) {
+        ArrayList<Map<String, Object>> stackTrace = new ArrayList<>();
+        for (StackTraceElement element : event.getThrowable().getStackTrace()) {
+            Map<String, Object> jsonElement = new HashMap<>();
+            jsonElement.put("className", element.getClassName());
+            jsonElement.put("methodName", element.getMethodName());
+            jsonElement.put("lineNumber", String.valueOf(element.getLineNumber()));
+            jsonElement.put("fileName", element.getFileName());
+            stackTrace.add(jsonElement);
+        }
+        return stackTrace;
     }
 
     private String getServerUrl(HttpServletRequest req) {
