@@ -19,6 +19,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
 
     protected final ConsoleFormatting format = ConsoleFormatting.getInstance();
 
+    protected MessageFormatter messageFormatter = new ConsoleMessageFormatter(format);
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     private DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private String[] includeMdcKeys = new String[0];
@@ -36,7 +37,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 colorizedLevel(e),
                 format.bold(e.getLoggerName()),
                 mdc(e, includeMdcKeys),
-                formatMessage(e))
+                messageFormatter.format(e.getMessage(), e.getArgumentArray()))
                 + exceptionFormatter.format(e.getThrowable());
     }
 

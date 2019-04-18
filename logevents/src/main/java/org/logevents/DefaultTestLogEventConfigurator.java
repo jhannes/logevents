@@ -40,7 +40,7 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
             int junitRunnerPos = -1;
             for (int i = 0; i < stackTrace.length-1; i++) {
                 StackTraceElement stackTraceElement = stackTrace[i];
-                if (stackTraceElement.getClassName().equals("org.junit.runners.BlockJUnit4ClassRunner")) {
+                if (stackTraceElement.getClassName().equals("org.junit.runners.BlockJUnit4ClassRunner") || stackTraceElement.getClassName().equals("org.junit.runners.ParentRunner")) {
                     junitRunnerPos = i;
                     break;
                 }
