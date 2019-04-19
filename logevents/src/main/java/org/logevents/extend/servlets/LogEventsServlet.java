@@ -133,6 +133,7 @@ public class LogEventsServlet extends HttpServlet {
     private LogEventBuffer logEventBuffer;
     private OpenIdConfiguration openIdConfiguration;
     private MessageFormatter messageFormatter = new MessageFormatter();
+    private JsonExceptionFormatter exceptionFormatter = new JsonExceptionFormatter();
 
     @Override
     public void init() {
@@ -148,6 +149,7 @@ public class LogEventsServlet extends HttpServlet {
         setLogEventBuffer(eventObserver.getLogEventBuffer());
         setOpenIdConfiguration(eventObserver.getOpenIdConfiguration());
         setMessageFormatter(eventObserver.getMessageFormatter());
+        setExceptionFormatter(eventObserver.getExceptionFormatter());
         setupEncryption(eventObserver.getCookieEncryptionKey());
     }
 
@@ -343,8 +345,7 @@ public class LogEventsServlet extends HttpServlet {
 
         if (event.getThrowable() != null) {
             jsonEvent.put("throwable", event.getThrowable().toString());
-            ArrayList<Map<String, Object>> stackTrace = createStackTrace(event);
-            jsonEvent.put("stackTrace", stackTrace);
+            jsonEvent.put("stackTrace", createStackTrace(event));
         }
 
         List<Object> mdc = new ArrayList<>();
@@ -358,17 +359,8 @@ public class LogEventsServlet extends HttpServlet {
         return jsonEvent;
     }
 
-    private ArrayList<Map<String, Object>> createStackTrace(LogEvent event) {
-        ArrayList<Map<String, Object>> stackTrace = new ArrayList<>();
-        for (StackTraceElement element : event.getThrowable().getStackTrace()) {
-            Map<String, Object> jsonElement = new HashMap<>();
-            jsonElement.put("className", element.getClassName());
-            jsonElement.put("methodName", element.getMethodName());
-            jsonElement.put("lineNumber", String.valueOf(element.getLineNumber()));
-            jsonElement.put("fileName", element.getFileName());
-            stackTrace.add(jsonElement);
-        }
-        return stackTrace;
+    private List<Map<String, Object>> createStackTrace(LogEvent event) {
+        return exceptionFormatter.createStackTrace(event.getThrowable());
     }
 
     private String getServerUrl(HttpServletRequest req) {
@@ -391,5 +383,9 @@ public class LogEventsServlet extends HttpServlet {
 
     public void setMessageFormatter(MessageFormatter messageFormatter) {
         this.messageFormatter = messageFormatter;
+    }
+
+    public void setExceptionFormatter(JsonExceptionFormatter exceptionFormatter) {
+        this.exceptionFormatter = exceptionFormatter;
     }
 }

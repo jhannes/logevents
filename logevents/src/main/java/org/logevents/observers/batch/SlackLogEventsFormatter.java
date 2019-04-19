@@ -98,14 +98,13 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         } else {
             for (LogEventGroup group : batch.groups()) {
                 LogEvent logEvent = group.headMessage();
+                text.append("* ").append(italic(group.headMessage().getZonedDateTime().toLocalTime())).append(": ");
                 if (group.size() > 1) {
                     String message = group.headMessage().getMessage();
-                    text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ");
                     text.append(batch.isMainGroup(group) ? bold(message) : message);
                     text.append(" (").append(group.size()).append(" repetitions)\n");
                 } else {
                     String message = formatMessage(group.headMessage());
-                    text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ");
                     text.append(batch.isMainGroup(group) ? bold(message) : message);
                     text.append("\n");
                 }
@@ -113,6 +112,10 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         }
         attachment.put("text", text);
         return attachment;
+    }
+
+    private String italic(Object o) {
+        return "_" + o + "_";
     }
 
     private String formatMessage(LogEvent logEvent) {

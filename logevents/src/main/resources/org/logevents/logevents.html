@@ -204,7 +204,6 @@ function showLogEventTable() {
             eventCard.appendChild(document.createTextNode(" \u2757"));
         }
 
-
         const eventDetails = createElementWithText("div", logEvent.formattedMessage);
         eventDetails.classList.add("details");
         const ul = document.createElement("ul");
@@ -231,9 +230,10 @@ function showLogEventTable() {
             const stackTrace = document.createElement("pre");
             for (const element of logEvent.stackTrace) {
                 if (element.sourceLink) {
-                    stackTrace.innerHTML += "<a href='#" + element.sourceLink + "'>" + element.className + "#" + element.methodName + "</a>\n";
+                    stackTrace.innerHTML += "<a target='source' href='" + element.sourceLink + "'>" + element.className + "#" + element.methodName + "</a>\n";
                 } else {
-                    stackTrace.innerText += element.className + "#" + element.methodName + "\n";
+                    stackTrace.innerHTML += element.className + "#" + element.methodName + "("
+                        + element.fileName + ":" + element.lineNumber + ")\n";
                 }
             }
             ul.appendChild(stackTrace);

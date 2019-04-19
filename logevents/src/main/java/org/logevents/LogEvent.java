@@ -177,12 +177,12 @@ public class LogEvent implements LoggingEvent {
         return throwable;
     }
 
-    public ZonedDateTime getZonedDateTime() {
-        return getInstant().atZone(ZoneId.systemDefault());
-    }
-
     public Instant getInstant() {
         return Instant.ofEpochMilli(timestamp);
+    }
+
+    public ZonedDateTime getZonedDateTime() {
+        return getInstant().atZone(ZoneId.systemDefault());
     }
 
     public LocalTime getLocalTime() {

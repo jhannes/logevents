@@ -2,6 +2,7 @@ package org.logevents.observers;
 
 import com.sun.net.httpserver.HttpsServer;
 import org.logevents.LogEvent;
+import org.logevents.extend.servlets.JsonExceptionFormatter;
 import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.util.Configuration;
@@ -49,7 +50,7 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
 
     private Optional<String> cookieEncryptionKey = Optional.empty();
     private final OpenIdConfiguration openIdConfiguration;
-    private String[] packageFilter;
+    private JsonExceptionFormatter exceptionFormatter;
 
     public WebLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
@@ -61,8 +62,7 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
                 configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class)
                 );
         configureFilter(configuration);
-        setPackageFilter(configuration.getStringList("packageFilter"));
-        //formatter.configureSourceCode(configuration);
+        this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", JsonExceptionFormatter.class);
         this.cookieEncryptionKey = configuration.optionalString("cookieEncryptionKey");
         configuration.checkForUnknownFields();
     }
@@ -89,20 +89,11 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         return logEventBuffer;
     }
 
-    protected boolean isIgnored(StackTraceElement frame) {
-        for (String filter : this.packageFilter) {
-            if (frame.getClassName().startsWith(filter)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void setPackageFilter(String[] packageFilter) {
-        this.packageFilter = packageFilter;
-    }
-
     public MessageFormatter getMessageFormatter() {
         return messageFormatter;
+    }
+
+    public JsonExceptionFormatter getExceptionFormatter() {
+        return exceptionFormatter;
     }
 }
