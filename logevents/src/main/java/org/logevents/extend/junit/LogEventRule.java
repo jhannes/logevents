@@ -6,6 +6,7 @@ import org.junit.runners.model.Statement;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
+import org.logevents.formatting.MessageFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -52,7 +53,7 @@ public class LogEventRule implements TestRule, LogEventObserver {
             .collect(Collectors.toList());
         assertTrue("Expected only one logged message at level " + level + ", but was " + events,
                 events.size() == 1);
-        assertEquals(message, events.get(0).formatMessage());
+        assertEquals(message, formatMessage(events.get(0)));
         assertEquals(level, events.get(0).getLevel());
     }
 
@@ -60,7 +61,7 @@ public class LogEventRule implements TestRule, LogEventObserver {
         assertFalse("Expected <" + message + "> but no messages were logged",
                 events.isEmpty());
         for (LogEvent event : events) {
-            if (event.formatMessage().equals(message)) {
+            if (formatMessage(event).equals(message)) {
                 assertEquals("Log level for " + message, level, event.getLevel());
                 return;
             }
@@ -68,11 +69,15 @@ public class LogEventRule implements TestRule, LogEventObserver {
         fail("Could not find <" + message + "> in logged messages: " + events);
     }
 
+    public String formatMessage(LogEvent event) {
+        return new MessageFormatter().format(event.getMessage(), event.getArgumentArray());
+    }
+
     public void assertContainsMessage(Level level, String message, Throwable throwable) {
         assertFalse("Expected <" + message + "> but no messages were logged",
                 events.isEmpty());
         for (LogEvent event : events) {
-            if (event.formatMessage().equals(message)) {
+            if (formatMessage(event).equals(message)) {
                 assertEquals("Log level for " + message, level, event.getLevel());
                 assertEquals("Exception for " + message, throwable, event.getThrowable());
                 return;
@@ -83,7 +88,7 @@ public class LogEventRule implements TestRule, LogEventObserver {
 
     public void assertDoesNotContainMessage(String message) {
         for (LogEvent event : events) {
-            if (event.formatMessage().equals(message)) {
+            if (formatMessage(event).equals(message)) {
                 fail("Did not expect to find find <" + message + "> in logged messages, but was " + event);
             }
         }

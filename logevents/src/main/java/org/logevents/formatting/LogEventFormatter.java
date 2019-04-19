@@ -46,10 +46,6 @@ public interface LogEventFormatter extends Function<LogEvent, String> {
         return mdcValue.isEmpty() ? "" : " {" + String.join(", ", mdcValue) + "}";
     }
 
-    default String formatMessage(LogEvent e) {
-        return e.formatMessage();
-    }
-
     default void configure(Configuration configuration) {
     }
 }

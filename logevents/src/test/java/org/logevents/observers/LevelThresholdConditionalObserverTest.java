@@ -1,18 +1,18 @@
 package org.logevents.observers;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
 
 public class LevelThresholdConditionalObserverTest {
 
@@ -21,7 +21,7 @@ public class LevelThresholdConditionalObserverTest {
     public static class Observer implements LogEventObserver {
         @Override
         public void logEvent(LogEvent logEvent) {
-            events.add(logEvent.formatMessage());
+            events.add(logEvent.getMessage());
         }
     }
 

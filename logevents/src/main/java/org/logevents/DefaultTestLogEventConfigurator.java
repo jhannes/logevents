@@ -30,13 +30,14 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
                     e.getThreadName(),
                     colorizedLevel(e),
                     format.bold(e.getLoggerName()),
-                    formatMessage(e))
+                    messageFormatter.format(e.getMessage(), e.getArgumentArray()))
                     + exceptionFormatter.format(e.getThrowable());
         }
 
         private Object getTestMethod(LogEvent logEvent) {
             StackTraceElement[] stackTrace = logEvent.getStackTrace();
 
+            // TODO: org.junit.runners.statements.RunBefores -> java.lang.reflect.Method -> not jdk.internal.reflect or java.reflect
             int junitRunnerPos = -1;
             for (int i = 0; i < stackTrace.length-1; i++) {
                 StackTraceElement stackTraceElement = stackTrace[i];

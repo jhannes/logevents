@@ -1,8 +1,8 @@
 package org.logevents.util.pattern;
 
-import java.util.Optional;
-
 import org.logevents.formatting.PatternLogEventFormatter;
+
+import java.util.Optional;
 
 /**
  * Utility method used to handle {@link PatternLogEventFormatter}
@@ -47,7 +47,7 @@ public class StringScanner {
 
     /**
      * Advances the current position over all current whitespace. If
-     * the current position is not a whitespace when {@link #skipWhitespace()} is
+     * the current position is not a whitespace when skipWhitespace() is
      * called, this method has no effect.
      */
     public void skipWhitespace() {
@@ -75,9 +75,9 @@ public class StringScanner {
         return parameter.toString();
     }
 
-    private boolean contains(char[] array, char c) {
-        for (int i = 0; i < array.length; i++) {
-            if (array[i] == c) return true;
+    private boolean contains(char[] array, char target) {
+        for (char c : array) {
+            if (c == target) return true;
         }
         return false;
     }

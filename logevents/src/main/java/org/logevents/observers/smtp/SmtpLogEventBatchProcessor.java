@@ -1,5 +1,7 @@
 package org.logevents.observers.smtp;
 
+import org.logevents.LogEvent;
+import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.batch.LogEventGroup;
@@ -19,6 +21,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
+    private final MessageFormatter messageFormatter;
     private String fromAddress;
     private String recipients;
     private Optional<String> applicationName;
@@ -32,6 +35,7 @@ public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
         this.applicationName = configuration.optionalString("applicationName");
         this.smtpUsername = configuration.optionalString("username").orElse(fromAddress);
         this.smtpPassword = configuration.getString("password");
+        this.messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
 
         props = new Properties();
         props.put("mail.smtp.starttls.enable", "true");
@@ -70,7 +74,8 @@ public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
         MimeMessage message = new MimeMessage(session);
         message.setFrom(fromAddress);
         message.setRecipients(Message.RecipientType.TO, recipients);
-        message.setSubject("[" + getApplicationName() + "] " + batch.firstHighestLevelLogEventGroup().headMessage().formatMessage());
+        LogEvent logEvent = batch.firstHighestLevelLogEventGroup().headMessage();
+        message.setSubject("[" + getApplicationName() + "] " + messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray()));
         message.setText(formatMessageBatch(batch));
         return message;
     }
@@ -78,13 +83,14 @@ public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
     private String formatMessageBatch(LogEventBatch batch) {
         StringBuilder text = new StringBuilder();
         for (LogEventGroup group : batch.groups()) {
-            String message = group.headMessage().formatMessage();
+            LogEvent logEvent = group.headMessage();
+            String message = messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray());
             if (group.size() > 1) {
                 message += " (" + group.size() + " repetitions)";
             }
             text.append("* ")
-                    .append(group.headMessage().getLocalTime())
-                    .append(" ").append(group.headMessage().getLevel()).append(": ")
+                    .append(logEvent.getLocalTime())
+                    .append(" ").append(logEvent.getLevel()).append(": ")
                     .append(message)
                     .append("\n");
         }

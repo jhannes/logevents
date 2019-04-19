@@ -3,6 +3,7 @@ package org.logevents.observers;
 import com.sun.net.httpserver.HttpsServer;
 import org.logevents.LogEvent;
 import org.logevents.extend.servlets.LogEventsServlet;
+import org.logevents.formatting.MessageFormatter;
 import org.logevents.util.Configuration;
 import org.logevents.util.openid.OpenIdConfiguration;
 
@@ -44,6 +45,7 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
      * In order to survive reload of configuration, it's useful to have a static message buffer
      */
     private static final LogEventBuffer logEventBuffer = new LogEventBuffer();
+    private final MessageFormatter messageFormatter;
 
     private Optional<String> cookieEncryptionKey = Optional.empty();
     private final OpenIdConfiguration openIdConfiguration;
@@ -54,7 +56,10 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
     }
 
     public WebLogEventObserver(Configuration configuration) {
-        this(new OpenIdConfiguration(configuration));
+        this(
+                new OpenIdConfiguration(configuration),
+                configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class)
+                );
         configureFilter(configuration);
         setPackageFilter(configuration.getStringList("packageFilter"));
         //formatter.configureSourceCode(configuration);
@@ -62,8 +67,9 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         configuration.checkForUnknownFields();
     }
 
-    public WebLogEventObserver(OpenIdConfiguration openIdConfiguration) {
+    public WebLogEventObserver(OpenIdConfiguration openIdConfiguration, MessageFormatter messageFormatter) {
         this.openIdConfiguration = openIdConfiguration;
+        this.messageFormatter = messageFormatter;
     }
 
     public Optional<String> getCookieEncryptionKey() {
@@ -94,5 +100,9 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
 
     public void setPackageFilter(String[] packageFilter) {
         this.packageFilter = packageFilter;
+    }
+
+    public MessageFormatter getMessageFormatter() {
+        return messageFormatter;
     }
 }

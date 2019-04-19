@@ -1,6 +1,7 @@
 package org.logevents.observers.batch;
 
 import org.logevents.LogEvent;
+import org.logevents.formatting.MessageFormatter;
 import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
@@ -21,6 +22,7 @@ import java.util.Optional;
  */
 public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
+    private MessageFormatter messageFormatter = new MessageFormatter();
     private SlackExceptionFormatter exceptionFormatter = new SlackExceptionFormatter();
     private Optional<String> username = Optional.empty();
     private Optional<String> channel = Optional.empty();
@@ -58,7 +60,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         }
         return JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()) + " "
             + exceptionInfo
-            + event.formatMessage()
+            + formatMessage(event)
             + " [" + event.getAbbreviatedLoggerName(10) + "]"
             + (mainGroup.size() > 1 ? " (" + mainGroup.size() + " repetitions)" : "")
             + (event.getLevel() == Level.ERROR ? " <!channel>" : "");
@@ -87,7 +89,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         StringBuilder text = new StringBuilder();
         if (showRepeatsIndividually) {
             for (LogEvent logEvent : batch) {
-                String message = logEvent.formatMessage();
+                String message = formatMessage(logEvent);
                 text.append(JsonLogEventsBatchFormatter.emojiiForLevel(logEvent.getLevel()))
                         .append(" _").append(logEvent.getLocalTime()).append("_: ");
                 text.append(message);
@@ -102,7 +104,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
                     text.append(batch.isMainGroup(group) ? bold(message) : message);
                     text.append(" (").append(group.size()).append(" repetitions)\n");
                 } else {
-                    String message = group.headMessage().formatMessage();
+                    String message = formatMessage(group.headMessage());
                     text.append("*").append(" _").append(group.headMessage().getZonedDateTime().toLocalTime()).append("_: ");
                     text.append(batch.isMainGroup(group) ? bold(message) : message);
                     text.append("\n");
@@ -111,6 +113,10 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         }
         attachment.put("text", text);
         return attachment;
+    }
+
+    private String formatMessage(LogEvent logEvent) {
+        return messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray());
     }
 
     private String getColor(Level level) {

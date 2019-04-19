@@ -1,12 +1,12 @@
 package org.logevents.util.pattern;
 
+import org.logevents.formatting.PatternLogEventFormatter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-
-import org.logevents.formatting.PatternLogEventFormatter;
 
 /**
  * Used to parse a single conversion for {@link PatternLogEventFormatter}. A
@@ -137,6 +137,7 @@ public class PatternConverterSpec<T extends Function<?, String>> {
     private void readParameters() {
         if (scanner.current() == '{')  {
             scanner.advance();
+            //noinspection StatementWithEmptyBody
             while (readSingleParameter()) {}
         }
     }

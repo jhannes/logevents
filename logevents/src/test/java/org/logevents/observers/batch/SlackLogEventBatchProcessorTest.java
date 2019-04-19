@@ -38,7 +38,7 @@ public class SlackLogEventBatchProcessorTest {
 
         @Override
         protected String createText(LogEventGroup mainGroup) {
-            return mainGroup.headMessage().formatMessage();
+            return mainGroup.headMessage().getMessage();
         }
     }
 

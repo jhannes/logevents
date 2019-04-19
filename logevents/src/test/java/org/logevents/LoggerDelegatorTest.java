@@ -1,20 +1,20 @@
 package org.logevents;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Random;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Random;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class LoggerDelegatorTest {
 
@@ -100,9 +100,8 @@ public class LoggerDelegatorTest {
         String message = "Here is some message: {}, {} and {}";
         loggerDelegator.error(message, 1, 2, 3);
         LogEvent event = observer.getEvents().get(0);
-        assertEquals(message, event.getMessage());
-        assertEquals("Here is some message: 1, 2 and 3", event.formatMessage());
         assertEquals(Level.ERROR, event.getLevel());
+        assertEquals(message, event.getMessage());
         assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
 
@@ -126,7 +125,8 @@ public class LoggerDelegatorTest {
         LogEvent event = observer.getEvents().get(0);
         assertEquals(e, event.getThrowable());
         assertEquals(Level.ERROR, event.getLevel());
-        assertEquals("Here is some message with an exception: 1, 2 and 3", event.formatMessage());
+        assertEquals(message, event.getMessage());
+        assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
 
     @Test
@@ -167,7 +167,6 @@ public class LoggerDelegatorTest {
         loggerDelegator.warn(message, 1, 2, 3);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
-        assertEquals("Here is some message: 1, 2 and 3", event.formatMessage());
         assertEquals(Level.WARN, event.getLevel());
         assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
@@ -192,7 +191,8 @@ public class LoggerDelegatorTest {
         LogEvent event = observer.getEvents().get(0);
         assertEquals(e, event.getThrowable());
         assertEquals(Level.WARN, event.getLevel());
-        assertEquals("Here is some message with an exception: 1, 2 and 3", event.formatMessage());
+        assertEquals(message, event.getMessage());
+        assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
 
     @Test
@@ -232,9 +232,8 @@ public class LoggerDelegatorTest {
         String message = "Here is some message: {}, {} and {}";
         loggerDelegator.info(message, 1, 2, 3);
         LogEvent event = observer.getEvents().get(0);
-        assertEquals(message, event.getMessage());
-        assertEquals("Here is some message: 1, 2 and 3", event.formatMessage());
         assertEquals(Level.INFO, event.getLevel());
+        assertEquals(message, event.getMessage());
         assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
 
@@ -258,7 +257,7 @@ public class LoggerDelegatorTest {
         LogEvent event = observer.getEvents().get(0);
         assertEquals(e, event.getThrowable());
         assertEquals(Level.INFO, event.getLevel());
-        assertEquals("Here is some message with an exception: 1, 2 and 3", event.formatMessage());
+        assertEquals(message, event.getMessage());
     }
 
     @Test
@@ -298,9 +297,8 @@ public class LoggerDelegatorTest {
         String message = "Here is some message: {}, {} and {}";
         loggerDelegator.debug(message, 1, 2, 3);
         LogEvent event = observer.getEvents().get(0);
-        assertEquals(message, event.getMessage());
-        assertEquals("Here is some message: 1, 2 and 3", event.formatMessage());
         assertEquals(Level.DEBUG, event.getLevel());
+        assertEquals(message, event.getMessage());
         assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
 
@@ -324,7 +322,8 @@ public class LoggerDelegatorTest {
         LogEvent event = observer.getEvents().get(0);
         assertEquals(e, event.getThrowable());
         assertEquals(Level.DEBUG, event.getLevel());
-        assertEquals("Here is some message with an exception: 1, 2 and 3", event.formatMessage());
+        assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
+        assertEquals(message, event.getMessage());
     }
 
     @Test
@@ -365,7 +364,6 @@ public class LoggerDelegatorTest {
         loggerDelegator.trace(message, 1, 2, 3);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(message, event.getMessage());
-        assertEquals("Here is some message: 1, 2 and 3", event.formatMessage());
         assertEquals(Level.TRACE, event.getLevel());
         assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
@@ -389,8 +387,9 @@ public class LoggerDelegatorTest {
         loggerDelegator.trace(message, 1, 2, 3, e);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(e, event.getThrowable());
+        assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
         assertEquals(Level.TRACE, event.getLevel());
-        assertEquals("Here is some message with an exception: 1, 2 and 3", event.formatMessage());
+        assertEquals(message, event.getMessage());
     }
 
     @Test
@@ -435,7 +434,6 @@ public class LoggerDelegatorTest {
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
-        assertEquals("Here is some message: 1, 2 and 3", event.formatMessage());
         assertEquals(Level.ERROR, event.getLevel());
         assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
@@ -461,8 +459,9 @@ public class LoggerDelegatorTest {
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(e, event.getThrowable());
+        assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
         assertEquals(Level.ERROR, event.getLevel());
-        assertEquals("Here is some message with an exception: 1, 2 and 3", event.formatMessage());
+        assertEquals(message, event.getMessage());
     }
 
     @Test
@@ -507,7 +506,6 @@ public class LoggerDelegatorTest {
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
-        assertEquals("Here is some message: 1, 2 and 3", event.formatMessage());
         assertEquals(Level.WARN, event.getLevel());
         assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
@@ -534,7 +532,7 @@ public class LoggerDelegatorTest {
         assertEquals(marker, event.getMarker());
         assertEquals(e, event.getThrowable());
         assertEquals(Level.WARN, event.getLevel());
-        assertEquals("Here is some message with an exception: 1, 2 and 3", event.formatMessage());
+        assertEquals(message, event.getMessage());
     }
 
     @Test
@@ -579,7 +577,6 @@ public class LoggerDelegatorTest {
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
         assertEquals(message, event.getMessage());
-        assertEquals("Here is some message: 1, 2 and 3", event.formatMessage());
         assertEquals(Level.INFO, event.getLevel());
         assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
@@ -606,7 +603,7 @@ public class LoggerDelegatorTest {
         assertEquals(marker, event.getMarker());
         assertEquals(e, event.getThrowable());
         assertEquals(Level.INFO, event.getLevel());
-        assertEquals("Here is some message with an exception: 1, 2 and 3", event.formatMessage());
+        assertEquals(message, event.getMessage());
     }
 
     @Test
@@ -650,9 +647,8 @@ public class LoggerDelegatorTest {
         loggerDelegator.debug(marker, message, 1, 2, 3);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
-        assertEquals(message, event.getMessage());
-        assertEquals("Here is some message: 1, 2 and 3", event.formatMessage());
         assertEquals(Level.DEBUG, event.getLevel());
+        assertEquals(message, event.getMessage());
         assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
 
@@ -678,7 +674,8 @@ public class LoggerDelegatorTest {
         assertEquals(marker, event.getMarker());
         assertEquals(e, event.getThrowable());
         assertEquals(Level.DEBUG, event.getLevel());
-        assertEquals("Here is some message with an exception: 1, 2 and 3", event.formatMessage());
+        assertEquals(message, event.getMessage());
+        assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
 
     @Test
@@ -722,9 +719,8 @@ public class LoggerDelegatorTest {
         loggerDelegator.trace(marker, message, 1, 2, 3);
         LogEvent event = observer.getEvents().get(0);
         assertEquals(marker, event.getMarker());
-        assertEquals(message, event.getMessage());
-        assertEquals("Here is some message: 1, 2 and 3", event.formatMessage());
         assertEquals(Level.TRACE, event.getLevel());
+        assertEquals(message, event.getMessage());
         assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
 
@@ -750,7 +746,8 @@ public class LoggerDelegatorTest {
         assertEquals(marker, event.getMarker());
         assertEquals(e, event.getThrowable());
         assertEquals(Level.TRACE, event.getLevel());
-        assertEquals("Here is some message with an exception: 1, 2 and 3", event.formatMessage());
+        assertEquals(message, event.getMessage());
+        assertArrayEquals(new Object[] { 1, 2, 3 }, event.getArgumentArray());
     }
 
     private Exception randomException() {

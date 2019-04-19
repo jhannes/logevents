@@ -3,8 +3,14 @@ package org.logevents.formatting;
 import org.logevents.status.LogEventStatus;
 
 import java.util.Arrays;
+import java.util.function.BiFunction;
 
-public class MessageFormatter {
+/**
+ * Output a message format with embedded message arguments. This is a reimplementation of
+ * {@link org.slf4j.helpers.MessageFormatter}, which allows for custom formatting of
+ * the embedded message arguments.
+ */
+public class MessageFormatter implements BiFunction<String, Object[], String> {
 
     public String format(String messageFormat, Object... args) {
         if (args == null || args.length == 0) {
@@ -14,7 +20,6 @@ public class MessageFormatter {
         StringBuilder result = new StringBuilder(messageFormat.length() + 50);
         format(result, messageFormat, args);
         return result.toString();
-        //return org.slf4j.helpers.MessageFormatter.arrayFormat(messageFormat, args).getMessage();
     }
 
     private void format(StringBuilder result, String messageFormat, Object[] args) {
@@ -24,7 +29,7 @@ public class MessageFormatter {
             int newPos;
             newPos = messageFormat.indexOf("{}", pos);
             while (isBackspace(messageFormat, newPos-1)) {
-                result.append(messageFormat, pos, newPos-1);
+                outputConstant(result, messageFormat, pos, newPos-1);
                 pos = newPos;
                 if (isBackspace(messageFormat, newPos-2)) {
                     break;
@@ -34,13 +39,17 @@ public class MessageFormatter {
             if (newPos < 0) {
                 break;
             }
-            result.append(messageFormat, pos, newPos);
+            outputConstant(result, messageFormat, pos, newPos);
             safeOutputArgument(result, args[i]);
             pos = newPos + 2;
             i++;
         }
 
         result.append(messageFormat.substring(pos));
+    }
+
+    protected StringBuilder outputConstant(StringBuilder destination, CharSequence source, int start, int end) {
+        return destination.append(source, start, end);
     }
 
     private boolean isBackspace(String messageFormat, int pos) {
@@ -89,5 +98,10 @@ public class MessageFormatter {
         else if (arg.getClass() == boolean[].class)
             return Arrays.toString((boolean[]) arg);
         return Arrays.deepToString(((Object[])arg));
+    }
+
+    @Override
+    public String apply(String s, Object[] objects) {
+        return format(s, objects);
     }
 }

@@ -2,8 +2,7 @@ package org.logevents.extend.servlets;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
-import org.logevents.formatting.LogEventFormatter;
-import org.logevents.formatting.TTLLEventLogFormatter;
+import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.LogEventBuffer;
 import org.logevents.observers.WebLogEventObserver;
 import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
@@ -126,15 +125,14 @@ public class LogEventsServlet extends HttpServlet {
 
     private final static Logger logger = LoggerFactory.getLogger(LogEventsServlet.class);
     private static final Marker AUDIT = MarkerFactory.getMarker("AUDIT");
-
-    private LogEventFormatter formatter = new TTLLEventLogFormatter();
+    private static final String LOGEVENTS_API = "/org/logevents/swagger.json";
 
     private String logeventsHtml = "/org/logevents/logevents.html";
-    private String logeventsApi = "/org/logevents/swagger.json";
     private Cipher encryptCipher;
     private Cipher decryptCipher;
     private LogEventBuffer logEventBuffer;
     private OpenIdConfiguration openIdConfiguration;
+    private MessageFormatter messageFormatter = new MessageFormatter();
 
     @Override
     public void init() {
@@ -143,9 +141,13 @@ public class LogEventsServlet extends HttpServlet {
     }
 
     public void configure(Configuration configuration) {
-        WebLogEventObserver eventObserver = new WebLogEventObserver(configuration);
+        setEventObserver(new WebLogEventObserver(configuration));
+    }
+
+    public void setEventObserver(WebLogEventObserver eventObserver) {
         setLogEventBuffer(eventObserver.getLogEventBuffer());
         setOpenIdConfiguration(eventObserver.getOpenIdConfiguration());
+        setMessageFormatter(eventObserver.getMessageFormatter());
         setupEncryption(eventObserver.getCookieEncryptionKey());
     }
 
@@ -188,7 +190,7 @@ public class LogEventsServlet extends HttpServlet {
             copyResource(resp, logeventsHtml);
         } else if (req.getPathInfo().equals("/swagger.json")) {
             resp.setContentType("application/json");
-            Map<String, Object> api = (Map<String, Object>) JsonParser.parse(getClass().getResourceAsStream(logeventsApi));
+            Map<String, Object> api = (Map<String, Object>) JsonParser.parse(getClass().getResourceAsStream(LOGEVENTS_API));
             HashMap<Object, Object> localServer = new HashMap<>();
             localServer.put("url", req.getContextPath() + req.getServletPath());
             api.put("servers", Collections.singletonList(localServer));
@@ -304,7 +306,7 @@ public class LogEventsServlet extends HttpServlet {
                                 return true;
                             }
                         }
-                    } catch (GeneralSecurityException|IllegalArgumentException e) {
+                    } catch (GeneralSecurityException|IllegalArgumentException|ArrayIndexOutOfBoundsException e) {
                         LogEventStatus.getInstance().addError(this, "Decoding session failed", e);
                     }
                     cookie.setValue("");
@@ -335,7 +337,7 @@ public class LogEventsServlet extends HttpServlet {
         jsonEvent.put("abbreviatedLogger", event.getAbbreviatedLoggerName(0));
         jsonEvent.put("level", event.getLevel().name());
         jsonEvent.put("levelIcon", JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()));
-        jsonEvent.put("formattedMessage", event.formatMessage());
+        jsonEvent.put("formattedMessage", messageFormatter.format(event.getMessage(), event.getArgumentArray()));
         jsonEvent.put("messageTemplate", event.getMessage());
         jsonEvent.put("marker", Optional.ofNullable(event.getMarker()).map(Marker::getName).orElse(null));
 
@@ -385,5 +387,9 @@ public class LogEventsServlet extends HttpServlet {
 
     public void setOpenIdConfiguration(OpenIdConfiguration openIdConfiguration) {
         this.openIdConfiguration = openIdConfiguration;
+    }
+
+    public void setMessageFormatter(MessageFormatter messageFormatter) {
+        this.messageFormatter = messageFormatter;
     }
 }

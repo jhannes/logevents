@@ -30,7 +30,7 @@ public class ConsoleLogEventFormatterTest {
                 .withLoggerName(loggerName)
                 .withFormat("Hello {}").withArgs("there")
                 .build());
-        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mcom.example.LoggerName\033[m]: Hello there\n",
+        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mcom.example.LoggerName\033[m]: Hello \033[4;mthere\033[m\n",
                 message);
     }
 

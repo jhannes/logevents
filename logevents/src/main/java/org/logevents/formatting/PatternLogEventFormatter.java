@@ -100,7 +100,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
         factory.put("level", spec -> e -> e.getLevel().toString());
         factory.put("coloredLevel", spec -> e -> e.getLevel().toString());
-        factory.put("message", spec -> LogEvent::formatMessage);
+        factory.put("message", spec -> PatternLogEventFormatter::formatMessage);
         factory.putAliases("message", new String[] { "m", "msg" });
         factory.put("thread", spec -> LogEvent::getThreadName);
         factory.putAliases("thread", new String[] { "t" });
@@ -160,6 +160,10 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.putTransformer("underline", spec -> s -> ansiFormat.underline(s));
     }
 
+    private static String formatMessage(LogEvent logEvent) {
+        return new MessageFormatter().format(logEvent.getMessage(), logEvent.getArgumentArray());
+    }
+
     private String pattern;
     private final ExceptionFormatter exceptionFormatter;
 
@@ -179,8 +183,8 @@ public class PatternLogEventFormatter implements LogEventFormatter {
     }
 
     public PatternLogEventFormatter(Configuration configuration) {
-        setPattern(configuration.getString("pattern"));
         this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", ExceptionFormatter.class);
+        setPattern(configuration.getString("pattern"));
         configuration.checkForUnknownFields();
     }
 

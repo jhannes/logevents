@@ -1,6 +1,7 @@
 package org.logevents.observers.batch;
 
 import org.logevents.LogEvent;
+import org.logevents.formatting.MessageFormatter;
 import org.slf4j.event.Level;
 
 import java.net.InetAddress;
@@ -14,6 +15,9 @@ import java.util.Map;
 import java.util.Optional;
 
 public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatter {
+
+    private MessageFormatter messageFormatter = new MessageFormatter();
+
     @Override
     public Map<String, Object> createMessage(LogEventBatch batch) {
         Map<String, Object> message = new LinkedHashMap<>();
@@ -66,7 +70,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         }
         return event.getLevel().toString().substring(0, 1) + " "
                 + exceptionInfo
-                + event.formatMessage()
+                + formatMessage(event)
                 + (batch.size() > 1 ? " (more)" : "");
     }
 
@@ -87,7 +91,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         }
         return event.getLevel().toString().substring(0, 1) + " "
                 + exceptionInfo
-                + event.formatMessage()
+                + formatMessage(event)
                 + " [" + event.getAbbreviatedLoggerName(10) + "]"
                 + (mainGroup.size() > 1 ? " (" + mainGroup.size() + " repetitions)" : "")
                 + (batch.groups().size() > 1 ? " (" + batch.groups().size() + " unique messages)" : "")
@@ -109,6 +113,10 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         } catch (UnknownHostException ignored) {
         }
         return hostname;
+    }
+
+    private String formatMessage(LogEvent event) {
+        return messageFormatter.format(event.getMessage(), event.getArgumentArray());
     }
 
 }

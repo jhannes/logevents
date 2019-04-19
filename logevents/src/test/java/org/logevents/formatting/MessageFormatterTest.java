@@ -1,11 +1,16 @@
 package org.logevents.formatting;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.logevents.status.LogEventStatus;
+import org.logevents.status.StatusEvent;
 
 import static org.junit.Assert.assertEquals;
 
 public class MessageFormatterTest {
 
+    private static StatusEvent.StatusLevel oldThreshold;
     private MessageFormatter messageFormatter = new MessageFormatter();
 
     @Test
@@ -28,7 +33,10 @@ public class MessageFormatterTest {
     @Test
     public void shouldDisplayPrimitiveArrays() {
         assertEquals("This is a message with number [1, 2, 4] included",
-                messageFormatter.format("This is a message with number {} included", new int[] {1, 2, 4}));
+                messageFormatter.format(
+                        "This is a message with number {} included",
+                        new Object[] { new int[] {1, 2, 4} }
+                ));
     }
 
     @Test
@@ -70,5 +78,16 @@ public class MessageFormatterTest {
                 messageFormatter.format("A message where {} is fairly interesting",
                         new Object[] { argumentArray })
                 );
+    }
+
+
+    @BeforeClass
+    public static void turnOffStatusLogging() {
+        oldThreshold = LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
+    }
+
+    @AfterClass
+    public static void restoreStatusLogging() {
+        LogEventStatus.getInstance().setThreshold(oldThreshold);
     }
 }

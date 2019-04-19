@@ -88,7 +88,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     @Test
     public void shouldRemoveTamperedCookie() {
         Cookie sessionCookie = createSessionCookie(Instant.now().minusSeconds(2 * 60 * 60));
-        sessionCookie.setValue(sessionCookie.getValue()+"0");
+        sessionCookie.setValue("000" + sessionCookie.getValue().substring(3));
 
         boolean authenticated = servlet.authenticated(response, new Cookie[] { sessionCookie });
         assertFalse(sessionCookie + " should be expired", authenticated);
@@ -197,11 +197,8 @@ public class LogEventsServletTest extends LogEventsServlet {
         verify(response).setContentType("application/json");
         Map<String, Object> openApiDefinition = (Map<String, Object>) JsonParser.parse(output.toString());
 
-
         assertEquals("Log Events - a simple Java Logging library",
                 JsonUtil.getField(JsonUtil.getObject(openApiDefinition, "info"), "description"));
-
-
     }
 
     public Cookie createSessionCookie(Instant now) {

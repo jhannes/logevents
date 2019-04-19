@@ -11,6 +11,7 @@ import org.logevents.util.Configuration;
  */
 public final class TTLLEventLogFormatter implements LogEventFormatter {
 
+    protected MessageFormatter messageFormatter = new MessageFormatter();
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
 
     private String[] includeMdcKeys = new String[0];
@@ -23,7 +24,7 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
                 LogEventFormatter.rightPad(e.getLevel(), 5, ' '),
                 e.getLoggerName(),
                 mdc(e, includeMdcKeys),
-                formatMessage(e))
+                messageFormatter.format(e.getMessage(), e.getArgumentArray()))
                 + exceptionFormatter.format(e.getThrowable());
     }
 

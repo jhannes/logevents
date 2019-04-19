@@ -5,7 +5,6 @@ import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 import org.slf4j.event.LoggingEvent;
-import org.slf4j.helpers.MessageFormatter;
 
 import java.time.Instant;
 import java.time.LocalTime;
@@ -18,9 +17,7 @@ import java.util.stream.Collectors;
 
 /**
  * The representation of a log event. This class is passed to all
- * {@link LogEventObserver} instances and used internally. The most the most
- * used method is {@link #formatMessage()}, which formats {@link #getMessage()}
- * with {@link #getArgumentArray()}.
+ * {@link LogEventObserver} instances and used internally.
  * <p>
  * When using LogEvent, be aware that {@link #getCallerLocation()} is initialized lazily.
  * This will fail it's not accessed the first time inside a call to {@link LogEventObserver}
@@ -178,10 +175,6 @@ public class LogEvent implements LoggingEvent {
     @Override
     public Throwable getThrowable() {
         return throwable;
-    }
-
-    public String formatMessage() {
-        return MessageFormatter.arrayFormat(format, args).getMessage();
     }
 
     public ZonedDateTime getZonedDateTime() {

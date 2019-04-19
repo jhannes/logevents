@@ -1,7 +1,12 @@
 package org.logevents.observers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
+import org.logevents.status.LogEventStatus;
+import org.logevents.status.StatusEvent;
+import org.logevents.status.StatusEvent.StatusLevel;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,16 +20,9 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.logevents.observers.FileDestination;
-import org.logevents.status.LogEventStatus;
-import org.logevents.status.StatusEvent;
-import org.logevents.status.StatusEvent.StatusLevel;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class FileDestinationTest {
 
@@ -118,8 +116,6 @@ public class FileDestinationTest {
         BufferedReader processReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         System.out.println(processReader.readLine());
 
-        Properties properties = new Properties();
-        properties.setProperty("observer.file.destination.filename", path.toString());
         FileDestination file = new FileDestination(path.getParent());
 
         file.writeEvent(path.getFileName().toString(), "Test message\n");
@@ -153,8 +149,6 @@ public class FileDestinationTest {
 
     private FileDestination createFileDestination(Path path) throws IOException {
         Files.deleteIfExists(path);
-        Properties properties = new Properties();
-        properties.setProperty("observer.file.destination.filename", path.toString());
         return new FileDestination(path.getParent());
     }
 

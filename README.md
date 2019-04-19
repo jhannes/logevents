@@ -419,7 +419,7 @@ your Slack messages.
 source code repository. Currently, Github and Bitbucket 5 URLs are supported.
 Examples:
 
-```
+```properties
 observer.slack.sourceCode.0.packages=org.logevents
 # See if META-INF/maven/org.logevents/logevents/pom.xml is available
 #  If so, look for the <scm> tag in the pom-file

@@ -78,8 +78,8 @@ public class Main {
                             pickOne(OPS, SECRET, HTTP, null),
                             null,
                             pickOne(Level.ERROR, Level.WARN, Level.INFO).toInt(),
-                            pickOne("Test message {}", "Other {} test message", "Even more"),
-                            new Object[] { random.nextInt(100)},
+                            pickOne("Test message {}", "Other {} test message", "Even more", "Message with <a href='#'>Embedded HTML</a>"),
+                            new Object[] { random.nextBoolean() ? random.nextInt(100) : "<a href='#'>A link</a>"},
                             random.nextInt(100) < 20 ? new IOException("Some error") : null);
                 } finally {
                     MDC.clear();
