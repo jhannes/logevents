@@ -197,7 +197,7 @@
                 "type": "string",
                 "example": "o.e.m.MyClass"
               }
-            },
+            }
           },
           "abbreviatedLogger": {
             "type": "string",
@@ -215,6 +215,39 @@
           "formattedMessage": {
             "type": "string",
             "example": "There was a disturbance in the force"
+          },
+          "message": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["constant", "argument"]
+                }
+              }
+            },
+            "example": [
+              {
+                "text": "There was a ",
+                "type": "constant"
+              },
+              {
+                "text": "disturbance",
+                "type": "argument"
+              },
+              {
+                "text": "in the ",
+                "type": "constant"
+              },
+              {
+                "text": "force",
+                "type": "argument"
+              }
+            ]
           },
           "messageTemplate": {
             "type": "string",
@@ -244,6 +277,10 @@
                 },
                 "filename": {
                   "type": "string"
+                },
+                "sourceLink": {
+                  "type": "string",
+                  "format": "url"
                 }
               }
             },
@@ -252,7 +289,8 @@
                 "className": "org.example.MyClass",
                 "methodName": "doSomething",
                 "filename": "MyClass.java",
-                "lineNumber": 42
+                "lineNumber": 42,
+                "sourceLink": "https://github.com/example/foo/src/main/java/MyClass#L42"
               },
               {
                 "className": "org.example.MyClass",

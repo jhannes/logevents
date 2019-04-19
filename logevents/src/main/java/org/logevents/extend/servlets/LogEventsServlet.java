@@ -2,10 +2,8 @@ package org.logevents.extend.servlets;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
-import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.LogEventBuffer;
 import org.logevents.observers.WebLogEventObserver;
-import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 import org.logevents.util.JsonParser;
@@ -31,7 +29,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
@@ -127,13 +124,12 @@ public class LogEventsServlet extends HttpServlet {
     private static final Marker AUDIT = MarkerFactory.getMarker("AUDIT");
     private static final String LOGEVENTS_API = "/org/logevents/swagger.json";
 
-    private String logeventsHtml = "/org/logevents/logevents.html";
+    private String logEventsHtml = "/org/logevents/logevents.html";
     private Cipher encryptCipher;
     private Cipher decryptCipher;
     private LogEventBuffer logEventBuffer;
     private OpenIdConfiguration openIdConfiguration;
-    private MessageFormatter messageFormatter = new MessageFormatter();
-    private JsonExceptionFormatter exceptionFormatter = new JsonExceptionFormatter();
+    private WebLogEventObserver webLogEventObserver = new WebLogEventObserver();
 
     @Override
     public void init() {
@@ -146,10 +142,10 @@ public class LogEventsServlet extends HttpServlet {
     }
 
     public void setEventObserver(WebLogEventObserver eventObserver) {
+        webLogEventObserver = eventObserver;
         setLogEventBuffer(eventObserver.getLogEventBuffer());
         setOpenIdConfiguration(eventObserver.getOpenIdConfiguration());
-        setMessageFormatter(eventObserver.getMessageFormatter());
-        setExceptionFormatter(eventObserver.getExceptionFormatter());
+        setLogEventsHtml(eventObserver.getLogEventsHtml());
         setupEncryption(eventObserver.getCookieEncryptionKey());
     }
 
@@ -189,7 +185,7 @@ public class LogEventsServlet extends HttpServlet {
             }
 
             resp.setContentType("text/html");
-            copyResource(resp, logeventsHtml);
+            copyResource(resp, logEventsHtml);
         } else if (req.getPathInfo().equals("/swagger.json")) {
             resp.setContentType("application/json");
             Map<String, Object> api = (Map<String, Object>) JsonParser.parse(getClass().getResourceAsStream(LOGEVENTS_API));
@@ -262,7 +258,7 @@ public class LogEventsServlet extends HttpServlet {
     private List<Map<String, Object>> findEvents(LogEventFilter filter, Collection<LogEvent> allEvents) {
         return allEvents.stream()
                 .filter(filter)
-                .map(this::formatAsJson)
+                .map(event -> webLogEventObserver.format(event))
                 .collect(Collectors.toList());
     }
 
@@ -330,39 +326,6 @@ public class LogEventsServlet extends HttpServlet {
         }
     }
 
-    Map<String, Object> formatAsJson(LogEvent event) {
-        Map<String, Object> jsonEvent = new HashMap<>();
-
-        jsonEvent.put("thread", event.getThreadName());
-        jsonEvent.put("time", event.getInstant().toString());
-        jsonEvent.put("logger", event.getLoggerName());
-        jsonEvent.put("abbreviatedLogger", event.getAbbreviatedLoggerName(0));
-        jsonEvent.put("level", event.getLevel().name());
-        jsonEvent.put("levelIcon", JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()));
-        jsonEvent.put("formattedMessage", messageFormatter.format(event.getMessage(), event.getArgumentArray()));
-        jsonEvent.put("messageTemplate", event.getMessage());
-        jsonEvent.put("marker", Optional.ofNullable(event.getMarker()).map(Marker::getName).orElse(null));
-
-        if (event.getThrowable() != null) {
-            jsonEvent.put("throwable", event.getThrowable().toString());
-            jsonEvent.put("stackTrace", createStackTrace(event));
-        }
-
-        List<Object> mdc = new ArrayList<>();
-        for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
-            Map<String, String> mdcEntry = new HashMap<>();
-            mdcEntry.put("name", entry.getKey());
-            mdcEntry.put("value", entry.getValue());
-            mdc.add(mdcEntry);
-        }
-        jsonEvent.put("mdc", mdc);
-        return jsonEvent;
-    }
-
-    private List<Map<String, Object>> createStackTrace(LogEvent event) {
-        return exceptionFormatter.createStackTrace(event.getThrowable());
-    }
-
     private String getServerUrl(HttpServletRequest req) {
         String scheme = Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
         int port = Optional.ofNullable(req.getHeader("X-Forwarded-Port")).map(Integer::parseInt).orElse(req.getServerPort());
@@ -381,11 +344,7 @@ public class LogEventsServlet extends HttpServlet {
         this.openIdConfiguration = openIdConfiguration;
     }
 
-    public void setMessageFormatter(MessageFormatter messageFormatter) {
-        this.messageFormatter = messageFormatter;
-    }
-
-    public void setExceptionFormatter(JsonExceptionFormatter exceptionFormatter) {
-        this.exceptionFormatter = exceptionFormatter;
+    public void setLogEventsHtml(String logEventsHtml) {
+        this.logEventsHtml = logEventsHtml;
     }
 }

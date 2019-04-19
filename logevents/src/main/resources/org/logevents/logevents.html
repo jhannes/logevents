@@ -61,11 +61,17 @@
 
         .event {
             border: 1px solid gray;
+            overflow-x: hidden;
+            white-space: nowrap;
         }
 
         .event button {
             width: 3em;
             margin-right: 0.5em;
+        }
+
+        .event .loggerName {
+            font-weight: bold;
         }
 
         .event .details {
@@ -78,8 +84,16 @@
             transition: 0.5s;
         }
 
-        .displayDetails.event .shortMessage {
-            display: none;
+        .formattedMessage {
+            display: inline;
+        }
+
+        .formattedMessage .argument {
+            text-decoration: underline;
+        }
+
+        .displayDetails.event .formattedMessage {
+            white-space: normal;
         }
 
         @media screen and (max-height: 450px) {
@@ -163,9 +177,12 @@ function toggleNav(e) {
     e.preventDefault();
 }
 
-function createElementWithText(tagName, textContent) {
+function createElementWithText(tagName, textContent, className) {
     const element = document.createElement(tagName);
     element.innerText = textContent;
+    if (className) {
+        element.classList.add(className);
+    }
     return element;
 }
 
@@ -195,16 +212,21 @@ function showLogEventTable() {
 
         const time = logEvent.time.replace(/^.*T(\d+:\d+:\d+).*/, "$1");
         eventCard.appendChild(createElementWithText("button", logEvent.levelIcon));
-        eventCard.appendChild(document.createTextNode(time + " [" + logEvent.abbreviatedLogger + "]: "));
-        const shortMessage = createElementWithText("span", logEvent.formattedMessage.substr(0, 60));
-        shortMessage.classList.add("shortMessage");
-        eventCard.appendChild(shortMessage);
+        eventCard.appendChild(document.createTextNode(time));
+        eventCard.appendChild(createElementWithText("span", " [" + logEvent.abbreviatedLogger + "]: ", "loggerName"));
 
         if (logEvent.throwable) {
             eventCard.appendChild(document.createTextNode(" \u2757"));
         }
 
-        const eventDetails = createElementWithText("div", logEvent.formattedMessage);
+        const formattedMessage = document.createElement("div");
+        formattedMessage.classList.add("formattedMessage");
+        for (const messagePart of logEvent.message) {
+            formattedMessage.appendChild(createElementWithText("span", messagePart.text, messagePart.type));
+        }
+        eventCard.appendChild(formattedMessage);
+
+        const eventDetails = document.createElement("div");
         eventDetails.classList.add("details");
         const ul = document.createElement("ul");
         ul.appendChild(listItem("Logger", logEvent.logger, "logger"));
