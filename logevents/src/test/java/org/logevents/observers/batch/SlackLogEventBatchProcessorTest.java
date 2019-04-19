@@ -55,7 +55,7 @@ public class SlackLogEventBatchProcessorTest {
 
         Properties properties = new Properties();
         properties.setProperty("observer.slack.slackUrl", "http://localhost:" + port);
-        properties.setProperty("observer.slack.slackLogEventsFormatter", Formatter.class.getName());
+        properties.setProperty("observer.slack.formatter", Formatter.class.getName());
         properties.setProperty("observer.slack.username", "loguser");
         properties.setProperty("observer.slack.channel", "general");
 

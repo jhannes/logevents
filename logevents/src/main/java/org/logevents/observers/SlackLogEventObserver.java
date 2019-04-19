@@ -66,7 +66,7 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
     }
 
     private static SlackLogEventsFormatter createFormatter(Configuration configuration) {
-        SlackLogEventsFormatter formatter = configuration.createInstanceWithDefault("slackLogEventsFormatter", SlackLogEventsFormatter.class);
+        SlackLogEventsFormatter formatter = configuration.createInstanceWithDefault("formatter", SlackLogEventsFormatter.class);
         formatter.setPackageFilter(configuration.getStringList("packageFilter"));
         formatter.setUsername(configuration.optionalString("username"));
         formatter.setChannel(configuration.optionalString("channel"));
