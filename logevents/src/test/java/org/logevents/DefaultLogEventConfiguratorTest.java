@@ -126,9 +126,9 @@ public class DefaultLogEventConfiguratorTest {
 
         factory.getLogger("org.example").error("Hello");
         assertEquals("Hello",
-                ((CircularBufferLogEventObserver) configurator.getObserver("buffer2")).singleMessage());
+                ((CircularBufferLogEventObserver) factory.getObserver("buffer2")).singleMessage());
         assertEquals(Collections.emptyList(),
-                new ArrayList<>(((CircularBufferLogEventObserver) configurator.getObserver("buffer1")).getEvents()));
+                new ArrayList<>(((CircularBufferLogEventObserver) factory.getObserver("buffer1")).getEvents()));
 
         assertEquals(
                 "CircularBufferLogEventObserver{size=1}",

@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.logevents.util.NetUtils.readAsString;
 
@@ -59,6 +60,16 @@ public class JsonParser {
     private JsonParser(Reader reader) throws IOException {
         this.reader = reader;
         readNext();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> parseObject(String input) throws IOException {
+        return (Map<String, Object>) parse(input);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> parseObject(InputStream input) throws IOException {
+        return (Map<String, Object>) parse(input);
     }
 
     private void readNext() throws IOException {

@@ -84,14 +84,12 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
     }
 
     @Override
-    protected void reset(LogEventFactory factory) {
-        super.reset(factory);
-        factory.setRootLevel(Level.WARN);
-        factory.setRootObserver(getObserver("console"));
+    protected ConsoleLogEventObserver createConsoleLogEventObserver(Properties configuration) {
+        return new ConsoleLogEventObserver(new ConsoleLogEventTestFormatter());
     }
 
     @Override
-    protected ConsoleLogEventObserver createConsoleLogEventObserver(Properties configuration) {
-        return new ConsoleLogEventObserver(new ConsoleLogEventTestFormatter());
+    protected Level getDefaultRootLevel() {
+        return Level.WARN;
     }
 }

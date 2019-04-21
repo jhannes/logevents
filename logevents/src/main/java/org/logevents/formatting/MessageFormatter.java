@@ -8,10 +8,6 @@ package org.logevents.formatting;
 public class MessageFormatter extends AbstractMessageFormatter<StringBuilder> {
 
     public String format(String messageFormat, Object... args) {
-        if (args == null || args.length == 0) {
-            return messageFormat;
-        }
-
         StringBuilder result = new StringBuilder(messageFormat.length() + 50);
         format(result, messageFormat, args);
         return result.toString();

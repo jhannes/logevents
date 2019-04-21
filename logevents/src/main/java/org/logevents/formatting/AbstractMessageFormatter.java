@@ -11,6 +11,10 @@ public abstract class AbstractMessageFormatter<OUTPUT> {
     protected abstract void outputConstant(OUTPUT destination, CharSequence source, int start, int end);
 
     protected void format(OUTPUT result, String messageFormat, Object[] args) {
+        if (args == null || args.length == 0) {
+            outputConstant(result, messageFormat, 0, messageFormat.length());
+            return;
+        }
         int i = 0;
         int pos = 0;
         while (i < args.length) {

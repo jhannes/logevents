@@ -4,7 +4,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
+import org.logevents.LogEventObserver;
 import org.logevents.observers.LogEventBuffer;
+import org.logevents.observers.WebLogEventObserver;
 import org.logevents.util.Configuration;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
@@ -14,6 +16,7 @@ import org.slf4j.Logger;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
+import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -63,9 +66,7 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     @Test
     public void usersShouldBeAuthenticated() {
-        HashMap<String, Object> idToken = new HashMap<>();
-        idToken.put("sub", "subjectId12345_abc");
-        idToken.put("iat", System.currentTimeMillis());
+        Map<String, Object> idToken = createSessionCookieToken(System.currentTimeMillis());
         Cookie sessionCookie = servlet.createSessionCookie(idToken);
 
         boolean authenticated = servlet.authenticated(response,
@@ -76,7 +77,9 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     @Test
     public void shouldRemoveExpiredCookie() {
-        Cookie sessionCookie = createSessionCookie(Instant.now().minusSeconds(2 * 60 * 60));
+        Cookie sessionCookie = servlet.createSessionCookie(
+                createSessionCookieToken(Instant.now().minusSeconds(2 * 60 * 60).getEpochSecond())
+        );
         assertEquals(-1, sessionCookie.getMaxAge());
 
         boolean authenticated = servlet.authenticated(response, new Cookie[] { sessionCookie });
@@ -87,7 +90,9 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     @Test
     public void shouldRemoveTamperedCookie() {
-        Cookie sessionCookie = createSessionCookie(Instant.now().minusSeconds(2 * 60 * 60));
+        Cookie sessionCookie = servlet.createSessionCookie(
+                createSessionCookieToken(Instant.now().minusSeconds(2 * 60 * 60).getEpochSecond())
+        );
         sessionCookie.setValue("000" + sessionCookie.getValue().substring(3));
 
         boolean authenticated = servlet.authenticated(response, new Cookie[] { sessionCookie });
@@ -96,24 +101,33 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldFormatLogEvent() throws IOException {
-        LogEventBuffer observer = new LogEventBuffer();
-        LogEventFactory.getInstance().setRootObserver(observer);
+    public void shouldFormatLogEvent() throws IOException, ServletException {
+        LogEventBuffer buffer = new LogEventBuffer();
+        WebLogEventObserver observer = new WebLogEventObserver() {
+            @Override
+            public LogEventBuffer getLogEventBuffer() {
+                return buffer;
+            }
+        };
+        HashMap<String, LogEventObserver> observers = new HashMap<>();
+        observers.put("servlet", observer);
+        LogEventFactory.getInstance().setObservers(observers);
         LogEvent logEvent = new LogEventSampler().withMarker().withMdc("clientIp", "127.0.0.1")
                 .withThrowable(new IOException()).build();
-        observer.logEvent(logEvent);
+        buffer.logEvent(logEvent);
 
-        servlet.setLogEventBuffer(observer);
+        servlet.setupEncryption(Optional.empty());
 
         when(request.getPathInfo()).thenReturn("/events");
-        when(request.getCookies()).thenReturn(new Cookie[] { createSessionCookie(Instant.now()) });
+        Map<String, Object> idToken = createSessionCookieToken(Instant.now().getEpochSecond());
+        when(request.getCookies()).thenReturn(new Cookie[] { servlet.createSessionCookie(idToken)});
 
         StringWriter result = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(result));
         servlet.doGet(request, response);
 
         verify(response).setContentType("application/json");
-        Map<String, Object> object = (Map<String, Object>) JsonParser.parse(result.toString());
+        Map<String, Object> object = JsonParser.parseObject(result.toString());
 
         List<Object> events = JsonUtil.getList(object, "events");
         Object classNameOfStacktrace = JsonUtil.getField(
@@ -124,12 +138,16 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldGenerateAuthenticationUrl() throws IOException {
+    public void shouldGenerateAuthenticationUrl() throws IOException, ServletException {
         Properties properties = new Properties();
         properties.put("observer.servlet.clientId", "my-application");
         properties.put("observer.servlet.clientSecret", "abc123");
         properties.put("observer.servlet.openIdIssuer", "https://login.microsoftonline.com/common");
-        servlet.configure(new Configuration(properties, "observer.servlet"));
+        WebLogEventObserver observer = new WebLogEventObserver(new Configuration(properties, "observer.servlet"));
+        HashMap<String, LogEventObserver> observers = new HashMap<>();
+        observers.put("servlet", observer);
+        LogEventFactory.getInstance().setObservers(observers);
+        servlet.setupEncryption(observer.getCookieEncryptionKey());
 
         when(request.getPathInfo()).thenReturn("/login");
 
@@ -145,7 +163,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldRedirectInstantToLocalTime() throws IOException {
+    public void shouldRedirectInstantToLocalTime() throws IOException, ServletException {
         LocalTime time = LocalTime.of(0, 0).plusMinutes(random.nextInt(24*60));
         LocalDate date = LocalDate.of(2019, 1, 1).plusDays(random.nextInt(365));
 
@@ -162,12 +180,18 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldCompleteLogin() throws IOException, BadPaddingException, IllegalBlockSizeException {
+    public void shouldCompleteLogin() throws IOException, BadPaddingException, IllegalBlockSizeException, ServletException {
         when(request.getPathInfo()).thenReturn("/oauth2callback");
         when(request.getParameter("code")).thenReturn(String.valueOf(random.nextInt()));
 
         OpenIdConfiguration openIdConfiguration = mock(OpenIdConfiguration.class);
-        servlet.setOpenIdConfiguration(openIdConfiguration);
+        LogEventsServlet servlet = new LogEventsServlet() {
+            @Override
+            protected OpenIdConfiguration getOpenIdConfiguration() {
+                return openIdConfiguration;
+            }
+        };
+        servlet.setupEncryption(Optional.empty());
 
         Instant issueTime = ZonedDateTime.of(2019, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()).plusMinutes(random.nextInt(60 * 24 * 365)).toInstant();
 
@@ -187,7 +211,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldReturnOpenApiDefinition() throws IOException {
+    public void shouldReturnOpenApiDefinition() throws IOException, ServletException {
         when(request.getPathInfo()).thenReturn("/swagger.json");
 
         StringWriter output = new StringWriter();
@@ -195,16 +219,16 @@ public class LogEventsServletTest extends LogEventsServlet {
 
         servlet.doGet(request, response);
         verify(response).setContentType("application/json");
-        Map<String, Object> openApiDefinition = (Map<String, Object>) JsonParser.parse(output.toString());
+        Map<String, Object> openApiDefinition = JsonParser.parseObject(output.toString());
 
         assertEquals("Log Events - a simple Java Logging library",
                 JsonUtil.getField(JsonUtil.getObject(openApiDefinition, "info"), "description"));
     }
 
-    public Cookie createSessionCookie(Instant now) {
+    public Map<String, Object> createSessionCookieToken(long epochSecond) {
         HashMap<String, Object> idToken = new HashMap<>();
         idToken.put("sub", "subjectId12345_abc");
-        idToken.put("iat", now.getEpochSecond());
-        return servlet.createSessionCookie(idToken);
+        idToken.put("iat", epochSecond);
+        return idToken;
     }
 }

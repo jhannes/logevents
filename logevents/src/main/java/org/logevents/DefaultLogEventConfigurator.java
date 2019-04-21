@@ -1,11 +1,9 @@
 package org.logevents;
 
-import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.ConfigUtil;
-import org.logevents.util.LogEventConfigurationException;
 import org.slf4j.event.Level;
 
 import java.io.FileInputStream;
@@ -20,13 +18,9 @@ import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -67,7 +61,6 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
     private Path propertiesDir;
     private WatchService newWatchService;
-    private Map<String, LogEventObserver> observers = new HashMap<>();
 
     public DefaultLogEventConfigurator(Path propertiesDir) {
         this.propertiesDir = propertiesDir;
@@ -139,8 +132,12 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
             applyConfigurationProperties(factory, loadConfigurationProperties());
         } catch (Exception e) {
             LogEventStatus.getInstance().addFatal(this, "Failed to load " + getConfigurationFileNames(), e);
-            reset(factory);
+            factory.reset(new ConsoleLogEventObserver(), getDefaultRootLevel());
         }
+    }
+
+    protected Level getDefaultRootLevel() {
+        return Level.INFO;
     }
 
     /**
@@ -245,16 +242,16 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @param configuration The merged configuration that should be applied to the factory
      */
     public void applyConfigurationProperties(LogEventFactory factory, Properties configuration) {
-        observers.clear();
+        Map<String, LogEventObserver> observers = new HashMap<>();
         for (Object key : configuration.keySet()) {
             if (key.toString().matches("observer\\.\\w+")) {
-                configureObserver(key.toString(), configuration);
+                configureObserver(observers, key.toString(), configuration);
             }
         }
         observers.putIfAbsent("console", createConsoleLogEventObserver(configuration));
         observers.putIfAbsent("file", new FileLogEventObserver(configuration, "observer.file"));
-
-        reset(factory);
+        factory.setObservers(observers);
+        factory.reset("console", getDefaultRootLevel());
         configureLogger(factory, factory.getRootLogger(), configuration.getProperty("root"), false);
 
         for (Object key : configuration.keySet()) {
@@ -272,10 +269,6 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         return new ConsoleLogEventObserver(configuration, "observer.console");
     }
 
-    protected void reset(LogEventFactory factory) {
-        factory.reset(getObserver("console"));
-    }
-
     private void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, boolean includeParent) {
         if (configuration != null) {
             int spacePos = configuration.indexOf(' ');
@@ -283,23 +276,12 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
             factory.setLevel(logger, level);
 
             if (spacePos > 0) {
-                Set<LogEventObserver> observers =
-                        Stream.of(configuration.substring(spacePos+1).trim().split(","))
-                        .map(s -> getObserver(s.trim()))
-                        .collect(Collectors.toCollection(LinkedHashSet::new));
-                LogEventObserver observer = CompositeLogEventObserver.combineList(observers);
-                factory.setObserver(logger, observer, includeParent);
+                factory.setObserverNames(logger, configuration.substring(spacePos+1).trim(), includeParent);
             }
         }
     }
 
-    LogEventObserver getObserver(String observerName) {
-        return observers.computeIfAbsent(observerName, key -> {
-            throw new LogEventConfigurationException("Unknown observer <" + key + ">");
-        });
-    }
-
-    private void configureObserver(String key, Properties configuration) {
+    private void configureObserver(Map<String, LogEventObserver> observers, String key, Properties configuration) {
         try {
             String name = key.split("\\.")[1];
             String prefix = "observer." + name;

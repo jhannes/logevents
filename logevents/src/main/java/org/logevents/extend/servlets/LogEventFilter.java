@@ -48,7 +48,9 @@ public class LogEventFilter implements Predicate<LogEvent> {
     private final Optional<List<Marker>> markers;
     private final Optional<Map<String, List<String>>> mdcFilter;
 
-    public LogEventFilter(Map<String, String[]> parameters) {
+    @SuppressWarnings("unchecked")
+    public LogEventFilter(Map untypedParameters) {
+        Map<String, String[]> parameters = untypedParameters;
         Optional<Instant> instant = Optional.ofNullable(parameters.get("instant"))
                 .map(t -> Instant.parse(t[0]));
 
