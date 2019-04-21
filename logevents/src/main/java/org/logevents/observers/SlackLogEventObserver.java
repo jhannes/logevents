@@ -67,7 +67,11 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
 
     private static SlackLogEventsFormatter createFormatter(Configuration configuration) {
         SlackLogEventsFormatter formatter = configuration.createInstanceWithDefault("formatter", SlackLogEventsFormatter.class);
-        formatter.setPackageFilter(configuration.getStringList("packageFilter"));
+        String[] packageFilters = configuration.getStringList("packageFilter");
+        if (packageFilters.length == 0) {
+            packageFilters = configuration.getDefaultStringList("packageFilter");
+        }
+        formatter.setPackageFilter(packageFilters);
         formatter.setUsername(configuration.optionalString("username"));
         formatter.setChannel(configuration.optionalString("channel"));
         formatter.setShowRepeatsIndividually(configuration.getBoolean("showRepeatsIndividually"));

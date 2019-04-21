@@ -1,13 +1,13 @@
 package org.logevents.formatting;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.logevents.util.Configuration;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
 
-import org.junit.Test;
-import org.logevents.util.Configuration;
+import static org.junit.Assert.assertEquals;
 
 public class ExceptionFormatterTest {
 
@@ -162,6 +162,25 @@ public class ExceptionFormatterTest {
     }
 
     @Test
+    public void shouldConfigureDefaultPackageFilter() {
+        IOException exceptions = new IOException("Nested nested");
+        exceptions.setStackTrace(new StackTraceElement[] {
+                ioInternalMethod, ioApiMethod,
+                nioInternalMethod, nioInternalMethod,
+                internalMethod
+        });
+
+        properties.setProperty("observer.*.packageFilter", "sun.nio.fs, java.nio");
+        String[] lines = getFormatter().format(exceptions).split("\r?\n");
+
+        assertEquals(exceptions.toString(), lines[0]);
+        assertEquals("\tat " + ioInternalMethod, lines[1]);
+        assertEquals("\tat " + ioApiMethod, lines[2]);
+        assertEquals("\tat " + internalMethod + " [2 skipped]", lines[3]);
+        assertEquals(1+3, lines.length);
+    }
+
+    @Test
     public void shouldOutputFinalIgnoredLineCount() {
         IOException exceptions = new IOException("Nested nested");
         exceptions.setStackTrace(new StackTraceElement[] {
@@ -183,7 +202,7 @@ public class ExceptionFormatterTest {
 
     @Test
     public void shouldFindPackagingInformation() {
-        RuntimeException exception = new RuntimeException("Something wen wrong");
+        RuntimeException exception = new RuntimeException("Something went wrong");
         StackTraceElement[] stackTrace = new StackTraceElement[] {
             new StackTraceElement("java.nio.file.Files", "write", "Files.java", 3292),
             new StackTraceElement("org.logevents.formatting.ExceptionFormatterTest", "shouldFindPackagingInformation", "ExceptionFormatterTest.java", 175),
@@ -206,6 +225,31 @@ public class ExceptionFormatterTest {
                 "\tat " + stackTrace[3] + " [junit-4.12.jar:4.12]",
                 "\tat " + stackTrace[4] + " [junit-4.12.jar:4.12]"),
                 Arrays.asList(lines));
+    }
+
+    @Test
+    public void shouldLinkToSourceCode() {
+        properties.put("observer.file.formatter.exceptionFormatter.sourceCode.1.package", "org.logevents");
+        properties.put("observer.file.formatter.exceptionFormatter.sourceCode.1.github", "jhannes/logevents");
+
+        StackTraceElement stackFrame = new StackTraceElement(getClass().getName(), "shouldLinkToSourceCode", "ExceptionFormatterTest.java", 235);
+        String sourceLink = getFormatter().getSourceLink(stackFrame);
+        assertEquals(
+                "https://github.com/jhannes/logevents/blob/master/src/main/java/org/logevents/formatting/ExceptionFormatterTest.java#L235",
+                sourceLink);
+    }
+
+
+    @Test
+    public void shouldConfigureDefaultLinkToSourceCode() {
+        properties.put("observer.*.sourceCode.1.package", "org.logevents");
+        properties.put("observer.*.sourceCode.1.github", "jhannes/logevents");
+
+        StackTraceElement stackFrame = new StackTraceElement(getClass().getName(), "shouldConfigureDefaultLinkToSourceCode", "ExceptionFormatterTest.java", 251);
+        String sourceLink = getFormatter().getSourceLink(stackFrame);
+        assertEquals(
+                "https://github.com/jhannes/logevents/blob/master/src/main/java/org/logevents/formatting/ExceptionFormatterTest.java#L251",
+                sourceLink);
     }
 
     private ExceptionFormatter getFormatter() {

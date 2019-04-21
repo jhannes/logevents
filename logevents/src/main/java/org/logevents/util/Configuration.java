@@ -81,6 +81,20 @@ public class Configuration {
         return Optional.ofNullable(properties.getProperty(fullKey(key)));
     }
 
+    public String[] getDefaultStringList(String key) {
+        return optionalDefaultString(key)
+                .map(s -> s.split(",\\s*"))
+                .orElse(new String[0]);
+    }
+
+    public Optional<String> optionalDefaultString(String key) {
+        return Optional.ofNullable(properties.getProperty(defaultKey(key)));
+    }
+
+    private String defaultKey(String key) {
+        return "observer.*." + key;
+    }
+
     private String fullKey(String key) {
         return prefix + "." + key;
     }
@@ -116,12 +130,11 @@ public class Configuration {
     }
 
     public void checkForUnknownFields() {
-        Set<String> actualFields = properties.stringPropertyNames().stream()
-            .filter(n -> n.startsWith(prefix + "."))
-            .map(n -> n.substring(prefix.length()+1))
-            .map(n -> n.replaceAll("(\\w+)*.*", "$1"))
-            .collect(Collectors.toSet());
-        Set<String> remainingFields = new TreeSet<>(actualFields);
+        Set<String> remainingFields = properties.stringPropertyNames().stream()
+                .filter(n -> n.startsWith(prefix + "."))
+                .map(n -> n.substring(prefix.length() + 1))
+                .map(n -> n.replaceAll("(\\w+)*.*", "$1"))
+                .collect(Collectors.toCollection(TreeSet::new));
         remainingFields.removeAll(expectedFields);
         if (!remainingFields.isEmpty()) {
             throw new LogEventConfigurationException(

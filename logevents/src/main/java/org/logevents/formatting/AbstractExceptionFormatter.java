@@ -32,6 +32,9 @@ public abstract class AbstractExceptionFormatter {
     public AbstractExceptionFormatter(Properties properties, String prefix) {
         Configuration configuration = new Configuration(properties, prefix);
         packageFilter = configuration.getStringList("packageFilter");
+        if (packageFilter.length == 0) {
+            packageFilter = configuration.getDefaultStringList("packageFilter");
+        }
         includePackagingData = configuration.getBoolean("includePackagingData");
         maxLength = configuration.optionalInt("maxLength").orElse(Integer.MAX_VALUE);
         configureSourceCode(configuration);
@@ -203,17 +206,31 @@ public abstract class AbstractExceptionFormatter {
             Optional<String> githubLocation = configuration.optionalString("sourceCode." + index + ".github");
             Optional<String> mavenLocation = configuration.optionalString("sourceCode." + index + ".maven");
             Optional<String> bitbucketLocation = configuration.optionalString("sourceCode." + index + ".bitbucket");
-
-            if (githubLocation.isPresent()) {
-                addPackageGithubLocation(sourcePackages.get(), githubLocation.get(), configuration.optionalString("sourceCode." + index + ".tag"));
-            } else if (bitbucketLocation.isPresent()) {
-                addPackageBitbucket5Location(sourcePackages.get(), bitbucketLocation.get(), configuration.optionalString("sourceCode." + index + ".tag"));
-            } else if (mavenLocation.isPresent()) {
-                addPackageMavenLocation(sourcePackages.get(), mavenLocation.get());
-            } else {
-                throw new LogEventConfigurationException("Can't find source code location for " + sourcePackages);
-            }
+            Optional<String> tag = configuration.optionalString("sourceCode." + index + ".tag");
+            addPackageLocation(sourcePackages.get(), githubLocation, mavenLocation, bitbucketLocation, tag);
             index++;
+        }
+
+        index = 1;
+        while ((sourcePackages = configuration.optionalDefaultString("sourceCode." + index + ".package")).isPresent()) {
+            Optional<String> githubLocation = configuration.optionalDefaultString("sourceCode." + index + ".github");
+            Optional<String> mavenLocation = configuration.optionalDefaultString("sourceCode." + index + ".maven");
+            Optional<String> bitbucketLocation = configuration.optionalDefaultString("sourceCode." + index + ".bitbucket");
+            Optional<String> tag = configuration.optionalDefaultString("sourceCode." + index + ".tag");
+            addPackageLocation(sourcePackages.get(), githubLocation, mavenLocation, bitbucketLocation, tag);
+            index++;
+        }
+    }
+
+    public void addPackageLocation(String sourcePackages, Optional<String> githubLocation, Optional<String> mavenLocation, Optional<String> bitbucketLocation, Optional<String> tag) {
+        if (githubLocation.isPresent()) {
+            addPackageGithubLocation(sourcePackages, githubLocation.get(), tag);
+        } else if (bitbucketLocation.isPresent()) {
+            addPackageBitbucket5Location(sourcePackages, bitbucketLocation.get(), tag);
+        } else if (mavenLocation.isPresent()) {
+            addPackageMavenLocation(sourcePackages, mavenLocation.get());
+        } else {
+            throw new LogEventConfigurationException("Can't find source code location for " + sourcePackages);
         }
     }
 

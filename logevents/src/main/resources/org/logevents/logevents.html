@@ -252,11 +252,15 @@ function showLogEventTable() {
             const stackTrace = document.createElement("pre");
             for (const element of logEvent.stackTrace) {
                 if (element.sourceLink) {
-                    stackTrace.innerHTML += "<a target='source' href='" + element.sourceLink + "'>" + element.className + "#" + element.methodName + "</a>\n";
-                } else {
+                    stackTrace.innerHTML += "<a target='source' href='" + element.sourceLink + "'>" + element.className + "#" + element.methodName + "</a>";
+                } else if (element.className) {
                     stackTrace.innerHTML += element.className + "#" + element.methodName + "("
-                        + element.fileName + ":" + element.lineNumber + ")\n";
+                        + element.fileName + ":" + element.lineNumber + ")";
                 }
+                if (element.ignoredFrames > 0) {
+                    stackTrace.innerHTML += "[" + element.ignoredFrames + " skipped]";
+                }
+                stackTrace.innerHTML += "\n";
             }
             ul.appendChild(stackTrace);
         }
