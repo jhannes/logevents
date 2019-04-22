@@ -32,10 +32,10 @@ public class JsonUtilTest {
     }
 
     @Test
-    public void shouldEscapedStrings() {
+    public void shouldEscapeStrings() {
         Map<String, Object> jsonObject = new LinkedHashMap<>();
         jsonObject.put("string", "newline\n, carriage return \r, tab\t, bell\b, quote\", backslash \\");
-        assertJsonOutput("{\"string\": \"newline\\n, carriage return \\r, tab\\t, bell\\b, quote\\\", backslash \\\"}", jsonObject);
+        assertJsonOutput("{\"string\": \"newline\\n, carriage return \\r, tab\\t, bell\\b, quote\\\", backslash \\\\\"}", jsonObject);
     }
 
     @Test
@@ -61,6 +61,18 @@ public class JsonUtilTest {
         Map<String, Object> jsonObject = new LinkedHashMap<>();
         jsonObject.put("object", new Object());
         JsonUtil.toIndentedJson(jsonObject);
+    }
+
+    @Test
+    public void shouldParseEscapes() throws IOException {
+        String escapedText = "\"quote=\\\" backslash=\\\\ slash=\\/ bell=\\b feed=\\f newline=\\n tab=\\t\"";
+        String parsedText = (String) JsonParser.parse(escapedText);
+        assertEquals(
+                "quote=\" backslash=\\ slash=/ bell=\b feed=\f newline=\n tab=\t",
+                parsedText
+        );
+        assertEquals(escapedText,
+                new JsonUtil("", "").toJson(parsedText));
     }
 
     private void assertJsonOutput(String expected, Map<String, Object> jsonObject) {

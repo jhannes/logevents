@@ -64,6 +64,44 @@ public class SlackLogMessageFormatterTest {
     }
 
     @Test
+    public void canShowMessagesIndividually() {
+        SlackLogEventsFormatter formatter = new SlackLogEventsFormatter(Optional.empty(), Optional.empty());
+        formatter.setShowRepeatsIndividually(true);
+
+
+        LogEventSampler sampler = new LogEventSampler().withFormat("Something very {} has happened {}");
+
+        LogEventBatch batch = new LogEventBatch().add(
+                sampler.withArgs("good", "yesterday").build()
+        ).add(
+                sampler.withArgs("bad", "today").build()
+        );
+        Map<String, Object> message = formatter.createMessage(batch);
+        Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(message, "attachments"), 1);
+        assertEquals("Throttled log events", JsonUtil.getField(suppressedEventsAttachment, "title"));
+        String text = JsonUtil.getField(suppressedEventsAttachment, "text").toString();
+        assertContains(": Something very good has happened yesterday", text);
+        assertContains(": Something very bad has happened today", text);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void shouldShowMdcInformation() {
+        LogEventBatch batch = new LogEventBatch();
+        batch.add(new LogEventSampler().withMdc("operation", "DELETE").withMdc("clientIp", "127.0.0.1").build());
+
+        Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.empty(), Optional.empty())
+                .createMessage(batch);
+        Map<String, Object> mdcAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);
+        assertEquals("MDC", mdcAttachment.get("title"));
+        List<Map<String, Object>> mdcFields = (List<Map<String, Object>>) mdcAttachment.get("fields");
+        assertEquals("operation", mdcFields.get(0).get("title"));
+        assertEquals("DELETE", mdcFields.get(0).get("value"));
+        assertEquals("clientIp", mdcFields.get(1).get("title"));
+        assertEquals("127.0.0.1", mdcFields.get(1).get("value"));
+    }
+
+    @Test
     public void shouldOutputStackTrace() {
         Exception exception = new IOException("Something went wrong with " + randomString());
         LogEventBatch batch = new LogEventBatch();

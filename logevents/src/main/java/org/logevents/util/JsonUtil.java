@@ -30,7 +30,7 @@ public class JsonUtil {
         return new JsonUtil("  ", "\n").toJson(jsonObject);
     }
 
-    public String toJson(Map<String, ?> jsonObject) {
+    public String toJson(Object jsonObject) {
         StringBuilder result = new StringBuilder();
         objectToJson(jsonObject, result, "");
         return result.toString();
@@ -110,10 +110,13 @@ public class JsonUtil {
         for (int i = 0; i < key.length(); i++) {
             switch (key.charAt(i)) {
             case '\\':
-                result.append("\\");
+                result.append("\\\\");
                 break;
             case '\n':
                 result.append("\\n");
+                break;
+            case '\f':
+                result.append("\\f");
                 break;
             case '\r':
                 result.append("\\r");
@@ -123,6 +126,9 @@ public class JsonUtil {
                 break;
             case '\b':
                 result.append("\\b");
+                break;
+            case '/':
+                result.append("\\/");
                 break;
             case '\"':
                 result.append("\\\"");
