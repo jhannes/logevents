@@ -23,7 +23,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -296,10 +297,10 @@ public class LogEventsServlet extends HttpServlet {
     }
 
     private void copyResource(HttpServletResponse resp, String resource) throws IOException {
-        try (InputStream html = getClass().getResourceAsStream(resource)) {
+        try (Reader html = new InputStreamReader(getClass().getResourceAsStream(resource))) {
             int c;
             while ((c = html.read()) != -1) {
-                resp.getOutputStream().write((byte) c);
+                resp.getWriter().write((char) c);
             }
         }
     }

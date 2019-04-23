@@ -225,6 +225,19 @@ public class LogEventsServletTest extends LogEventsServlet {
                 JsonUtil.getField(JsonUtil.getObject(openApiDefinition, "info"), "description"));
     }
 
+    @Test
+    public void shouldReturnHtmlPage() throws IOException, ServletException {
+        when(request.getPathInfo()).thenReturn("/");
+
+        StringWriter output = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(output));
+
+        servlet.doGet(request, response);
+        verify(response).setContentType("text/html");
+        assertTrue("Should be an HTML file: " + output,
+                output.toString().startsWith("<!DOCTYPE html>\n<html>"));
+    }
+
     public Map<String, Object> createSessionCookieToken(long epochSecond) {
         HashMap<String, Object> idToken = new HashMap<>();
         idToken.put("sub", "subjectId12345_abc");
