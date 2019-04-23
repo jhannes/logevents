@@ -101,6 +101,11 @@ public class JsonUtil {
         return (List<Object>) getField(object, fieldName);
     }
 
+    @SuppressWarnings("unchecked")
+    public static List<Map<String, Object>> getObjectList(Map<String, Object> object, String field) {
+        return (List<Map<String, Object>>) getField(object, field);
+    }
+
     private static void toJson(CharSequence value, StringBuilder result) {
         result.append('"').append(jsonEscape(value)).append('"');
     }

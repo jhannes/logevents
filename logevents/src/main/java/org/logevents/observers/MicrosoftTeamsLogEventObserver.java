@@ -24,7 +24,10 @@ public class MicrosoftTeamsLogEventObserver extends BatchingLogEventObserver {
     }
 
     public MicrosoftTeamsLogEventObserver(Configuration configuration) {
-        super(new HttpPostJsonBatchProcessor(configuration.getUrl("url"), new MicrosoftTeamsMessageFormatter()));
+        super(new HttpPostJsonBatchProcessor(
+                configuration.getUrl("url"),
+                configuration.createInstanceWithDefault("formatter", MicrosoftTeamsMessageFormatter.class)
+        ));
         configureFilter(configuration);
         configureBatching(configuration);
 

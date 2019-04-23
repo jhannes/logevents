@@ -8,6 +8,7 @@ import org.slf4j.event.Level;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -24,7 +25,9 @@ public class MicrosoftTeamsMessageFormatterTest {
         batch.add(new LogEventSampler().withLevel(Level.ERROR).build());
         batch.add(new LogEventSampler().build());
 
-        Map<String, Object> teamsMessage = new MicrosoftTeamsMessageFormatter().createMessage(batch);
+        Map<String, Object> teamsMessage = new MicrosoftTeamsMessageFormatter(
+                new Properties(), "observer.teams.formatter"
+        ).createMessage(batch);
         Map<String, Object> detailsSection = JsonUtil.getObject(JsonUtil.getList(teamsMessage, "sections"), 0);
 
         String level = null;
