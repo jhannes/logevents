@@ -1,12 +1,39 @@
 package org.logevents.extend.servlets;
 
 import org.logevents.formatting.AbstractExceptionFormatter;
+import org.logevents.util.Configuration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+/**
+ * Presents the exception of a Log Event as a JSON representation.
+ * Supports filtering stack traces by package and
+ * including a link to the corresponding source code.
+ * <p>
+ * Example configuration
+ *
+ * <pre>
+ * observer.x.formatter.exceptionFormatter=JsonExceptionFormatter
+ * observer.x.formatter.exceptionFormatter.packageFilter=sun.www, com.example.uninteresting
+ * observer.x.formatter.exceptionFormatter.sourceCode.1.package=org.logevents
+ * observer.x.formatter.exceptionFormatter.sourceCode.1.maven=org.logevents/logevents
+ * </pre>
+ *
+ * You can also specify package filters and source code for all observers:
+ * <pre>
+ * observer.*.packageFilter=sun.www, com.example.uninteresting
+ * observer.*.sourceCode.1.package=org.logevents
+ * observer.*.sourceCode.1.github=jhannes/logevents
+ * </pre>
+ *
+ * For more on source code links, see {@link #configureSourceCode(Configuration)}
+ *
+ * @author Johannes Brodwall
+ */
 
 public class JsonExceptionFormatter extends AbstractExceptionFormatter {
 

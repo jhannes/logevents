@@ -45,7 +45,7 @@ public class Main {
 
     private static WebAppContext demoContext() throws IOException {
         WebAppContext context = new WebAppContext();
-        context.setContextPath("/myDemo");
+        context.setContextPath("/");
         context.setBaseResource(Resource.newClassPathResource("/webapp-logevents"));
         //context.setBaseResource(Resource.newResource("src/main/resources/webapp-logevents"));
         context.getInitParams().put("org.eclipse.jetty.servlet.Default.useFileMappedBuffer", "false");
@@ -93,7 +93,7 @@ public class Main {
     private static class ApplicationContext implements ServletContextListener {
         @Override
         public void contextInitialized(ServletContextEvent sce) {
-            sce.getServletContext().addServlet("logs", new LogEventsServlet()).addMapping("/logs/demo/*");
+            sce.getServletContext().addServlet("logs", new LogEventsServlet()).addMapping("/logs/*");
 
             sce.getServletContext().addServlet("swagger", new WebJarServlet("swagger-ui"))
                     .addMapping("/swagger/*");

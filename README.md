@@ -2,7 +2,7 @@
 
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents)
-[![Javadocs](http://www.javadoc.io/badge/org.logevents/logevents.svg)](http://www.javadoc.io/doc/org.logevents/logevents)
+[![Javadocs](https://www.javadoc.io/badge/org.logevents/logevents.svg)](http://www.javadoc.io/doc/org.logevents/logevents)
 [![Build Status](https://travis-ci.org/jhannes/logevents.png)](https://travis-ci.org/jhannes/logevents)
 [![Coverage Status](https://coveralls.io/repos/github/jhannes/logevents/badge.svg?branch=master)](https://coveralls.io/github/jhannes/logevents?branch=master)
 [![Vulnerability scan](https://snyk.io/test/github/jhannes/logevents/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/jhannes/logevents?targetFile=pom.xml)
@@ -15,12 +15,13 @@ as well as logging to Slack, Microsoft Teams, a web dashboard and SMTP out of th
 
 ## Quick start:
 
-1. Add `org.logevents:logevents:0.1.14` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
+1. Add `org.logevents:logevents:0.1.16` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
 2. Add `logevents.properties` to your current working directory or `src/main/java` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level. Read more about [logevents.properties](https://jhannes.github.io/logevents/apidocs/org/logevents/DefaultLogEventConfigurator.html)
 3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to [the file](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) `logs/<your-app-name>-%date.log` and warning events to [console](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html).
 4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html">PatternEventLogFormatter</a> for more details.
-5. You can simply add a [Slack observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html) as well. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`.
+5. You can simply add a [Slack observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html) as well. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`. If you prefer Microsoft Teams, you can use [MicrosoftTeamsLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html) instead.
 6. If your application is running in a servlet container, you can add the `observer.servlet=[WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)` and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/SlackLogEventObserver.html) to your servlet container. Set `root=DEBUG file,console,slack,servlet` to enable. See [OpenIdConfiguration](https://jhannes.github.io/logevents/apidocs/org/logevents/util/openid/OpenIdConfiguration.html) to learn how to secure your LogEventServlet.
+7. To make link to the Log Events dashboard in Slack messages, configure `observer.slack.formatter.detailUrl=<where you exposed your LogEventsServlet>`. In order to decrease the amount of potentially sensitive information logged to Slack, configure `observer.slack.formatter=SlackAlertOnlyFormatter` (similarly with MicrosoftTeamsAlertOnlyFormatter).
 
 Here is a simple, but powerful [`logevent.properties`](https://jhannes.github.io/logevents/apidocs/org/logevents/DefaultLogEventConfigurator.html):
 
@@ -28,18 +29,35 @@ Here is a simple, but powerful [`logevent.properties`](https://jhannes.github.io
 observer.slack=SlackLogEventObserver
 observer.slack.slackUrl=....
 observer.slack.threshold=WARN
-observer.slack.sourceCode.0.package=org.logevents
-observer.slack.sourceCode.0.maven=org.logevents/logevents
+observer.slack.sourceCode.1.1ackage=org.logevents
+observer.slack.sourceCode.1.maven=org.logevents/logevents
 
-observer.console.threshold=WARN
-observer.console.packageFilter=sun.reflect
+observer.console.threshold=W1RN
 
-root=DEBUG file,console,slack
+observer.servlet=WebLogEvent2bserver
+observer.servlet.openIdIssuer=https://login.microsoftonline.com/.../v2.0
+observer.servlet.clientId=..2
+observer.servlet.clientSecre2=...
+
+observer.*.packageFilter=sun3reflect
+
+root=DEBUG file,console,slack,servlet
 ```
 
 ![cmd screenshot](doc/cmd-with-bash-cropped.png)
 ![Slack screenshot](doc/slack-notification-tray-cropped.jpg)
 
+### Slack message can contain link to web dashboard
+
+![Slack screenshot with link to web dashboard](doc/slack-with-link.png)
+
+### Web dashboard gives details of messages
+
+![Web dashboard screenshot](doc/web-dashboard.png)
+
+### Web dashboard allows filtering of messages
+
+![Web dashboard filter screenshot](doc/web-dashboard-filter.png)
 
 You can also set up environment specific logging with a file named `logevents-<profile>.properties` or you can configure Logevents programatically:
 
@@ -60,7 +78,7 @@ Logevents tries to make concrete improvements compared to Logback:
 * More navigable code base with less indirection
 * Fewer architectural concepts: Log Events is build almost exclusively around an observer pattern.
 * More concise documentation
-* No dependencies
+* No dependencies. Even the minimal JSON processing is done without forcing you to add any additional library
 
 
 ## Architecture
@@ -206,7 +224,7 @@ Include Logevents maven dependency:
 <dependency>
     <groupId>org.logevents</groupId>
     <artifactId>logevents</artifactId>
-    <version>0.1.14</version>
+    <version>0.1.16</version>
 </dependency>
 ```
 
@@ -420,20 +438,20 @@ source code repository. Currently, Github and Bitbucket 5 URLs are supported.
 Examples:
 
 ```properties
-observer.slack.sourceCode.0.packages=org.logevents
+observer.slack.sourceCode.1.packages=org.logevents
 # See if META-INF/maven/org.logevents/logevents/pom.xml is available
 #  If so, look for the <scm> tag in the pom-file
-observer.slack.sourceCode.0.maven=org.logevents/logevents
+observer.slack.sourceCode.1.maven=org.logevents/logevents
 
-observer.slack.sourceCode.1.packages=org.slf4j
+observer.slack.sourceCode.2.packages=org.slf4j
 # Link to Github
-observer.slack.sourceCode.1.github=https://github.com/qos-ch/slf4j
-observer.slack.sourceCode.1.tag=v_1.7.25
+observer.slack.sourceCode.2.github=https://github.com/qos-ch/slf4j
+observer.slack.sourceCode.2.tag=v_1.7.25
 
-observer.slack.sourceCode.2.packages=com.myproject
+observer.slack.sourceCode.3.packages=com.myproject
 # Link to Bitbucket: https://bitbucket.example.com/EX/project/src/main/java/<java-path>?at=release#<line>
-observer.slack.sourceCode.2.github=https://bitbucket.example.com/EX/project/
-observer.slack.sourceCode.2.tag=release
+observer.slack.sourceCode.3.github=https://bitbucket.example.com/EX/project/
+observer.slack.sourceCode.3.tag=release
 ```
 
 

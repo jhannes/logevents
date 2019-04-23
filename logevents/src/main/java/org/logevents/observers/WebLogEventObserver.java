@@ -30,7 +30,7 @@ import java.util.Properties;
  *    <li>Add a {@link LogEventsServlet} to your servlet container</li>
  * </ol>
  *
- * You can even include a link to the web dashboard for Logevents in {@link SlackLogEventObserver} by setting the <code></code>
+ * You can even include a link to the web dashboard for Logevents in {@link SlackLogEventObserver} by setting the <code>observer.slack.detailUrl</code> configuration parameter to point to your {@link LogEventsServlet}.
  *
  * <h2>Sample configuration</h2>
  *

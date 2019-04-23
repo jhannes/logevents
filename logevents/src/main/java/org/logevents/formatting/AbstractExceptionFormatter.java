@@ -143,6 +143,11 @@ public abstract class AbstractExceptionFormatter {
         return stackTraceElement.getClassName().replaceAll("\\.", "/") + ".java";
     }
 
+    /**
+     * Looks for POM file in <code>/META-INF/maven/{mavenLocation}/pom.xml</code> and
+     * parses <code>&lt;scm&gt;&lt;url /&gt;&lt;tag /&gt;&lt;/scm&gt;</code> to find
+     * source code location and tag. <strong>Currently only supports Github</strong>.
+     */
     public void addPackageMavenLocation(String sourcePackages, String mavenLocation) {
         try (InputStream pomResource = getClass().getResourceAsStream("/META-INF/maven/" + mavenLocation + "/pom.xml")) {
             if (pomResource == null) {
@@ -179,6 +184,9 @@ public abstract class AbstractExceptionFormatter {
         }
     }
 
+    /**
+     * Links to <code>https://github.com/{project}/blob/{tag}/src/main/java/{filename}#L{line}</code>
+     */
     public void addPackageGithubLocation(String sourcePackages, String project, Optional<String> tag) {
         String url = project.startsWith("https://") ? project : "https://github.com/" + project;
         if (url.endsWith(".git")) {
@@ -192,11 +200,38 @@ public abstract class AbstractExceptionFormatter {
                 ste -> String.format(pattern, fileName(ste), ste.getLineNumber()));
     }
 
+    /**
+     * Links to <code>{url}/src/main/java/{filename}?at={tag}#{line}</code>
+     */
     public void addPackageBitbucket5Location(String sourcePackages, String url, Optional<String> tag) {
         addPackageUrlPattern(sourcePackages,
                 ste -> url + "/src/main/java/" + fileName(ste) + "?at=" + tag.orElse("master") + "#" + ste.getLineNumber());
     }
 
+    /**
+     * Configure links to source code (for ExceptionFormatters that support it),
+     * based on package names. Currently, Log Events understand how to read
+     * (some) &lt;scm&gt; settings from <code>.pom</code>-files
+     * {@link #addPackageMavenLocation(String, String)}
+     * and how to set up a link to a simple Github ({@link #addPackageGithubLocation} or
+     * Bitbucket ({@link #addPackageBitbucket5Location}) project. Example configuration:
+     * <pre>
+     * observer.*.sourceCode.1.packages=org.logevents
+     * # See if META-INF/maven/org.logevents/logevents/pom.xml is available
+     * #  If so, look for the &lt;scm&gt; tag in the pom-file
+     * observer.*.sourceCode.1.maven=org.logevents/logevents
+     *
+     * observer.*.sourceCode.2.packages=org.slf4j
+     * # Link to Github
+     * observer.*.sourceCode.2.github=https://github.com/qos-ch/slf4j
+     * observer.*.sourceCode.2.tag=v_1.7.25
+     *
+     * observer.*.sourceCode.3.packages=com.myproject
+     * # Link to Bitbucket: https://bitbucket.example.com/EX/project/src/main/java/{file-path}?at=release#{line}
+     * observer.*.sourceCode.3.github=https://bitbucket.example.com/EX/project/
+     * observer.*.sourceCode.3.tag=release
+     * </pre>
+     */
     public void configureSourceCode(Configuration configuration) {
         configuration.optionalString("sourceCode");
 

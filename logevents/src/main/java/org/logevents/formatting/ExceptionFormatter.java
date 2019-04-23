@@ -2,6 +2,26 @@ package org.logevents.formatting;
 
 import java.util.Properties;
 
+/**
+ * Presents the exception of a Log Event as a nicely formatted textual
+ * representation. Supports filtering stack traces by package and
+ * (for {@link org.logevents.observers.batch.SlackExceptionFormatter})
+ * including a link to the corresponding source code.
+ * <p>
+ * Example configuration
+ *
+ * <pre>
+ * observer.x.formatter.exceptionFormatter={@link CauseFirstExceptionFormatter}
+ * observer.x.formatter.exceptionFormatter.packageFilter=sun.www, com.example.uninteresting
+ * </pre>
+ *
+ * You can also specify package filters for all observers:
+ * <pre>
+ * observer.*.packageFilter=sun.www, com.example.uninteresting
+ * </pre>
+ *
+ * @author Johannes Brodwall
+ */
 public class ExceptionFormatter extends AbstractExceptionFormatter {
     public ExceptionFormatter(Properties properties, String prefix) {
         super(properties, prefix);
