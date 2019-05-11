@@ -78,7 +78,8 @@ public class Configuration {
 
     public Optional<String> optionalString(String key) {
         expectedFields.add(key);
-        return Optional.ofNullable(properties.getProperty(fullKey(key)));
+        String property = properties.getProperty(fullKey(key));
+        return property == null || property.isEmpty() ? Optional.empty() : Optional.of(property);
     }
 
     public String[] getDefaultStringList(String key) {

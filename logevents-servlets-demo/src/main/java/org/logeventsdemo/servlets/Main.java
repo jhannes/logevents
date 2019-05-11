@@ -16,6 +16,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import java.io.IOException;
 import java.util.Random;
+import java.util.TimeZone;
 
 public class Main {
 
@@ -30,6 +31,7 @@ public class Main {
     private static LocationAwareLogger logger = (LocationAwareLogger) LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) throws Exception {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         LogEventFactory factory = LogEventFactory.getInstance();
         factory.setLevel(factory.getLogger("org.logeventsdemo"), Level.DEBUG);
         factory.setLevel(factory.getRootLogger(), Level.INFO);
@@ -43,7 +45,7 @@ public class Main {
         logger.warn(LIFECYCLE, "Started server {}", server.getURI());
     }
 
-    private static WebAppContext demoContext() throws IOException {
+    private static WebAppContext demoContext() {
         WebAppContext context = new WebAppContext();
         context.setContextPath("/");
         context.setBaseResource(Resource.newClassPathResource("/webapp-logevents"));

@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,6 +48,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
     private final Level level;
     private final Optional<List<Marker>> markers;
     private final Optional<Map<String, List<String>>> mdcFilter;
+    private final ZoneOffset timezoneOffset;
 
     @SuppressWarnings("unchecked")
     public LogEventFilter(Map untypedParameters) {
@@ -58,10 +60,14 @@ public class LogEventFilter implements Predicate<LogEvent> {
                 .map(p -> LocalDate.parse(p[0]))
                 .orElse(LocalDate.now());
 
+        timezoneOffset = Optional.ofNullable(parameters.get("timezoneOffset"))
+                .map(tzOffset -> -Integer.parseInt(tzOffset[0]))
+                .map(tzOffset -> ZoneOffset.ofHoursMinutes(tzOffset / 60, tzOffset % 60))
+                .orElse(ZoneId.systemDefault().getRules().getOffset(date.atStartOfDay()));
+
         this.time = instant.orElseGet(() -> Optional.ofNullable(parameters.get("time"))
                 .map(t -> LocalTime.parse(t[0]))
-                .map(time -> LocalDateTime.of(date, time))
-                .map(dateTime -> dateTime.toInstant(ZoneId.systemDefault().getRules().getOffset(dateTime)))
+                .map(time -> LocalDateTime.of(date, time).toInstant(timezoneOffset))
                 .orElse(Instant.now()));
 
         this.interval = Optional.ofNullable(parameters.get("interval"))

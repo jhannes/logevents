@@ -27,9 +27,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
@@ -152,16 +149,6 @@ public class LogEventsServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + req.getServletPath() + "/" +
                     (req.getQueryString() != null ? "?" + req.getQueryString() : ""));
         } else if (req.getPathInfo().equals("/")) {
-            if (req.getParameter("time") == null && req.getParameter("instant") != null) {
-                Instant instant = Instant.parse(req.getParameter("instant"));
-                LocalTime time = instant.atZone(ZoneId.systemDefault()).toLocalTime();
-                LocalDate date = instant.atZone(ZoneId.systemDefault()).toLocalDate();
-
-                resp.sendRedirect(req.getContextPath() + req.getServletPath() + "/?"
-                    + "time=" + time + "&date=" + date + "&" + req.getQueryString());
-                return;
-            }
-
             resp.setContentType("text/html");
             copyResource(resp, getObserver().getLogEventsHtml());
         } else if (req.getPathInfo().equals("/swagger.json")) {

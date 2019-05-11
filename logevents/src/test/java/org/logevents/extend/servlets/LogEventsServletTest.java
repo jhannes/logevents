@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -35,13 +33,9 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class LogEventsServletTest extends LogEventsServlet {
 
@@ -160,23 +154,6 @@ public class LogEventsServletTest extends LogEventsServlet {
         String prefix = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=code&client_id=my-application&redirect_uri=https://www.example.com";
         assertTrue(captor.getValue() + " should start with " + prefix,
                 captor.getValue().startsWith(prefix));
-    }
-
-    @Test
-    public void shouldRedirectInstantToLocalTime() throws IOException, ServletException {
-        LocalTime time = LocalTime.of(0, 0).plusMinutes(random.nextInt(24*60));
-        LocalDate date = LocalDate.of(2019, 1, 1).plusDays(random.nextInt(365));
-
-        Instant instant = ZonedDateTime.of(date, time, ZoneId.systemDefault()).toInstant();
-
-        when(request.getPathInfo()).thenReturn("/");
-        when(request.getParameter("instant")).thenReturn(instant.toString());
-        when(request.getQueryString()).thenReturn("instant=" + instant + "&thread=main");
-
-        servlet.doGet(request, response);
-
-        verify(response).sendRedirect("/logs/" +
-                "?time=" + time + "&date=" + date + "&instant=" + instant + "&thread=main");
     }
 
     @Test

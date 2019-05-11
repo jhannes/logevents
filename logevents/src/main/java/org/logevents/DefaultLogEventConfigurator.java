@@ -20,11 +20,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static java.nio.file.StandardWatchEventKinds.*;
 
 /**
  * Default implementation of {@link LogEventConfigurator} which reads the
@@ -160,8 +159,15 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @return the activated profiles for the current JVM as a list of strings
      */
     protected List<String> getProfiles() {
-        String profilesString = System.getProperty("profiles", System.getProperty("spring.profiles.active", ""));
-        return Arrays.asList(profilesString.split(","));
+        List<String> systemProfiles = Arrays.asList(System.getProperty("profiles", System.getProperty("spring.profiles.active", "")).split(","));
+        List<String> environmentProfiles = Optional.ofNullable(System.getenv("PROFILES"))
+                .map(s -> s.split(","))
+                .map(Arrays::asList).orElse(new ArrayList<>());
+
+        List<String> profiles = new ArrayList<>();
+        profiles.addAll(systemProfiles);
+        profiles.addAll(Arrays.asList(System.getProperty("profiles", System.getProperty("spring.profiles.active", "")).split(",")));
+        return profiles;
     }
 
     /**

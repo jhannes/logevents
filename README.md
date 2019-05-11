@@ -20,7 +20,7 @@ as well as logging to Slack, Microsoft Teams, a web dashboard and SMTP out of th
 3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to [the file](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) `logs/<your-app-name>-%date.log` and warning events to [console](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html).
 4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html">PatternEventLogFormatter</a> for more details.
 5. You can simply add a [Slack observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html) as well. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`. If you prefer Microsoft Teams, you can use [MicrosoftTeamsLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html) instead.
-6. If your application is running in a servlet container, you can add the `observer.servlet=[WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)` and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/SlackLogEventObserver.html) to your servlet container. Set `root=DEBUG file,console,slack,servlet` to enable. See [OpenIdConfiguration](https://jhannes.github.io/logevents/apidocs/org/logevents/util/openid/OpenIdConfiguration.html) to learn how to secure your LogEventServlet.
+6. If your application is running in a servlet container, you can add the `observer.servlet=[WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)` and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/LogEventsServlet.html) to your servlet container. Set `root=DEBUG file,console,slack,servlet` to enable. See [OpenIdConfiguration](https://jhannes.github.io/logevents/apidocs/org/logevents/util/openid/OpenIdConfiguration.html) to learn how to secure your LogEventServlet.
 7. To make link to the Log Events dashboard in Slack messages, configure `observer.slack.formatter.detailUrl=<where you exposed your LogEventsServlet>`. In order to decrease the amount of potentially sensitive information logged to Slack, configure `observer.slack.formatter=SlackAlertOnlyFormatter` (similarly with MicrosoftTeamsAlertOnlyFormatter).
 
 Here is a simple, but powerful [`logevent.properties`](https://jhannes.github.io/logevents/apidocs/org/logevents/DefaultLogEventConfigurator.html):
@@ -439,17 +439,17 @@ Examples:
 
 ```properties
 observer.slack.sourceCode.1.packages=org.logevents
-# See if META-INF/maven/org.logevents/logevents/pom.xml is available
-#  If so, look for the <scm> tag in the pom-file
+; See if META-INF/maven/org.logevents/logevents/pom.xml is available
+;  If so, look for the <scm> tag in the pom-file
 observer.slack.sourceCode.1.maven=org.logevents/logevents
 
 observer.slack.sourceCode.2.packages=org.slf4j
-# Link to Github
+; Link to Github
 observer.slack.sourceCode.2.github=https://github.com/qos-ch/slf4j
 observer.slack.sourceCode.2.tag=v_1.7.25
 
 observer.slack.sourceCode.3.packages=com.myproject
-# Link to Bitbucket: https://bitbucket.example.com/EX/project/src/main/java/<java-path>?at=release#<line>
+; Link to Bitbucket: https://bitbucket.example.com/EX/project/src/main/java/<java-path>?at=release#<line>
 observer.slack.sourceCode.3.github=https://bitbucket.example.com/EX/project/
 observer.slack.sourceCode.3.tag=release
 ```

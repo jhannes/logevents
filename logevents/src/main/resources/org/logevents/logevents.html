@@ -128,6 +128,7 @@
                     <option value="PT15M">+/- 15 min</option>
                     <option value="PT1H">+/- 1 hr</option>
                 </select>
+                <input type="hidden" name="timezoneOffset" id="timezoneOffset" />
                 <button>Update</button>
             </fieldset>
             <fieldset>
@@ -177,6 +178,18 @@ function toggleNav(e) {
     e.preventDefault();
 }
 
+function hourMinute(instant) {
+    return instant.getHours().toString().padStart(2, "0") +
+            ":" + instant.getMinutes().toString().padStart(2, "0");
+}
+
+function hourMinuteSecond(instant) {
+    return instant.getHours().toString().padStart(2, "0") +
+            ":" + instant.getMinutes().toString().padStart(2, "0") +
+            ":" + instant.getSeconds().toString().padStart(2, "0");
+}
+
+
 function createElementWithText(tagName, textContent, className) {
     const element = document.createElement(tagName);
     element.innerText = textContent;
@@ -194,8 +207,9 @@ function showLogEventTable() {
             const time = currentFilter.get("time");
             const interval = currentFilter.get("interval");
             const level = currentFilter.get("level");
+            const timezoneOffset = currentFilter.get("timezoneOffset");
             li.innerHTML = `<strong>${header}:</strong>
-                <a href="?time=${time}&interval=${interval}&level=${level}&${filter}=${text}"
+                <a href="?time=${time}&interval=${interval}&level=${level}&${filter}=${text}&timezoneOffset=${timezoneOffset}"
                 >${text}</a>`;
         } else {
             li.innerHTML = `<strong>${header}:</strong> ${text}`;
@@ -210,9 +224,8 @@ function showLogEventTable() {
         eventCard.classList.add("event");
         eventCard.dataset.eventIndex = index;
 
-        const time = logEvent.time.replace(/^.*T(\d+:\d+:\d+).*/, "$1");
         eventCard.appendChild(createElementWithText("button", logEvent.levelIcon));
-        eventCard.appendChild(document.createTextNode(time));
+        eventCard.appendChild(document.createTextNode(hourMinuteSecond(new Date(logEvent.time))));
         eventCard.appendChild(createElementWithText("span", " [" + logEvent.abbreviatedLogger + "]: ", "loggerName"));
 
         if (logEvent.throwable) {
@@ -326,6 +339,9 @@ function showFacets(facets) {
         dateInput.setAttribute("value", currentFilter.get("date"));
         dateTimeFieldset.appendChild(dateInput);
     }
+    if (currentFilter.get("timezoneOffset")) {
+       document.getElementById("timezoneOffset").value = currentFilter.get("timezoneOffset");
+    }
 
     markersFieldset.innerHTML = "";
 
@@ -402,23 +418,28 @@ logEventsFilter.addEventListener("change", e => {
 
 const clearButton = document.getElementById("clearButton");
 clearButton.addEventListener("click", e => {
-    const d = new Date(),
-        h = (d.getHours()<10?'0':'') + d.getHours(),
-        m = (d.getMinutes()<10?'0':'') + d.getMinutes();
-    window.location.search = "time=" + h + ':' + m + "&interval=PT5M&level=TRACE";
+    const d = new Date();
+    window.location.search = "time=" + hourMinute(new Date()) + "&interval=PT5M&level=TRACE&timezoneOffset=" + d.getTimezoneOffset();
     e.preventDefault();
 });
 
 
 if (!window.location.search) {
-    const d = new Date(),
-        h = (d.getHours()<10?'0':'') + d.getHours(),
-        m = (d.getMinutes()<10?'0':'') + d.getMinutes();
-    const timeInput = document.getElementById("time");
-    timeInput.value = h + ':' + m;
+    const d = new Date();
+    document.getElementById("time").value = hourMinute(d);
+    document.getElementById("timezoneOffset").value = d.getTimezoneOffset();
     window.location.search = new URLSearchParams(new FormData(logEventsFilter)).toString();
 } else {
-    fetchEvents();
+    const currentFilter = new URLSearchParams(window.location.search.substr(1));
+    if (!currentFilter.get("time") && currentFilter.get("instant")) {
+        const instant = new Date(currentFilter.get("instant"));
+        currentFilter.delete("instant");
+        currentFilter.set("time", hourMinuteSecond(instant));
+        currentFilter.set("timezoneOffset", instant.getTimezoneOffset());
+        window.location.search = currentFilter;
+    } else {
+        fetchEvents();
+    }
 }
 </script>
 </html>
