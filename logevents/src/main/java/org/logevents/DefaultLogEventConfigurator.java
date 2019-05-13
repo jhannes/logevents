@@ -4,6 +4,7 @@ import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.ConfigUtil;
+import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
 import java.io.FileInputStream;
@@ -104,6 +105,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                         }
                         key.reset();
                         if (shouldReload) {
+                            LogEventStatus.getInstance().addInfo(DefaultLogEventConfigurator.this, "Reloading configuration");
                             resetConfigurationFromFiles(factory);
                         }
                     }
@@ -178,6 +180,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @return Properties with the configuration of all files merged together
      */
     protected Properties loadPropertiesFromFiles(List<String> configurationFileNames) {
+        LogEventStatus.getInstance().addInfo(this, "Loading configuration from " + configurationFileNames);
         Properties properties = new Properties();
         for (String filename : configurationFileNames) {
             loadConfigResource(properties, filename);
@@ -212,6 +215,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     protected void loadConfigFile(Properties properties, String fileName) {
         if (Files.isRegularFile(this.propertiesDir.resolve(fileName))) {
             try (InputStream propertiesFile = new FileInputStream(this.propertiesDir.resolve(fileName).toFile())) {
+                LogEventStatus.getInstance().addDebug(this, "Loading file:" + propertiesDir.resolve(fileName));
                 properties.load(propertiesFile);
             } catch (IOException e) {
                 LogEventStatus.getInstance().addError(this, "Can't load " + fileName, e);
@@ -228,6 +232,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     protected void loadConfigResource(Properties properties, String resourceName) {
         try (InputStream propertiesFile = getClass().getClassLoader().getResourceAsStream(resourceName)) {
             if (propertiesFile != null) {
+                LogEventStatus.getInstance().addDebug(this, "Loading classpath:" + resourceName);
                 properties.load(propertiesFile);
             }
         } catch (IOException e) {
@@ -248,6 +253,9 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @param configuration The merged configuration that should be applied to the factory
      */
     public void applyConfigurationProperties(LogEventFactory factory, Properties configuration) {
+        Configuration logeventsConfig = new Configuration(configuration, "logevents");
+        LogEventStatus.getInstance().configure(logeventsConfig);
+        new Configuration(configuration, toString());
         Map<String, LogEventObserver> observers = new HashMap<>();
         for (Object key : configuration.keySet()) {
             if (key.toString().matches("observer\\.\\w+")) {
@@ -255,7 +263,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
             }
         }
         observers.putIfAbsent("console", createConsoleLogEventObserver(configuration));
-        observers.putIfAbsent("file", new FileLogEventObserver(configuration, "observer.file"));
+        observers.putIfAbsent("file", createFileObserver(configuration));
         factory.setObservers(observers);
         factory.reset("console", getDefaultRootLevel());
         configureLogger(factory, factory.getRootLogger(), configuration.getProperty("root"), false);
@@ -269,10 +277,32 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                         includeParent);
             }
         }
+        if (logeventsConfig.getBoolean("installExceptionHandler")) {
+            if (Thread.getDefaultUncaughtExceptionHandler() == null) {
+                Thread.setDefaultUncaughtExceptionHandler((thread, e) -> {
+                    LogEventFactory.getInstance().getRootLogger()
+                            .error("Thread {} terminated with unhandled exception", thread.getName(), e);
+                });
+                LogEventStatus.getInstance().addInfo(this, "Installing default uncaught exception handler");
+            } else {
+                LogEventStatus.getInstance().addDebug(this, "Uncaught exception handler already set to " + Thread.getDefaultUncaughtExceptionHandler());
+            }
+        }
+        logeventsConfig.checkForUnknownFields();
+    }
+
+    protected FileLogEventObserver createFileObserver(Properties configuration) {
+        LogEventStatus.getInstance().addDebug(this, "Configuring observer.console");
+        FileLogEventObserver observer = new FileLogEventObserver(configuration, "observer.file");
+        LogEventStatus.getInstance().addDebug(this, "Configured " + observer);
+        return observer;
     }
 
     protected ConsoleLogEventObserver createConsoleLogEventObserver(Properties configuration) {
-        return new ConsoleLogEventObserver(configuration, "observer.console");
+        LogEventStatus.getInstance().addDebug(this, "Configuring observer.console");
+        ConsoleLogEventObserver observer = new ConsoleLogEventObserver(configuration, "observer.console");
+        LogEventStatus.getInstance().addDebug(this, "Configured " + observer);
+        return observer;
     }
 
     private void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, boolean includeParent) {
@@ -280,9 +310,12 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
             int spacePos = configuration.indexOf(' ');
             Level level = Level.valueOf(spacePos < 0 ? configuration : configuration.substring(0, spacePos).trim());
             factory.setLevel(logger, level);
+            LogEventStatus.getInstance().addDebug(this, "Setting level " + level + " for " + logger);
 
             if (spacePos > 0) {
-                factory.setObserverNames(logger, configuration.substring(spacePos+1).trim(), includeParent);
+                String observerNames = configuration.substring(spacePos + 1).trim();
+                factory.setObserverNames(logger, observerNames, includeParent);
+                LogEventStatus.getInstance().addDebug(this, "Setting observers " + observerNames + " for " + logger);
             }
         }
     }
@@ -291,8 +324,11 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         try {
             String name = key.split("\\.")[1];
             String prefix = "observer." + name;
+            LogEventStatus.getInstance().addDebug(this, "Configuring " + prefix);
             if (!observers.containsKey(name)) {
-                observers.put(name, ConfigUtil.create(prefix, "org.logevents.observers", configuration));
+                LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", configuration);
+                observers.put(name, observer);
+                LogEventStatus.getInstance().addDebug(this, "Configured " + observer);
             }
         } catch (RuntimeException e) {
             LogEventStatus.getInstance().addError(this, "Failed to create " + key, e);

@@ -151,4 +151,11 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         jsonEvent.put("mdc", mdc);
         return jsonEvent;
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" +
+                "openIdConfiguration=" + openIdConfiguration +
+                '}';
+    }
 }

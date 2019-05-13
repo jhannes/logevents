@@ -151,7 +151,7 @@ public abstract class AbstractExceptionFormatter {
     public void addPackageMavenLocation(String sourcePackages, String mavenLocation) {
         try (InputStream pomResource = getClass().getResourceAsStream("/META-INF/maven/" + mavenLocation + "/pom.xml")) {
             if (pomResource == null) {
-                LogEventStatus.getInstance().addInfo(this, mavenLocation + " pom.xml not found");
+                LogEventStatus.getInstance().addError(this, mavenLocation + " pom.xml not found", null);
                 return;
             }
 

@@ -153,10 +153,10 @@ public class Configuration {
      */
     public Set<String> listProperties(String key) {
         expectedFields.add(key);
-        String keyPrefix = prefix + "."  + key;
+        String keyPrefix = prefix + "."  + key + ".";
         return properties.stringPropertyNames().stream()
                 .filter(n -> n.startsWith(keyPrefix))
-                .map(n -> n.substring(keyPrefix.length() + 1))
+                .map(n -> n.substring(keyPrefix.length()))
                 .map(n -> n.split("\\.")[0])
                 .collect(Collectors.toSet());
     }

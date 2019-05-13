@@ -108,4 +108,11 @@ public class OpenIdConfiguration {
         return (Map<String, Object>)
                 JsonParser.parse(new URL(this.openIdIssuer + "/.well-known/openid-configuration"));
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" +
+                "openIdIssuer='" + openIdIssuer + '\'' +
+                '}';
+    }
 }

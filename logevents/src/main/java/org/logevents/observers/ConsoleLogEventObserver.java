@@ -45,9 +45,9 @@ public class ConsoleLogEventObserver extends FilteredLogEventObserver {
                 LogEventFormatter.class, ConsoleLogEventFormatter.class);
         configureFilter(configuration);
         formatter.configure(configuration);
-        configuration.checkForUnknownFields();
         boolean outputToSyserr = configuration.getBoolean("outputToSyserr");
         out = outputToSyserr ? System.err : System.out;
+        configuration.checkForUnknownFields();
     }
 
     public ConsoleLogEventObserver(Properties properties, String prefix) {

@@ -3,7 +3,6 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.TTLLEventLogFormatter;
-import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 
 import java.time.LocalDate;
@@ -29,7 +28,6 @@ public class DateRollingLogEventObserver extends FileLogEventObserver {
         this(configuration.getString("filename"),
                 configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class));
         configuration.checkForUnknownFields();
-        LogEventStatus.getInstance().addInfo(this, "Configured " + configuration.getPrefix());
     }
 
     @SuppressWarnings("unused")

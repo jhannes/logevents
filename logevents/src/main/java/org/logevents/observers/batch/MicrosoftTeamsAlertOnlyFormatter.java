@@ -26,4 +26,9 @@ public class MicrosoftTeamsAlertOnlyFormatter extends MicrosoftTeamsMessageForma
     protected String formatMessage(LogEvent event) {
         return event.getMessage();
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{}";
+    }
 }

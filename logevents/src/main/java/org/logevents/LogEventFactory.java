@@ -290,7 +290,7 @@ public class LogEventFactory implements ILoggerFactory {
         List<LogEventConfigurator> configurators = new ArrayList<>();
         ServiceLoader.load(LogEventConfigurator.class).forEach(configurators::add);
         if (configurators.isEmpty()) {
-            LogEventStatus.getInstance().addInfo(this, "No configuration found - using default");
+            LogEventStatus.getInstance().addDebug(this, "No configuration found - using default");
             if (isRunningInsideJunit()) {
                 configurators.add(new DefaultTestLogEventConfigurator());
             } else {
@@ -327,5 +327,10 @@ public class LogEventFactory implements ILoggerFactory {
             }
         }
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{}";
     }
 }

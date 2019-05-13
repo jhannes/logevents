@@ -86,7 +86,6 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
 
         scheduler = new ExecutorScheduler(scheduledExecutorService);
         scheduler.setAction(this::execute);
-        LogEventStatus.getInstance().addInfo(this, "Configured " + prefix);
     }
 
     /**
