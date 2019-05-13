@@ -294,8 +294,8 @@ public class LogEventsServlet extends HttpServlet {
 
     private String getServerUrl(HttpServletRequest req) {
         String scheme = Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
+        String host = Optional.ofNullable(req.getHeader("X-Forwarded-Host")).orElse(req.getServerName());
         int port = Optional.ofNullable(req.getHeader("X-Forwarded-Port")).map(Integer::parseInt).orElse(req.getServerPort());
-        String host = req.getServerName();
         int defaultSchemePort = scheme.equals("https") ? 443 : 80;
 
         StringBuilder url = new StringBuilder();
