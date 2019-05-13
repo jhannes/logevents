@@ -1,6 +1,4 @@
-package org.logevents.observers;
-
-import org.logevents.observers.batch.Scheduler;
+package org.logevents.observers.batch;
 
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
@@ -11,11 +9,13 @@ import java.util.concurrent.TimeUnit;
 //  Runnable action and returns a Scheduler, but that may be harder to test
 public class ExecutorScheduler implements Scheduler {
     private ScheduledExecutorService executor;
+    private LogEventShutdownHook shutdownHook;
     private Runnable action;
     private ScheduledFuture<?> scheduledTask;
 
-    public ExecutorScheduler(ScheduledExecutorService executor) {
+    public ExecutorScheduler(ScheduledExecutorService executor, LogEventShutdownHook shutdownHook) {
         this.executor = executor;
+        this.shutdownHook = shutdownHook;
     }
 
     @Override
@@ -34,5 +34,6 @@ public class ExecutorScheduler implements Scheduler {
     @Override
     public void setAction(Runnable action) {
         this.action = action;
+        this.shutdownHook.addAction(action);
     }
 }

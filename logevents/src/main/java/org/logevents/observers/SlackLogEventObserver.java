@@ -1,6 +1,7 @@
 package org.logevents.observers;
 
 import org.logevents.observers.batch.BatchThrottler;
+import org.logevents.observers.batch.ExecutorScheduler;
 import org.logevents.observers.batch.HttpPostJsonBatchProcessor;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
@@ -88,7 +89,7 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
                 .ifPresent(channel -> formatter.setChannel(Optional.of(channel)));
         String throttle = configuration.getString("markers." + markerName + ".throttle");
         return new BatchThrottler(
-                new ExecutorScheduler(scheduledExecutorService), createBatchProcessor(configuration, formatter))
+                new ExecutorScheduler(scheduledExecutorService, shutdownHook), createBatchProcessor(configuration, formatter))
                 .setThrottle(throttle);
     }
 }

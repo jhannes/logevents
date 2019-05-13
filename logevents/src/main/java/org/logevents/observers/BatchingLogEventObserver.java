@@ -2,8 +2,10 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.observers.batch.BatchThrottler;
+import org.logevents.observers.batch.ExecutorScheduler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
+import org.logevents.observers.batch.LogEventShutdownHook;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 import org.slf4j.Marker;
@@ -57,6 +59,11 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
                 }
             });
 
+    static LogEventShutdownHook shutdownHook = new LogEventShutdownHook();
+    static {
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+    }
+
     private final LogEventBatchProcessor batchProcessor;
     protected final ExecutorScheduler scheduler;
 
@@ -72,7 +79,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
 
     public BatchingLogEventObserver(LogEventBatchProcessor batchProcessor) {
         this.batchProcessor = batchProcessor;
-        scheduler = new ExecutorScheduler(scheduledExecutorService);
+        scheduler = new ExecutorScheduler(scheduledExecutorService, shutdownHook);
         scheduler.setAction(this::execute);
     }
 
@@ -84,7 +91,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
         batchProcessor = configuration.createInstance("batchProcessor", LogEventBatchProcessor.class);
         configuration.checkForUnknownFields();
 
-        scheduler = new ExecutorScheduler(scheduledExecutorService);
+        scheduler = new ExecutorScheduler(scheduledExecutorService, shutdownHook);
         scheduler.setAction(this::execute);
     }
 
@@ -211,7 +218,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
 
     protected BatchThrottler createBatcher(Configuration configuration, String markerName) {
         String throttle = configuration.getString("markers." + markerName + ".throttle");
-        return new BatchThrottler(new ExecutorScheduler(scheduledExecutorService), batchProcessor)
+        return new BatchThrottler(new ExecutorScheduler(scheduledExecutorService, shutdownHook), batchProcessor)
                 .setThrottle(throttle);
     }
 

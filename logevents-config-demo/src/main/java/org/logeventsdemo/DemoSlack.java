@@ -50,7 +50,6 @@ public class DemoSlack {
         Thread.sleep(5500); // Cooldown time from previous batch
 
         logger.error("Here is a message with an exception", new RuntimeException("Uh oh!"));
-        Thread.sleep(5500); // Cooldown time from previous batch
     }
 
 
