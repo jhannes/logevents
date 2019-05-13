@@ -12,6 +12,13 @@ import java.util.Optional;
  * A simple formatter used by {@link ConsoleLogEventObserver} by default.
  * Suitable for overriding {@link #apply(LogEvent)}
  *
+ * Example configuration
+ *
+ * <pre>
+ * observer.foo.includeMdcKeys=clientIp
+ * observer.*.packageFilter=sun.www, com.example.uninteresting
+ * </pre>
+ *
  * @author Johannes Brodwall
  *
  */
@@ -62,8 +69,16 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     }
 
     public void configure(Configuration configuration) {
-        getExceptionFormatter().ifPresent(
-                exceptionFormatter -> exceptionFormatter.setPackageFilter(configuration.getStringList("packageFilter")));
+        String[] packageFilter = getPackageFilter(configuration, "packageFilter");
+        getExceptionFormatter().ifPresent(exceptionFormatter -> exceptionFormatter.setPackageFilter(packageFilter));
         includeMdcKeys = configuration.getStringList("includeMdcKeys");
+    }
+
+    private String[] getPackageFilter(Configuration configuration, String key) {
+        String[] packageFilter = configuration.getStringList(key);
+        if (packageFilter.length == 0) {
+            packageFilter = configuration.getDefaultStringList(key);
+        }
+        return packageFilter;
     }
 }
