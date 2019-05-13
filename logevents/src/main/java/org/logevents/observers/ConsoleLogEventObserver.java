@@ -3,9 +3,9 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.formatting.ConsoleLogEventFormatter;
 import org.logevents.formatting.LogEventFormatter;
-import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 
+import java.io.PrintStream;
 import java.util.Properties;
 
 /**
@@ -18,8 +18,10 @@ import java.util.Properties;
  *
  * <pre>
  * observer.console.threshold=WARN
- * observer.suppressMarkers=UNINTERESTING, PERSONAL_DATA
- * observer.packageFilter=sun.www, com.example.uninteresting
+ * observer.console.outputToSyserr=true
+ * observer.console.includeMdcKeys=clientIp
+ * observer.console.suppressMarkers=UNINTERESTING, PERSONAL_DATA
+ * observer.console.packageFilter=sun.www, com.example.uninteresting
  * </pre>
  *
  * @author Johannes Brodwall
@@ -27,9 +29,11 @@ import java.util.Properties;
 public class ConsoleLogEventObserver extends FilteredLogEventObserver {
 
     private final LogEventFormatter formatter;
+    private PrintStream out;
 
     public ConsoleLogEventObserver(LogEventFormatter formatter) {
         this.formatter = formatter;
+        out = System.out;
     }
 
     public ConsoleLogEventObserver() {
@@ -42,7 +46,8 @@ public class ConsoleLogEventObserver extends FilteredLogEventObserver {
         configureFilter(configuration);
         formatter.configure(configuration);
         configuration.checkForUnknownFields();
-        LogEventStatus.getInstance().addInfo(this, "Configured " + configuration.getPrefix());
+        boolean outputToSyserr = configuration.getBoolean("outputToSyserr");
+        out = outputToSyserr ? System.err : System.out;
     }
 
     public ConsoleLogEventObserver(Properties properties, String prefix) {
@@ -56,8 +61,8 @@ public class ConsoleLogEventObserver extends FilteredLogEventObserver {
 
     @Override
     protected void doLogEvent(LogEvent logEvent) {
-        System.out.print(formatter.apply(logEvent));
-        System.out.flush();
+        out.print(formatter.apply(logEvent));
+        out.flush();
     }
 
     @Override
