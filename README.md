@@ -529,9 +529,7 @@ If you're using logback today and would like to check out logevents, here's a si
 
 ### TODO
 
-* MDC-based batching
 * JMX
 * Logback features that logevents is missing:
   * DBAppender
   * SiftingAppender
-  * SocketAppender

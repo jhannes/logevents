@@ -28,6 +28,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Queries a list of {@link LogEvent} objects by {@link #time},
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
  * {@link #level}, {@link #markers} and {@link #mdcFilter}.
  * <p>
  *     Use {@link #test(LogEvent)} to filter a {@link java.util.stream.Stream} of
- *     {@link LogEvent}s and {@link #collectFacets(Collection)} to return a summary
+ *     {@link LogEvent}s and {@link #getFacets()} to return a summary
  *     of which threads, loggers, markers and mdcs were used in the interval.
  * </p>
  *
@@ -49,9 +50,10 @@ public class LogEventFilter implements Predicate<LogEvent> {
     private final Optional<List<Marker>> markers;
     private final Optional<Map<String, List<String>>> mdcFilter;
     private final ZoneOffset timezoneOffset;
+    private final Collection<LogEvent> allEvents;
 
     @SuppressWarnings("unchecked")
-    public LogEventFilter(Map untypedParameters) {
+    public LogEventFilter(Map untypedParameters, LogEventBuffer logEventBuffer) {
         Map<String, String[]> parameters = untypedParameters;
         Optional<Instant> instant = Optional.ofNullable(parameters.get("instant"))
                 .map(t -> Instant.parse(t[0]));
@@ -91,6 +93,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
             }
         }
         this.mdcFilter = mdcFilter.isEmpty() ? Optional.empty() : Optional.of(mdcFilter);
+        this.allEvents = logEventBuffer.filter(level, time.minus(interval), time.plus(interval));
     }
 
     private static Optional<List<String>> getParameter(Map<String, String[]> parameters, String name) {
@@ -130,22 +133,12 @@ public class LogEventFilter implements Predicate<LogEvent> {
                 "}";
     }
 
-    public Collection<LogEvent> collectMessages(LogEventBuffer logsByLevel) {
-        Instant start = time.minus(interval);
-        Instant end = time.plus(interval);
-        return logsByLevel.filter(level, start, end);
-    }
-
-    public Map<String, Object> collectFacets(LogEventBuffer logsByLevel) {
-        return collectFacets(collectMessages(logsByLevel));
-    }
-
-    Map<String, Object> collectFacets(Collection<LogEvent> events) {
+    Map<String, Object> getFacets() {
         Set<String> threads = new TreeSet<>();
         Map<String, String> loggerMap = new TreeMap<>();
         Set<String> markers = new TreeSet<>();
         Map<String, Set<String>> mdcMap = new TreeMap<>();
-        for (LogEvent event : events) {
+        for (LogEvent event : allEvents) {
             threads.add(event.getThreadName());
             loggerMap.put(event.getLoggerName(), event.getAbbreviatedLoggerName(0));
             if (event.getMarker() != null) {
@@ -177,5 +170,9 @@ public class LogEventFilter implements Predicate<LogEvent> {
         facets.put("markers", markers);
         facets.put("mdc", mdc);
         return facets;
+    }
+
+    public Stream<LogEvent> stream() {
+        return allEvents.stream().filter(this);
     }
 }

@@ -1,6 +1,5 @@
 package org.logevents.extend.servlets;
 
-import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.observers.WebLogEventObserver;
 import org.logevents.status.LogEventStatus;
@@ -28,7 +27,6 @@ import java.io.Reader;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -187,13 +185,11 @@ public class LogEventsServlet extends HttpServlet {
         } else if (!authenticated(resp, req.getCookies())) {
             resp.sendError(401, "Please log in");
         } else if (req.getPathInfo().equals("/events")) {
-            LogEventFilter filter = new LogEventFilter(req.getParameterMap());
-            Collection<LogEvent> allEvents = filter.collectMessages(getObserver().getLogEventBuffer());
+            LogEventFilter filter = new LogEventFilter(req.getParameterMap(), getObserver().getLogEventBuffer());
 
             Map<String, Object> result = new LinkedHashMap<>();
-            result.put("facets", filter.collectFacets(allEvents));
-            result.put("events", allEvents.stream()
-                    .filter(filter)
+            result.put("facets", filter.getFacets());
+            result.put("events", filter.stream()
                     .map(getObserver()::format)
                     .collect(Collectors.toList()));
 

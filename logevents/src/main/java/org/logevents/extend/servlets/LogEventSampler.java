@@ -15,6 +15,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class LogEventSampler {
+    private static final Marker[] SAMPLE_MARKERS = new Marker[] {
+            MarkerFactory.getMarker("AUDIT"), MarkerFactory.getMarker("SECURITY"),
+            MarkerFactory.getMarker("LIFECYCLE"), MarkerFactory.getMarker("OPS")
+    };
     private static Random random = new Random();
 
     public static String sampleLoggerName() {
@@ -29,7 +33,7 @@ public class LogEventSampler {
     private Optional<String> loggerName = Optional.empty();
     private Optional<Level> level = Optional.empty();
     private Instant timestamp = Instant.now();
-    private Marker marker = null;
+    private Marker marker = sampleMarker();
     private Optional<String> format = Optional.empty();
     private Object[] args = sampleArgs();
     private Map<String, String> mdc = new LinkedHashMap<>();
@@ -46,12 +50,20 @@ public class LogEventSampler {
                 mdc);
     }
 
+    public static Marker sampleMarker() {
+        return random.nextInt(100) < 30 ? pickOne(SAMPLE_MARKERS) : null;
+    }
+
     private Object[] sampleArgs() {
         return new Object[0];
     }
 
     private static String sampleThreadName() {
-        return "Thread-" + pickOne("one", "two", "three", "four", "five", "six") + "-" + random.nextInt(1000);
+        return "Thread-" + randomString();
+    }
+
+    public static String randomString() {
+        return pickOne("one", "two", "three", "four", "five", "six") + "-" + random.nextInt(1000);
     }
 
     private static <T> T pickOne(T... alternatives) {
@@ -118,4 +130,9 @@ public class LogEventSampler {
         this.level = Optional.of(level);
         return this;
     }
+
+    public LogEventSampler withRandomTime() {
+        return this.withTime(Instant.now().minusSeconds(random.nextInt(3600) + 60));
+    }
+
 }

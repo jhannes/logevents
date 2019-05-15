@@ -43,16 +43,26 @@ public class LogEvent implements LoggingEvent {
     private StackTraceElement callerLocation;
     private StackTraceElement[] stackTrace;
 
-    public LogEvent(String loggerName, Level level, String format, Marker marker, Throwable throwable, Object[] args) {
+    public LogEvent(
+            String loggerName,
+            Level level,
+            String threadName,
+            Instant timestamp,
+            Marker marker,
+            String format,
+            Object[] args,
+            Throwable throwable,
+            Map<String, String> mdcProperties
+    ) {
         this.loggerName = loggerName;
         this.level = level;
         this.marker = marker;
         this.format = format;
         this.args = args;
         this.throwable = throwable;
-        this.threadName = Thread.currentThread().getName();
-        this.timestamp = Instant.now().toEpochMilli();
-        this.mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
+        this.threadName = threadName;
+        this.timestamp = timestamp.toEpochMilli();
+        this.mdcProperties = mdcProperties;
     }
 
     public LogEvent(String loggerName, Level level, Marker marker, String format, Object[] args) {

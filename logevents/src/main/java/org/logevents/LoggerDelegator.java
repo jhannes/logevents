@@ -3,9 +3,14 @@ package org.logevents;
 import org.logevents.impl.LogEventGenerator;
 import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Logger;
+import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -379,7 +384,9 @@ abstract class LoggerDelegator implements LoggerConfiguration {
             Level level = Stream.of(Level.TRACE, Level.DEBUG, Level.INFO, Level.WARN, Level.ERROR)
                     .filter(l -> l.toInt() >= levelInt)
                     .findFirst().orElse(Level.ERROR);
-            observer.logEvent(new LogEvent(this.name, level, message, marker, t, argArray));
+            String threadName = Thread.currentThread().getName();
+            Map<String, String> mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
+            observer.logEvent(new LogEvent(this.name, level, threadName, Instant.now(), marker, message, argArray, t, mdcProperties));
         }
     }
 
