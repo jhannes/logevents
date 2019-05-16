@@ -114,7 +114,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
     }
 
     @Override
-    protected void doLogEvent(LogEvent logEvent) {
+    protected final void doLogEvent(LogEvent logEvent) {
         if (logEvent.getMarker() != null) {
             for (Marker marker : markerBatchers.keySet()) {
                 if (marker.contains(logEvent.getMarker())) {
@@ -142,11 +142,15 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
         LogEventBatch batch = takeCurrentBatch();
         if (!batch.isEmpty()) {
             try {
-                batchProcessor.processBatch(batch);
+                processBatch(batch);
             } catch (Exception e) {
                 LogEventStatus.getInstance().addFatal(this, "Failed to process batch", e);
             }
         }
+    }
+
+    protected void processBatch(LogEventBatch batch) {
+        batchProcessor.processBatch(batch);
     }
 
     synchronized LogEventBatch takeCurrentBatch() {

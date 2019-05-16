@@ -66,6 +66,7 @@ public class LogEventSampler {
         return pickOne("one", "two", "three", "four", "five", "six") + "-" + random.nextInt(1000);
     }
 
+    @SafeVarargs
     private static <T> T pickOne(T... alternatives) {
         return alternatives[random.nextInt(alternatives.length)];
     }
@@ -103,6 +104,11 @@ public class LogEventSampler {
 
     public LogEventSampler withMdc(String name, String value) {
         mdc.put(name, value);
+        return this;
+    }
+
+    public LogEventSampler withMdc(Map<String, String> mdc) {
+        this.mdc.putAll(mdc);
         return this;
     }
 

@@ -4,12 +4,15 @@ import junit.framework.AssertionFailedError;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.observers.batch.LogEventBatch;
 import org.slf4j.event.Level;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Function;
@@ -30,9 +33,9 @@ public class DatabaseLogEventObserverTest {
     @Test
     public void shouldListSavedLogEvents() {
         LogEvent event = new LogEventSampler().build();
-        observer.logEvent(event);
+        observer.processBatch(new LogEventBatch().add(event));
 
-        List<LogEvent> events = observer.filter(event.getLevel(), event.getInstant().minusSeconds(1), event.getInstant().plusSeconds(1));
+        Collection<LogEvent> events = observer.filter(event.getLevel(), event.getInstant().minusSeconds(1), event.getInstant().plusSeconds(1));
         assertContains(event.getMessage(), events, LogEvent::getMessage);
     }
 
@@ -41,7 +44,7 @@ public class DatabaseLogEventObserverTest {
         LogEvent event = new LogEventSampler().withFormat(UUID.randomUUID().toString())
                 .withArgs(LogEventSampler.randomString(), LogEventSampler.randomString())
                 .build();
-        observer.logEvent(event);
+        observer.processBatch(new LogEventBatch().add(event));
 
         LogEvent savedEvent = observer
                 .filter(event.getLevel(), event.getInstant().minusSeconds(1), event.getInstant().plusSeconds(1))
@@ -59,6 +62,25 @@ public class DatabaseLogEventObserverTest {
     }
 
     @Test
+    public void shouldSaveMdc() {
+        Map<String, String> mdc = new HashMap<>();
+        mdc.put("ip", "127.0.0.1");
+        mdc.put("url", "/api/op");
+        LogEvent event = new LogEventSampler().withFormat(UUID.randomUUID().toString())
+                .withMdc(mdc)
+                .build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        LogEvent savedEvent = observer
+                .filter(event.getLevel(), event.getInstant().minusSeconds(1), event.getInstant().plusSeconds(1))
+                .stream()
+                .filter(e -> e.getMessage().equals(event.getMessage()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionFailedError("Didn't find <" + event.getMessage() + ">"));
+        assertEquals(mdc, savedEvent.getMdcProperties());
+    }
+
+    @Test
     public void shouldFilterSavedLogEvents() {
         LogEvent pastEvent = new LogEventSampler()
                 .withTime(ZonedDateTime.now().minusDays(1))
@@ -71,9 +93,9 @@ public class DatabaseLogEventObserverTest {
         LogEvent futureEvent = new LogEventSampler()
                 .withTime(ZonedDateTime.now().plusDays(1))
                 .build();
-        observer.logEvent(currentEvent);
+        observer.processBatch(new LogEventBatch().add(pastEvent).add(currentEvent).add(futureEvent));
 
-        List<LogEvent> events = observer.filter(Level.TRACE, Instant.now().minusSeconds(3600), Instant.now().plusSeconds(3600));
+        Collection<LogEvent> events = observer.filter(Level.TRACE, Instant.now().minusSeconds(3600), Instant.now().plusSeconds(3600));
         assertContains(currentEvent.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(pastEvent.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(futureEvent.getMessage(), events, LogEvent::getMessage);
@@ -83,13 +105,11 @@ public class DatabaseLogEventObserverTest {
     public void shouldFilterByLevel() {
         LogEventSampler logEventSampler = new LogEventSampler().withRandomTime();
         LogEvent higherEvent = logEventSampler.withLevel(Level.WARN).build();
-        observer.logEvent(higherEvent);
         LogEvent matchingEvent = logEventSampler.withLevel(Level.INFO).build();
-        observer.logEvent(matchingEvent);
         LogEvent lowerEvent = logEventSampler.withLevel(Level.DEBUG).build();
-        observer.logEvent(lowerEvent);
+        observer.processBatch(new LogEventBatch().add(higherEvent).add(matchingEvent).add(lowerEvent));
 
-        List<LogEvent> events = observer.filter(Level.INFO, Instant.now().minusSeconds(3600), Instant.now().plusSeconds(3600));
+        Collection<LogEvent> events = observer.filter(Level.INFO, Instant.now().minusSeconds(3600), Instant.now().plusSeconds(3600));
         assertContains(higherEvent.getMessage(), events, LogEvent::getMessage);
         assertContains(matchingEvent.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(lowerEvent.getMessage(), events, LogEvent::getMessage);

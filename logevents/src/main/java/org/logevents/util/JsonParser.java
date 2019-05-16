@@ -63,13 +63,26 @@ public class JsonParser {
     }
 
     @SuppressWarnings("unchecked")
-    public static Map<String, Object> parseObject(String input) throws IOException {
-        return (Map<String, Object>) parse(input);
+    public static Map<String, Object> parseObject(String input) {
+        try {
+            return (Map<String, Object>) parse(input);
+        } catch (IOException e) {
+            throw new RuntimeException("StringWriter shouldn't throw!", e);
+        }
     }
 
     @SuppressWarnings("unchecked")
     public static Map<String, Object> parseObject(InputStream input) throws IOException {
         return (Map<String, Object>) parse(input);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<Object> parseArray(String arguments) {
+        try {
+            return (List<Object>) parse(arguments);
+        } catch (IOException e) {
+            throw new RuntimeException("StringWriter shouldn't throw!", e);
+        }
     }
 
     private void readNext() throws IOException {

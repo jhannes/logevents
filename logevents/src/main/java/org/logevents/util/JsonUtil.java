@@ -30,6 +30,10 @@ public class JsonUtil {
         return new JsonUtil("  ", "\n").toJson(jsonObject);
     }
 
+    public static String toIndentedJson(Iterable<?> jsonArray) {
+        return new JsonUtil("  ", "\n").toJson(jsonArray);
+    }
+
     public String toJson(Object jsonObject) {
         StringBuilder result = new StringBuilder();
         objectToJson(jsonObject, result, "");
