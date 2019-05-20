@@ -5,8 +5,6 @@ import org.logevents.formatting.MessageFormatter;
 import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,17 +22,20 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
     private MessageFormatter messageFormatter = new MessageFormatter();
     private SlackExceptionFormatter exceptionFormatter = new SlackExceptionFormatter();
-    private Optional<String> username = Optional.empty();
-    private Optional<String> channel = Optional.empty();
+    private Optional<String> username;
+    private Optional<String> channel;
     private boolean showRepeatsIndividually;
     private Optional<String> detailUrl = Optional.empty();
+    private final String nodeName;
 
     public SlackLogEventsFormatter() {
+        this(Optional.empty(), Optional.empty());
     }
 
     public SlackLogEventsFormatter(Optional<String> username, Optional<String> channel) {
         this.username = username;
         this.channel = channel;
+        this.nodeName = Configuration.calculateNodeName();
     }
 
     @Override
@@ -42,7 +43,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         Map<String, Object> message = new LinkedHashMap<>();
         username.ifPresent(u -> message.put("username", u));
         if (!username.isPresent()) {
-            getHostname().ifPresent(h -> message.put("username", h));
+            message.put("username", nodeName);
         }
         channel.ifPresent(c -> message.put("channel", c));
 
@@ -155,30 +156,13 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         attachment.put("color", getColor(event.getLevel()));
         List<Map<String, Object>> fields = new ArrayList<>();
         fields.add(slackMessageField("Level", event.getLevel().toString(), true));
-        fields.add(slackMessageField("Source", getMessageSource(), true));
+        fields.add(slackMessageField("Source", nodeName, true));
         fields.add(slackMessageField("Main", System.getProperty("sun.java.command"), true));
         if (event.getMarker() != null) {
             fields.add(slackMessageField("Marker", event.getMarker().getName(), true));
         }
         attachment.put("fields", fields);
         return attachment;
-    }
-
-    private String getMessageSource() {
-        String username = System.getProperty("user.name");
-        return username + "@" + getHostname().orElse("unknown host");
-    }
-
-    private Optional<String> getHostname() {
-        try {
-            String hostname = Optional.ofNullable(System.getenv("HOSTNAME"))
-                        .orElse(Optional.ofNullable(System.getenv("HTTP_HOST"))
-                        .orElse(Optional.ofNullable(System.getenv("COMPUTERNAME"))
-                        .orElse(InetAddress.getLocalHost().getHostName())));
-            return Optional.of(hostname);
-        } catch (UnknownHostException ignored) {
-            return Optional.empty();
-        }
     }
 
     protected Map<String, Object> createStackTraceAttachment(LogEvent event) {

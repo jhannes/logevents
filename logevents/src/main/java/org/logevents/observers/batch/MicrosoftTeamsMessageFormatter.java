@@ -5,8 +5,6 @@ import org.logevents.formatting.MessageFormatter;
 import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,6 +22,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
 
     private MessageFormatter messageFormatter;
     private Optional<String> detailUrl;
+    private final String nodeName;
 
     public MicrosoftTeamsMessageFormatter(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
@@ -32,6 +31,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
     public MicrosoftTeamsMessageFormatter(Configuration configuration) {
         detailUrl = configuration.optionalString("detailUrl");
         messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
+        nodeName = configuration.getNodeName();
         configuration.checkForUnknownFields();
     }
 
@@ -43,7 +43,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         message.put("themeColor", colors.get(batch.firstHighestLevelLogEventGroup().getLevel()));
         message.put("title", createTitle(batch));
         message.put("text", createText(batch));
-        message.put("summary", batch.firstHighestLevelLogEventGroup().getLevel() + " message from " + getHostname());
+        message.put("summary", batch.firstHighestLevelLogEventGroup().getLevel() + " message from " + nodeName);
         message.put("sections", createSections(batch));
 
         return message;
@@ -61,7 +61,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         overviewSection.put("activityTitle", "Message details");
         overviewSection.put("facts", new ArrayList<>(Arrays.asList(
                 createSingleFact("Level", batch.firstHighestLevelLogEventGroup().getLevel().toString()),
-                createSingleFact("Server", getMessageSource()),
+                createSingleFact("Server", nodeName),
                 createSingleFact("Main", System.getProperty("sun.java.command")),
                 createSingleFact("Repetitions", String.valueOf(batch.firstHighestLevelLogEventGroup().size())),
                 createSingleFact("Batched message", String.valueOf(batch.size()))
@@ -144,25 +144,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
                 + (event.getLevel() == Level.ERROR ? " <!channel>" : "");
     }
 
-    private String getMessageSource() {
-        String username = System.getProperty("user.name");
-        return username + "@" + getHostname();
-    }
-
-    protected String getHostname() {
-        String hostname = "unknown host";
-        try {
-            hostname = Optional.ofNullable(System.getenv("HOSTNAME"))
-                    .orElse(Optional.ofNullable(System.getenv("HTTP_HOST"))
-                            .orElse(Optional.ofNullable(System.getenv("COMPUTERNAME"))
-                                    .orElse(InetAddress.getLocalHost().getHostName())));
-        } catch (UnknownHostException ignored) {
-        }
-        return hostname;
-    }
-
     protected String formatMessage(LogEvent event) {
         return messageFormatter.format(event.getMessage(), event.getArgumentArray());
     }
-
 }

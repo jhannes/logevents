@@ -1,7 +1,9 @@
 package org.logevents.util;
 
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
@@ -159,5 +161,24 @@ public class Configuration {
                 .map(n -> n.substring(keyPrefix.length()))
                 .map(n -> n.split("\\.")[0])
                 .collect(Collectors.toSet());
+    }
+
+    public String getNodeName() {
+        return optionalString("nodeName")
+                .orElseGet(Configuration::calculateNodeName);
+    }
+
+    public static String calculateNodeName() {
+        String hostname = "unknown host";
+        try {
+            hostname = Optional.ofNullable(System.getenv("HOSTNAME"))
+                    .orElse(Optional.ofNullable(System.getenv("HTTP_HOST"))
+                            .orElse(Optional.ofNullable(System.getenv("COMPUTERNAME"))
+                                    .orElse(InetAddress.getLocalHost().getHostName())));
+        } catch (UnknownHostException ignored) {
+        }
+
+        String username = System.getProperty("user.name");
+        return username + "@" + hostname;
     }
 }

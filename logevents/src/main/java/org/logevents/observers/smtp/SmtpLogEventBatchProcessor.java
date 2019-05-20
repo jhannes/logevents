@@ -15,16 +15,13 @@ import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.MimeMessage;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Optional;
 import java.util.Properties;
 
 public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
     private final MessageFormatter messageFormatter;
+    private final String nodeName;
     private String fromAddress;
     private String recipients;
-    private Optional<String> applicationName;
     private String smtpUsername;
     private String smtpPassword;
     private Properties props;
@@ -32,10 +29,10 @@ public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
     public SmtpLogEventBatchProcessor(Configuration configuration) {
         this.fromAddress = configuration.getString("fromAddress");
         this.recipients = configuration.getString("recipients");
-        this.applicationName = configuration.optionalString("applicationName");
         this.smtpUsername = configuration.optionalString("username").orElse(fromAddress);
         this.smtpPassword = configuration.getString("password");
         this.messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
+        this.nodeName = configuration.getNodeName();
 
         props = new Properties();
         props.put("mail.smtp.starttls.enable", "true");
@@ -75,7 +72,7 @@ public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
         message.setFrom(fromAddress);
         message.setRecipients(Message.RecipientType.TO, recipients);
         LogEvent logEvent = batch.firstHighestLevelLogEventGroup().headMessage();
-        message.setSubject("[" + getApplicationName() + "] " + messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray()));
+        message.setSubject("[" + nodeName + "] " + messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray()));
         message.setText(formatMessageBatch(batch));
         return message;
     }
@@ -95,24 +92,6 @@ public class SmtpLogEventBatchProcessor implements LogEventBatchProcessor {
                     .append("\n");
         }
         return text.toString();
-    }
-
-    private String getApplicationName() {
-        return applicationName.orElseGet(this::calculateApplicationName);
-    }
-
-    private String calculateApplicationName() {
-        String hostname = "unknown host";
-        try {
-            hostname = Optional.ofNullable(System.getenv("HOSTNAME"))
-                    .orElse(Optional.ofNullable(System.getenv("HTTP_HOST"))
-                            .orElse(Optional.ofNullable(System.getenv("COMPUTERNAME"))
-                                    .orElse(InetAddress.getLocalHost().getHostName())));
-        } catch (UnknownHostException ignored) {
-        }
-
-        String username = System.getProperty("user.name");
-        return username + "@" + hostname;
     }
 
     @Override
