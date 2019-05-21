@@ -2,6 +2,9 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.query.LogEventFilter;
+import org.logevents.query.LogEventQueryResult;
+import org.logevents.query.LogEventSummary;
 import org.logevents.util.CircularBuffer;
 import org.slf4j.event.Level;
 
@@ -12,6 +15,7 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class LogEventBuffer implements LogEventObserver {
     private final EnumMap<Level, CircularBuffer<LogEvent>> messages = new EnumMap<>(Level.class);
@@ -26,7 +30,7 @@ public class LogEventBuffer implements LogEventObserver {
         this(2000);
     }
 
-    public Collection<LogEvent> filter(Level threshold, Instant start, Instant end) {
+    private Collection<LogEvent> filter(Level threshold, Instant start, Instant end) {
         List<LogEvent> logEvents = new ArrayList<>();
         for (Map.Entry<Level, ? extends Collection<LogEvent>> entry : messages.entrySet()) {
             if (entry.getKey().compareTo(threshold) <= 0) {
@@ -43,5 +47,22 @@ public class LogEventBuffer implements LogEventObserver {
     @Override
     public void logEvent(LogEvent logEvent) {
         messages.get(logEvent.getLevel()).add(logEvent);
+    }
+
+    public LogEventQueryResult query(LogEventFilter filter) {
+        Collection<LogEvent> allEvents = filter(filter.getThreshold(), filter.getStartTime(), filter.getEndTime());
+        return new LogEventQueryResult() {
+            @Override
+            public Stream<LogEvent> stream() {
+                return allEvents.stream();
+            }
+
+            @Override
+            public LogEventSummary getSummary() {
+                LogEventSummary summary = new LogEventSummary();
+                allEvents.forEach(summary::add);
+                return summary;
+            }
+        };
     }
 }

@@ -5,11 +5,14 @@ import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
+import org.logevents.query.LogEventFilter;
+import org.logevents.query.LogEventSummary;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -131,18 +134,20 @@ public class DatabaseLogEventObserverTest {
                 .add(new LogEventSampler().withMdc("ip", "127.0.0.1").build())
                 .add(new LogEventSampler().withMdc("ip", "10.0.0.4").build()));
 
-        Map<String, Object> facets = observer.getFacets(Optional.empty(),
-                ZonedDateTime.now().minusMinutes(10).toInstant(),
-                ZonedDateTime.now().plusMinutes(10).toInstant());
-        List<Map<String, Object>> mdc = (List<Map<String, Object>>) facets.get("mdc");
+        LogEventSummary summary = observer.getSummary(filter(Optional.empty(), ZonedDateTime.now(), Duration.ofMinutes(10)));
+        assertEquals(new HashSet<>(Arrays.asList("ip", "url")), summary.getMdcMap().keySet());
+        assertEquals(new HashSet<>(Arrays.asList("127.0.0.1", "10.0.0.4")), summary.getMdcMap().get("ip"));
+        assertEquals(new HashSet<>(Arrays.asList("/api/op")), summary.getMdcMap().get("url"));
+    }
 
-        Map<String, Object> ipMdc = mdc.stream().filter(m -> m.get("name").equals("ip")).findAny()
-                .orElseThrow(() -> new IllegalArgumentException("missing ip in " + mdc));
-        Map<String, Object> urlMdc = mdc.stream().filter(m -> m.get("name").equals("url")).findAny()
-                .orElseThrow(() -> new IllegalArgumentException("missing ip in " + mdc));
-
-        assertEquals(new HashSet<>(Arrays.asList("127.0.0.1", "10.0.0.4")), ipMdc.get("values"));
-        assertEquals(new HashSet<>(Arrays.asList("/api/op")), urlMdc.get("values"));
+    private LogEventFilter filter(Optional<Level> level, ZonedDateTime time, Duration interval) {
+        HashMap<String, String[]> untypedParameters = new HashMap<>();
+        level.ifPresent(l -> untypedParameters.put("level", new String[] { l.toString() }));
+        untypedParameters.put("time", new String[] { time.toLocalTime().toString() });
+        untypedParameters.put("date", new String[] { time.toLocalDate().toString() });
+        untypedParameters.put("timezoneOffset", new String[] {String.valueOf(- time.getOffset().getTotalSeconds() / 60)});
+        untypedParameters.put("interval", new String[] { interval.toString() });
+        return new LogEventFilter(untypedParameters);
     }
 
     @Test
@@ -156,42 +161,38 @@ public class DatabaseLogEventObserverTest {
         LogEvent event3 = sampler.withMarker(OTHER_MARKER).withLoggerName(logger2).build();
         observer.processBatch(new LogEventBatch().add(event1).add(event2).add(event3));
 
-        Map<String, Object> facets = observer.getFacets(Optional.empty(),
-                logTime.minusHours(1).toInstant(),
-                logTime.plusHours(1).toInstant());
+        LogEventSummary summary = observer.getSummary(filter(Optional.empty(), logTime, Duration.ofHours(1)));
         assertEquals(new HashSet<>(Arrays.asList(event1.getMarker().getName(), event3.getMarker().getName())),
-                facets.get("markers"));
+                summary.getMarkers());
         assertEquals(new HashSet<>(Arrays.asList(event1.getLoggerName(), event2.getLoggerName(), event3.getLoggerName())),
-                facets.get("loggers"));
+                summary.getLoggers());
         assertEquals(new HashSet<>(Arrays.asList(event1.getThreadName(), event2.getThreadName(), event3.getThreadName())),
-                facets.get("threads"));
+                summary.getThreads());
     }
 
     @Test
     public void shouldExcludeMessagesOutsideFilterFromFacets() throws SQLException {
-        ZonedDateTime start = ZonedDateTime.now().minusYears(2).minusMinutes(10);
-        ZonedDateTime end = start.plusMinutes(10);
+        ZonedDateTime time = ZonedDateTime.now().minusYears(2);
+        Duration interval = Duration.ofMinutes(10);
 
         LogEvent event1 = new LogEventSampler().withMarker(MY_MARKER)
                 .withMdc("mdcKey", "too old")
-                .withTime(start.minusMinutes(1)).build();
+                .withTime(time.minus(interval).minusMinutes(1)).build();
         LogEvent event2 = new LogEventSampler().withMarker(MY_MARKER)
-                .withTime(start.plusMinutes(1))
+                .withTime(time.minus(interval).plusMinutes(1))
                 .withMdc("mdcKey", "too boring")
                 .withLevel(Level.INFO).build();
         LogEvent event3 = new LogEventSampler().withMarker(OTHER_MARKER)
                 .withMdc("mdcKey", "just right")
-                .withTime(start.plusMinutes(1))
+                .withTime(time.minus(interval).plusMinutes(1))
                 .withLevel(Level.WARN).build();
         observer.processBatch(new LogEventBatch().add(event1).add(event2).add(event3));
 
-        Map<String, Object> facets = observer.getFacets(Optional.of(Level.WARN), start.toInstant(), end.toInstant());
-        assertEquals(new HashSet<>(Arrays.asList(OTHER_MARKER.toString())),
-                facets.get("markers"));
-        List<Map<String, Object>> mdc = (List<Map<String, Object>>) facets.get("mdc");
-        Map<String, Object> mdcEntry = mdc.stream().filter(m -> m.get("name").equals("mdcKey")).findAny()
-                .orElseThrow(() -> new IllegalArgumentException("missing mdcKey in " + mdc));
-        assertEquals(new HashSet<>(Arrays.asList("just right")), mdcEntry.get("values"));
+        LogEventSummary summary = observer.getSummary(filter(Optional.of(Level.WARN), time, interval));
+        assertEquals(new HashSet<>(Arrays.asList("mdcKey")), summary.getMdcMap().keySet());
+        assertEquals(new HashSet<>(Arrays.asList("just right")), summary.getMdcMap().get("mdcKey"));
+        Map<String, Object> facets = summary.toJson();
+        assertEquals(new HashSet<>(Arrays.asList(OTHER_MARKER.toString())), summary.getMarkers());
     }
 
     private <T, U> void assertDoesNotContain(T value, Collection<U> collection, Function<U, T> transformer) {

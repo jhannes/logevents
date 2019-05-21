@@ -3,6 +3,7 @@ package org.logevents.extend.servlets;
 import org.logevents.LogEventFactory;
 import org.logevents.observers.WebLogEventObserver;
 import org.logevents.query.LogEventFilter;
+import org.logevents.query.LogEventQueryResult;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
@@ -186,11 +187,12 @@ public class LogEventsServlet extends HttpServlet {
         } else if (!authenticated(resp, req.getCookies())) {
             resp.sendError(401, "Please log in");
         } else if (req.getPathInfo().equals("/events")) {
-            LogEventFilter filter = new LogEventFilter(req.getParameterMap(), getObserver().getLogEventBuffer());
+            LogEventFilter filter = new LogEventFilter(req.getParameterMap());
+            LogEventQueryResult queryResult = getObserver().getLogEventBuffer().query(filter);
 
             Map<String, Object> result = new LinkedHashMap<>();
-            result.put("facets", filter.getFacets());
-            result.put("events", filter.stream()
+            result.put("facets", queryResult.getSummary().toJson());
+            result.put("events", queryResult.stream()
                     .map(getObserver()::format)
                     .collect(Collectors.toList()));
 

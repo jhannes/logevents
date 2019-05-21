@@ -1,7 +1,6 @@
 package org.logevents.query;
 
 import org.logevents.LogEvent;
-import org.logevents.observers.LogEventBuffer;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -14,7 +13,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,29 +24,26 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Queries a list of {@link LogEvent} objects by {@link #time},
- * {@link #interval}, {@link #threadName}, {@link #logger},
- * {@link #level}, {@link #markers} and {@link #mdcFilter}.
+ * Queries a list of {@link LogEvent} objects by time, interval, {@link #threadName},
+ * {@link #logger}, {@link #level}, {@link #markers} and {@link #mdcFilter}.
  * <p>
- *     Use {@link #test(LogEvent)} to filter a {@link java.util.stream.Stream} of
- *     {@link LogEvent}s and {@link #getFacets()} to return a summary
- *     of which threads, loggers, markers and mdcs were used in the interval.
+ *     Use {@link #test(LogEvent)} to filter a {@link Stream} of
+ *     {@link LogEvent}s .
  * </p>
  *
  */
 public class LogEventFilter implements Predicate<LogEvent> {
-    private final Instant time;
-    private final Duration interval;
+
+    private final Instant startTime;
+    private final Instant endTime;
+    private final Level level;
     private final Optional<List<String>> threadName;
     private final Optional<List<String>> logger;
-    private final Level level;
     private final Optional<List<Marker>> markers;
     private final Optional<Map<String, List<String>>> mdcFilter;
-    private final ZoneOffset timezoneOffset;
-    private final Collection<LogEvent> allEvents;
 
     @SuppressWarnings("unchecked")
-    public LogEventFilter(Map untypedParameters, LogEventBuffer logEventBuffer) {
+    public LogEventFilter(Map untypedParameters) {
         Map<String, String[]> parameters = untypedParameters;
         Optional<Instant> instant = Optional.ofNullable(parameters.get("instant"))
                 .map(t -> Instant.parse(t[0]));
@@ -57,22 +52,24 @@ public class LogEventFilter implements Predicate<LogEvent> {
                 .map(p -> LocalDate.parse(p[0]))
                 .orElse(LocalDate.now());
 
-        timezoneOffset = Optional.ofNullable(parameters.get("timezoneOffset"))
+        ZoneOffset timezoneOffset = Optional.ofNullable(parameters.get("timezoneOffset"))
                 .map(tzOffset -> -Integer.parseInt(tzOffset[0]))
                 .map(tzOffset -> ZoneOffset.ofHoursMinutes(tzOffset / 60, tzOffset % 60))
                 .orElse(ZoneId.systemDefault().getRules().getOffset(date.atStartOfDay()));
 
-        this.time = instant.orElseGet(() -> Optional.ofNullable(parameters.get("time"))
+        Instant time = instant.orElseGet(() -> Optional.ofNullable(parameters.get("time"))
                 .map(t -> LocalTime.parse(t[0]))
-                .map(time -> LocalDateTime.of(date, time).toInstant(timezoneOffset))
+                .map(t -> LocalDateTime.of(date, t).toInstant(timezoneOffset))
                 .orElse(Instant.now()));
 
-        this.interval = Optional.ofNullable(parameters.get("interval"))
+        Duration interval = Optional.ofNullable(parameters.get("interval"))
                 .map(t -> Duration.parse(t[0]))
                 .orElse(Duration.ofMinutes(10));
         this.logger = getParameter(parameters, "logger");
         this.threadName = getParameter(parameters, "thread");
-        this.level = getParameter(parameters, "level").map(list -> Level.valueOf(list.get(0))).orElse(Level.INFO);
+        this.level = getParameter(parameters, "level")
+                .map(list -> Level.valueOf(list.get(0)))
+                .orElse(Level.INFO);
         this.markers = getParameter(parameters,"marker")
                 .map(m -> m.stream().map(MarkerFactory::getMarker).collect(Collectors.toList()));
 
@@ -88,7 +85,8 @@ public class LogEventFilter implements Predicate<LogEvent> {
             }
         }
         this.mdcFilter = mdcFilter.isEmpty() ? Optional.empty() : Optional.of(mdcFilter);
-        this.allEvents = logEventBuffer.filter(level, time.minus(interval), time.plus(interval));
+        startTime = time.minus(interval);
+        endTime = time.plus(interval);
     }
 
     private static Optional<List<String>> getParameter(Map<String, String[]> parameters, String name) {
@@ -119,8 +117,8 @@ public class LogEventFilter implements Predicate<LogEvent> {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" +
-                "time=" + time +
-                ", interval=" + interval +
+                "startTime=" + startTime +
+                ", endTime=" + endTime +
                 ", threadName=" + threadName +
                 ", level=" + level +
                 ", markers=" + markers +
@@ -128,19 +126,15 @@ public class LogEventFilter implements Predicate<LogEvent> {
                 "}";
     }
 
-    public LogEventSummary getSummary() {
-        LogEventSummary summary = new LogEventSummary();
-        for (LogEvent event : allEvents) {
-            summary.add(event);
-        }
-        return summary;
+    public Instant getStartTime() {
+        return startTime;
     }
 
-    public Map<String, Object> getFacets() {
-        return getSummary().toJson();
+    public Instant getEndTime() {
+        return endTime;
     }
 
-    public Stream<LogEvent> stream() {
-        return allEvents.stream().filter(this);
+    public Level getThreshold() {
+        return level;
     }
 }

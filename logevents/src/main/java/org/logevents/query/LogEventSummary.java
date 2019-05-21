@@ -4,7 +4,6 @@ import org.logevents.LogEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,9 +12,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class LogEventSummary {
-    private Set<String> threads = new HashSet<>();
-    private Set<String> markers = new HashSet<>();
-    private TreeSet<String> loggers = new TreeSet<>();
+    private Set<String> threads = new TreeSet<>();
+    private Set<String> markers = new TreeSet<>();
+    private Set<String> loggers = new TreeSet<>();
     private Map<String, Set<String>> mdcMap = new TreeMap<>();
 
     public Map<String, Object> toJson() {
@@ -58,5 +57,37 @@ public class LogEventSummary {
         if (event.getMarker() != null) {
             markers.add(event.getMarker().getName());
         }
+    }
+
+    public void setMarkers(Set<String> markers) {
+        this.markers = markers;
+    }
+
+    public void setThreads(Set<String> threads) {
+        this.threads = threads;
+    }
+
+    public Set<String> getLoggers() {
+        return loggers;
+    }
+
+    public void setLoggers(Set<String> loggers) {
+        this.loggers = loggers;
+    }
+
+    public void setMdcMap(Map<String, Set<String>> mdcMap) {
+        this.mdcMap = mdcMap;
+    }
+
+    public Map<String, Set<String>> getMdcMap() {
+        return mdcMap;
+    }
+
+    public Set<String> getMarkers() {
+        return markers;
+    }
+
+    public Set<String> getThreads() {
+        return threads;
     }
 }

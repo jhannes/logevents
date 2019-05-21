@@ -34,7 +34,7 @@ public class LogEventFilterTest {
         LogEvent nonMatchingEvent = new LogEventSampler().build();
 
         LogEventFilter filter = new LogEventFilter(parameters("thread",
-                "none", matchingEvent.getThreadName(), "nonsense"), logsByLevel);
+                "none", matchingEvent.getThreadName(), "nonsense"));
         assertMatches(matchingEvent, filter);
         assertDoesNotMatch(nonMatchingEvent, filter);
     }
@@ -52,7 +52,7 @@ public class LogEventFilterTest {
                 .build();
 
         LogEventFilter filter = new LogEventFilter(parameters("marker",
-                "none", matchingEvent.getMarker().getName(), "nonsense"), logsByLevel);
+                "none", matchingEvent.getMarker().getName(), "nonsense"));
         assertMatches(matchingEvent, filter);
         assertDoesNotMatch(nonMatchingEvent, filter);
         assertDoesNotMatch(eventWithNoMarker, filter);
@@ -66,7 +66,7 @@ public class LogEventFilterTest {
                 .withLoggerName(LogEventSampler.sampleLoggerName() + "Foo")
                 .build();
 
-        LogEventFilter filter = new LogEventFilter(parameters("logger", matchingEvent.getLoggerName(), secondMatchingEvent.getLoggerName()), logsByLevel);
+        LogEventFilter filter = new LogEventFilter(parameters("logger", matchingEvent.getLoggerName(), secondMatchingEvent.getLoggerName()));
         assertMatches(matchingEvent, filter);
         assertMatches(secondMatchingEvent, filter);
         assertDoesNotMatch(nonMatchingEvent, filter);
@@ -77,7 +77,7 @@ public class LogEventFilterTest {
         Map<String, String[]> parameters = new HashMap<>();
         parameters.put("mdc[user]", new String[] { "adminUser", "limitedUser" });
         parameters.put("mdc[operation]", new String[]{ "add", "remove" });
-        LogEventFilter filter = new LogEventFilter(parameters, logsByLevel);
+        LogEventFilter filter = new LogEventFilter(parameters);
 
         assertDoesNotMatch(new LogEventSampler().build(), filter);
         assertMatches(new LogEventSampler().withMdc("user", "adminUser").withMdc("operation", "remove").build(), filter);
@@ -93,7 +93,7 @@ public class LogEventFilterTest {
         LogEvent warnMessage = record(new LogEventSampler().withLevel(Level.WARN).build());
         LogEvent errorMessage = record(new LogEventSampler().withLevel(Level.ERROR).build());
 
-        LogEventFilter filter = new LogEventFilter(parameters("level", "DEBUG"), logsByLevel);
+        LogEventFilter filter = new LogEventFilter(parameters("level", "DEBUG"));
 
         assertCollectionDoesNotContain(traceMessage, filter);
         assertCollectionIncludes(debugMessage, filter);
@@ -116,7 +116,7 @@ public class LogEventFilterTest {
                 .withTime(start.minusMinutes(2))
                 .build());
 
-        Collection<LocalTime> logEvents = new LogEventFilter(new HashMap<>(), logsByLevel).stream()
+        Collection<LocalTime> logEvents = logsByLevel.query(new LogEventFilter(new HashMap<>())).stream()
                 .map(LogEvent::getLocalTime).collect(Collectors.toList());
 
         assertEquals(
@@ -148,7 +148,7 @@ public class LogEventFilterTest {
         parameters.put("time", new String[] { start.minusMinutes(10).toLocalTime().toString() });
         parameters.put("interval", new String[] { "PT10M" });
 
-        Collection<Instant> logEvents = new LogEventFilter(parameters, logsByLevel)
+        Collection<Instant> logEvents = logsByLevel.query(new LogEventFilter(parameters))
                 .stream().map(LogEvent::getInstant).collect(Collectors.toList());
         assertEquals(
                 Arrays.asList(earlyMessage.getInstant(), lateMessage.getInstant(), latestMessage.getInstant()),
@@ -156,7 +156,7 @@ public class LogEventFilterTest {
         );
 
         parameters.put("interval", new String[] { "PT6M" });
-        logEvents = new LogEventFilter(parameters, logsByLevel)
+        logEvents = logsByLevel.query(new LogEventFilter(parameters))
                 .stream().map(LogEvent::getInstant).collect(Collectors.toList());
         assertEquals(
                 Arrays.asList(earlyMessage.getInstant(), lateMessage.getInstant()),
@@ -175,9 +175,9 @@ public class LogEventFilterTest {
         record(oldEvent);
         record(new LogEventSampler().withThread("TimeThread-8").build());
 
-        LogEventFilter filter = new LogEventFilter(parameters("interval", "PT1M"), logsByLevel);
+        LogEventFilter filter = new LogEventFilter(parameters("interval", "PT1M"));
 
-        Map<String, Object> facets = filter.getFacets();
+        Map<String, Object> facets = logsByLevel.query(filter).getSummary().toJson();
         assertEquals(new HashSet<>(Arrays.asList("main", "TimeThread-8")),
                 facets.get("threads"));
     }
@@ -187,9 +187,8 @@ public class LogEventFilterTest {
         record(new LogEventSampler().withThread("main").build());
         record(new LogEventSampler().withThread("TimeThread-8").build());
 
-        LogEventFilter filter = new LogEventFilter(parameters("thread", "main"), logsByLevel);
-
-        Map<String, Object> facets = filter.getFacets();
+        LogEventFilter filter = new LogEventFilter(parameters("thread", "main"));
+        Map<String, Object> facets = logsByLevel.query(filter).getSummary().toJson();
         assertEquals(new HashSet<>(Arrays.asList("main", "TimeThread-8")),
                 facets.get("threads"));
     }
@@ -200,8 +199,8 @@ public class LogEventFilterTest {
         record(new LogEventSampler().withMarker(MY_MARKER).build());
         record(new LogEventSampler().withMarker(OTHER_MARKER).build());
 
-        LogEventFilter filter = new LogEventFilter(parameters("marker", "my_marker"), logsByLevel);
-        Map<String, Object> facets = filter.getFacets();
+        LogEventFilter filter = new LogEventFilter(parameters("marker", "my_marker"));
+        Map<String, Object> facets = logsByLevel.query(filter).getSummary().toJson();
         assertEquals(new HashSet<>(Arrays.asList(MY_MARKER.getName(), OTHER_MARKER.getName())),
                 facets.get("markers"));
     }
@@ -214,8 +213,8 @@ public class LogEventFilterTest {
         record(new LogEventSampler().withLoggerName(firstLogger).build());
         record(new LogEventSampler().withLoggerName(secondLogger).build());
 
-        LogEventFilter filter = new LogEventFilter(parameters("logger", firstLogger), logsByLevel);
-        Map<String, Object> facets = filter.getFacets();
+        LogEventFilter filter = new LogEventFilter(parameters("logger", firstLogger));
+        Map<String, Object> facets = logsByLevel.query(filter).getSummary().toJson();
         List<Object> expected = new ArrayList<>();
         Map<String, String> first = new HashMap<>();
         first.put("name", firstLogger);
@@ -234,7 +233,7 @@ public class LogEventFilterTest {
         record(new LogEventSampler().withMdc("ip", "127.0.0.1").build());
         record(new LogEventSampler().withMdc("ip", "10.0.0.4").build());
 
-        Map<String, Object> facets = new LogEventFilter(new HashMap<>(), logsByLevel).getFacets();
+        Map<String, Object> facets = logsByLevel.query(new LogEventFilter(new HashMap<>())).getSummary().toJson();
         List<Map<String, Object>> mdc = (List<Map<String, Object>>) facets.get("mdc");
 
         Map<String, Object> ipMdc = mdc.stream().filter(m -> m.get("name").equals("ip")).findAny()
@@ -252,14 +251,13 @@ public class LogEventFilterTest {
     }
 
     private void assertCollectionIncludes(LogEvent logEvent, LogEventFilter filter) {
-        filter.stream().collect(Collectors.toList());
         assertTrue("Expect " + filter + " to include " + logEvent,
-                filter.stream().collect(Collectors.toList()).contains(logEvent));
+                logsByLevel.query(filter).stream().collect(Collectors.toList()).contains(logEvent));
     }
 
     private void assertCollectionDoesNotContain(LogEvent logEvent, LogEventFilter filter) {
         assertFalse("Expect " + filter + " to exclude " + logEvent,
-                filter.stream().collect(Collectors.toList()).contains(logEvent));
+                logsByLevel.query(filter).stream().collect(Collectors.toList()).contains(logEvent));
     }
 
     private Map<String, String[]> parameters(String name, String... values) {

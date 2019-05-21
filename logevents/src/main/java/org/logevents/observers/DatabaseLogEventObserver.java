@@ -3,6 +3,8 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
+import org.logevents.query.LogEventFilter;
+import org.logevents.query.LogEventSummary;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
 import org.logevents.util.JsonParser;
@@ -23,12 +25,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 /**
@@ -219,38 +220,42 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     /**
      * Retrieves a summary of log events within the specified interval above the threshold log level
      */
-    public Map<String, Object> getFacets(Optional<Level> threshold, Instant start, Instant end) throws SQLException {
-        Map<String, Object> facets = new LinkedHashMap<>();
+    public LogEventSummary getSummary(LogEventFilter filter) throws SQLException {
+        LogEventSummary summary = new LogEventSummary();
+
         try (Connection connection = getConnection()) {
-            facets.put("mdc", getMdcMap(connection, threshold, start, end));
-            facets.put("markers", listDistinct(connection, threshold, start, end, "marker"));
-            facets.put("loggers", listDistinct(connection, threshold, start, end, "logger"));
-            facets.put("threads", listDistinct(connection, threshold, start, end, "thread_name"));
+            summary.setMarkers(listDistinct(connection, filter, "marker"));
+            summary.setThreads(listDistinct(connection, filter, "thread_name"));
+            summary.setLoggers(listDistinct(connection, filter, "logger"));
+            summary.setMdcMap(getMdcMap(connection, filter));
         }
-        return facets;
+        return summary;
     }
 
-    private Object listDistinct(Connection connection, Optional<Level> threshold, Instant start, Instant end, final String columnName) throws SQLException {
+    private Set<String> listDistinct(Connection connection, LogEventFilter filter, String columnName) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("select distinct " + columnName + " from log_events where instant between ? and ? and level_int >= ?")) {
-            statement.setLong(1, start.toEpochMilli());
-            statement.setLong(2, end.toEpochMilli());
-            statement.setLong(3, threshold.map(Level::toInt).orElse(0));
+            statement.setLong(1, filter.getStartTime().toEpochMilli());
+            statement.setLong(2, filter.getEndTime().toEpochMilli());
+            statement.setLong(3, filter.getThreshold().toInt());
             try (ResultSet rs = statement.executeQuery()) {
-                Set<Object> result = new HashSet<>();
+                Set<String> result = new TreeSet<>();
                 while (rs.next()) {
-                    result.add(rs.getString(1));
+                    String value = rs.getString(1);
+                    if (!rs.wasNull()) {
+                        result.add(value);
+                    }
                 }
                 return result;
             }
         }
     }
 
-    private Object getMdcMap(Connection connection, Optional<Level> threshold, Instant start, Instant end) throws SQLException {
+    private Map<String, Set<String>> getMdcMap(Connection connection, LogEventFilter filter) throws SQLException {
         Map<String, Set<String>> mdcMap = new HashMap<>();
         try (PreparedStatement statement = connection.prepareStatement("select distinct key, value from log_events_mdc m inner join log_events e on m.event_id = e.event_id where instant between ? and ? and level_int >= ?")) {
-            statement.setLong(1, start.toEpochMilli());
-            statement.setLong(2, end.toEpochMilli());
-            statement.setLong(3, threshold.map(Level::toInt).orElse(0));
+            statement.setLong(1, filter.getStartTime().toEpochMilli());
+            statement.setLong(2, filter.getEndTime().toEpochMilli());
+            statement.setLong(3, filter.getThreshold().toInt());
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
                     String key = rs.getString("key");
@@ -258,13 +263,6 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                 }
             }
         }
-        List<Map<String, Object>> mdc = new ArrayList<>();
-        for (Map.Entry<String, Set<String>> entry : mdcMap.entrySet()) {
-            Map<String, Object> mdcEntry = new LinkedHashMap<>();
-            mdcEntry.put("name", entry.getKey());
-            mdcEntry.put("values", entry.getValue());
-            mdc.add(mdcEntry);
-        }
-        return mdc;
+        return mdcMap;
     }
 }
