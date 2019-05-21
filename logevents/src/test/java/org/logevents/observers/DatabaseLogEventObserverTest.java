@@ -167,8 +167,32 @@ public class DatabaseLogEventObserverTest {
                 facets.get("threads"));
     }
 
+    @Test
+    public void shouldExcludeMessagesOutsideFilterFromFacets() throws SQLException {
+        ZonedDateTime start = ZonedDateTime.now().minusYears(2).minusMinutes(10);
+        ZonedDateTime end = start.plusMinutes(10);
 
+        LogEvent event1 = new LogEventSampler().withMarker(MY_MARKER)
+                .withMdc("mdcKey", "too old")
+                .withTime(start.minusMinutes(1)).build();
+        LogEvent event2 = new LogEventSampler().withMarker(MY_MARKER)
+                .withTime(start.plusMinutes(1))
+                .withMdc("mdcKey", "too boring")
+                .withLevel(Level.INFO).build();
+        LogEvent event3 = new LogEventSampler().withMarker(OTHER_MARKER)
+                .withMdc("mdcKey", "just right")
+                .withTime(start.plusMinutes(1))
+                .withLevel(Level.WARN).build();
+        observer.processBatch(new LogEventBatch().add(event1).add(event2).add(event3));
 
+        Map<String, Object> facets = observer.getFacets(Optional.of(Level.WARN), start.toInstant(), end.toInstant());
+        assertEquals(new HashSet<>(Arrays.asList(OTHER_MARKER.toString())),
+                facets.get("markers"));
+        List<Map<String, Object>> mdc = (List<Map<String, Object>>) facets.get("mdc");
+        Map<String, Object> mdcEntry = mdc.stream().filter(m -> m.get("name").equals("mdcKey")).findAny()
+                .orElseThrow(() -> new IllegalArgumentException("missing mdcKey in " + mdc));
+        assertEquals(new HashSet<>(Arrays.asList("just right")), mdcEntry.get("values"));
+    }
 
     private <T, U> void assertDoesNotContain(T value, Collection<U> collection, Function<U, T> transformer) {
         assertNotNull("value should not be null", value);

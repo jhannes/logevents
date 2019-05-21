@@ -31,6 +31,29 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Writes log events asynchronously to relational database with JDBC. Will create the necessary tables
+ * at startup if they don't exist. {@link DatabaseLogEventObserver} can use an existing database and
+ * doesn't interfere with database migrations with Flyway or similar tools. Log events are written with
+ * UUID primary keys and the same database can be used for several applications if you want.
+ * <strong>This class should work with all relational database providers but has only been verified with
+ * Postgres and H2.</strong>
+ *
+ * <p>{@link DatabaseLogEventObserver} is a nice compromise if you want to take a step towards centralized logging,
+ * but don't want to set up Elastic search, Splunk or a similar solution quite yet.</p>
+ *
+ * <p>{@link DatabaseLogEventObserver} is designed to be used with {@link org.logevents.extend.servlets.LogEventsServlet}</p>
+ *
+ * <h3>Sample configuration</h3>
+ * <pre>
+ * observer.db=DatabaseLogEventObserver
+ * observer.db.jdbcUrl=jdbc:postgres://localhost/logdb
+ * observer.db.jdbcUsername=logevents
+ * observer.db.jdbcPassword=sdgawWWF/)l31L
+ * observer.db.logeventTable=log_events
+ * observer.db.logeventMdcTable=log_events_mdc
+ * </pre>
+ */
 // TODO: Save exception
 // TODO: Configurable table names
 public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventBatchProcessor {
@@ -99,6 +122,9 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         return Optional.ofNullable(o).map(Object::toString).orElse(null);
     }
 
+    /**
+     * Retrieve log events from the database within the specified interval
+     */
     public Collection<LogEvent> filter(Level threshold, Instant start, Instant end) {
         Collection<LogEvent> result = new ArrayList<>();
         Map<String, LogEvent> idToResult = new HashMap<>();
@@ -142,12 +168,19 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         return marker != null ? MarkerFactory.getMarker(marker) : null;
     }
 
+    /**
+     * Open a new connection to the database
+     */
     private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(jdbcUrl, jdbcUsername, jdbcPassword);
     }
 
     @Override
     public void processBatch(LogEventBatch batch) {
+        saveLogEvents(batch);
+    }
+
+    private void saveLogEvents(LogEventBatch batch) {
         try (Connection connection = getConnection()) {
             try (
                     PreparedStatement eventStmt = connection.prepareStatement("insert into log_events (event_id, logger, level, level_int, message, instant, thread_name, arguments, marker, node_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -183,6 +216,9 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         }
     }
 
+    /**
+     * Retrieves a summary of log events within the specified interval above the threshold log level
+     */
     public Map<String, Object> getFacets(Optional<Level> threshold, Instant start, Instant end) throws SQLException {
         Map<String, Object> facets = new LinkedHashMap<>();
         try (Connection connection = getConnection()) {
@@ -195,10 +231,10 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     }
 
     private Object listDistinct(Connection connection, Optional<Level> threshold, Instant start, Instant end, final String columnName) throws SQLException {
-        // TODO: Filter on threshold
-        try (PreparedStatement statement = connection.prepareStatement("select distinct " + columnName + " from log_events where instant between ? and ?")) {
+        try (PreparedStatement statement = connection.prepareStatement("select distinct " + columnName + " from log_events where instant between ? and ? and level_int >= ?")) {
             statement.setLong(1, start.toEpochMilli());
             statement.setLong(2, end.toEpochMilli());
+            statement.setLong(3, threshold.map(Level::toInt).orElse(0));
             try (ResultSet rs = statement.executeQuery()) {
                 Set<Object> result = new HashSet<>();
                 while (rs.next()) {
@@ -211,8 +247,10 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
 
     private Object getMdcMap(Connection connection, Optional<Level> threshold, Instant start, Instant end) throws SQLException {
         Map<String, Set<String>> mdcMap = new HashMap<>();
-        // TODO: Filter on time and threshold
-        try (PreparedStatement statement = connection.prepareStatement("select distinct key, value from log_events_mdc")) {
+        try (PreparedStatement statement = connection.prepareStatement("select distinct key, value from log_events_mdc m inner join log_events e on m.event_id = e.event_id where instant between ? and ? and level_int >= ?")) {
+            statement.setLong(1, start.toEpochMilli());
+            statement.setLong(2, end.toEpochMilli());
+            statement.setLong(3, threshold.map(Level::toInt).orElse(0));
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
                     String key = rs.getString("key");
