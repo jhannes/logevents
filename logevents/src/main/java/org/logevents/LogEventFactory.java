@@ -217,8 +217,8 @@ public class LogEventFactory implements ILoggerFactory {
 
     /**
      * Logs to the console at level INFO, or level WARN if running in JUnit.
-     * @param rootObserver The observer used for {@see getRootLogger}
-     * @param rootLevel The logging threshold for {@see getRootLogger}
+     * @param rootObserver The observer used for getRootLogger
+     * @param rootLevel The logging threshold for getRootLogger
      */
     public void reset(LogEventObserver rootObserver, Level rootLevel) {
         rootLogger.reset();

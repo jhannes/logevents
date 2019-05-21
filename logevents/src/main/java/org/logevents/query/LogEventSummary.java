@@ -1,0 +1,62 @@
+package org.logevents.query;
+
+import org.logevents.LogEvent;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+public class LogEventSummary {
+    private Set<String> threads = new HashSet<>();
+    private Set<String> markers = new HashSet<>();
+    private TreeSet<String> loggers = new TreeSet<>();
+    private Map<String, Set<String>> mdcMap = new TreeMap<>();
+
+    public Map<String, Object> toJson() {
+        Map<String, Object> facets = new LinkedHashMap<>();
+        facets.put("threads", threads);
+        facets.put("loggers", getLoggerSummary());
+        facets.put("markers", markers);
+        facets.put("mdc", calculateMdc());
+        return facets;
+    }
+
+    public List<Map<String, String>> getLoggerSummary() {
+        List<Map<String, String>> result = new ArrayList<>();
+        for (String loggerName : loggers) {
+            Map<String, String> logger = new HashMap<>();
+            logger.put("name", loggerName);
+            logger.put("abbreviatedName", LogEvent.getAbbreviatedLoggerName(loggerName, 0));
+            result.add(logger);
+        }
+        return result;
+    }
+
+    private Object calculateMdc() {
+        List<Object> mdcSummary = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : mdcMap.entrySet()) {
+            Map<String, Object> mdcEntry = new LinkedHashMap<>();
+            mdcEntry.put("name", entry.getKey());
+            mdcEntry.put("values", entry.getValue());
+            mdcSummary.add(mdcEntry);
+        }
+        return mdcSummary;
+    }
+
+    public void add(LogEvent event) {
+        this.loggers.add(event.getLoggerName());
+        this.threads.add(event.getThreadName());
+        for (String mdcKey : event.getMdcProperties().keySet()) {
+            mdcMap.computeIfAbsent(mdcKey, k -> new TreeSet<>()).add(event.getMdcProperties().get(mdcKey));
+        }
+        if (event.getMarker() != null) {
+            markers.add(event.getMarker().getName());
+        }
+    }
+}

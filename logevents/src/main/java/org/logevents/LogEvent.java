@@ -144,6 +144,15 @@ public class LogEvent implements LoggingEvent {
      * For example "org.example.Logger" will be abbreviated to "o.e.Logger" or "org.e.Logger".
      */
     public String getAbbreviatedLoggerName(int maxLength) {
+        return getAbbreviatedLoggerName(loggerName, maxLength);
+    }
+
+    /**
+     * Returns the logger name restricted as much as possible to fit maxLength characters.
+     * The final component of the name is prioritized, then each part from the beginning.
+     * For example "org.example.Logger" will be abbreviated to "o.e.Logger" or "org.e.Logger".
+     */
+    public static String getAbbreviatedLoggerName(String loggerName, int maxLength) {
         String[] parts = loggerName.split("\\.");
         String lastPartName = parts[parts.length-1];
         int remainder = maxLength - lastPartName.length() - ((parts.length-1) * 2);

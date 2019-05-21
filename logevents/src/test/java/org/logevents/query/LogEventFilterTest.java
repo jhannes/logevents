@@ -1,7 +1,8 @@
-package org.logevents.extend.servlets;
+package org.logevents.query;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.LogEventBuffer;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -224,8 +225,7 @@ public class LogEventFilterTest {
         second.put("name", secondLogger);
         second.put("abbreviatedName", "c.e.ClassTwo");
         expected.add(second);
-        assertEquals(expected,
-                facets.get("loggers"));
+        assertEquals(expected, facets.get("loggers"));
     }
 
     @Test

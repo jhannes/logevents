@@ -84,6 +84,9 @@
                     <reportOutputDirectory>${project.basedir}/../docs</reportOutputDirectory>
                     <detectLinks>true</detectLinks>
                     <doclint>all,-missing</doclint>
+                    <links>
+                        <link>https://junit.org/junit5/docs/current/api/</link>
+                    </links>
                 </configuration>
             </plugin>
             <plugin>

@@ -37,7 +37,7 @@ public class LoggerDelegatorTest {
     public void shouldRecordEventLocation() {
         loggerDelegator.error("Some message");
         LogEvent event = observer.getEvents().get(0);
-        assertEquals(41, event.getCallerLocation().getLineNumber());
+        assertEquals(38, event.getCallerLocation().getLineNumber());
         assertEquals("LoggerDelegatorTest.java", event.getCallerLocation().getFileName());
         assertEquals(getClass().getName(), event.getCallerLocation().getClassName());
         assertEquals("shouldRecordEventLocation", event.getCallerLocation().getMethodName());

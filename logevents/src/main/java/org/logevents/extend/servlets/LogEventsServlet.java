@@ -2,6 +2,7 @@ package org.logevents.extend.servlets;
 
 import org.logevents.LogEventFactory;
 import org.logevents.observers.WebLogEventObserver;
+import org.logevents.query.LogEventFilter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;

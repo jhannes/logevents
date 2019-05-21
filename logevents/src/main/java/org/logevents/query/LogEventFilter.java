@@ -1,4 +1,4 @@
-package org.logevents.extend.servlets;
+package org.logevents.query;
 
 import org.logevents.LogEvent;
 import org.logevents.observers.LogEventBuffer;
@@ -13,17 +13,12 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -133,43 +128,16 @@ public class LogEventFilter implements Predicate<LogEvent> {
                 "}";
     }
 
-    Map<String, Object> getFacets() {
-        Set<String> threads = new TreeSet<>();
-        Map<String, String> loggerMap = new TreeMap<>();
-        Set<String> markers = new TreeSet<>();
-        Map<String, Set<String>> mdcMap = new TreeMap<>();
+    public LogEventSummary getSummary() {
+        LogEventSummary summary = new LogEventSummary();
         for (LogEvent event : allEvents) {
-            threads.add(event.getThreadName());
-            loggerMap.put(event.getLoggerName(), event.getAbbreviatedLoggerName(0));
-            if (event.getMarker() != null) {
-                markers.add(event.getMarker().getName());
-            }
-            for (String mdcKey : event.getMdcProperties().keySet()) {
-                mdcMap.computeIfAbsent(mdcKey, k -> new TreeSet<>()).add(event.getMdcProperties().get(mdcKey));
-            }
+            summary.add(event);
         }
-        List<Map<String, Object>> mdc = new ArrayList<>();
-        for (Map.Entry<String, Set<String>> entry : mdcMap.entrySet()) {
-            Map<String, Object> mdcEntry = new LinkedHashMap<>();
-            mdcEntry.put("name", entry.getKey());
-            mdcEntry.put("values", entry.getValue());
-            mdc.add(mdcEntry);
-        }
-        List<Map<String,String>> loggers = new ArrayList<>();
-        for (Map.Entry<String, String> entry : loggerMap.entrySet()) {
-            Map<String, String> logger = new HashMap<>();
-            logger.put("name", entry.getKey());
-            logger.put("abbreviatedName", entry.getValue());
-            loggers.add(logger);
-        }
+        return summary;
+    }
 
-
-        Map<String, Object> facets = new LinkedHashMap<>();
-        facets.put("threads", threads);
-        facets.put("loggers", loggers);
-        facets.put("markers", markers);
-        facets.put("mdc", mdc);
-        return facets;
+    public Map<String, Object> getFacets() {
+        return getSummary().toJson();
     }
 
     public Stream<LogEvent> stream() {
