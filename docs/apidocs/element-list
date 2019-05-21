@@ -1,4 +1,5 @@
 org.logevents
+org.logevents.config
 org.logevents.extend.junit
 org.logevents.extend.servlets
 org.logevents.formatting
@@ -6,6 +7,7 @@ org.logevents.impl
 org.logevents.observers
 org.logevents.observers.batch
 org.logevents.observers.smtp
+org.logevents.query
 org.logevents.status
 org.logevents.util
 org.logevents.util.openid
