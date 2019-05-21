@@ -1,4 +1,4 @@
-package org.logevents;
+package org.logevents.impl;
 
 import org.junit.Rule;
 import org.junit.Test;

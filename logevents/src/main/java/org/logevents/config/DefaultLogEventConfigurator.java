@@ -1,5 +1,9 @@
-package org.logevents;
+package org.logevents.config;
 
+import org.logevents.LogEventConfigurator;
+import org.logevents.LogEventFactory;
+import org.logevents.LogEventObserver;
+import org.logevents.LoggerConfiguration;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
 import org.logevents.status.LogEventStatus;

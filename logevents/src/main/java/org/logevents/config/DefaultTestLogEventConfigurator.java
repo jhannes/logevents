@@ -1,5 +1,6 @@
-package org.logevents;
+package org.logevents.config;
 
+import org.logevents.LogEvent;
 import org.logevents.formatting.ConsoleLogEventFormatter;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.slf4j.event.Level;

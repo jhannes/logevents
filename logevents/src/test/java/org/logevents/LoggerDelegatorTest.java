@@ -2,6 +2,7 @@ package org.logevents;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.logevents.impl.LoggerDelegator;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -11,14 +12,11 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Random;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class LoggerDelegatorTest {
 
-    private LoggerDelegator loggerDelegator = new LogEventFactory.RootLoggerDelegator();
+    private LoggerDelegator loggerDelegator = LoggerDelegator.rootLogger();
     private CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
     private static Random random = new Random();
 
@@ -39,7 +37,7 @@ public class LoggerDelegatorTest {
     public void shouldRecordEventLocation() {
         loggerDelegator.error("Some message");
         LogEvent event = observer.getEvents().get(0);
-        assertEquals(40, event.getCallerLocation().getLineNumber());
+        assertEquals(41, event.getCallerLocation().getLineNumber());
         assertEquals("LoggerDelegatorTest.java", event.getCallerLocation().getFileName());
         assertEquals(getClass().getName(), event.getCallerLocation().getClassName());
         assertEquals("shouldRecordEventLocation", event.getCallerLocation().getMethodName());

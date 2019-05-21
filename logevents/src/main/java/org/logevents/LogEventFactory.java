@@ -1,8 +1,11 @@
 package org.logevents;
 
+import org.logevents.config.DefaultLogEventConfigurator;
+import org.logevents.config.DefaultTestLogEventConfigurator;
+import org.logevents.impl.JavaUtilLoggingAdapter;
+import org.logevents.impl.LoggerDelegator;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
-import org.logevents.observers.NullLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.LogEventConfigurationException;
 import org.slf4j.ILoggerFactory;
@@ -15,7 +18,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -62,73 +64,11 @@ public class LogEventFactory implements ILoggerFactory {
         this.observers = observers;
     }
 
-    static class RootLoggerDelegator extends LoggerDelegator {
-
-        public RootLoggerDelegator() {
-            super("ROOT");
-            ownObserver = new NullLogEventObserver();
-            levelThreshold = Level.INFO;
-            refresh();
-        }
-
-        @Override
-        void reset() {
-            super.reset();
-            levelThreshold = Level.INFO;
-        }
-
-        @Override
-        public void refresh() {
-            this.effectiveThreshold = this.levelThreshold;
-            this.observer = this.ownObserver;
-            refreshEventGenerators(effectiveThreshold, observer);
-        }
-
-        @Override
-        public LoggerDelegator getParentLogger() {
-            return null;
-        }
-    }
-
-    private static class CategoryLoggerDelegator extends LoggerDelegator {
-
-        private LoggerDelegator parentLogger;
-
-        CategoryLoggerDelegator(String name, LoggerDelegator parentLogger) {
-            super(name);
-            this.parentLogger = Objects.requireNonNull(parentLogger, "parentLogger" + " should not be null");
-        }
-
-        @Override
-        void reset() {
-            super.reset();
-            this.effectiveThreshold = null;
-        }
-
-        @Override
-        void refresh() {
-            this.effectiveThreshold = this.levelThreshold;
-            if (effectiveThreshold == null) {
-                this.effectiveThreshold = parentLogger.effectiveThreshold;
-            }
-            observer = inheritParentObserver
-                    ? CompositeLogEventObserver.combine(parentLogger.observer, ownObserver)
-                    : ownObserver;
-
-            refreshEventGenerators(effectiveThreshold, observer);
-        }
-
-        @Override
-        LoggerDelegator getParentLogger() {
-            return parentLogger;
-        }
-    }
-
-    private LoggerDelegator rootLogger = new RootLoggerDelegator();
+    private LoggerDelegator rootLogger = LoggerDelegator.rootLogger();
 
     private Map<String, LoggerDelegator> loggerCache = new HashMap<>();
 
-    LogEventFactory() {
+    public LogEventFactory() {
         configure();
     }
 
@@ -136,11 +76,8 @@ public class LogEventFactory implements ILoggerFactory {
     public synchronized LoggerConfiguration getLogger(String name) {
         if (!loggerCache.containsKey(name)) {
             int lastPeriodPos = name.lastIndexOf('.');
-            LoggerConfiguration parent = (lastPeriodPos < 0 ? rootLogger : getLogger(name.substring(0, lastPeriodPos)));
-            LoggerDelegator newLogger = new CategoryLoggerDelegator(name, (LoggerDelegator) parent);
-            newLogger.refresh();
-
-            loggerCache.put(name, newLogger);
+            LoggerDelegator parent = (LoggerDelegator)(lastPeriodPos < 0 ? rootLogger : getLogger(name.substring(0, lastPeriodPos)));
+            loggerCache.put(name, parent.getChildLogger(name));
         }
 
         return loggerCache.get(name);
@@ -186,12 +123,7 @@ public class LogEventFactory implements ILoggerFactory {
 
     private void refreshLoggers(LoggerDelegator logger) {
         logger.refresh();
-        loggerCache.values().stream().filter(l -> isParent(logger, l))
-            .forEach(this::refreshLoggers);
-    }
-
-    private boolean isParent(LoggerDelegator parent, LoggerDelegator logger) {
-        return logger.getParentLogger() == parent;
+        loggerCache.values().stream().filter(l -> l.hasParent(logger)).forEach(this::refreshLoggers);
     }
 
     public void setRootObserver(LogEventObserver observer) {
@@ -199,26 +131,15 @@ public class LogEventFactory implements ILoggerFactory {
     }
 
     public void setObserver(String loggerName, LogEventObserver observer) {
-        setObserver(getLogger(loggerName), observer);
+        LoggerConfiguration logger = getLogger(loggerName);
+        logger.replaceObserver(observer);
+        refreshLoggers((LoggerDelegator) logger);
     }
 
     public LogEventObserver getObserver(String observerName) {
         return observers.computeIfAbsent(observerName, key -> {
             throw new LogEventConfigurationException("Unknown observer <" + key + ">");
         });
-    }
-
-
-    /**
-     * Sets the observer that should be used to receive LogEvents for this logger
-     * and children. Keep the inheritParentObserver field value
-     *
-     * @param logger The logger to set
-     * @param observer The nullable observer. Use {@link CompositeLogEventObserver} to register more than one observer
-     * @return The previous observer. Useful if you want to temporarily set the observer
-     */
-    public LogEventObserver setObserver(Logger logger, LogEventObserver observer) {
-        return setObserver(logger, observer, ((LoggerDelegator)logger).inheritParentObserver);
     }
 
     /**
@@ -231,8 +152,7 @@ public class LogEventFactory implements ILoggerFactory {
      * @return The previous observer. Useful if you want to temporarily set the observer
      */
     public LogEventObserver setObserver(Logger logger, LogEventObserver observer, boolean inheritParentObserver) {
-        LogEventObserver oldObserver = ((LoggerDelegator)logger).ownObserver;
-        ((LoggerDelegator)logger).setOwnObserver(observer, inheritParentObserver);
+        LogEventObserver oldObserver = ((LoggerDelegator)logger).setObserver(observer, inheritParentObserver);
         refreshLoggers((LoggerDelegator)logger);
         return oldObserver;
     }
@@ -263,13 +183,8 @@ public class LogEventFactory implements ILoggerFactory {
     /**
      * Adds a new nullable observer to the current observers for the specified logger
      */
-    public void addObserver(Logger logger, LogEventObserver observer) {
-        LogEventObserver oldObserver = ((LoggerDelegator)logger).ownObserver;
-        LogEventObserver combinedObservers = CompositeLogEventObserver.combine(observer, oldObserver);
-        setObserver(logger, combinedObservers);
-        ((LoggerDelegator)logger).setOwnObserver(
-                combinedObservers,
-                ((LoggerDelegator)logger).inheritParentObserver);
+    private void addObserver(Logger logger, LogEventObserver observer) {
+        ((LoggerDelegator)logger).addObserver(observer);
         refreshLoggers((LoggerDelegator)logger);
     }
 
@@ -305,7 +220,7 @@ public class LogEventFactory implements ILoggerFactory {
      * @param rootObserver The observer used for {@see getRootLogger}
      * @param rootLevel The logging threshold for {@see getRootLogger}
      */
-    void reset(LogEventObserver rootObserver, Level rootLevel) {
+    public void reset(LogEventObserver rootObserver, Level rootLevel) {
         rootLogger.reset();
         loggerCache.values().forEach(LoggerDelegator::reset);
         rootLogger.setOwnObserver(rootObserver, false);
@@ -313,7 +228,7 @@ public class LogEventFactory implements ILoggerFactory {
         refreshLoggers(rootLogger);
     }
 
-    void reset(String rootObserverName, Level rootLevel) {
+    public void reset(String rootObserverName, Level rootLevel) {
         reset(getObserver(rootObserverName), rootLevel);
     }
 

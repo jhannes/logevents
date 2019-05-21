@@ -1,10 +1,12 @@
-package org.logevents;
+package org.logevents.config;
 
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.logevents.LogEvent;
+import org.logevents.LogEventFactory;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.status.LogEventStatus;

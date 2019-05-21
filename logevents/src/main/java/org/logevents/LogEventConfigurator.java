@@ -1,5 +1,7 @@
 package org.logevents;
 
+import org.logevents.config.DefaultLogEventConfigurator;
+
 import java.util.Properties;
 import java.util.ServiceLoader;
 

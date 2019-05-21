@@ -1,6 +1,10 @@
-package org.logevents;
+package org.logevents.impl;
 
-import org.logevents.impl.LogEventGenerator;
+import org.logevents.LogEvent;
+import org.logevents.LogEventFactory;
+import org.logevents.LogEventObserver;
+import org.logevents.LoggerConfiguration;
+import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
@@ -24,7 +28,7 @@ import java.util.stream.Stream;
  *
  */
 @SuppressWarnings("JavaDoc")
-abstract class LoggerDelegator implements LoggerConfiguration {
+public abstract class LoggerDelegator implements LoggerConfiguration {
 
     private final String name;
 
@@ -61,6 +65,10 @@ abstract class LoggerDelegator implements LoggerConfiguration {
 
     public LoggerDelegator(String name) {
         this.name = name;
+    }
+
+    public static LoggerDelegator rootLogger() {
+        return new RootLoggerDelegator();
     }
 
     @Override
@@ -399,7 +407,7 @@ abstract class LoggerDelegator implements LoggerConfiguration {
         this.inheritParentObserver = inheritParentObserver;
     }
 
-    void reset() {
+    public void reset() {
         this.ownObserver = new NullLogEventObserver();
         this.inheritParentObserver = true;
         this.levelThreshold = null;
@@ -407,7 +415,7 @@ abstract class LoggerDelegator implements LoggerConfiguration {
         this.observer = null;
     }
 
-    abstract void refresh();
+    public abstract void refresh();
 
     protected void refreshEventGenerators(Level effectiveThreshold, LogEventObserver observer) {
         this.errorEventGenerator = LogEventGenerator.create(getName(), effectiveThreshold, Level.ERROR, observer);
@@ -417,11 +425,28 @@ abstract class LoggerDelegator implements LoggerConfiguration {
         this.traceEventGenerator = LogEventGenerator.create(getName(), effectiveThreshold, Level.TRACE, observer);
     }
 
-    abstract LoggerDelegator getParentLogger();
-
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" + name + ",level=" + levelThreshold + ",ownObserver=" + ownObserver + "}";
     }
 
+    public LogEventObserver setObserver(LogEventObserver observer, boolean inheritParentObserver) {
+        LogEventObserver oldObserver = this.ownObserver;
+        setOwnObserver(observer, inheritParentObserver);
+        return oldObserver;
+    }
+
+    public void addObserver(LogEventObserver observer) {
+        this.ownObserver = CompositeLogEventObserver.combine(observer, ownObserver);
+    }
+
+    public void replaceObserver(LogEventObserver observer) {
+        this.ownObserver = observer;
+    }
+
+    public LoggerDelegator getChildLogger(String name) {
+        return new CategoryLoggerDelegator(name, this);
+    }
+
+    public abstract boolean hasParent(LoggerDelegator parent);
 }

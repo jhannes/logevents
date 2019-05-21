@@ -16,14 +16,14 @@ as well as logging to Slack, Microsoft Teams, a web dashboard and SMTP out of th
 ## Quick start:
 
 1. Add `org.logevents:logevents:0.1.16` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
-2. Add `logevents.properties` to your current working directory or `src/main/java` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level. Read more about [logevents.properties](https://jhannes.github.io/logevents/apidocs/org/logevents/DefaultLogEventConfigurator.html)
+2. Add `logevents.properties` to your current working directory or `src/main/java` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level. Read more about [logevents.properties](https://jhannes.github.io/logevents/apidocs/org/logevents/config/DefaultLogEventConfigurator.html)
 3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to [the file](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) `logs/<your-app-name>-%date.log` and warning events to [console](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html).
 4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html">PatternEventLogFormatter</a> for more details.
 5. You can simply add a [Slack observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html) as well. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`. If you prefer Microsoft Teams, you can use [MicrosoftTeamsLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html) instead.
 6. If your application is running in a servlet container, you can add the `observer.servlet=[WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)` and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/LogEventsServlet.html) to your servlet container. Set `root=DEBUG file,console,slack,servlet` to enable. See [OpenIdConfiguration](https://jhannes.github.io/logevents/apidocs/org/logevents/util/openid/OpenIdConfiguration.html) to learn how to secure your LogEventServlet.
 7. To make link to the Log Events dashboard in Slack messages, configure `observer.slack.formatter.detailUrl=<where you exposed your LogEventsServlet>`. In order to decrease the amount of potentially sensitive information logged to Slack, configure `observer.slack.formatter=SlackAlertOnlyFormatter` (similarly with MicrosoftTeamsAlertOnlyFormatter).
 
-Here is a simple, but powerful [`logevent.properties`](https://jhannes.github.io/logevents/apidocs/org/logevents/DefaultLogEventConfigurator.html):
+Here is a simple, but powerful [`logevent.properties`](https://jhannes.github.io/logevents/apidocs/org/logevents/config/DefaultLogEventConfigurator.html):
 
 ```
 observer.slack=SlackLogEventObserver
@@ -283,7 +283,7 @@ com.example.myapp.MyAppConfigurator
 
 ### Configuring Log Events with a properties file
 
-The <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/DefaultLogEventConfigurator.html">
+The <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/config/DefaultLogEventConfigurator.html">
 default `LogEventConfigurator`</a> will try to determine the current profile,
 using the system properties `profiles`, `profile`, `spring.profiles.active` or
 the environment variables `PROFILES`, `PROFILE` or `SPRING_PROFILES_ACTIVE`.

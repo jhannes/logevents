@@ -20,4 +20,5 @@ public interface LoggerConfiguration extends Logger, LocationAwareLogger {
      */
     String getObserver();
 
+    void replaceObserver(LogEventObserver observer);
 }

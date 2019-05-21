@@ -1,5 +1,6 @@
-package org.logevents;
+package org.logevents.impl;
 
+import org.logevents.LogEventFactory;
 import org.slf4j.spi.LocationAwareLogger;
 
 import java.util.logging.Handler;
@@ -8,6 +9,9 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.stream.Stream;
 
+/**
+ * An adapter from java.util.logging to LogEvents. Install by calling {@link #install(LogEventFactory)}
+ */
 public class JavaUtilLoggingAdapter extends Handler {
     private LogEventFactory factory;
 
@@ -16,7 +20,8 @@ public class JavaUtilLoggingAdapter extends Handler {
     }
 
     /**
-     * Ensures that logging to {@link java.util.logging.Logger} is intercepted.
+     * Ensures that logging to {@link java.util.logging.Logger} is intercepted. Removes existing java.util.logging
+     * handlers and adds a new {@link JavaUtilLoggingAdapter}
      */
     public static void install(LogEventFactory factory) {
         java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
