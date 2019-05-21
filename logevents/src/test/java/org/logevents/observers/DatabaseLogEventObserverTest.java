@@ -5,14 +5,20 @@ import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Function;
@@ -21,6 +27,9 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.*;
 
 public class DatabaseLogEventObserverTest {
+
+    private final Marker MY_MARKER = MarkerFactory.getMarker("MY_MARKER");
+    private final Marker OTHER_MARKER = MarkerFactory.getMarker("OTHER_MARKER");
 
     private Properties properties = new Properties();
     {
@@ -114,6 +123,52 @@ public class DatabaseLogEventObserverTest {
         assertContains(matchingEvent.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(lowerEvent.getMessage(), events, LogEvent::getMessage);
     }
+
+    @Test
+    public void shouldIncludeMdcInFacets() throws SQLException {
+        observer.processBatch(new LogEventBatch()
+                .add(new LogEventSampler().withMdc("ip", "127.0.0.1").withMdc("url", "/api/op").build())
+                .add(new LogEventSampler().withMdc("ip", "127.0.0.1").build())
+                .add(new LogEventSampler().withMdc("ip", "10.0.0.4").build()));
+
+        Map<String, Object> facets = observer.getFacets(Optional.empty(),
+                ZonedDateTime.now().minusMinutes(10).toInstant(),
+                ZonedDateTime.now().plusMinutes(10).toInstant());
+        List<Map<String, Object>> mdc = (List<Map<String, Object>>) facets.get("mdc");
+
+        Map<String, Object> ipMdc = mdc.stream().filter(m -> m.get("name").equals("ip")).findAny()
+                .orElseThrow(() -> new IllegalArgumentException("missing ip in " + mdc));
+        Map<String, Object> urlMdc = mdc.stream().filter(m -> m.get("name").equals("url")).findAny()
+                .orElseThrow(() -> new IllegalArgumentException("missing ip in " + mdc));
+
+        assertEquals(new HashSet<>(Arrays.asList("127.0.0.1", "10.0.0.4")), ipMdc.get("values"));
+        assertEquals(new HashSet<>(Arrays.asList("/api/op")), urlMdc.get("values"));
+    }
+
+    @Test
+    public void shouldIncludeMarkersAndLoggersInFacets() throws SQLException {
+        String logger1 = "com.example.foo.FooServer";
+        String logger2 = "org.logevents.LogEventSampler";
+        ZonedDateTime logTime = ZonedDateTime.now().minusYears(10);
+        LogEventSampler sampler = new LogEventSampler().withTime(logTime);
+        LogEvent event1 = sampler.withMarker(MY_MARKER).withLoggerName(logger1).build();
+        LogEvent event2 = sampler.withMarker(MY_MARKER).withLoggerName(logger1).build();
+        LogEvent event3 = sampler.withMarker(OTHER_MARKER).withLoggerName(logger2).build();
+        observer.processBatch(new LogEventBatch().add(event1).add(event2).add(event3));
+
+        Map<String, Object> facets = observer.getFacets(Optional.empty(),
+                logTime.minusHours(1).toInstant(),
+                logTime.plusHours(1).toInstant());
+        assertEquals(new HashSet<>(Arrays.asList(event1.getMarker().getName(), event3.getMarker().getName())),
+                facets.get("markers"));
+        assertEquals(new HashSet<>(Arrays.asList(event1.getLoggerName(), event2.getLoggerName(), event3.getLoggerName())),
+                facets.get("loggers"));
+        assertEquals(new HashSet<>(Arrays.asList(event1.getThreadName(), event2.getThreadName(), event3.getThreadName())),
+                facets.get("threads"));
+    }
+
+
+
 
     private <T, U> void assertDoesNotContain(T value, Collection<U> collection, Function<U, T> transformer) {
         assertNotNull("value should not be null", value);

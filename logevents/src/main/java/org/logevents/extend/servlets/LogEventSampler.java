@@ -29,7 +29,7 @@ public class LogEventSampler {
                 + pickOne("Customer", "Order", "Person") + pickOne("Controller", "Service", "Repository");
     }
 
-    private String threadName = sampleThreadName();
+    private Optional<String> threadName = Optional.empty();
     private Optional<String> loggerName = Optional.empty();
     private Optional<Level> level = Optional.empty();
     private Instant timestamp = Instant.now();
@@ -42,7 +42,7 @@ public class LogEventSampler {
         return new LogEvent(
                 loggerName.orElseGet(LogEventSampler::sampleLoggerName),
                 level.orElseGet(() -> pickOne(Level.INFO, Level.WARN, Level.ERROR)),
-                threadName,
+                threadName.orElseGet(LogEventSampler::sampleThreadName),
                 timestamp,
                 marker,
                 this.format.orElseGet(() -> sampleMessage(args)),
@@ -93,7 +93,7 @@ public class LogEventSampler {
     }
 
     public LogEventSampler withThread(String thread) {
-        this.threadName = thread;
+        this.threadName = Optional.ofNullable(thread);
         return this;
     }
 

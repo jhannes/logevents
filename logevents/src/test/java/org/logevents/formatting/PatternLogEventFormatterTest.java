@@ -121,11 +121,10 @@ public class PatternLogEventFormatterTest {
         LogEvent debugEvent = sampler.withLevel(Level.DEBUG).build();
 
         formatter.setPattern("%highlight(%thread)");
-        String s = errorEvent.getThreadName();
-        assertEquals(formatting.boldRed(s) + "\n", formatter.apply(errorEvent));
-        assertEquals(formatting.red(s) + "\n", formatter.apply(warnEvent));
-        assertEquals(formatting.blue(s) + "\n", formatter.apply(infoEvent));
-        assertEquals(s + "\n", formatter.apply(debugEvent));
+        assertEquals(formatting.boldRed(errorEvent.getThreadName()) + "\n", formatter.apply(errorEvent));
+        assertEquals(formatting.red(warnEvent.getThreadName()) + "\n", formatter.apply(warnEvent));
+        assertEquals(formatting.blue(infoEvent.getThreadName()) + "\n", formatter.apply(infoEvent));
+        assertEquals(debugEvent.getThreadName() + "\n", formatter.apply(debugEvent));
     }
 
     @Test
@@ -217,9 +216,9 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(event.getMessage(), lines[0]);
         assertEquals(ex.toString(), lines[1]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:208)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:207)",
                 lines[2]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:214)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:213)",
                 lines[3]);
     }
 
@@ -232,7 +231,7 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(2+2, lines.length);
         assertEquals(event.getMessage(), lines[0]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:208)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:207)",
                 lines[2]);
     }
 

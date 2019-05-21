@@ -22,9 +22,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 
 // TODO: Save exception
@@ -48,7 +52,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         this.nodeName = configuration.getNodeName();
 
         try (Connection connection = getConnection()) {
-            try (ResultSet tables = connection.getMetaData().getTables(null, null, "LOG_EVENT", null)) {
+            try (ResultSet tables = connection.getMetaData().getTables(null, null, "LOG_EVENTS", null)) {
                 if (!tables.next()) {
                     try (Statement statement = connection.createStatement()) {
                         statement.executeUpdate("create table log_events (" +
@@ -73,7 +77,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                     }
                 }
             }
-            try (ResultSet tables = connection.getMetaData().getTables(null, null, "LOG_EVENT_MDC", null)) {
+            try (ResultSet tables = connection.getMetaData().getTables(null, null, "LOG_EVENTS_MDC", null)) {
                 if (!tables.next()) {
                     try (Statement statement = connection.createStatement()) {
                         statement.executeUpdate("create table log_events_mdc (" +
@@ -177,5 +181,52 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         } catch (SQLException e) {
             LogEventStatus.getInstance().addError(this, "Failed to write log record", e);
         }
+    }
+
+    public Map<String, Object> getFacets(Optional<Level> threshold, Instant start, Instant end) throws SQLException {
+        Map<String, Object> facets = new LinkedHashMap<>();
+        try (Connection connection = getConnection()) {
+            facets.put("mdc", getMdcMap(connection, threshold, start, end));
+            facets.put("markers", listDistinct(connection, threshold, start, end, "marker"));
+            facets.put("loggers", listDistinct(connection, threshold, start, end, "logger"));
+            facets.put("threads", listDistinct(connection, threshold, start, end, "thread_name"));
+        }
+        return facets;
+    }
+
+    private Object listDistinct(Connection connection, Optional<Level> threshold, Instant start, Instant end, final String columnName) throws SQLException {
+        // TODO: Filter on threshold
+        try (PreparedStatement statement = connection.prepareStatement("select distinct " + columnName + " from log_events where instant between ? and ?")) {
+            statement.setLong(1, start.toEpochMilli());
+            statement.setLong(2, end.toEpochMilli());
+            try (ResultSet rs = statement.executeQuery()) {
+                Set<Object> result = new HashSet<>();
+                while (rs.next()) {
+                    result.add(rs.getString(1));
+                }
+                return result;
+            }
+        }
+    }
+
+    private Object getMdcMap(Connection connection, Optional<Level> threshold, Instant start, Instant end) throws SQLException {
+        Map<String, Set<String>> mdcMap = new HashMap<>();
+        // TODO: Filter on time and threshold
+        try (PreparedStatement statement = connection.prepareStatement("select distinct key, value from log_events_mdc")) {
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    String key = rs.getString("key");
+                    mdcMap.computeIfAbsent(key, k -> new HashSet<>()).add(rs.getString("value"));
+                }
+            }
+        }
+        List<Map<String, Object>> mdc = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : mdcMap.entrySet()) {
+            Map<String, Object> mdcEntry = new LinkedHashMap<>();
+            mdcEntry.put("name", entry.getKey());
+            mdcEntry.put("values", entry.getValue());
+            mdc.add(mdcEntry);
+        }
+        return mdc;
     }
 }
