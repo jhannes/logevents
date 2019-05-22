@@ -97,7 +97,7 @@ public class DatabaseLogEventObserverTest {
         parameters.put("marker", new String[] { "NON_EXISTING_MARKER" });
         assertDoesNotContain(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
         parameters.put("marker", new String[] { "NON_EXISTING_MARKER", event.getMarker().getName() });
-        assertDoesNotContain(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        assertContains(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
     }
 
     @Test
