@@ -7,13 +7,13 @@ import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventSummary;
+import org.logevents.util.Configuration;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
 import java.sql.SQLException;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,7 +47,7 @@ public class DatabaseLogEventObserverTest {
         LogEvent event = new LogEventSampler().build();
         observer.processBatch(new LogEventBatch().add(event));
 
-        Collection<LogEvent> events = observer.filter(event.getLevel(), event.getInstant().minusSeconds(1), event.getInstant().plusSeconds(1));
+        Collection<LogEvent> events = observer.filter(filter(Optional.ofNullable(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)));
         assertContains(event.getMessage(), events, LogEvent::getMessage);
     }
 
@@ -59,7 +59,7 @@ public class DatabaseLogEventObserverTest {
         observer.processBatch(new LogEventBatch().add(event));
 
         LogEvent savedEvent = observer
-                .filter(event.getLevel(), event.getInstant().minusSeconds(1), event.getInstant().plusSeconds(1))
+                .filter(filter(Optional.of(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)))
                 .stream()
                 .filter(e -> e.getMessage().equals(event.getMessage()))
                 .findFirst()
@@ -84,7 +84,7 @@ public class DatabaseLogEventObserverTest {
         observer.processBatch(new LogEventBatch().add(event));
 
         LogEvent savedEvent = observer
-                .filter(event.getLevel(), event.getInstant().minusSeconds(1), event.getInstant().plusSeconds(1))
+                .filter(filter(Optional.ofNullable(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)))
                 .stream()
                 .filter(e -> e.getMessage().equals(event.getMessage()))
                 .findFirst()
@@ -107,7 +107,7 @@ public class DatabaseLogEventObserverTest {
                 .build();
         observer.processBatch(new LogEventBatch().add(pastEvent).add(currentEvent).add(futureEvent));
 
-        Collection<LogEvent> events = observer.filter(Level.TRACE, Instant.now().minusSeconds(3600), Instant.now().plusSeconds(3600));
+        Collection<LogEvent> events = observer.filter(filter(Optional.of(Level.TRACE), ZonedDateTime.now(), Duration.ofHours(1)));
         assertContains(currentEvent.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(pastEvent.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(futureEvent.getMessage(), events, LogEvent::getMessage);
@@ -121,7 +121,7 @@ public class DatabaseLogEventObserverTest {
         LogEvent lowerEvent = logEventSampler.withLevel(Level.DEBUG).build();
         observer.processBatch(new LogEventBatch().add(higherEvent).add(matchingEvent).add(lowerEvent));
 
-        Collection<LogEvent> events = observer.filter(Level.INFO, Instant.now().minusSeconds(3600), Instant.now().plusSeconds(3600));
+        Collection<LogEvent> events = observer.filter(filter(Optional.of(Level.INFO), ZonedDateTime.now(), Duration.ofHours(1)));
         assertContains(higherEvent.getMessage(), events, LogEvent::getMessage);
         assertContains(matchingEvent.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(lowerEvent.getMessage(), events, LogEvent::getMessage);
@@ -168,6 +168,7 @@ public class DatabaseLogEventObserverTest {
                 summary.getLoggers());
         assertEquals(new HashSet<>(Arrays.asList(event1.getThreadName(), event2.getThreadName(), event3.getThreadName())),
                 summary.getThreads());
+        assertEquals(new HashSet<>(Arrays.asList(Configuration.calculateNodeName())), summary.getNodes());
     }
 
     @Test

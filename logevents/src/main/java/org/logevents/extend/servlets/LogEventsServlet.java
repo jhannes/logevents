@@ -1,6 +1,7 @@
 package org.logevents.extend.servlets;
 
 import org.logevents.LogEventFactory;
+import org.logevents.observers.LogEventSource;
 import org.logevents.observers.WebLogEventObserver;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventQueryResult;
@@ -188,11 +189,11 @@ public class LogEventsServlet extends HttpServlet {
             resp.sendError(401, "Please log in");
         } else if (req.getPathInfo().equals("/events")) {
             LogEventFilter filter = new LogEventFilter(req.getParameterMap());
-            LogEventQueryResult queryResult = getObserver().getLogEventBuffer().query(filter);
+            LogEventQueryResult queryResult = getLogEventSource().query(filter);
 
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("facets", queryResult.getSummary().toJson());
-            result.put("events", queryResult.stream()
+            result.put("events", queryResult.getEvents().stream()
                     .map(getObserver()::format)
                     .collect(Collectors.toList()));
 
@@ -201,6 +202,10 @@ public class LogEventsServlet extends HttpServlet {
         } else {
             resp.sendError(404, "Not found " + req.getPathInfo());
         }
+    }
+
+    private LogEventSource getLogEventSource() throws ServletException {
+        return getObserver().getLogEventSource();
     }
 
     protected OpenIdConfiguration getOpenIdConfiguration() throws ServletException {

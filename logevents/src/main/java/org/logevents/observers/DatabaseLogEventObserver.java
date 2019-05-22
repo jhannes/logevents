@@ -4,6 +4,7 @@ import org.logevents.LogEvent;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.query.LogEventFilter;
+import org.logevents.query.LogEventQueryResult;
 import org.logevents.query.LogEventSummary;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.Configuration;
@@ -21,7 +22,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +31,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Writes log events asynchronously to relational database with JDBC. Will create the necessary tables
@@ -57,7 +59,7 @@ import java.util.UUID;
  */
 // TODO: Save exception
 // TODO: Configurable table names
-public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventBatchProcessor {
+public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventBatchProcessor, LogEventSource {
 
     private final String jdbcUrl;
     private final String jdbcUsername;
@@ -124,16 +126,13 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     }
 
     /**
-     * Retrieve log events from the database within the specified interval
+     * Retrieve log events from the database that matches the argument filter
      */
-    public Collection<LogEvent> filter(Level threshold, Instant start, Instant end) {
+    public Collection<LogEvent> filter(LogEventFilter filter) {
         Collection<LogEvent> result = new ArrayList<>();
         Map<String, LogEvent> idToResult = new HashMap<>();
         try (Connection connection = getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement("select * from log_events e left outer join log_events_mdc m on e.event_id = m.event_id where instant between ? and ? and level_int >= ?")) {
-                statement.setLong(1, start.toEpochMilli());
-                statement.setLong(2, end.toEpochMilli());
-                statement.setInt(3, threshold.toInt());
+            try (PreparedStatement statement = prepareQuery(connection, filter)) {
                 try (ResultSet rs = statement.executeQuery()) {
                     while (rs.next()) {
                         String id = rs.getString("event_id");
@@ -151,11 +150,11 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                                     new HashMap<>()
                             );
                             idToResult.put(id, e);
+                            result.add(e);
                         }
                         if (rs.getString("key") != null) {
                             e.getMdcProperties().put(rs.getString("key"), rs.getString("value"));
                         }
-                        result.add(e);
                     }
                 }
             }
@@ -163,6 +162,15 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
             LogEventStatus.getInstance().addError(this, "Failed to write log record", e);
         }
         return result;
+    }
+
+    public PreparedStatement prepareQuery(Connection connection, LogEventFilter filter) throws SQLException {
+        String sql = "select * from log_events e left outer join log_events_mdc m on e.event_id = m.event_id where instant between ? and ? and level_int >= ? order by instant";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setLong(1, filter.getStartTime().toEpochMilli());
+        statement.setLong(2, filter.getEndTime().toEpochMilli());
+        statement.setInt(3, filter.getThreshold().toInt());
+        return statement;
     }
 
     private Marker getMarker(String marker) {
@@ -196,7 +204,9 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                     eventStmt.setString(5, logEvent.getMessage());
                     eventStmt.setLong(6, logEvent.getTimeStamp());
                     eventStmt.setString(7, logEvent.getThreadName());
-                    eventStmt.setString(8, JsonUtil.toIndentedJson(Arrays.asList(logEvent.getArgumentArray())));
+                    eventStmt.setString(8, JsonUtil.toIndentedJson(
+                            Stream.of(logEvent.getArgumentArray()).map(Object::toString).collect(Collectors.toList())
+                    ));
                     eventStmt.setString(9, toString(logEvent.getMarker()));
                     eventStmt.setString(10, nodeName);
                     eventStmt.addBatch();
@@ -217,6 +227,15 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         }
     }
 
+    @Override
+    public LogEventQueryResult query(LogEventFilter filter) {
+        try {
+            return new LogEventQueryResult(filter(filter), getSummary(filter));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Retrieves a summary of log events within the specified interval above the threshold log level
      */
@@ -227,6 +246,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
             summary.setMarkers(listDistinct(connection, filter, "marker"));
             summary.setThreads(listDistinct(connection, filter, "thread_name"));
             summary.setLoggers(listDistinct(connection, filter, "logger"));
+            summary.setNodes(listDistinct(connection, filter, "node_name"));
             summary.setMdcMap(getMdcMap(connection, filter));
         }
         return summary;

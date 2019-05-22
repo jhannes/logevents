@@ -15,6 +15,7 @@ public class LogEventSummary {
     private Set<String> threads = new TreeSet<>();
     private Set<String> markers = new TreeSet<>();
     private Set<String> loggers = new TreeSet<>();
+    private Set<String> nodes = new TreeSet<>();
     private Map<String, Set<String>> mdcMap = new TreeMap<>();
 
     public Map<String, Object> toJson() {
@@ -22,6 +23,7 @@ public class LogEventSummary {
         facets.put("threads", threads);
         facets.put("loggers", getLoggerSummary());
         facets.put("markers", markers);
+        facets.put("nodes", nodes);
         facets.put("mdc", calculateMdc());
         return facets;
     }
@@ -89,5 +91,13 @@ public class LogEventSummary {
 
     public Set<String> getThreads() {
         return threads;
+    }
+
+    public Set<String> getNodes() {
+        return nodes;
+    }
+
+    public void setNodes(Set<String> nodes) {
+        this.nodes = nodes;
     }
 }

@@ -99,7 +99,7 @@ public class LogEventsServletTest extends LogEventsServlet {
         LogEventBuffer buffer = new LogEventBuffer();
         WebLogEventObserver observer = new WebLogEventObserver() {
             @Override
-            public LogEventBuffer getLogEventBuffer() {
+            public LogEventBuffer getLogEventSource() {
                 return buffer;
             }
         };

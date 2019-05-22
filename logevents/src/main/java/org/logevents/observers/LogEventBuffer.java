@@ -15,10 +15,12 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
-public class LogEventBuffer implements LogEventObserver {
-    private final EnumMap<Level, CircularBuffer<LogEvent>> messages = new EnumMap<>(Level.class);
+public class LogEventBuffer implements LogEventObserver, LogEventSource {
+    /**
+     * In order to survive reload of configuration, it's useful to have a static message buffer
+     */
+    private final static EnumMap<Level, CircularBuffer<LogEvent>> messages = new EnumMap<>(Level.class);
 
     public LogEventBuffer(int capacity) {
         for (Level level : Level.values()) {
@@ -51,18 +53,8 @@ public class LogEventBuffer implements LogEventObserver {
 
     public LogEventQueryResult query(LogEventFilter filter) {
         Collection<LogEvent> allEvents = filter(filter.getThreshold(), filter.getStartTime(), filter.getEndTime());
-        return new LogEventQueryResult() {
-            @Override
-            public Stream<LogEvent> stream() {
-                return allEvents.stream();
-            }
-
-            @Override
-            public LogEventSummary getSummary() {
-                LogEventSummary summary = new LogEventSummary();
-                allEvents.forEach(summary::add);
-                return summary;
-            }
-        };
+        LogEventSummary summary = new LogEventSummary();
+        allEvents.forEach(summary::add);
+        return new LogEventQueryResult(allEvents, summary);
     }
 }

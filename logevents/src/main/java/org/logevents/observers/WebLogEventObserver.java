@@ -39,6 +39,8 @@ import java.util.Properties;
  * observer.servlet.openIdIssuer=https://login.microsoftonline.com/common
  * observer.servlet.clientId=12345678-abcd-pqrs-9876-9abcdef01234
  * observer.servlet.clientSecret=3¤..¤!?qwer
+ * observer.servlet.source=DatabaseLogEventObserver
+ * observer.servlet.source.jdbcUrl=...
  * </pre>
  *
  * Possible future improvements: a. Run with {@link HttpsServer},
@@ -49,11 +51,8 @@ import java.util.Properties;
  */
 public class WebLogEventObserver extends FilteredLogEventObserver {
 
-    /**
-     * In order to survive reload of configuration, it's useful to have a static message buffer
-     */
-    private static final LogEventBuffer logEventBuffer = new LogEventBuffer();
     private final MessageFormatter messageFormatter;
+    private final LogEventSource source;
     private JsonMessageFormatter jsonFormatter = new JsonMessageFormatter();
 
     private Optional<String> cookieEncryptionKey = Optional.empty();
@@ -68,8 +67,9 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
     public WebLogEventObserver(Configuration configuration) {
         this(
                 new OpenIdConfiguration(configuration),
-                configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class)
-                );
+                configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class),
+                configuration.createInstanceWithDefault("source", LogEventSource.class, LogEventBuffer.class)
+        );
         configureFilter(configuration);
         this.logEventsHtml = configuration.optionalString("logEventsHtml")
                 .orElse("/org/logevents/logevents.html");
@@ -79,14 +79,16 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         configuration.checkForUnknownFields();
     }
 
-    public WebLogEventObserver(OpenIdConfiguration openIdConfiguration, MessageFormatter messageFormatter) {
+    public WebLogEventObserver(OpenIdConfiguration openIdConfiguration, MessageFormatter messageFormatter, LogEventSource source) {
         this.openIdConfiguration = openIdConfiguration;
         this.messageFormatter = messageFormatter;
+        this.source = source;
     }
 
     public WebLogEventObserver() {
         messageFormatter = new MessageFormatter();
         openIdConfiguration = null;
+        source = new LogEventBuffer();
     }
 
     public Optional<String> getCookieEncryptionKey() {
@@ -95,15 +97,15 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
 
     @Override
     protected void doLogEvent(LogEvent logEvent) {
-        logEventBuffer.logEvent(logEvent);
+        source.logEvent(logEvent);
     }
 
     public OpenIdConfiguration getOpenIdConfiguration() {
         return openIdConfiguration;
     }
 
-    public LogEventBuffer getLogEventBuffer() {
-        return logEventBuffer;
+    public LogEventSource getLogEventSource() {
+        return source;
     }
 
     public MessageFormatter getMessageFormatter() {
