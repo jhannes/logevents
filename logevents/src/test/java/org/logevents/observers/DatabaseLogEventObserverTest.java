@@ -39,6 +39,8 @@ public class DatabaseLogEventObserverTest {
         properties.setProperty("observer.db.jdbcUrl", "jdbc:h2:mem:logevents-test;DB_CLOSE_DELAY=-1");
         properties.setProperty("observer.db.jdbcUsername", "sa");
         properties.setProperty("observer.db.jdbcPassword", "");
+        properties.setProperty("observer.db.logEventsTable", "test_log_events");
+        properties.setProperty("observer.db.logEventsTable", "test_log_mdc");
     }
     private DatabaseLogEventObserver observer = new DatabaseLogEventObserver(properties, "observer.db");
 

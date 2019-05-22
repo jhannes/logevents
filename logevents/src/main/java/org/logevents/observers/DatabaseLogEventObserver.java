@@ -53,18 +53,20 @@ import java.util.stream.Stream;
  * observer.db.jdbcUrl=jdbc:postgres://localhost/logdb
  * observer.db.jdbcUsername=logevents
  * observer.db.jdbcPassword=sdgawWWF/)l31L
- * observer.db.logeventTable=log_events
- * observer.db.logeventMdcTable=log_events_mdc
+ * observer.db.logeventsTable=log_events
+ * observer.db.logeventsMdcTable=log_events_mdc
  * </pre>
  */
+// TODO: Filter on all filter variables
 // TODO: Save exception
-// TODO: Configurable table names
 public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventBatchProcessor, LogEventSource {
 
     private final String jdbcUrl;
     private final String jdbcUsername;
     private final String jdbcPassword;
     private final String nodeName;
+    private final String logEventsTable;
+    private final String logEventsMdcTable;
 
     public DatabaseLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
@@ -75,13 +77,15 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         this.jdbcUrl = configuration.getString("jdbcUrl");
         this.jdbcUsername = configuration.getString("jdbcUsername");
         this.jdbcPassword = configuration.optionalString("jdbcPassword").orElse("");
+        this.logEventsTable = configuration.optionalString("logEventsTable").orElse("LOG_EVENTS").toUpperCase();
+        this.logEventsMdcTable = configuration.optionalString("logEventsMdcTable").orElse(logEventsTable + "_MDC").toUpperCase();
         this.nodeName = configuration.getNodeName();
 
         try (Connection connection = getConnection()) {
-            try (ResultSet tables = connection.getMetaData().getTables(null, null, "LOG_EVENTS", null)) {
+            try (ResultSet tables = connection.getMetaData().getTables(null, null, logEventsTable, null)) {
                 if (!tables.next()) {
                     try (Statement statement = connection.createStatement()) {
-                        statement.executeUpdate("create table log_events (" +
+                        statement.executeUpdate("create table " + logEventsTable + "(" +
                                 "event_id varchar(100) primary key, " +
                                 "logger varchar(100) not null, " +
                                 "level varchar(10) not null, " +
@@ -94,25 +98,25 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                                 "marker varchar(100)" +
                                 ")"
                         );
-                        statement.executeUpdate("create index log_events_logger_idx on log_events(logger)");
-                        statement.executeUpdate("create index log_events_level_idx on log_events(level)");
-                        statement.executeUpdate("create index log_events_instant_idx on log_events(instant)");
-                        statement.executeUpdate("create index log_events_thread_name_idx on log_events(thread_name)");
-                        statement.executeUpdate("create index log_events_marker_idx on log_events(marker)");
-                        statement.executeUpdate("create index log_events_node_name_idx on log_events(node_name)");
+                        statement.executeUpdate("create index " + logEventsTable + "_logger_idx on " + logEventsTable + "(logger)");
+                        statement.executeUpdate("create index " + logEventsTable + "_level_idx on " + logEventsTable + "(level)");
+                        statement.executeUpdate("create index " + logEventsTable + "_instant_idx on " + logEventsTable + "(instant)");
+                        statement.executeUpdate("create index " + logEventsTable + "_thread_name_idx on " + logEventsTable + "(thread_name)");
+                        statement.executeUpdate("create index " + logEventsTable + "_marker_idx on " + logEventsTable + "(marker)");
+                        statement.executeUpdate("create index " + logEventsTable + "_node_name_idx on " + logEventsTable + "(node_name)");
                     }
                 }
             }
-            try (ResultSet tables = connection.getMetaData().getTables(null, null, "LOG_EVENTS_MDC", null)) {
+            try (ResultSet tables = connection.getMetaData().getTables(null, null, logEventsMdcTable, null)) {
                 if (!tables.next()) {
                     try (Statement statement = connection.createStatement()) {
-                        statement.executeUpdate("create table log_events_mdc (" +
-                                "event_id varchar(100) not null references log_events(event_id), " +
+                        statement.executeUpdate("create table " + logEventsMdcTable + " (" +
+                                "event_id varchar(100) not null references " + logEventsTable + "(event_id), " +
                                 "key varchar(100) not null, " +
                                 "value varchar(20) not null" +
                                 ")"
                         );
-                        statement.executeUpdate("create index log_events_mdc_idx on log_events_mdc(key, value)");
+                        statement.executeUpdate("create index " + logEventsMdcTable + "_idx on " + logEventsMdcTable + "(key, value)");
                     }
                 }
             }
@@ -165,7 +169,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     }
 
     public PreparedStatement prepareQuery(Connection connection, LogEventFilter filter) throws SQLException {
-        String sql = "select * from log_events e left outer join log_events_mdc m on e.event_id = m.event_id where instant between ? and ? and level_int >= ? order by instant";
+        String sql = "select * from " + logEventsTable + " e left outer join " + logEventsMdcTable + "  m on e.event_id = m.event_id where instant between ? and ? and level_int >= ? order by instant";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setLong(1, filter.getStartTime().toEpochMilli());
         statement.setLong(2, filter.getEndTime().toEpochMilli());
@@ -192,8 +196,8 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     private void saveLogEvents(LogEventBatch batch) {
         try (Connection connection = getConnection()) {
             try (
-                    PreparedStatement eventStmt = connection.prepareStatement("insert into log_events (event_id, logger, level, level_int, message, instant, thread_name, arguments, marker, node_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    PreparedStatement mdcStmt = connection.prepareStatement("insert into log_events_mdc (event_id, key, value) values (?, ?, ?)")
+                    PreparedStatement eventStmt = connection.prepareStatement("insert into " + logEventsTable + " (event_id, logger, level, level_int, message, instant, thread_name, arguments, marker, node_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    PreparedStatement mdcStmt = connection.prepareStatement("insert into " + logEventsMdcTable + " (event_id, key, value) values (?, ?, ?)")
                     ) {
                 for (LogEvent logEvent : batch) {
                     String id = UUID.randomUUID().toString();
@@ -253,7 +257,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     }
 
     private Set<String> listDistinct(Connection connection, LogEventFilter filter, String columnName) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("select distinct " + columnName + " from log_events where instant between ? and ? and level_int >= ?")) {
+        try (PreparedStatement statement = connection.prepareStatement("select distinct " + columnName + " from " + logEventsTable + " where instant between ? and ? and level_int >= ?")) {
             statement.setLong(1, filter.getStartTime().toEpochMilli());
             statement.setLong(2, filter.getEndTime().toEpochMilli());
             statement.setLong(3, filter.getThreshold().toInt());
@@ -272,7 +276,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
 
     private Map<String, Set<String>> getMdcMap(Connection connection, LogEventFilter filter) throws SQLException {
         Map<String, Set<String>> mdcMap = new HashMap<>();
-        try (PreparedStatement statement = connection.prepareStatement("select distinct key, value from log_events_mdc m inner join log_events e on m.event_id = e.event_id where instant between ? and ? and level_int >= ?")) {
+        try (PreparedStatement statement = connection.prepareStatement("select distinct key, value from " + logEventsMdcTable + " m inner join "  + logEventsTable + " e on m.event_id = e.event_id where instant between ? and ? and level_int >= ?")) {
             statement.setLong(1, filter.getStartTime().toEpochMilli());
             statement.setLong(2, filter.getEndTime().toEpochMilli());
             statement.setLong(3, filter.getThreshold().toInt());
