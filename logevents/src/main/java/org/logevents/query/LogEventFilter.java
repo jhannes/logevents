@@ -24,8 +24,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Queries a list of {@link LogEvent} objects by time, interval, {@link #threadName},
- * {@link #logger}, {@link #level}, {@link #markers} and {@link #mdcFilter}.
+ * Queries a list of {@link LogEvent} objects by time, interval, {@link #threadNames},
+ * {@link #loggers}, {@link #level}, {@link #markers} and {@link #mdcFilter}.
  * <p>
  *     Use {@link #test(LogEvent)} to filter a {@link Stream} of
  *     {@link LogEvent}s .
@@ -37,8 +37,8 @@ public class LogEventFilter implements Predicate<LogEvent> {
     private final Instant startTime;
     private final Instant endTime;
     private final Level level;
-    private final Optional<List<String>> threadName;
-    private final Optional<List<String>> logger;
+    private final Optional<List<String>> threadNames;
+    private final Optional<List<String>> loggers;
     private final Optional<List<Marker>> markers;
     private final Optional<Map<String, List<String>>> mdcFilter;
 
@@ -65,8 +65,8 @@ public class LogEventFilter implements Predicate<LogEvent> {
         Duration interval = Optional.ofNullable(parameters.get("interval"))
                 .map(t -> Duration.parse(t[0]))
                 .orElse(Duration.ofMinutes(10));
-        this.logger = getParameter(parameters, "logger");
-        this.threadName = getParameter(parameters, "thread");
+        this.loggers = getParameter(parameters, "logger");
+        this.threadNames = getParameter(parameters, "thread");
         this.level = getParameter(parameters, "level")
                 .map(list -> Level.valueOf(list.get(0)))
                 .orElse(Level.INFO);
@@ -99,10 +99,26 @@ public class LogEventFilter implements Predicate<LogEvent> {
 
     @Override
     public boolean test(LogEvent logEvent) {
-        return threadName.map(names -> names.contains(logEvent.getThreadName())).orElse(true) &&
-                logger.map(l -> l.contains(logEvent.getLoggerName())).orElse(true) &&
+        return threadNames.map(names -> names.contains(logEvent.getThreadName())).orElse(true) &&
+                loggers.map(l -> l.contains(logEvent.getLoggerName())).orElse(true) &&
                 markers.map(m -> m.contains(logEvent.getMarker())).orElse(true) &&
                 mdcFilter.map(mdc -> matchesMdc(logEvent, mdc)).orElse(true);
+    }
+
+    public Optional<List<Marker>> getMarkers() {
+        return markers;
+    }
+
+    public Optional<List<String>> getLoggers() {
+        return loggers;
+    }
+
+    public Optional<List<String>> getThreadNames() {
+        return threadNames;
+    }
+
+    public Optional<Map<String, List<String>>> getMdcFilter() {
+        return mdcFilter;
     }
 
     private boolean matchesMdc(LogEvent logEvent, Map<String, List<String>> mdc) {
@@ -119,7 +135,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
         return getClass().getSimpleName() + "{" +
                 "startTime=" + startTime +
                 ", endTime=" + endTime +
-                ", threadName=" + threadName +
+                ", threadNames=" + threadNames +
                 ", level=" + level +
                 ", markers=" + markers +
                 ", mdcFilter=" + mdcFilter +

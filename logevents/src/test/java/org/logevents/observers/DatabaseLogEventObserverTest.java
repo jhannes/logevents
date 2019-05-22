@@ -76,6 +76,83 @@ public class DatabaseLogEventObserverTest {
     }
 
     @Test
+    public void shouldFilterOnThreshold() {
+        LogEvent event = new LogEventSampler().withLevel(Level.INFO).withMarker().build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        HashMap<String, String[]> parameters;
+        parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
+        assertContains(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+
+        parameters.put("level", new String[] { Level.WARN.toString() });
+        assertDoesNotContain(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+    }
+
+    @Test
+    public void shouldFilterOnMarkers() {
+        LogEvent event = new LogEventSampler().withLevel(Level.INFO).withMarker().build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
+        parameters.put("marker", new String[] { "NON_EXISTING_MARKER" });
+        assertDoesNotContain(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        parameters.put("marker", new String[] { "NON_EXISTING_MARKER", event.getMarker().getName() });
+        assertDoesNotContain(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+    }
+
+    @Test
+    public void shouldFilterOnLoggers() {
+        LogEvent event = new LogEventSampler().withLevel(Level.INFO).withMarker().build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
+        parameters.put("logger", new String[] { "org.example.non.Existing" });
+        assertDoesNotContain(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        parameters.put("logger", new String[] { "org.example.non.Existing", event.getLoggerName() });
+        assertContains(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+    }
+
+    @Test
+    public void shouldFilterOnThreads() {
+        LogEvent event = new LogEventSampler().build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
+        parameters.put("thread", new String[] { "Thread-nonexisting" });
+        assertDoesNotContain(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        parameters.put("thread", new String[] { "Thread-nonexisting", event.getThreadName() });
+        assertContains(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+    }
+
+    @Test
+    public void shouldFilterOnMdc() {
+        ZonedDateTime time = ZonedDateTime.now().minusYears(3);
+        LogEvent event1 = new LogEventSampler().withTime(time).withMdc("op", "firstOp").build();
+        LogEvent event2 = new LogEventSampler().withTime(time).withMdc("op", "secondOp").build();
+        LogEvent event3 = new LogEventSampler().withTime(time).withMdc("op", "secondOp").withMdc("ip", "127.0.0.1").build();
+        observer.processBatch(new LogEventBatch().add(event1).add(event2).add(event3));
+
+        HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), time, Duration.ofHours(10));
+        parameters.put("mdc[ip]", new String[] { "127.0.0.1" });
+        Collection<LogEvent> events = observer.filter(new LogEventFilter(parameters));
+        assertDoesNotContain(event1.getMessage(), events, LogEvent::getMessage);
+        assertDoesNotContain(event2.getMessage(), events, LogEvent::getMessage);
+        assertContains(event3.getMessage(), events, LogEvent::getMessage);
+
+        parameters.put("mdc[op]", new String[] { "secondOp" });
+        events = observer.filter(new LogEventFilter(parameters));
+        assertDoesNotContain(event1.getMessage(), events, LogEvent::getMessage);
+        assertContains(event2.getMessage(), events, LogEvent::getMessage);
+        assertContains(event3.getMessage(), events, LogEvent::getMessage);
+
+        parameters.put("mdc[op]", new String[] { "firstOp", "secondOp" });
+        events = observer.filter(new LogEventFilter(parameters));
+        assertContains(event1.getMessage(), events, LogEvent::getMessage);
+        assertContains(event2.getMessage(), events, LogEvent::getMessage);
+        assertContains(event3.getMessage(), events, LogEvent::getMessage);
+    }
+
+    @Test
     public void shouldSaveMdc() {
         Map<String, String> mdc = new HashMap<>();
         mdc.put("ip", "127.0.0.1");
@@ -143,13 +220,18 @@ public class DatabaseLogEventObserverTest {
     }
 
     private LogEventFilter filter(Optional<Level> level, ZonedDateTime time, Duration interval) {
+        HashMap<String, String[]> untypedParameters = parameters(level, time, interval);
+        return new LogEventFilter(untypedParameters);
+    }
+
+    private HashMap<String, String[]> parameters(Optional<Level> level, ZonedDateTime time, Duration interval) {
         HashMap<String, String[]> untypedParameters = new HashMap<>();
         level.ifPresent(l -> untypedParameters.put("level", new String[] { l.toString() }));
         untypedParameters.put("time", new String[] { time.toLocalTime().toString() });
         untypedParameters.put("date", new String[] { time.toLocalDate().toString() });
         untypedParameters.put("timezoneOffset", new String[] {String.valueOf(- time.getOffset().getTotalSeconds() / 60)});
         untypedParameters.put("interval", new String[] { interval.toString() });
-        return new LogEventFilter(untypedParameters);
+        return untypedParameters;
     }
 
     @Test

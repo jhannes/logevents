@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -45,7 +46,8 @@ import java.util.stream.Stream;
  * <p>{@link DatabaseLogEventObserver} is a nice compromise if you want to take a step towards centralized logging,
  * but don't want to set up Elastic search, Splunk or a similar solution quite yet.</p>
  *
- * <p>{@link DatabaseLogEventObserver} is designed to be used with {@link org.logevents.extend.servlets.LogEventsServlet}</p>
+ * <p>{@link DatabaseLogEventObserver} is designed to be used with {@link org.logevents.extend.servlets.LogEventsServlet}
+ * through {@link WebLogEventObserver}</p>
  *
  * <h3>Sample configuration</h3>
  * <pre>
@@ -57,7 +59,6 @@ import java.util.stream.Stream;
  * observer.db.logeventsMdcTable=log_events_mdc
  * </pre>
  */
-// TODO: Filter on all filter variables
 // TODO: Save exception
 public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventBatchProcessor, LogEventSource {
 
@@ -169,12 +170,52 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     }
 
     public PreparedStatement prepareQuery(Connection connection, LogEventFilter filter) throws SQLException {
-        String sql = "select * from " + logEventsTable + " e left outer join " + logEventsMdcTable + "  m on e.event_id = m.event_id where instant between ? and ? and level_int >= ? order by instant";
+        List<Object> parameters = new ArrayList<>();
+        List<String> filters = new ArrayList<>();
+
+        filters.add("level_int >= ?");
+        parameters.add(filter.getThreshold().toInt());
+        filter.getMarkers().ifPresent(markers -> {
+            filters.add("marker in (" + questionMarks(markers.size()) + ")");
+            parameters.addAll(markers);
+        });
+        filter.getLoggers().ifPresent(loggers -> {
+            filters.add("logger in (" + questionMarks(loggers.size()) + ")");
+            parameters.addAll(loggers);
+        });
+        filter.getThreadNames().ifPresent(threads -> {
+            filters.add("thread_name in (" + questionMarks(threads.size()) + ")");
+            parameters.addAll(threads);
+        });
+        filter.getMdcFilter().ifPresent(mdcFilter -> {
+            List<String> mdcFilters = new ArrayList<>();
+            mdcFilter.forEach((key, value) -> {
+                mdcFilters.add("e.event_id in (select event_id from " + logEventsMdcTable + " where key = ? and value in (" + questionMarks(value.size()) + "))");
+                parameters.add(key);
+                parameters.addAll(value);
+            });
+            filters.add("(" + String.join(" OR ", mdcFilters) + ")");
+        });
+
+        String sql = "select * from " + logEventsTable + " e left outer join " + logEventsMdcTable + "  m on e.event_id = m.event_id " +
+                " where instant between ? and ? and "
+                + String.join(" AND ", filters)
+                + " order by instant";
+
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setLong(1, filter.getStartTime().toEpochMilli());
         statement.setLong(2, filter.getEndTime().toEpochMilli());
-        statement.setInt(3, filter.getThreshold().toInt());
+        int parameterIndex = 3;
+        for (Object parameter : parameters) {
+            statement.setObject(parameterIndex++, parameter);
+        }
         return statement;
+    }
+
+    public String questionMarks(int size) {
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i< size; i++) result.add("?");
+        return String.join(",", result);
     }
 
     private Marker getMarker(String marker) {
