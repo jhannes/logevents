@@ -5,6 +5,7 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
@@ -114,7 +115,32 @@ public class LogEventSampler {
 
     public LogEventSampler withThrowable(Throwable throwable) {
         this.args = new Object[] { throwable };
+        if (!this.level.isPresent()) {
+            this.level = Optional.of(Level.WARN);
+        }
         return this;
+    }
+
+    public LogEventSampler withThrowable() {
+        return withThrowable(createThrowable());
+    }
+
+    private StackTraceElement mainMethod = new StackTraceElement("org.logeventsdemo.MyApplication", "main", "MyApplication.java", 20);
+    private StackTraceElement publicMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "publicMethod", "MyClassName.java", 31);
+    private StackTraceElement internalMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "internalMethod", "MyClassName.java", 311);
+    private StackTraceElement nioApiMethod = new StackTraceElement("java.nio.file.Files", "write", "Files.java", 3292);
+    private StackTraceElement nioInternalMethod = new StackTraceElement("sun.nio.fs.WindowsException", "translateToIOException", "WindowsException.java", 79);
+    private StackTraceElement ioApiMethod = new StackTraceElement("java.io.FilterOutputStream", "close", "FilterOutputStream.java", 180);
+    private StackTraceElement ioInternalMethod = new StackTraceElement("java.io.FileOutputStream", "close", "FileOutputStream.java", 323);
+
+    private Throwable createThrowable() {
+        IOException exception = new IOException("Something went wrong");
+        exception.setStackTrace(new StackTraceElement[] {
+                ioInternalMethod, ioApiMethod,
+                nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod,
+                internalMethod, publicMethod, mainMethod
+        });
+        return exception;
     }
 
     public LogEventSampler withLoggerName(String loggerName) {

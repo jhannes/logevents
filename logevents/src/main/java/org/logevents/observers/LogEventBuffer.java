@@ -2,6 +2,7 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.query.JsonLogEventFormatter;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventQueryResult;
 import org.logevents.query.LogEventSummary;
@@ -15,6 +16,7 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class LogEventBuffer implements LogEventObserver, LogEventSource {
     /**
@@ -51,10 +53,12 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
         messages.get(logEvent.getLevel()).add(logEvent);
     }
 
+    private final JsonLogEventFormatter jsonFormatter = new JsonLogEventFormatter();
+
     public LogEventQueryResult query(LogEventFilter filter) {
         Collection<LogEvent> allEvents = filter(filter.getThreshold(), filter.getStartTime(), filter.getEndTime());
         LogEventSummary summary = new LogEventSummary();
         allEvents.forEach(summary::add);
-        return new LogEventQueryResult(allEvents, summary);
+        return new LogEventQueryResult(summary, allEvents.stream().map(jsonFormatter).collect(Collectors.toList()));
     }
 }

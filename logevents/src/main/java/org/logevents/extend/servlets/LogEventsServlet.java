@@ -193,9 +193,7 @@ public class LogEventsServlet extends HttpServlet {
 
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("facets", queryResult.getSummary().toJson());
-            result.put("events", queryResult.getEvents().stream()
-                    .map(getObserver()::format)
-                    .collect(Collectors.toList()));
+            result.put("events", queryResult.getEventsAsJson());
 
             resp.setContentType("application/json");
             resp.getWriter().write(JsonUtil.toIndentedJson(result));

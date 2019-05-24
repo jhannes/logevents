@@ -90,6 +90,19 @@
           },
           {
             "in": "query",
+            "name": "node",
+            "description": "The node that logged the event to include",
+            "collectionFormat": "multi",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "example": "appserver1.example.com"
+              }
+            }
+          },
+          {
+            "in": "query",
             "name": "mdc",
             "schema": {
               "type": "object"
@@ -152,6 +165,13 @@
             },
             "example": ["main", "TimerThread-1"]
           },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["appserver1.example.com", "appserver2.example.com"]
+          },
           "mdc": {
             "type": "array",
             "items": {
@@ -173,7 +193,13 @@
               { "name":  "request", "values": ["/api/operation", "/api/resources"] }
             ]
           }
-        }
+        },
+        "required": [
+          "markers",
+          "loggers",
+          "threads",
+          "mdc"
+        ]
       },
       "LogEvent": {
         "type": "object",
@@ -317,6 +343,10 @@
               {"name":  "clientIp", "value": "127.0.0.1"},
               {"name":  "request", "value": "/api/operation"}
             ]
+          },
+          "node": {
+            "type": "string",
+            "example": "appserver1.example.com"
           }
         },
         "required": [

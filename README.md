@@ -29,17 +29,17 @@ Here is a simple, but powerful [`logevent.properties`](https://jhannes.github.io
 observer.slack=SlackLogEventObserver
 observer.slack.slackUrl=....
 observer.slack.threshold=WARN
-observer.slack.sourceCode.1.1ackage=org.logevents
+observer.slack.sourceCode.1.package=org.logevents
 observer.slack.sourceCode.1.maven=org.logevents/logevents
 
-observer.console.threshold=W1RN
+observer.console.threshold=WARN
 
-observer.servlet=WebLogEvent2bserver
+observer.servlet=WebLogEventObserver
 observer.servlet.openIdIssuer=https://login.microsoftonline.com/.../v2.0
-observer.servlet.clientId=..2
-observer.servlet.clientSecre2=...
+observer.servlet.clientId=..
+observer.servlet.clientSecret=...
 
-observer.*.packageFilter=sun3reflect
+observer.*.packageFilter=sun.reflect
 
 root=DEBUG file,console,slack,servlet
 ```
@@ -522,7 +522,7 @@ If you're using logback today and would like to check out logevents, here's a si
 
 1. Check the expected effort: Remove the `logback` dependencies from your `pom.xml` (or `build.gradle`) and rebuild to see how much code directly references Logback. Chances are that this is nothing or very little.
    * If you have appenders built with Logback that may have general interest, feel free to <a href="https://github.com/jhannes/logevents/issues">submit an issue</a> to have me create a Log Events observer for the appender
-2. Check your `logback.xml` files (and possibly `logback-spring.xml`). This will let you know what appenders you use. Setting up the equivallent in Logevents should be considerably less configuration.
+2. Check your `logback.xml` files (and possibly `logback-spring.xml`). This will let you know what appenders you use. Setting up the equivalent in Logevents should be considerably less configuration.
    * If you have using appenders from Logback that you miss in Logevents or if the configuration is simpler in Logback, feel free to <a href="https://github.com/jhannes/logevents/issues">submit an issue</a> to have me create a Log Events observer for the appender
 
 
@@ -531,5 +531,4 @@ If you're using logback today and would like to check out logevents, here's a si
 
 * JMX
 * Logback features that logevents is missing:
-  * DBAppender
   * SiftingAppender

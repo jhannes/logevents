@@ -13,6 +13,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -297,4 +298,22 @@ public class LogEvent implements LoggingEvent {
         return compared != 0 ? -compared : -getInstant().compareTo(other.getInstant());
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LogEvent logEvent = (LogEvent) o;
+        return threadId == logEvent.threadId &&
+                timestamp == logEvent.timestamp &&
+                Objects.equals(loggerName, logEvent.loggerName) &&
+                level == logEvent.level &&
+                Objects.equals(marker, logEvent.marker) &&
+                Objects.equals(format, logEvent.format) &&
+                Objects.equals(threadName, logEvent.threadName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(loggerName, level, marker, format, threadId, threadName, timestamp);
+    }
 }

@@ -48,9 +48,7 @@ public class DatabaseLogEventObserverTest {
     public void shouldListSavedLogEvents() {
         LogEvent event = new LogEventSampler().build();
         observer.processBatch(new LogEventBatch().add(event));
-
-        Collection<LogEvent> events = observer.filter(filter(Optional.ofNullable(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)));
-        assertContains(event.getMessage(), events, LogEvent::getMessage);
+        assertContains(event.getMessage(), listEvents(event), LogEvent::getMessage);
     }
 
     @Test
@@ -60,8 +58,7 @@ public class DatabaseLogEventObserverTest {
                 .build();
         observer.processBatch(new LogEventBatch().add(event));
 
-        LogEvent savedEvent = observer
-                .filter(filter(Optional.of(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)))
+        LogEvent savedEvent = listEvents(event.getLevel(), event.getZonedDateTime(), Duration.ofSeconds(1))
                 .stream()
                 .filter(e -> e.getMessage().equals(event.getMessage()))
                 .findFirst()
@@ -76,16 +73,32 @@ public class DatabaseLogEventObserverTest {
     }
 
     @Test
+    public void shouldSaveExceptionInformation() {
+        LogEvent event = new LogEventSampler().withThrowable().build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        Map<String, Object> savedEvent = observer
+                .query(filter(Optional.of(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)))
+                .getEventsAsJson()
+                .stream()
+                .filter(e -> e.get("formattedMessage").equals(event.getMessage()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionFailedError("Didn't find <" + event.getMessage() + ">"));
+
+        assertEquals(event.getThrowable().toString(), savedEvent.get("throwable"));
+    }
+
+    @Test
     public void shouldFilterOnThreshold() {
         LogEvent event = new LogEventSampler().withLevel(Level.INFO).withMarker().build();
         observer.processBatch(new LogEventBatch().add(event));
 
         HashMap<String, String[]> parameters;
         parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
-        assertContains(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        assertContains(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
 
         parameters.put("level", new String[] { Level.WARN.toString() });
-        assertDoesNotContain(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        assertDoesNotContain(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
     }
 
     @Test
@@ -95,9 +108,9 @@ public class DatabaseLogEventObserverTest {
 
         HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
         parameters.put("marker", new String[] { "NON_EXISTING_MARKER" });
-        assertDoesNotContain(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        assertDoesNotContain(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
         parameters.put("marker", new String[] { "NON_EXISTING_MARKER", event.getMarker().getName() });
-        assertContains(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        assertContains(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
     }
 
     @Test
@@ -107,9 +120,9 @@ public class DatabaseLogEventObserverTest {
 
         HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
         parameters.put("logger", new String[] { "org.example.non.Existing" });
-        assertDoesNotContain(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        assertDoesNotContain(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
         parameters.put("logger", new String[] { "org.example.non.Existing", event.getLoggerName() });
-        assertContains(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        assertContains(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
     }
 
     @Test
@@ -119,9 +132,9 @@ public class DatabaseLogEventObserverTest {
 
         HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
         parameters.put("thread", new String[] { "Thread-nonexisting" });
-        assertDoesNotContain(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        assertDoesNotContain(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
         parameters.put("thread", new String[] { "Thread-nonexisting", event.getThreadName() });
-        assertContains(event.getMessage(), observer.filter(new LogEventFilter(parameters)), LogEvent::getMessage);
+        assertContains(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
     }
 
     @Test
@@ -134,19 +147,19 @@ public class DatabaseLogEventObserverTest {
 
         HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), time, Duration.ofHours(10));
         parameters.put("mdc[ip]", new String[] { "127.0.0.1" });
-        Collection<LogEvent> events = observer.filter(new LogEventFilter(parameters));
+        Collection<LogEvent> events = listEvents(parameters);
         assertDoesNotContain(event1.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(event2.getMessage(), events, LogEvent::getMessage);
         assertContains(event3.getMessage(), events, LogEvent::getMessage);
 
         parameters.put("mdc[op]", new String[] { "secondOp" });
-        events = observer.filter(new LogEventFilter(parameters));
+        events = listEvents(parameters);
         assertDoesNotContain(event1.getMessage(), events, LogEvent::getMessage);
         assertContains(event2.getMessage(), events, LogEvent::getMessage);
         assertContains(event3.getMessage(), events, LogEvent::getMessage);
 
         parameters.put("mdc[op]", new String[] { "firstOp", "secondOp" });
-        events = observer.filter(new LogEventFilter(parameters));
+        events = listEvents(parameters);
         assertContains(event1.getMessage(), events, LogEvent::getMessage);
         assertContains(event2.getMessage(), events, LogEvent::getMessage);
         assertContains(event3.getMessage(), events, LogEvent::getMessage);
@@ -162,8 +175,7 @@ public class DatabaseLogEventObserverTest {
                 .build();
         observer.processBatch(new LogEventBatch().add(event));
 
-        LogEvent savedEvent = observer
-                .filter(filter(Optional.ofNullable(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)))
+        LogEvent savedEvent = listEvents(event)
                 .stream()
                 .filter(e -> e.getMessage().equals(event.getMessage()))
                 .findFirst()
@@ -186,7 +198,7 @@ public class DatabaseLogEventObserverTest {
                 .build();
         observer.processBatch(new LogEventBatch().add(pastEvent).add(currentEvent).add(futureEvent));
 
-        Collection<LogEvent> events = observer.filter(filter(Optional.of(Level.TRACE), ZonedDateTime.now(), Duration.ofHours(1)));
+        Collection<LogEvent> events = listEvents(Level.TRACE, ZonedDateTime.now(), Duration.ofHours(1));
         assertContains(currentEvent.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(pastEvent.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(futureEvent.getMessage(), events, LogEvent::getMessage);
@@ -200,7 +212,7 @@ public class DatabaseLogEventObserverTest {
         LogEvent lowerEvent = logEventSampler.withLevel(Level.DEBUG).build();
         observer.processBatch(new LogEventBatch().add(higherEvent).add(matchingEvent).add(lowerEvent));
 
-        Collection<LogEvent> events = observer.filter(filter(Optional.of(Level.INFO), ZonedDateTime.now(), Duration.ofHours(1)));
+        Collection<LogEvent> events = listEvents(Level.INFO, ZonedDateTime.now(), Duration.ofHours(1));
         assertContains(higherEvent.getMessage(), events, LogEvent::getMessage);
         assertContains(matchingEvent.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(lowerEvent.getMessage(), events, LogEvent::getMessage);
@@ -213,25 +225,10 @@ public class DatabaseLogEventObserverTest {
                 .add(new LogEventSampler().withMdc("ip", "127.0.0.1").build())
                 .add(new LogEventSampler().withMdc("ip", "10.0.0.4").build()));
 
-        LogEventSummary summary = observer.getSummary(filter(Optional.empty(), ZonedDateTime.now(), Duration.ofMinutes(10)));
+        LogEventSummary summary = observer.getSummary(listEvents(Optional.empty(), ZonedDateTime.now(), Duration.ofMinutes(10)));
         assertEquals(new HashSet<>(Arrays.asList("ip", "url")), summary.getMdcMap().keySet());
         assertEquals(new HashSet<>(Arrays.asList("127.0.0.1", "10.0.0.4")), summary.getMdcMap().get("ip"));
         assertEquals(new HashSet<>(Arrays.asList("/api/op")), summary.getMdcMap().get("url"));
-    }
-
-    private LogEventFilter filter(Optional<Level> level, ZonedDateTime time, Duration interval) {
-        HashMap<String, String[]> untypedParameters = parameters(level, time, interval);
-        return new LogEventFilter(untypedParameters);
-    }
-
-    private HashMap<String, String[]> parameters(Optional<Level> level, ZonedDateTime time, Duration interval) {
-        HashMap<String, String[]> untypedParameters = new HashMap<>();
-        level.ifPresent(l -> untypedParameters.put("level", new String[] { l.toString() }));
-        untypedParameters.put("time", new String[] { time.toLocalTime().toString() });
-        untypedParameters.put("date", new String[] { time.toLocalDate().toString() });
-        untypedParameters.put("timezoneOffset", new String[] {String.valueOf(- time.getOffset().getTotalSeconds() / 60)});
-        untypedParameters.put("interval", new String[] { interval.toString() });
-        return untypedParameters;
     }
 
     @Test
@@ -280,6 +277,37 @@ public class DatabaseLogEventObserverTest {
         assertEquals(new HashSet<>(Arrays.asList(OTHER_MARKER.toString())), summary.getMarkers());
     }
 
+    private Collection<LogEvent> listEvents(Level level, ZonedDateTime zonedDateTime, Duration duration) {
+        return observer.query(filter(Optional.of(level), zonedDateTime, duration)).getEvents();
+    }
+
+    private Collection<LogEvent> listEvents(HashMap<String, String[]> parameters) {
+        return observer.query(new LogEventFilter(parameters)).getEvents();
+    }
+
+    private Collection<LogEvent> listEvents(LogEvent event) {
+        return listEvents(event.getLevel(), event.getZonedDateTime(), Duration.ofSeconds(1));
+    }
+
+    private LogEventFilter listEvents(Optional<Level> empty, ZonedDateTime now, Duration duration) {
+        return filter(empty, now, duration);
+    }
+
+    private LogEventFilter filter(Optional<Level> level, ZonedDateTime time, Duration interval) {
+        HashMap<String, String[]> untypedParameters = parameters(level, time, interval);
+        return new LogEventFilter(untypedParameters);
+    }
+
+    private HashMap<String, String[]> parameters(Optional<Level> level, ZonedDateTime time, Duration interval) {
+        HashMap<String, String[]> untypedParameters = new HashMap<>();
+        level.ifPresent(l -> untypedParameters.put("level", new String[] { l.toString() }));
+        untypedParameters.put("time", new String[] { time.toLocalTime().toString() });
+        untypedParameters.put("date", new String[] { time.toLocalDate().toString() });
+        untypedParameters.put("timezoneOffset", new String[] {String.valueOf(- time.getOffset().getTotalSeconds() / 60)});
+        untypedParameters.put("interval", new String[] { interval.toString() });
+        return untypedParameters;
+    }
+
     private <T, U> void assertDoesNotContain(T value, Collection<U> collection, Function<U, T> transformer) {
         assertNotNull("value should not be null", value);
         assertNotNull("collection should not be null", collection);
@@ -297,5 +325,4 @@ public class DatabaseLogEventObserverTest {
             fail("Expected to find <" + value + "> in " + collect);
         }
     }
-
 }

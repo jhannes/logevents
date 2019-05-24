@@ -26,7 +26,7 @@ public class JsonParser {
     }
 
     public static Object parse(String input) throws IOException {
-        return parse(new StringReader(input));
+        return input != null ? parse(new StringReader(input)) : null;
     }
 
     public static Object parse(InputStream input) throws IOException {

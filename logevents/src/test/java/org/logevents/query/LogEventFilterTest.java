@@ -116,7 +116,7 @@ public class LogEventFilterTest {
                 .withTime(start.minusMinutes(2))
                 .build());
 
-        Collection<LocalTime> logEvents = logsByLevel.query(new LogEventFilter(new HashMap<>())).stream()
+        Collection<LocalTime> logEvents = logsByLevel.query(new LogEventFilter(new HashMap<>())).getEvents().stream()
                 .map(LogEvent::getLocalTime).collect(Collectors.toList());
 
         assertEquals(
@@ -148,16 +148,14 @@ public class LogEventFilterTest {
         parameters.put("time", new String[] { start.minusMinutes(10).toLocalTime().toString() });
         parameters.put("interval", new String[] { "PT10M" });
 
-        Collection<Instant> logEvents = logsByLevel.query(new LogEventFilter(parameters))
-                .stream().map(LogEvent::getInstant).collect(Collectors.toList());
+        Collection<Instant> logEvents = logsByLevel.query(new LogEventFilter(parameters)).getEvents().stream().map(LogEvent::getInstant).collect(Collectors.toList());
         assertEquals(
                 Arrays.asList(earlyMessage.getInstant(), lateMessage.getInstant(), latestMessage.getInstant()),
                 logEvents
         );
 
         parameters.put("interval", new String[] { "PT6M" });
-        logEvents = logsByLevel.query(new LogEventFilter(parameters))
-                .stream().map(LogEvent::getInstant).collect(Collectors.toList());
+        logEvents = logsByLevel.query(new LogEventFilter(parameters)).getEvents().stream().map(LogEvent::getInstant).collect(Collectors.toList());
         assertEquals(
                 Arrays.asList(earlyMessage.getInstant(), lateMessage.getInstant()),
                 logEvents
@@ -252,12 +250,12 @@ public class LogEventFilterTest {
 
     private void assertCollectionIncludes(LogEvent logEvent, LogEventFilter filter) {
         assertTrue("Expect " + filter + " to include " + logEvent,
-                logsByLevel.query(filter).stream().collect(Collectors.toList()).contains(logEvent));
+                logsByLevel.query(filter).getEvents().stream().collect(Collectors.toList()).contains(logEvent));
     }
 
     private void assertCollectionDoesNotContain(LogEvent logEvent, LogEventFilter filter) {
         assertFalse("Expect " + filter + " to exclude " + logEvent,
-                logsByLevel.query(filter).stream().collect(Collectors.toList()).contains(logEvent));
+                logsByLevel.query(filter).getEvents().stream().collect(Collectors.toList()).contains(logEvent));
     }
 
     private Map<String, String[]> parameters(String name, String... values) {

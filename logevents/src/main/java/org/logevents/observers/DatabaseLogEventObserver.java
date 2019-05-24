@@ -1,6 +1,9 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
+import org.logevents.extend.servlets.JsonExceptionFormatter;
+import org.logevents.extend.servlets.JsonMessageFormatter;
+import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.query.LogEventFilter;
@@ -25,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,7 +63,7 @@ import java.util.stream.Stream;
  * observer.db.logeventsMdcTable=log_events_mdc
  * </pre>
  */
-// TODO: Save exception
+// TODO: Filter on node
 public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventBatchProcessor, LogEventSource {
 
     private final String jdbcUrl;
@@ -92,17 +96,21 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                                 "level varchar(10) not null, " +
                                 "level_int integer not null, " +
                                 "message text not null, " +
+                                "message text not null, " +
+                                "message_json text not null, " +
                                 "instant bigint not null, " +
-                                "thread_name varchar(100) not null," +
+                                "thread varchar(100) not null," +
                                 "arguments varchar(1000) not null," +
-                                "node_name varchar(100) not null," +
-                                "marker varchar(100)" +
+                                "marker varchar(100)," +
+                                "throwable varchar(100)," +
+                                "stack_trace text," +
+                                "node_name varchar(100) not null" +
                                 ")"
                         );
                         statement.executeUpdate("create index " + logEventsTable + "_logger_idx on " + logEventsTable + "(logger)");
                         statement.executeUpdate("create index " + logEventsTable + "_level_idx on " + logEventsTable + "(level)");
                         statement.executeUpdate("create index " + logEventsTable + "_instant_idx on " + logEventsTable + "(instant)");
-                        statement.executeUpdate("create index " + logEventsTable + "_thread_name_idx on " + logEventsTable + "(thread_name)");
+                        statement.executeUpdate("create index " + logEventsTable + "_thread_idx on " + logEventsTable + "(thread)");
                         statement.executeUpdate("create index " + logEventsTable + "_marker_idx on " + logEventsTable + "(marker)");
                         statement.executeUpdate("create index " + logEventsTable + "_node_name_idx on " + logEventsTable + "(node_name)");
                     }
@@ -113,11 +121,11 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                     try (Statement statement = connection.createStatement()) {
                         statement.executeUpdate("create table " + logEventsMdcTable + " (" +
                                 "event_id varchar(100) not null references " + logEventsTable + "(event_id), " +
-                                "key varchar(100) not null, " +
+                                "name varchar(100) not null, " +
                                 "value varchar(20) not null" +
                                 ")"
                         );
-                        statement.executeUpdate("create index " + logEventsMdcTable + "_idx on " + logEventsMdcTable + "(key, value)");
+                        statement.executeUpdate("create index " + logEventsMdcTable + "_idx on " + logEventsMdcTable + "(name, value)");
                     }
                 }
             }
@@ -133,32 +141,43 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     /**
      * Retrieve log events from the database that matches the argument filter
      */
-    public Collection<LogEvent> filter(LogEventFilter filter) {
-        Collection<LogEvent> result = new ArrayList<>();
-        Map<String, LogEvent> idToResult = new HashMap<>();
+    private Collection<Map<String, Object>> list(LogEventFilter filter) {
+        Map<String, Map<String, Object>> idToJson = new LinkedHashMap<>();
+        Map<String, List<Map<String, String>>> idToJsonMdc = new LinkedHashMap<>();
         try (Connection connection = getConnection()) {
             try (PreparedStatement statement = prepareQuery(connection, filter)) {
                 try (ResultSet rs = statement.executeQuery()) {
                     while (rs.next()) {
                         String id = rs.getString("event_id");
-                        LogEvent e = idToResult.get(id);
-                        if (e == null) {
-                            e = new LogEvent(
-                                    rs.getString("logger"),
-                                    Level.valueOf(rs.getString("level")),
-                                    rs.getString("thread_name"),
-                                    Instant.ofEpochMilli(rs.getLong("instant")),
-                                    getMarker(rs.getString("marker")),
-                                    rs.getString("message"),
-                                    JsonParser.parseArray(rs.getString("arguments")).toArray(),
-                                    null,
-                                    new HashMap<>()
-                            );
-                            idToResult.put(id, e);
-                            result.add(e);
+                        if (!idToJson.containsKey(id)) {
+                            Map<String, Object> jsonEvent = new HashMap<>();
+                            jsonEvent.put("thread", rs.getString("thread"));
+                            jsonEvent.put("time", Instant.ofEpochMilli(rs.getLong("instant")).toString());
+                            jsonEvent.put("logger", rs.getString("logger"));
+                            jsonEvent.put("level", rs.getString("level"));
+                            jsonEvent.put("levelIcon", null);
+                            jsonEvent.put("formattedMessage", rs.getString("message"));
+                            jsonEvent.put("messageTemplate", rs.getString("message"));
+                            jsonEvent.put("message", JsonParser.parseArray(rs.getString("message_json")));
+                            jsonEvent.put("marker", rs.getString("marker"));
+                            jsonEvent.put("arguments", JsonParser.parseArray(rs.getString("arguments")));
+                            jsonEvent.put("throwable", rs.getString("throwable"));
+                            jsonEvent.put("stackTrace", JsonParser.parseArray(rs.getString("stack_trace")));
+
+                            jsonEvent.put("abbreviatedLogger", LogEvent.getAbbreviatedLoggerName(jsonEvent.get("logger").toString(), 0));
+                            jsonEvent.put("levelIcon", JsonLogEventsBatchFormatter.emojiiForLevel(Level.valueOf(jsonEvent.get("level").toString())));
+
+                            idToJson.put(id, jsonEvent);
+
+                            List<Map<String, String>> jsonMdc = new ArrayList<>();
+                            jsonEvent.put("mdc", jsonMdc);
+                            idToJsonMdc.put(id, jsonMdc);
                         }
-                        if (rs.getString("key") != null) {
-                            e.getMdcProperties().put(rs.getString("key"), rs.getString("value"));
+                        if (rs.getString("name") != null) {
+                            Map<String, String> jsonMdc = new HashMap<>();
+                            jsonMdc.put("name", rs.getString("name"));
+                            jsonMdc.put("value", rs.getString("value"));
+                            idToJsonMdc.get(id).add(jsonMdc);
                         }
                     }
                 }
@@ -166,7 +185,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         } catch (SQLException e) {
             LogEventStatus.getInstance().addError(this, "Failed to write log record", e);
         }
-        return result;
+        return idToJson.values();
     }
 
     public PreparedStatement prepareQuery(Connection connection, LogEventFilter filter) throws SQLException {
@@ -184,14 +203,14 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
             parameters.addAll(loggers);
         });
         filter.getThreadNames().ifPresent(threads -> {
-            filters.add("thread_name in (" + questionMarks(threads.size()) + ")");
+            filters.add("thread in (" + questionMarks(threads.size()) + ")");
             parameters.addAll(threads);
         });
         filter.getMdcFilter().ifPresent(mdcFilter -> {
             List<String> mdcFilters = new ArrayList<>();
-            mdcFilter.forEach((key, value) -> {
-                mdcFilters.add("e.event_id in (select event_id from " + logEventsMdcTable + " where key = ? and value in (" + questionMarks(value.size()) + "))");
-                parameters.add(key);
+            mdcFilter.forEach((name, value) -> {
+                mdcFilters.add("e.event_id in (select event_id from " + logEventsMdcTable + " where name = ? and value in (" + questionMarks(value.size()) + "))");
+                parameters.add(name);
                 parameters.addAll(value);
             });
             filters.add("(" + String.join(" OR ", mdcFilters) + ")");
@@ -231,14 +250,14 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
 
     @Override
     public void processBatch(LogEventBatch batch) {
-        saveLogEvents(batch);
+         saveLogEvents(batch);
     }
 
     private void saveLogEvents(LogEventBatch batch) {
         try (Connection connection = getConnection()) {
             try (
-                    PreparedStatement eventStmt = connection.prepareStatement("insert into " + logEventsTable + " (event_id, logger, level, level_int, message, instant, thread_name, arguments, marker, node_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    PreparedStatement mdcStmt = connection.prepareStatement("insert into " + logEventsMdcTable + " (event_id, key, value) values (?, ?, ?)")
+                    PreparedStatement eventStmt = connection.prepareStatement("insert into " + logEventsTable + " (event_id, logger, level, level_int, message, message_json, instant, thread, arguments, marker, throwable, stack_trace, node_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    PreparedStatement mdcStmt = connection.prepareStatement("insert into " + logEventsMdcTable + " (event_id, name, value) values (?, ?, ?)")
                     ) {
                 for (LogEvent logEvent : batch) {
                     String id = UUID.randomUUID().toString();
@@ -247,13 +266,19 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                     eventStmt.setString(3, logEvent.getLevel().toString());
                     eventStmt.setInt(4, logEvent.getLevel().toInt());
                     eventStmt.setString(5, logEvent.getMessage());
-                    eventStmt.setLong(6, logEvent.getTimeStamp());
-                    eventStmt.setString(7, logEvent.getThreadName());
-                    eventStmt.setString(8, JsonUtil.toIndentedJson(
+                    // OR - do this on the way out
+                    eventStmt.setString(6, JsonUtil.toIndentedJson(jsonMessageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray())));
+                    eventStmt.setLong(7, logEvent.getTimeStamp());
+                    eventStmt.setString(8, logEvent.getThreadName());
+                    eventStmt.setString(9, JsonUtil.toIndentedJson(
                             Stream.of(logEvent.getArgumentArray()).map(Object::toString).collect(Collectors.toList())
                     ));
-                    eventStmt.setString(9, toString(logEvent.getMarker()));
-                    eventStmt.setString(10, nodeName);
+                    eventStmt.setString(10, toString(logEvent.getMarker()));
+                    eventStmt.setString(11, logEvent.getThrowable() != null ? logEvent.getThrowable().toString() : null);
+                    eventStmt.setString(12, logEvent.getThrowable() != null
+                            ? JsonUtil.toIndentedJson(exceptionFormatter.createStackTrace(logEvent.getThrowable()))
+                            : null);
+                    eventStmt.setString(13, nodeName);
                     eventStmt.addBatch();
 
                     for (Map.Entry<String, String> entry : logEvent.getMdcProperties().entrySet()) {
@@ -262,7 +287,6 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                         mdcStmt.setString(3,entry.getValue());
                         mdcStmt.addBatch();
                     }
-
                 }
                 eventStmt.executeBatch();
                 mdcStmt.executeBatch();
@@ -272,10 +296,13 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         }
     }
 
+    private final JsonMessageFormatter jsonMessageFormatter = new JsonMessageFormatter();
+    private final JsonExceptionFormatter exceptionFormatter = new JsonExceptionFormatter();
+
     @Override
     public LogEventQueryResult query(LogEventFilter filter) {
         try {
-            return new LogEventQueryResult(filter(filter), getSummary(filter));
+            return new LogEventQueryResult(getSummary(filter), list(filter));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -289,7 +316,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
 
         try (Connection connection = getConnection()) {
             summary.setMarkers(listDistinct(connection, filter, "marker"));
-            summary.setThreads(listDistinct(connection, filter, "thread_name"));
+            summary.setThreads(listDistinct(connection, filter, "thread"));
             summary.setLoggers(listDistinct(connection, filter, "logger"));
             summary.setNodes(listDistinct(connection, filter, "node_name"));
             summary.setMdcMap(getMdcMap(connection, filter));
@@ -317,14 +344,14 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
 
     private Map<String, Set<String>> getMdcMap(Connection connection, LogEventFilter filter) throws SQLException {
         Map<String, Set<String>> mdcMap = new HashMap<>();
-        try (PreparedStatement statement = connection.prepareStatement("select distinct key, value from " + logEventsMdcTable + " m inner join "  + logEventsTable + " e on m.event_id = e.event_id where instant between ? and ? and level_int >= ?")) {
+        try (PreparedStatement statement = connection.prepareStatement("select distinct name, value from " + logEventsMdcTable + " m inner join "  + logEventsTable + " e on m.event_id = e.event_id where instant between ? and ? and level_int >= ?")) {
             statement.setLong(1, filter.getStartTime().toEpochMilli());
             statement.setLong(2, filter.getEndTime().toEpochMilli());
             statement.setLong(3, filter.getThreshold().toInt());
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    String key = rs.getString("key");
-                    mdcMap.computeIfAbsent(key, k -> new HashSet<>()).add(rs.getString("value"));
+                    String name = rs.getString("name");
+                    mdcMap.computeIfAbsent(name, k -> new HashSet<>()).add(rs.getString("value"));
                 }
             }
         }
