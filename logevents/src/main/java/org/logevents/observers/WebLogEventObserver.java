@@ -3,7 +3,6 @@ package org.logevents.observers;
 import com.sun.net.httpserver.HttpsServer;
 import org.logevents.LogEvent;
 import org.logevents.extend.servlets.JsonExceptionFormatter;
-import org.logevents.extend.servlets.JsonMessageFormatter;
 import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.util.Configuration;
@@ -47,7 +46,6 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
 
     private final MessageFormatter messageFormatter;
     private final LogEventSource source;
-    private JsonMessageFormatter jsonFormatter = new JsonMessageFormatter();
 
     private Optional<String> cookieEncryptionKey = Optional.empty();
     private final OpenIdConfiguration openIdConfiguration;
@@ -69,7 +67,6 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
                 .orElse("/org/logevents/logevents.html");
         this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", JsonExceptionFormatter.class);
         this.cookieEncryptionKey = configuration.optionalString("cookieEncryptionKey");
-        this.jsonFormatter = configuration.createInstanceWithDefault("jsonMessageFormatter", JsonMessageFormatter.class);
         configuration.checkForUnknownFields();
     }
 

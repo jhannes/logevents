@@ -3,6 +3,7 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.extend.servlets.JsonExceptionFormatter;
 import org.logevents.extend.servlets.JsonMessageFormatter;
+import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
@@ -96,7 +97,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                                 "level varchar(10) not null, " +
                                 "level_int integer not null, " +
                                 "message text not null, " +
-                                "message text not null, " +
+                                "formatted_message text not null, " +
                                 "message_json text not null, " +
                                 "instant bigint not null, " +
                                 "thread varchar(100) not null," +
@@ -156,7 +157,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                             jsonEvent.put("logger", rs.getString("logger"));
                             jsonEvent.put("level", rs.getString("level"));
                             jsonEvent.put("levelIcon", null);
-                            jsonEvent.put("formattedMessage", rs.getString("message"));
+                            jsonEvent.put("formattedMessage", rs.getString("formatted_message"));
                             jsonEvent.put("messageTemplate", rs.getString("message"));
                             jsonEvent.put("message", JsonParser.parseArray(rs.getString("message_json")));
                             jsonEvent.put("marker", rs.getString("marker"));
@@ -256,7 +257,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     private void saveLogEvents(LogEventBatch batch) {
         try (Connection connection = getConnection()) {
             try (
-                    PreparedStatement eventStmt = connection.prepareStatement("insert into " + logEventsTable + " (event_id, logger, level, level_int, message, message_json, instant, thread, arguments, marker, throwable, stack_trace, node_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    PreparedStatement eventStmt = connection.prepareStatement("insert into " + logEventsTable + " (event_id, logger, level, level_int, message, formatted_message, message_json, instant, thread, arguments, marker, throwable, stack_trace, node_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     PreparedStatement mdcStmt = connection.prepareStatement("insert into " + logEventsMdcTable + " (event_id, name, value) values (?, ?, ?)")
                     ) {
                 for (LogEvent logEvent : batch) {
@@ -266,19 +267,19 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                     eventStmt.setString(3, logEvent.getLevel().toString());
                     eventStmt.setInt(4, logEvent.getLevel().toInt());
                     eventStmt.setString(5, logEvent.getMessage());
-                    // OR - do this on the way out
-                    eventStmt.setString(6, JsonUtil.toIndentedJson(jsonMessageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray())));
-                    eventStmt.setLong(7, logEvent.getTimeStamp());
-                    eventStmt.setString(8, logEvent.getThreadName());
-                    eventStmt.setString(9, JsonUtil.toIndentedJson(
+                    eventStmt.setString(6, messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray()));
+                    eventStmt.setString(7, JsonUtil.toIndentedJson(jsonMessageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray())));
+                    eventStmt.setLong(8, logEvent.getTimeStamp());
+                    eventStmt.setString(9, logEvent.getThreadName());
+                    eventStmt.setString(10, JsonUtil.toIndentedJson(
                             Stream.of(logEvent.getArgumentArray()).map(Object::toString).collect(Collectors.toList())
                     ));
-                    eventStmt.setString(10, toString(logEvent.getMarker()));
-                    eventStmt.setString(11, logEvent.getThrowable() != null ? logEvent.getThrowable().toString() : null);
-                    eventStmt.setString(12, logEvent.getThrowable() != null
+                    eventStmt.setString(11, toString(logEvent.getMarker()));
+                    eventStmt.setString(12, logEvent.getThrowable() != null ? logEvent.getThrowable().toString() : null);
+                    eventStmt.setString(13, logEvent.getThrowable() != null
                             ? JsonUtil.toIndentedJson(exceptionFormatter.createStackTrace(logEvent.getThrowable()))
                             : null);
-                    eventStmt.setString(13, nodeName);
+                    eventStmt.setString(14, nodeName);
                     eventStmt.addBatch();
 
                     for (Map.Entry<String, String> entry : logEvent.getMdcProperties().entrySet()) {
@@ -296,6 +297,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         }
     }
 
+    private final MessageFormatter messageFormatter = new MessageFormatter();
     private final JsonMessageFormatter jsonMessageFormatter = new JsonMessageFormatter();
     private final JsonExceptionFormatter exceptionFormatter = new JsonExceptionFormatter();
 
