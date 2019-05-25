@@ -1,13 +1,13 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
+import org.logevents.config.Configuration;
 import org.logevents.observers.batch.BatchThrottler;
 import org.logevents.observers.batch.ExecutorScheduler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.batch.LogEventShutdownHook;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.Configuration;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 

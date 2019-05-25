@@ -1,7 +1,7 @@
 package org.logevents.formatting;
 
 import org.logevents.LogEvent;
-import org.logevents.util.Configuration;
+import org.logevents.config.Configuration;
 
 import java.util.ArrayList;
 import java.util.List;

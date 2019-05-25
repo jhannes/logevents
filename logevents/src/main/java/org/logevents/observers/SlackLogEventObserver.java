@@ -1,11 +1,11 @@
 package org.logevents.observers;
 
+import org.logevents.config.Configuration;
 import org.logevents.observers.batch.BatchThrottler;
 import org.logevents.observers.batch.ExecutorScheduler;
 import org.logevents.observers.batch.HttpPostJsonBatchProcessor;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
-import org.logevents.util.Configuration;
 
 import java.net.URL;
 import java.util.Optional;

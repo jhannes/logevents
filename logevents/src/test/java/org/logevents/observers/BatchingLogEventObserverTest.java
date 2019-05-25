@@ -2,10 +2,10 @@ package org.logevents.observers;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
-import org.logevents.util.Configuration;
 import org.mockito.Mockito;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;

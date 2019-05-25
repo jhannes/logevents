@@ -1,8 +1,8 @@
 package org.logevents.observers.batch;
 
 import org.logevents.LogEvent;
+import org.logevents.config.Configuration;
 import org.logevents.formatting.MessageFormatter;
-import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
 import java.util.ArrayList;

@@ -2,12 +2,12 @@ package org.logevents;
 
 import org.logevents.config.DefaultLogEventConfigurator;
 import org.logevents.config.DefaultTestLogEventConfigurator;
+import org.logevents.config.LogEventConfigurationException;
 import org.logevents.impl.JavaUtilLoggingAdapter;
 import org.logevents.impl.LoggerDelegator;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.LogEventConfigurationException;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;

@@ -1,12 +1,12 @@
 package org.logevents.observers.smtp;
 
 import org.logevents.LogEvent;
+import org.logevents.config.Configuration;
+import org.logevents.config.LogEventConfigurationException;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.batch.LogEventGroup;
-import org.logevents.util.Configuration;
-import org.logevents.util.LogEventConfigurationException;
 
 import javax.mail.Authenticator;
 import javax.mail.Message;

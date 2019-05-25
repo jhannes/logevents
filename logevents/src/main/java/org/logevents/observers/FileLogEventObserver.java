@@ -2,10 +2,10 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.config.Configuration;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.LogEventFormatterBuilderFactory;
 import org.logevents.formatting.TTLLEventLogFormatter;
-import org.logevents.util.Configuration;
 import org.logevents.util.pattern.PatternReader;
 
 import java.nio.file.Path;

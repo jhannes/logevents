@@ -1,9 +1,9 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
+import org.logevents.config.Configuration;
 import org.logevents.formatting.ConsoleLogEventFormatter;
 import org.logevents.formatting.LogEventFormatter;
-import org.logevents.util.Configuration;
 
 import java.io.PrintStream;
 import java.util.Properties;

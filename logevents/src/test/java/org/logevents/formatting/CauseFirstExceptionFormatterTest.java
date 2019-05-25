@@ -1,12 +1,12 @@
 package org.logevents.formatting;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.logevents.config.Configuration;
 
 import java.io.IOException;
 import java.util.Properties;
 
-import org.junit.Test;
-import org.logevents.util.Configuration;
+import static org.junit.Assert.assertEquals;
 
 public class CauseFirstExceptionFormatterTest {
 

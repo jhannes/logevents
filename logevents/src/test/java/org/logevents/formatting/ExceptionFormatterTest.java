@@ -1,7 +1,7 @@
 package org.logevents.formatting;
 
 import org.junit.Test;
-import org.logevents.util.Configuration;
+import org.logevents.config.Configuration;
 
 import java.io.IOException;
 import java.util.Arrays;

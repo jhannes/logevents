@@ -1,9 +1,9 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
+import org.logevents.config.Configuration;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.TTLLEventLogFormatter;
-import org.logevents.util.Configuration;
 
 import java.time.LocalDate;
 import java.util.Optional;

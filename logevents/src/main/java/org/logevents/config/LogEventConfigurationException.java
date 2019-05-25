@@ -1,4 +1,4 @@
-package org.logevents.util;
+package org.logevents.config;
 
 public class LogEventConfigurationException extends RuntimeException {
 

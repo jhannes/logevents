@@ -1,4 +1,4 @@
-package org.logevents.util;
+package org.logevents.config;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;

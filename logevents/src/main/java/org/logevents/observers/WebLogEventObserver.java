@@ -2,10 +2,10 @@ package org.logevents.observers;
 
 import com.sun.net.httpserver.HttpsServer;
 import org.logevents.LogEvent;
+import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.JsonExceptionFormatter;
 import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.formatting.MessageFormatter;
-import org.logevents.util.Configuration;
 import org.logevents.util.openid.OpenIdConfiguration;
 
 import java.util.Optional;

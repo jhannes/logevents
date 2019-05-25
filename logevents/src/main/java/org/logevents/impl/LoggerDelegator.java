@@ -14,6 +14,7 @@ import org.slf4j.event.Level;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -29,6 +30,71 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("JavaDoc")
 public abstract class LoggerDelegator implements LoggerConfiguration {
+
+    private static class RootLoggerDelegator extends LoggerDelegator {
+
+        RootLoggerDelegator() {
+            super("ROOT");
+            ownObserver = new NullLogEventObserver();
+            levelThreshold = Level.INFO;
+            refresh();
+        }
+
+        @Override
+        public void reset() {
+            super.reset();
+            levelThreshold = Level.INFO;
+        }
+
+        @Override
+        public void refresh() {
+            this.effectiveThreshold = this.levelThreshold;
+            this.observer = this.ownObserver;
+            refreshEventGenerators(effectiveThreshold, observer);
+        }
+
+        @Override
+        public boolean hasParent(LoggerDelegator parent) {
+            return false;
+        }
+    }
+
+    private static class CategoryLoggerDelegator extends LoggerDelegator {
+
+        private LoggerDelegator parentLogger;
+
+        CategoryLoggerDelegator(String name, LoggerDelegator parentLogger) {
+            super(name);
+            this.parentLogger = Objects.requireNonNull(parentLogger, "parentLogger" + " should not be null");
+            refresh();
+        }
+
+        @Override
+        public void reset() {
+            super.reset();
+            this.effectiveThreshold = null;
+        }
+
+        @Override
+        public void refresh() {
+            this.effectiveThreshold = this.levelThreshold;
+            if (effectiveThreshold == null) {
+                this.effectiveThreshold = parentLogger.effectiveThreshold;
+            }
+            observer = inheritParentObserver
+                    ? CompositeLogEventObserver.combine(parentLogger.observer, ownObserver)
+                    : ownObserver;
+
+            refreshEventGenerators(effectiveThreshold, observer);
+        }
+
+        @Override
+        public boolean hasParent(LoggerDelegator parent) {
+            return this.parentLogger == parent;
+        }
+    }
+
+
 
     private final String name;
 

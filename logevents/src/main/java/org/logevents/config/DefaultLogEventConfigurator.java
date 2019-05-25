@@ -7,8 +7,6 @@ import org.logevents.LoggerConfiguration;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.ConfigUtil;
-import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
 import java.io.FileInputStream;
@@ -28,7 +26,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
-import static java.nio.file.StandardWatchEventKinds.*;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 /**
  * Default implementation of {@link LogEventConfigurator} which reads the

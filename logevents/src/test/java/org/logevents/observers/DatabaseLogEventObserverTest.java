@@ -3,11 +3,11 @@ package org.logevents.observers;
 import junit.framework.AssertionFailedError;
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventSummary;
-import org.logevents.util.Configuration;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -27,7 +27,10 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 public class DatabaseLogEventObserverTest {
 

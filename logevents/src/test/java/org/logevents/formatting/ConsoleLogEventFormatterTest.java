@@ -1,8 +1,8 @@
 package org.logevents.formatting;
 
 import org.junit.Test;
+import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
-import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
 import java.time.Instant;

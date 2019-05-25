@@ -1,6 +1,7 @@
 package org.logevents.extend.servlets;
 
 import org.logevents.LogEventFactory;
+import org.logevents.config.LogEventConfigurationException;
 import org.logevents.observers.LogEventSource;
 import org.logevents.observers.WebLogEventObserver;
 import org.logevents.query.LogEventFilter;
@@ -8,7 +9,6 @@ import org.logevents.query.LogEventQueryResult;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
-import org.logevents.util.LogEventConfigurationException;
 import org.logevents.util.openid.OpenIdConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

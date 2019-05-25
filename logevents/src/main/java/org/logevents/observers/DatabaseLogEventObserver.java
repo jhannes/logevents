@@ -1,6 +1,7 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
+import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.JsonExceptionFormatter;
 import org.logevents.extend.servlets.JsonMessageFormatter;
 import org.logevents.formatting.MessageFormatter;
@@ -11,7 +12,6 @@ import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventQueryResult;
 import org.logevents.query.LogEventSummary;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.Configuration;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.slf4j.Marker;

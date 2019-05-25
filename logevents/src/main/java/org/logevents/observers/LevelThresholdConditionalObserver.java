@@ -2,7 +2,7 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
-import org.logevents.util.Configuration;
+import org.logevents.config.Configuration;
 import org.slf4j.event.Level;
 
 import java.util.Properties;

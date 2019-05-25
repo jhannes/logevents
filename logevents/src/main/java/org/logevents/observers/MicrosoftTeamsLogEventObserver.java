@@ -1,8 +1,8 @@
 package org.logevents.observers;
 
+import org.logevents.config.Configuration;
 import org.logevents.observers.batch.HttpPostJsonBatchProcessor;
 import org.logevents.observers.batch.MicrosoftTeamsMessageFormatter;
-import org.logevents.util.Configuration;
 
 import java.util.Properties;
 

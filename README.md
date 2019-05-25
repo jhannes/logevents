@@ -7,25 +7,36 @@
 [![Coverage Status](https://coveralls.io/repos/github/jhannes/logevents/badge.svg?branch=master)](https://coveralls.io/github/jhannes/logevents?branch=master)
 [![Vulnerability scan](https://snyk.io/test/github/jhannes/logevents/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/jhannes/logevents?targetFile=pom.xml)
 
-
 Setting up and configuring logging should be *easy*, whether you want to do it with
-configuration files or in code. Log Events is a small logging framework built on top of
-SLF4J - the logging lingua franka for Java which include nice formatting, file observers,
-as well as logging to Slack, Microsoft Teams, a web dashboard and SMTP out of the box.
+configuration files or in code. Log Events is a small (250kb, no dependencies) logging framework
+built on top of SLF4J - the logging lingua franka for Java. It include nice formatting,
+[file observers](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html),
+as well as logging to [Slack]((https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html),
+[Microsoft Teams](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html),
+[database](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/DatabaseLogEventObserver.html),
+a [web dashboard](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlet/LogEventServlet.html)
+and [SMTP](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SmtpLogEventObserver.html)
+out of [the box](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/).
 
 ## Quick start:
 
-1. Add `org.logevents:logevents:0.1.16` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
+1. Add `org.logevents:logevents:0.1.17` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
 2. Add `logevents.properties` to your current working directory or `src/main/java` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level. Read more about [logevents.properties](https://jhannes.github.io/logevents/apidocs/org/logevents/config/DefaultLogEventConfigurator.html)
 3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to [the file](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) `logs/<your-app-name>-%date.log` and warning events to [console](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html).
 4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html">PatternEventLogFormatter</a> for more details.
 5. You can simply add a [Slack observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html) as well. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`. If you prefer Microsoft Teams, you can use [MicrosoftTeamsLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html) instead.
 6. If your application is running in a servlet container, you can add the `observer.servlet=[WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)` and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/LogEventsServlet.html) to your servlet container. Set `root=DEBUG file,console,slack,servlet` to enable. See [OpenIdConfiguration](https://jhannes.github.io/logevents/apidocs/org/logevents/util/openid/OpenIdConfiguration.html) to learn how to secure your LogEventServlet.
 7. To make link to the Log Events dashboard in Slack messages, configure `observer.slack.formatter.detailUrl=<where you exposed your LogEventsServlet>`. In order to decrease the amount of potentially sensitive information logged to Slack, configure `observer.slack.formatter=SlackAlertOnlyFormatter` (similarly with MicrosoftTeamsAlertOnlyFormatter).
+8. To save log message in a database between restarts and so load balanced nodes can view each others log messages, configure `observer.servlet.source=[WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)` and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/LogEventsServlet.html) to your servlet container. Set `root=DEBUG file,console,slack,servlet` to enable. See [OpenIdConfiguration](https://jhannes.github.io/logevents/apidocs/org/logevents/util/openid/OpenIdConfiguration.html)`
+9. To ensure that all uncaught exceptions in your application are logged, add `installExceptionHandler=true` to  logevents.properties`
 
 Here is a simple, but powerful [`logevent.properties`](https://jhannes.github.io/logevents/apidocs/org/logevents/config/DefaultLogEventConfigurator.html):
 
 ```
+# Output LogEvents configuration to system err
+status=DEBUG
+installExceptionHandler=true
+
 observer.slack=SlackLogEventObserver
 observer.slack.slackUrl=....
 observer.slack.threshold=WARN
@@ -33,15 +44,22 @@ observer.slack.sourceCode.1.package=org.logevents
 observer.slack.sourceCode.1.maven=org.logevents/logevents
 
 observer.console.threshold=WARN
+# If you want LogEvents to output to standard error instead of standard out
+observer.console.outputToSyserr=true
 
 observer.servlet=WebLogEventObserver
 observer.servlet.openIdIssuer=https://login.microsoftonline.com/.../v2.0
 observer.servlet.clientId=..
 observer.servlet.clientSecret=...
+observer.servlet.source.jdbcUrl=jdbc:postgresql:logevents
+observer.servlet.source.jdbcUsername=logevents
+observer.servlet.source.jdbcPassword=33sg423sgaw21
 
 observer.*.packageFilter=sun.reflect
+observer.*.includeMdcKeys=clientIp, request
 
-root=DEBUG file,console,slack,servlet
+root=INFO file,console,slack,servlet
+logger.org.example=DEBUG
 ```
 
 ![cmd screenshot](doc/cmd-with-bash-cropped.png)
@@ -224,7 +242,7 @@ Include Logevents maven dependency:
 <dependency>
     <groupId>org.logevents</groupId>
     <artifactId>logevents</artifactId>
-    <version>0.1.16</version>
+    <version>0.1.17</version>
 </dependency>
 ```
 

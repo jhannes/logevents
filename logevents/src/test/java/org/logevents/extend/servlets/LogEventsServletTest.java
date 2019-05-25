@@ -5,9 +5,9 @@ import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
+import org.logevents.config.Configuration;
 import org.logevents.observers.LogEventBuffer;
 import org.logevents.observers.WebLogEventObserver;
-import org.logevents.util.Configuration;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.openid.OpenIdConfiguration;
@@ -33,9 +33,13 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class LogEventsServletTest extends LogEventsServlet {
 

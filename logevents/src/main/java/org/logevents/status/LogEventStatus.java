@@ -1,8 +1,8 @@
 package org.logevents.status;
 
+import org.logevents.config.Configuration;
 import org.logevents.status.StatusEvent.StatusLevel;
 import org.logevents.util.CircularBuffer;
-import org.logevents.util.Configuration;
 
 import java.util.ArrayList;
 import java.util.List;

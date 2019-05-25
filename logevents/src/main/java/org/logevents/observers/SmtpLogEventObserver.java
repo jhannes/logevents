@@ -1,8 +1,8 @@
 package org.logevents.observers;
 
+import org.logevents.config.Configuration;
 import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.smtp.SmtpLogEventBatchProcessor;
-import org.logevents.util.Configuration;
 
 import java.util.Properties;
 

@@ -1,4 +1,4 @@
-package org.logevents.util;
+package org.logevents.config;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;

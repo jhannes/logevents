@@ -1,7 +1,7 @@
 package org.logevents.formatting;
 
 import org.logevents.LogEvent;
-import org.logevents.util.Configuration;
+import org.logevents.config.Configuration;
 import org.logevents.util.pattern.PatternConverterSpec;
 import org.logevents.util.pattern.PatternReader;
 import org.slf4j.Marker;

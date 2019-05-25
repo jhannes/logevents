@@ -1,7 +1,7 @@
 package org.logevents.extend.servlets;
 
+import org.logevents.config.Configuration;
 import org.logevents.formatting.AbstractExceptionFormatter;
-import org.logevents.util.Configuration;
 
 import java.util.ArrayList;
 import java.util.HashMap;

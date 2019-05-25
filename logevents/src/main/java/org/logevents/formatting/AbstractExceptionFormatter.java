@@ -1,8 +1,8 @@
 package org.logevents.formatting;
 
+import org.logevents.config.Configuration;
+import org.logevents.config.LogEventConfigurationException;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.Configuration;
-import org.logevents.util.LogEventConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;

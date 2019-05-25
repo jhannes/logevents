@@ -1,10 +1,10 @@
 package org.logevents.observers;
 
 import org.junit.Test;
+import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.smtp.SmtpLogEventBatchProcessor;
-import org.logevents.util.Configuration;
 import org.slf4j.event.Level;
 
 import javax.mail.MessagingException;

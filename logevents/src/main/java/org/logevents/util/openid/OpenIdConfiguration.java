@@ -1,6 +1,6 @@
 package org.logevents.util.openid;
 
-import org.logevents.util.Configuration;
+import org.logevents.config.Configuration;
 import org.logevents.util.JsonParser;
 import org.logevents.util.NetUtils;
 

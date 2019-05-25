@@ -20,7 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class LogEventFilterTest {
 
@@ -250,12 +252,12 @@ public class LogEventFilterTest {
 
     private void assertCollectionIncludes(LogEvent logEvent, LogEventFilter filter) {
         assertTrue("Expect " + filter + " to include " + logEvent,
-                logsByLevel.query(filter).getEvents().stream().collect(Collectors.toList()).contains(logEvent));
+                logsByLevel.query(filter).getEvents().contains(logEvent));
     }
 
     private void assertCollectionDoesNotContain(LogEvent logEvent, LogEventFilter filter) {
         assertFalse("Expect " + filter + " to exclude " + logEvent,
-                logsByLevel.query(filter).getEvents().stream().collect(Collectors.toList()).contains(logEvent));
+                logsByLevel.query(filter).getEvents().contains(logEvent));
     }
 
     private Map<String, String[]> parameters(String name, String... values) {

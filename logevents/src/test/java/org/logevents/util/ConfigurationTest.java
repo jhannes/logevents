@@ -1,6 +1,9 @@
 package org.logevents.util;
 
 import org.junit.Test;
+import org.logevents.config.ConfigUtil;
+import org.logevents.config.Configuration;
+import org.logevents.config.LogEventConfigurationException;
 
 import java.util.Arrays;
 import java.util.HashSet;
