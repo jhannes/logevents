@@ -165,14 +165,22 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @return the activated profiles for the current JVM as a list of strings
      */
     protected List<String> getProfiles() {
-        List<String> systemProfiles = Arrays.asList(System.getProperty("profiles", System.getProperty("spring.profiles.active", "")).split(","));
-        List<String> environmentProfiles = Optional.ofNullable(System.getenv("PROFILES"))
-                .map(s -> s.split(","))
-                .map(Arrays::asList).orElse(new ArrayList<>());
-
         List<String> profiles = new ArrayList<>();
-        profiles.addAll(systemProfiles);
-        profiles.addAll(Arrays.asList(System.getProperty("profiles", System.getProperty("spring.profiles.active", "")).split(",")));
+        Optional.ofNullable(System.getenv("PROFILES"))
+                .map(s -> s.split(","))
+                .ifPresent(p -> profiles.addAll(Arrays.asList(p)));
+        Optional.ofNullable(System.getenv("PROFILE"))
+                .map(s -> s.split(","))
+                .ifPresent(p -> profiles.addAll(Arrays.asList(p)));
+        Optional.ofNullable(System.getProperty("profiles"))
+                .map(s -> s.split(","))
+                .ifPresent(p -> profiles.addAll(Arrays.asList(p)));
+        Optional.ofNullable(System.getProperty("profile"))
+                .map(s -> s.split(","))
+                .ifPresent(p -> profiles.addAll(Arrays.asList(p)));
+        Optional.ofNullable(System.getProperty("spring.profiles.active"))
+                .map(s -> s.split(","))
+                .ifPresent(p -> profiles.addAll(Arrays.asList(p)));
         return profiles;
     }
 
