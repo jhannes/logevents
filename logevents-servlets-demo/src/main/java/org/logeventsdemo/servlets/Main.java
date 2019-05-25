@@ -38,7 +38,7 @@ public class Main {
 
         new Thread(Main::makeNoise).start();
 
-        Server server = new Server(4000);
+        Server server = new Server(Integer.parseInt(System.getProperty("httpPort", "4000")));
         server.setHandler(demoContext());
 
         server.start();
@@ -57,6 +57,7 @@ public class Main {
 
     private static final Random random = new Random();
 
+    @SafeVarargs
     private static <T> T pickOne(T... options) {
         return options[random.nextInt(options.length)];
     }

@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 
 /**
  * Queries a list of {@link LogEvent} objects by time, interval, {@link #threadNames},
- * {@link #loggers}, {@link #level}, {@link #markers} and {@link #mdcFilter}.
+ * {@link #loggers}, {@link #level}, {@link #markers}, {@link #mdcFilter} and {@link #nodeNames}.
  * <p>
  *     Use {@link #test(LogEvent)} to filter a {@link Stream} of
  *     {@link LogEvent}s .
@@ -38,6 +38,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
     private final Instant endTime;
     private final Level level;
     private final Optional<List<String>> threadNames;
+    private final Optional<List<String>> nodeNames;
     private final Optional<List<String>> loggers;
     private final Optional<List<Marker>> markers;
     private final Optional<Map<String, List<String>>> mdcFilter;
@@ -72,6 +73,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
                 .orElse(Level.INFO);
         this.markers = getParameter(parameters,"marker")
                 .map(m -> m.stream().map(MarkerFactory::getMarker).collect(Collectors.toList()));
+        this.nodeNames = getParameter(parameters, "node");
 
         Map<String, List<String>> mdcFilter = new HashMap<>();
         Pattern pattern = Pattern.compile("mdc\\[(.*)]");
@@ -115,6 +117,10 @@ public class LogEventFilter implements Predicate<LogEvent> {
 
     public Optional<List<String>> getThreadNames() {
         return threadNames;
+    }
+
+    public Optional<List<String>> getNodes() {
+        return nodeNames;
     }
 
     public Optional<Map<String, List<String>>> getMdcFilter() {

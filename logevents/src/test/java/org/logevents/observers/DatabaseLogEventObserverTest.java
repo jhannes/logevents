@@ -126,6 +126,18 @@ public class DatabaseLogEventObserverTest {
     }
 
     @Test
+    public void shouldFilterOnNodes() {
+        LogEvent event = new LogEventSampler().withLevel(Level.INFO).withMarker().build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
+        parameters.put("node", new String[] { "some.example.org" });
+        assertDoesNotContain(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
+        parameters.put("node", new String[] { "some.example.org", Configuration.calculateNodeName() });
+        assertContains(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
+    }
+
+    @Test
     public void shouldFilterOnThreads() {
         LogEvent event = new LogEventSampler().build();
         observer.processBatch(new LogEventBatch().add(event));

@@ -140,12 +140,10 @@
                     <option value="ERROR">ERROR</option>
                 </select>
             </fieldset>
-            <fieldset id="threads">
-            </fieldset>
-            <fieldset id="loggers">
-            </fieldset>
-            <fieldset id="markers">
-            </fieldset>
+            <fieldset id="threads"></fieldset>
+            <fieldset id="loggers"></fieldset>
+            <fieldset id="markers"></fieldset>
+            <fieldset id="nodes"></fieldset>
             <fieldset id="mdcFilter">
                 <div>
                     <label>
@@ -244,6 +242,7 @@ function showLogEventTable() {
         const ul = document.createElement("ul");
         ul.appendChild(listItem("Logger", logEvent.logger, "logger"));
         ul.appendChild(listItem("Thread", logEvent.thread, "thread"));
+        ul.appendChild(listItem("Node", logEvent.node, "node"));
         if (logEvent.marker) {
             ul.appendChild(listItem("Marker", logEvent.marker, "marker"));
         }
@@ -313,6 +312,7 @@ function showFacets(facets) {
     const dateTimeFieldset = document.getElementById("dateTime");
     const loggersFieldset = document.getElementById("loggers");
     const markersFieldset = document.getElementById("markers");
+    const nodesFieldset = document.getElementById("nodes");
 
     document.getElementById("time").value = currentFilter.get("time");
     const selectedInterval = document.querySelector("[name=interval] [value=" + currentFilter.get("interval") + "]");
@@ -344,7 +344,6 @@ function showFacets(facets) {
     }
 
     markersFieldset.innerHTML = "";
-
     for (const marker of facets.markers) {
         markersFieldset.appendChild(checkbox("marker", marker));
     }
@@ -362,6 +361,10 @@ function showFacets(facets) {
     loggersFieldset.innerHTML = "";
     for (const logger of facets.loggers) {
         loggersFieldset.appendChild(checkbox("logger", logger.name, logger.abbreviatedName));
+    }
+    nodesFieldset.innerHTML = "";
+    for (const node of facets.nodes) {
+        nodesFieldset.appendChild(checkbox("node", node));
     }
 
     const mdcFilter = document.getElementById("mdcFilter");
