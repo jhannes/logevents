@@ -120,7 +120,11 @@ public class CircularBuffer<T> implements Collection<T> {
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException();
+        for (int i = 0; i < buffer.length; i++) {
+            buffer[i] = null;
+        }
+        size = 0;
+        start = 0;
     }
 
     @Override

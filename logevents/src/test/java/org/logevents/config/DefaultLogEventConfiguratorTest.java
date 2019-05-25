@@ -4,9 +4,11 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
+import org.logevents.extend.junit.LogEventRule;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.status.LogEventStatus;
@@ -244,6 +246,27 @@ public class DefaultLogEventConfiguratorTest {
                 .apply(logEvent);
         assertTrue(formattedMessage + " should start with test name",
                 formattedMessage.contains("TEST(DefaultLogEventConfiguratorTest.shouldFindTestMethod)"));
+    }
+
+    @Rule
+    public LogEventRule captureLogEvents = new LogEventRule(Level.ERROR, LogEventFactory.getInstance().getRootLogger());
+
+    @Test
+    public void shouldInstallDefaultExceptionHandler() throws InterruptedException {
+        Properties properties = new Properties();
+        properties.put("logevents.installExceptionHandler", "true");
+        new DefaultLogEventConfigurator().applyConfigurationProperties(factory, properties);
+        factory.setRootObserver(captureLogEvents);
+
+        NumberFormatException exception = new NumberFormatException("Something happened");
+        Thread thread = new Thread(() -> {
+            throw exception;
+        });
+        thread.setName("SomeThread-121");
+        thread.start();
+        thread.join();
+
+        captureLogEvents.assertContainsMessage(Level.ERROR, "Thread SomeThread-121 terminated with unhandled exception", exception);
     }
 
 

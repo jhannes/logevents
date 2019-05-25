@@ -131,7 +131,10 @@ public class LogEventFactory implements ILoggerFactory {
     }
 
     public void setObserver(String loggerName, LogEventObserver observer) {
-        LoggerConfiguration logger = getLogger(loggerName);
+        setObserver(observer, getLogger(loggerName));
+    }
+
+    public void setObserver(LogEventObserver observer, LoggerConfiguration logger) {
         logger.replaceObserver(observer);
         refreshLoggers((LoggerDelegator) logger);
     }

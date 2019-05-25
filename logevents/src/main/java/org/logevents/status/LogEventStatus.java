@@ -28,7 +28,7 @@ public class LogEventStatus {
         });
         for (String status : configuration.listProperties("status")) {
             String level = configuration.getString("status." + status);
-            System.setProperty(status, level);
+            System.setProperty("logevents.status." + status, level);
             addDebug(this, "Set threshold " + StatusLevel.valueOf(level) + " for " + status);
         }
     }
@@ -124,5 +124,10 @@ public class LogEventStatus {
                 "headMessages=" + headMessages.size() + "," +
                 "threshold=" + getThreshold() +
                 '}';
+    }
+
+    public void clear() {
+        headMessages.clear();
+        tailMessages.clear();
     }
 }

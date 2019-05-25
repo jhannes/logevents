@@ -26,13 +26,17 @@ public class LogEventRule implements TestRule, LogEventObserver {
     private Level level;
     private List<LogEvent> events = new ArrayList<>();
 
-    public LogEventRule(Level level, String logName) {
+    public LogEventRule(Level level, Logger logger) {
         this.level = level;
-        this.logger = LoggerFactory.getLogger(logName);
+        this.logger = logger;
+    }
+
+    public LogEventRule(Level level, String logName) {
+        this(level, LoggerFactory.getLogger(logName));
     }
 
     public LogEventRule(Level level, Class<?> category) {
-        this(level, category.getName());
+        this(level, LoggerFactory.getLogger(category));
     }
 
     public void setLevel(Level level) {

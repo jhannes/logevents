@@ -75,6 +75,16 @@ public class JsonUtilTest {
                 new JsonUtil("", "").toJson(parsedText));
     }
 
+    @Test
+    public void shouldParseNumbers() {
+        Map<String, Object> jsonObject = new HashMap<>();
+        jsonObject.put("longNumber", 123L);
+        jsonObject.put("floatNumber", 123.25);
+        Map<String, Object> stringifiedObject = JsonParser.parseObject(JsonUtil.toIndentedJson(jsonObject));
+
+        assertEquals(jsonObject, stringifiedObject);
+    }
+
     private void assertJsonOutput(String expected, Map<String, Object> jsonObject) {
         assertEquals(expected, new JsonUtil("", "").toJson(jsonObject));
     }
