@@ -88,50 +88,64 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         this.nodeName = configuration.getNodeName();
 
         try (Connection connection = getConnection()) {
-            try (ResultSet tables = connection.getMetaData().getTables(null, null, logEventsTable, null)) {
-                if (!tables.next()) {
-                    try (Statement statement = connection.createStatement()) {
-                        statement.executeUpdate("create table " + logEventsTable + "(" +
-                                "event_id varchar(100) primary key, " +
-                                "logger varchar(100) not null, " +
-                                "level varchar(10) not null, " +
-                                "level_int integer not null, " +
-                                "message text not null, " +
-                                "formatted_message text not null, " +
-                                "message_json text not null, " +
-                                "instant bigint not null, " +
-                                "thread varchar(100) not null," +
-                                "arguments varchar(1000) not null," +
-                                "marker varchar(100)," +
-                                "throwable varchar(100)," +
-                                "stack_trace text," +
-                                "node_name varchar(100) not null" +
-                                ")"
-                        );
-                        statement.executeUpdate("create index " + logEventsTable + "_logger_idx on " + logEventsTable + "(logger)");
-                        statement.executeUpdate("create index " + logEventsTable + "_level_idx on " + logEventsTable + "(level)");
-                        statement.executeUpdate("create index " + logEventsTable + "_instant_idx on " + logEventsTable + "(instant)");
-                        statement.executeUpdate("create index " + logEventsTable + "_thread_idx on " + logEventsTable + "(thread)");
-                        statement.executeUpdate("create index " + logEventsTable + "_marker_idx on " + logEventsTable + "(marker)");
-                        statement.executeUpdate("create index " + logEventsTable + "_node_name_idx on " + logEventsTable + "(node_name)");
-                    }
-                }
+            if (!tableExists(connection, logEventsTable)) {
+                createLogEventsTable(connection);
             }
-            try (ResultSet tables = connection.getMetaData().getTables(null, null, logEventsMdcTable, null)) {
-                if (!tables.next()) {
-                    try (Statement statement = connection.createStatement()) {
-                        statement.executeUpdate("create table " + logEventsMdcTable + " (" +
-                                "event_id varchar(100) not null references " + logEventsTable + "(event_id), " +
-                                "name varchar(100) not null, " +
-                                "value varchar(20) not null" +
-                                ")"
-                        );
-                        statement.executeUpdate("create index " + logEventsMdcTable + "_idx on " + logEventsMdcTable + "(name, value)");
-                    }
-                }
+            if (!tableExists(connection, logEventsMdcTable)) {
+                createMdcTable(connection);
             }
         } catch (SQLException e) {
             LogEventStatus.getInstance().addFatal(this, "Failed to initialize database", e);
+        }
+    }
+
+    private boolean tableExists(Connection connection, String tableName) throws SQLException {
+        try (ResultSet tables = connection.getMetaData().getTables(null, null, null, new String[] { "TABLE" })) {
+            while (tables.next()) {
+                String rowTableName = tables.getString("TABLE_NAME");
+                if (rowTableName.equalsIgnoreCase(tableName)) return true;
+            }
+            return false;
+        }
+    }
+
+    public void createMdcTable(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate("create table " + logEventsMdcTable + " (" +
+                    "event_id varchar(100) not null references " + logEventsTable + "(event_id), " +
+                    "name varchar(100) not null, " +
+                    "value varchar(20) not null" +
+                    ")"
+            );
+            statement.executeUpdate("create index " + logEventsMdcTable + "_idx on " + logEventsMdcTable + "(name, value)");
+        }
+    }
+
+    public void createLogEventsTable(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate("create table " + logEventsTable + "(" +
+                    "event_id varchar(100) primary key, " +
+                    "logger varchar(100) not null, " +
+                    "level varchar(10) not null, " +
+                    "level_int integer not null, " +
+                    "message text not null, " +
+                    "formatted_message text not null, " +
+                    "message_json text not null, " +
+                    "instant bigint not null, " +
+                    "thread varchar(100) not null," +
+                    "arguments varchar(1000) not null," +
+                    "marker varchar(100)," +
+                    "throwable varchar(100)," +
+                    "stack_trace text," +
+                    "node_name varchar(100) not null" +
+                    ")"
+            );
+            statement.executeUpdate("create index " + logEventsTable + "_logger_idx on " + logEventsTable + "(logger)");
+            statement.executeUpdate("create index " + logEventsTable + "_level_idx on " + logEventsTable + "(level)");
+            statement.executeUpdate("create index " + logEventsTable + "_instant_idx on " + logEventsTable + "(instant)");
+            statement.executeUpdate("create index " + logEventsTable + "_thread_idx on " + logEventsTable + "(thread)");
+            statement.executeUpdate("create index " + logEventsTable + "_marker_idx on " + logEventsTable + "(marker)");
+            statement.executeUpdate("create index " + logEventsTable + "_node_name_idx on " + logEventsTable + "(node_name)");
         }
     }
 
@@ -167,6 +181,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
 
                             jsonEvent.put("abbreviatedLogger", LogEvent.getAbbreviatedLoggerName(jsonEvent.get("logger").toString(), 0));
                             jsonEvent.put("levelIcon", JsonLogEventsBatchFormatter.emojiiForLevel(Level.valueOf(jsonEvent.get("level").toString())));
+                            jsonEvent.put("node", rs.getString("node_name"));
 
                             idToJson.put(id, jsonEvent);
 
@@ -206,6 +221,10 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         filter.getThreadNames().ifPresent(threads -> {
             filters.add("thread in (" + questionMarks(threads.size()) + ")");
             parameters.addAll(threads);
+        });
+        filter.getNodes().ifPresent(nodes -> {
+            filters.add("node_name in (" + questionMarks(nodes.size()) + ")");
+            parameters.addAll(nodes);
         });
         filter.getMdcFilter().ifPresent(mdcFilter -> {
             List<String> mdcFilters = new ArrayList<>();
