@@ -1,10 +1,9 @@
-package org.logevents.util;
+package org.logevents.config;
 
+import junit.framework.TestCase;
 import org.junit.Test;
-import org.logevents.config.ConfigUtil;
-import org.logevents.config.Configuration;
-import org.logevents.config.LogEventConfigurationException;
 
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
@@ -115,7 +114,29 @@ public class ConfigurationTest {
 
         assertEquals(new HashSet<>(Arrays.asList("foo", "bar", "baz")),
                 configuration.listProperties("markers"));
+    }
 
+    @Test
+    public void shouldDetermineJarName() {
+        Properties properties = new Properties();
+
+        assertEquals("junit", Configuration.determineJarName(TestCase.class.getName()));
+        assertEquals(currentWorkingDirectory(), Configuration.determineJarName(String.class.getName()));
+        assertEquals(currentWorkingDirectory(), Configuration.determineJarName(getClass().getName()));
+    }
+
+    @Test
+    public void shouldCalculateApplicationNameFromJarName() {
+        String prefix = "/usr/local/apps/myApp/";
+        assertEquals("my-little-app", Configuration.toApplicationName(prefix + "my-little-app.jar"));
+        assertEquals("random-app", Configuration.toApplicationName(prefix + "random-app-1.2.jar"));
+        assertEquals("random-app", Configuration.toApplicationName(prefix + "random-app-1.2.11.jar"));
+        assertEquals("logevents-demo", Configuration.toApplicationName(prefix + "logevents-demo-1.2.11-SNAPSHOT.jar"));
+        assertEquals("logevents-demo", Configuration.toApplicationName(prefix + "logevents-demo-1.2.11-alfa2.jar"));
+    }
+
+    private static String currentWorkingDirectory() {
+        return Paths.get("").toAbsolutePath().getFileName().toString();
     }
 
     private void assertConfigurationError(Runnable r, String expected) {

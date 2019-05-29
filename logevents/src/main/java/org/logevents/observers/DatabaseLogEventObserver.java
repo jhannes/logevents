@@ -63,7 +63,7 @@ import java.util.stream.Stream;
  * observer.db.logeventsMdcTable=log_events_mdc
  * </pre>
  */
-// TODO: Filter on node
+// TODO: Filter on applicationName
 public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventSource {
 
     private final String jdbcUrl;
@@ -87,10 +87,16 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
 
         try (Connection connection = getConnection()) {
             if (!tableExists(connection, logEventsTable)) {
+                LogEventStatus.getInstance().addInfo(this, "Creating table " + logEventsTable);
                 createLogEventsTable(connection);
+            } else {
+                LogEventStatus.getInstance().addDebug(this, "Table " + logEventsMdcTable + " already exists");
             }
             if (!tableExists(connection, logEventsMdcTable)) {
+                LogEventStatus.getInstance().addInfo(this, "Creating table " + logEventsMdcTable);
                 createMdcTable(connection);
+            } else {
+                LogEventStatus.getInstance().addDebug(this, "Table " + logEventsMdcTable + " already exists");
             }
         } catch (SQLException e) {
             LogEventStatus.getInstance().addFatal(this, "Failed to initialize database", e);

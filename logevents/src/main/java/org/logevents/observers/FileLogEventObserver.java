@@ -10,12 +10,9 @@ import org.logevents.util.pattern.PatternReader;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.CodeSource;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -52,66 +49,28 @@ public class FileLogEventObserver implements LogEventObserver {
      * will be used. If the main class of the application was loaded from a directory,
      * the current working directory base name will be used.
      */
-    public static String defaultFilename() {
-        Optional<String> filename = Thread.getAllStackTraces().entrySet().stream()
-                .filter(pair -> pair.getKey().getName().equals("main"))
-                .map(Map.Entry::getValue)
-                .findAny()
-                .map(stackTrace ->
-                    (isRunningInTest(stackTrace))
-                            ? "logs/" + currentWorkingDirectory() + "-test.log"
-                            : "logs/" + determineJarName(stackTrace[stackTrace.length-1].getClassName()) + "-%date.log"
-                );
-        return filename.orElse("logs/" + currentWorkingDirectory() + "-%date.log");
-    }
-
-    static String determineJarName(String className) {
-        try {
-            CodeSource codeSource = Class.forName(className).getProtectionDomain().getCodeSource();
-            if (codeSource == null) {
-                return currentWorkingDirectory();
-            }
-            String path = codeSource.getLocation().getPath();
-            if (path.endsWith("/")) {
-                return currentWorkingDirectory();
-            }
-            return toApplicationName(path);
-        } catch (ClassNotFoundException e) {
-            return currentWorkingDirectory();
+    public static String defaultFilename(Configuration configuration) {
+        if (Configuration.isRunningInTest()) {
+            return "logs/" + configuration.getApplicationName() + "-test.log";
+        } else {
+            return "logs/" + configuration.getApplicationName() + "-%date.log";
         }
     }
-
-    /** Remove directory name, .jar suffix and semver version from file path */
-    static String toApplicationName(String jarPath) {
-        int lastSlash = jarPath.lastIndexOf('/');
-        String filename = jarPath.substring(lastSlash + 1);
-        return filename
-                .replaceAll("(-\\d+(\\.\\d+)*(-[0-9A-Za-z-.]+)?)?\\.jar$", "");
-    }
-
-    static String currentWorkingDirectory() {
-        return Paths.get("").toAbsolutePath().getFileName().toString();
-    }
-
-    private static boolean isRunningInTest(StackTraceElement[] stackTrace) {
-        return Arrays.stream(stackTrace)
-                .anyMatch(ste -> ste.getClassName().startsWith("org.junit.runners."));
-    }
-
 
     public FileLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 
     public FileLogEventObserver(Configuration configuration) {
-        this(Optional.of(createFormatter(configuration)), configuration.optionalString("filename"));
+        this(Optional.of(createFormatter(configuration)),
+                configuration.optionalString("filename").orElse(defaultFilename(configuration)));
         formatter.configure(configuration);
         configuration.checkForUnknownFields();
     }
 
-    public FileLogEventObserver(Optional<LogEventFormatter> formatter, Optional<String> path) {
+    public FileLogEventObserver(Optional<LogEventFormatter> formatter, String path) {
         this.formatter = formatter.orElse(new TTLLEventLogFormatter());
-        this.path = Paths.get(path.orElseGet(FileLogEventObserver::defaultFilename));
+        this.path = Paths.get(path);
 
         this.filenameGenerator = new PatternReader<>(factory).readPattern(this.path.getFileName().toString());
         this.destination = new FileDestination(this.path.getParent());

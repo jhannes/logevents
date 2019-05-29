@@ -17,7 +17,7 @@ import java.util.Properties;
 public class DateRollingLogEventObserver extends FileLogEventObserver {
 
     public DateRollingLogEventObserver(String fileName, LogEventFormatter formatter) {
-        super(Optional.of(formatter), Optional.of(fileName));
+        super(Optional.of(formatter), fileName);
     }
 
     public DateRollingLogEventObserver(String fileName) {

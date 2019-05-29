@@ -4,8 +4,11 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -21,6 +24,59 @@ public class Configuration {
     public Configuration(Properties properties, String prefix) {
         this.properties = properties;
         this.prefix = prefix;
+    }
+
+    public String getApplicationName() {
+        return optionalString("application")
+                .orElseGet(Configuration::calculateApplicationName);
+    }
+
+    public static String calculateApplicationName() {
+        return Thread.getAllStackTraces().entrySet().stream()
+                .filter(pair -> pair.getKey().getName().equals("main"))
+                .map(Map.Entry::getValue)
+                .findAny()
+                .filter(stackTrace -> (!isRunningInTest(stackTrace)))
+                .map(stackTrace -> determineJarName(stackTrace[stackTrace.length - 1].getClassName()))
+                .orElseGet(Configuration::currentWorkingDirectory);
+    }
+
+    public static boolean isRunningInTest() {
+        return Thread.getAllStackTraces().entrySet().stream()
+                .filter(pair -> pair.getKey().getName().equals("main"))
+                .map(Map.Entry::getValue)
+                .findAny()
+                .filter(Configuration::isRunningInTest)
+                .isPresent();
+    }
+
+    private static boolean isRunningInTest(StackTraceElement[] stackTrace) {
+        return Arrays.stream(stackTrace)
+                .anyMatch(ste -> ste.getClassName().startsWith("org.junit.runners."));
+    }
+
+    static String determineJarName(String className) {
+        try {
+            return Optional.ofNullable(Class.forName(className).getProtectionDomain().getCodeSource())
+                    .map(codeSource -> codeSource.getLocation().getPath())
+                    .filter(path -> !path.endsWith("/"))
+                    .map(Configuration::toApplicationName)
+                    .orElseGet(Configuration::currentWorkingDirectory);
+        } catch (ClassNotFoundException e) {
+            return currentWorkingDirectory();
+        }
+    }
+
+    private static String currentWorkingDirectory() {
+        return Paths.get("").toAbsolutePath().getFileName().toString();
+    }
+
+    /** Remove directory name, .jar suffix and semver version from file path */
+    static String toApplicationName(String jarPath) {
+        int lastSlash = jarPath.lastIndexOf('/');
+        String filename = jarPath.substring(lastSlash + 1);
+        return filename
+                .replaceAll("(-\\d+(\\.\\d+)*(-[0-9A-Za-z-.]+)?)?\\.jar$", "");
     }
 
     public URL getUrl(String key) {

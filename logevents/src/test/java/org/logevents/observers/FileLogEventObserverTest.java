@@ -1,6 +1,5 @@
 package org.logevents.observers;
 
-import junit.framework.TestCase;
 import org.junit.Test;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
@@ -49,21 +48,6 @@ public class FileLogEventObserverTest {
         FileLogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
 
         assertEquals(CWD + "-test.log", observer.getFilename(new LogEventSampler().build()));
-
-        assertEquals(CWD, FileLogEventObserver.currentWorkingDirectory());
-        assertEquals("junit", FileLogEventObserver.determineJarName(TestCase.class.getName()));
-        assertEquals(CWD, FileLogEventObserver.determineJarName(String.class.getName()));
-        assertEquals(CWD, FileLogEventObserver.determineJarName(getClass().getName()));
-    }
-
-    @Test
-    public void shouldCalculateApplicationNameFromJarName() {
-        String prefix = "/usr/local/apps/myApp/";
-        assertEquals("my-little-app", FileLogEventObserver.toApplicationName(prefix + "my-little-app.jar"));
-        assertEquals("random-app", FileLogEventObserver.toApplicationName(prefix + "random-app-1.2.jar"));
-        assertEquals("random-app", FileLogEventObserver.toApplicationName(prefix + "random-app-1.2.11.jar"));
-        assertEquals("logevents-demo", FileLogEventObserver.toApplicationName(prefix + "logevents-demo-1.2.11-SNAPSHOT.jar"));
-        assertEquals("logevents-demo", FileLogEventObserver.toApplicationName(prefix + "logevents-demo-1.2.11-alfa2.jar"));
     }
 
     @Test
