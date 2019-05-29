@@ -103,6 +103,19 @@
           },
           {
             "in": "query",
+            "name": "application",
+            "description": "The application that logged the event to include",
+            "collectionFormat": "multi",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "example": "logevents-demo"
+              }
+            }
+          },
+          {
+            "in": "query",
             "name": "mdc",
             "schema": {
               "type": "object"
@@ -171,6 +184,13 @@
               "type": "string"
             },
             "example": ["appserver1.example.com", "appserver2.example.com"]
+          },
+          "applications": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["logevents-demo", "logevents-web-demo"]
           },
           "mdc": {
             "type": "array",
@@ -347,6 +367,10 @@
           "node": {
             "type": "string",
             "example": "appserver1.example.com"
+          },
+          "application": {
+            "type": "string",
+            "example": "logevents-web-demo"
           }
         },
         "required": [

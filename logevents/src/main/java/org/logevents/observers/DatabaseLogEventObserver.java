@@ -63,13 +63,13 @@ import java.util.stream.Stream;
  * observer.db.logeventsMdcTable=log_events_mdc
  * </pre>
  */
-// TODO: Filter on applicationName
 public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventSource {
 
     private final String jdbcUrl;
     private final String jdbcUsername;
     private final String jdbcPassword;
     private final String nodeName;
+    private final String applicationName;
     private final String logEventsTable;
     private final String logEventsMdcTable;
 
@@ -84,6 +84,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         this.logEventsTable = configuration.optionalString("logEventsTable").orElse("LOG_EVENTS").toUpperCase();
         this.logEventsMdcTable = configuration.optionalString("logEventsMdcTable").orElse(logEventsTable + "_MDC").toUpperCase();
         this.nodeName = configuration.getNodeName();
+        this.applicationName = configuration.getApplicationName();
 
         try (Connection connection = getConnection()) {
             if (!tableExists(connection, logEventsTable)) {
@@ -141,7 +142,8 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                     "marker varchar(100)," +
                     "throwable varchar(100)," +
                     "stack_trace text," +
-                    "node_name varchar(100) not null" +
+                    "node_name varchar(100) not null," +
+                    "application_name varchar(100) not null" +
                     ")"
             );
             statement.executeUpdate("create index " + logEventsTable + "_logger_idx on " + logEventsTable + "(logger)");
@@ -186,6 +188,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                             jsonEvent.put("abbreviatedLogger", LogEvent.getAbbreviatedLoggerName(jsonEvent.get("logger").toString(), 0));
                             jsonEvent.put("levelIcon", JsonLogEventsBatchFormatter.emojiiForLevel(Level.valueOf(jsonEvent.get("level").toString())));
                             jsonEvent.put("node", rs.getString("node_name"));
+                            jsonEvent.put("application", rs.getString("application_name"));
 
                             idToJson.put(id, jsonEvent);
 
@@ -229,6 +232,10 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         filter.getNodes().ifPresent(nodes -> {
             filters.add("node_name in (" + questionMarks(nodes.size()) + ")");
             parameters.addAll(nodes);
+        });
+        filter.getApplications().ifPresent(applications -> {
+            filters.add("application_name in (" + questionMarks(applications.size()) + ")");
+            parameters.addAll(applications);
         });
         filter.getMdcFilter().ifPresent(mdcFilter -> {
             List<String> mdcFilters = new ArrayList<>();
@@ -280,7 +287,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     private void saveLogEvents(LogEventBatch batch) {
         try (Connection connection = getConnection()) {
             try (
-                    PreparedStatement eventStmt = connection.prepareStatement("insert into " + logEventsTable + " (event_id, logger, level, level_int, message, formatted_message, message_json, instant, thread, arguments, marker, throwable, stack_trace, node_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    PreparedStatement eventStmt = connection.prepareStatement("insert into " + logEventsTable + " (event_id, logger, level, level_int, message, formatted_message, message_json, instant, thread, arguments, marker, throwable, stack_trace, node_name, application_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     PreparedStatement mdcStmt = connection.prepareStatement("insert into " + logEventsMdcTable + " (event_id, name, value) values (?, ?, ?)")
                     ) {
                 for (LogEvent logEvent : batch) {
@@ -303,6 +310,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                             ? JsonUtil.toIndentedJson(exceptionFormatter.createStackTrace(logEvent.getThrowable()))
                             : null);
                     eventStmt.setString(14, nodeName);
+                    eventStmt.setString(15, applicationName);
                     eventStmt.addBatch();
 
                     for (Map.Entry<String, String> entry : logEvent.getMdcProperties().entrySet()) {
@@ -344,6 +352,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
             summary.setThreads(listDistinct(connection, filter, "thread"));
             summary.setLoggers(listDistinct(connection, filter, "logger"));
             summary.setNodes(listDistinct(connection, filter, "node_name"));
+            summary.setApplications(listDistinct(connection, filter, "application_name"));
             summary.setMdcMap(getMdcMap(connection, filter));
         }
         return summary;

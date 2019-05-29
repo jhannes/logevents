@@ -144,6 +144,7 @@
             <fieldset id="loggers"></fieldset>
             <fieldset id="markers"></fieldset>
             <fieldset id="nodes"></fieldset>
+            <fieldset id="applications"></fieldset>
             <fieldset id="mdcFilter">
                 <div>
                     <label>
@@ -313,6 +314,7 @@ function showFacets(facets) {
     const loggersFieldset = document.getElementById("loggers");
     const markersFieldset = document.getElementById("markers");
     const nodesFieldset = document.getElementById("nodes");
+    const applicationsFieldset = document.getElementById("applications");
 
     document.getElementById("time").value = currentFilter.get("time");
     const selectedInterval = document.querySelector("[name=interval] [value=" + currentFilter.get("interval") + "]");
@@ -365,6 +367,10 @@ function showFacets(facets) {
     nodesFieldset.innerHTML = "";
     for (const node of facets.nodes) {
         nodesFieldset.appendChild(checkbox("node", node));
+    }
+    applicationsFieldset.innerHTML = "";
+    for (const node of facets.applications) {
+        applicationsFieldset.appendChild(checkbox("application", node));
     }
 
     const mdcFilter = document.getElementById("mdcFilter");

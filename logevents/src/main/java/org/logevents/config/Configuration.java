@@ -116,7 +116,6 @@ public class Configuration {
         }
     }
 
-
     public String getString(String key) {
         return optionalString(key)
                 .orElseThrow(() -> new LogEventConfigurationException("Missing required key <" + fullKey(key) + "> in <" + properties.keySet() + ">"));

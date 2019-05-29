@@ -92,6 +92,23 @@ public class DatabaseLogEventObserverTest {
     }
 
     @Test
+    public void shouldSaveApplicationAndNodeName() {
+        LogEvent event = new LogEventSampler().withThrowable().build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        Map<String, Object> savedEvent = observer
+                .query(filter(Optional.of(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)))
+                .getEventsAsJson()
+                .stream()
+                .filter(e -> e.get("formattedMessage").equals(event.getMessage()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionFailedError("Didn't find <" + event.getMessage() + ">"));
+
+        assertEquals(Configuration.calculateNodeName(), savedEvent.get("node"));
+        assertEquals(Configuration.calculateApplicationName(), savedEvent.get("application"));
+    }
+
+    @Test
     public void shouldFilterOnThreshold() {
         LogEvent event = new LogEventSampler().withLevel(Level.INFO).withMarker().build();
         observer.processBatch(new LogEventBatch().add(event));
@@ -137,6 +154,18 @@ public class DatabaseLogEventObserverTest {
         parameters.put("node", new String[] { "some.example.org" });
         assertDoesNotContain(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
         parameters.put("node", new String[] { "some.example.org", Configuration.calculateNodeName() });
+        assertContains(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
+    }
+
+    @Test
+    public void shouldFilterOnApplication() {
+        LogEvent event = new LogEventSampler().withLevel(Level.INFO).withMarker().build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
+        parameters.put("application", new String[] { "example-server" });
+        assertDoesNotContain(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
+        parameters.put("application", new String[] { "example-server", Configuration.calculateApplicationName() });
         assertContains(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
     }
 
@@ -265,6 +294,7 @@ public class DatabaseLogEventObserverTest {
         assertEquals(new HashSet<>(Arrays.asList(event1.getThreadName(), event2.getThreadName(), event3.getThreadName())),
                 summary.getThreads());
         assertEquals(new HashSet<>(Arrays.asList(Configuration.calculateNodeName())), summary.getNodes());
+        assertEquals(new HashSet<>(Arrays.asList(Configuration.calculateApplicationName())), summary.getApplications());
     }
 
     @Test
