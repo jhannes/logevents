@@ -8,6 +8,8 @@ import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.observers.LogEventBuffer;
 import org.logevents.observers.WebLogEventObserver;
+import org.logevents.status.LogEventStatus;
+import org.logevents.status.StatusEvent;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.openid.OpenIdConfiguration;
@@ -88,6 +90,7 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     @Test
     public void shouldRemoveTamperedCookie() {
+        LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
         Cookie sessionCookie = servlet.createSessionCookie(
                 createSessionCookieToken(Instant.now().minusSeconds(2 * 60 * 60).getEpochSecond())
         );

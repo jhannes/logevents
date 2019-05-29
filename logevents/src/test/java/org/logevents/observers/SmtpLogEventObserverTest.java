@@ -4,7 +4,6 @@ import org.junit.Test;
 import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.observers.smtp.SmtpLogEventBatchProcessor;
 import org.slf4j.event.Level;
 
 import javax.mail.MessagingException;
@@ -23,13 +22,12 @@ public class SmtpLogEventObserverTest {
     public void shouldConfigureSmtpLogEventObserver() {
         Properties properties = createConfig();
         SmtpLogEventObserver observer = new SmtpLogEventObserver(createConfiguration());
-        assertEquals("SmtpLogEventObserver{batchProcessor=SmtpLogEventBatchProcessor{smtpHost=smtp.example.com}}", observer.toString());
+        assertEquals("SmtpLogEventObserver{smtpHost=smtp.example.com}", observer.toString());
     }
-
 
     @Test
     public void shouldFormatBatch() throws MessagingException, IOException {
-        SmtpLogEventBatchProcessor batchProcessor = new SmtpLogEventBatchProcessor(createConfiguration());
+        SmtpLogEventObserver batchProcessor = new SmtpLogEventObserver(createConfiguration());
 
         LogEventBatch batch = new LogEventBatch();
         Instant eventTime = Instant.ofEpochMilli(1529655082000L);

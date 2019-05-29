@@ -1,13 +1,14 @@
 package org.logevents.observers;
 
 import org.logevents.config.Configuration;
+import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.observers.batch.BatchThrottler;
 import org.logevents.observers.batch.ExecutorScheduler;
-import org.logevents.observers.batch.HttpPostJsonBatchProcessor;
-import org.logevents.observers.batch.LogEventBatchProcessor;
+import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 
 import java.net.URL;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -22,7 +23,7 @@ import java.util.Properties;
  * observer.slack=SlackLogEventObserver
  * observer.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
  * observer.slack.threshold=WARN
- * observer.slack.slackLogEventsFormatter={@link org.logevents.observers.batch.SlackLogEventsFormatter}
+ * observer.slack.slackLogEventsFormatter={@link SlackLogEventsFormatter}
  * observer.slack.showRepeatsIndividually=false
  * observer.slack.channel=alertChannel
  * observer.slack.cooldownTime=PT10S
@@ -31,21 +32,24 @@ import java.util.Properties;
  * observer.slack.suppressMarkers=BORING_MARKER
  * observer.slack.requireMarker=MY_MARKER, MY_OTHER_MARKER
  * observer.slack.markers.MY_MARKER.throttle=PT1M PT10M PT30M
- * observer.slack.detailUrl=link to your {@link org.logevents.extend.servlets.LogEventsServlet}
+ * observer.slack.detailUrl=link to your {@link LogEventsServlet}
  * </pre>
  *
  * @see BatchingLogEventObserver
  * @see MicrosoftTeamsLogEventObserver
  * @see BatchThrottler
  */
-public class SlackLogEventObserver extends BatchingLogEventObserver {
+public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
+
+    private final SlackLogEventsFormatter formatter;
 
     public SlackLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 
     public SlackLogEventObserver(Configuration configuration) {
-        super(createBatchProcessor(configuration, createFormatter(configuration)));
+        super(configuration.optionalUrl("slackUrl").orElse(null));
+        this.formatter = createFormatter(configuration);
 
         configureFilter(configuration);
         configureBatching(configuration);
@@ -56,14 +60,8 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
     }
 
     public SlackLogEventObserver(URL slackUrl, Optional<String> username, Optional<String> channel) {
-        super(new HttpPostJsonBatchProcessor(slackUrl, new SlackLogEventsFormatter(username, channel)));
-    }
-
-    private static LogEventBatchProcessor createBatchProcessor(Configuration configuration, SlackLogEventsFormatter formatter) {
-        return new HttpPostJsonBatchProcessor(
-                configuration.optionalUrl("slackUrl").orElse(null),
-                formatter
-        );
+        super(slackUrl);
+        this.formatter = new SlackLogEventsFormatter(username, channel);
     }
 
     private static SlackLogEventsFormatter createFormatter(Configuration configuration) {
@@ -89,7 +87,19 @@ public class SlackLogEventObserver extends BatchingLogEventObserver {
                 .ifPresent(channel -> formatter.setChannel(Optional.of(channel)));
         String throttle = configuration.getString("markers." + markerName + ".throttle");
         return new BatchThrottler(
-                new ExecutorScheduler(scheduledExecutorService, shutdownHook), createBatchProcessor(configuration, formatter))
-                .setThrottle(throttle);
+                new ExecutorScheduler(scheduledExecutorService, shutdownHook),
+                this::processBatch
+        ).setThrottle(throttle);
     }
+
+    @Override
+    protected Map<String, Object> formatBatch(LogEventBatch batch) {
+        return formatter.createMessage(batch);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{formatter=" + formatter + ",url=" + getUrl() + '}';
+    }
+
 }

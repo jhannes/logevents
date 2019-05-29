@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -23,10 +24,10 @@ public class BatchThrottler implements LogEventObserver {
     private List<Duration> throttle = new ArrayList<>();
     private int throttleIndex = 0;
     private LogEventBatch currentBatch = new LogEventBatch();
-    private LogEventBatchProcessor batchProcessor;
+    private Consumer<LogEventBatch> batchProcessor;
     private Instant lastFlush = Instant.ofEpochMilli(0);
 
-    public BatchThrottler(Scheduler executor, LogEventBatchProcessor batchProcessor) {
+    public BatchThrottler(Scheduler executor, Consumer<LogEventBatch> batchProcessor) {
         this.executor = executor;
         this.executor.setAction(this::flush);
         this.batchProcessor = batchProcessor;
@@ -49,7 +50,7 @@ public class BatchThrottler implements LogEventObserver {
         return this;
     }
 
-    public void setBatchProcessor(LogEventBatchProcessor batchProcessor) {
+    public void setBatchProcessor(Consumer<LogEventBatch> batchProcessor) {
         this.batchProcessor = batchProcessor;
     }
 
@@ -58,7 +59,7 @@ public class BatchThrottler implements LogEventObserver {
         doLogEvent(logEvent, Instant.now());
     }
 
-    private synchronized  void doLogEvent(LogEvent logEvent, Instant now) {
+    private synchronized void doLogEvent(LogEvent logEvent, Instant now) {
         if (currentBatch.isEmpty()) {
             // schedule for execution
             Instant nextFlush = lastFlush.plusMillis(throttle.get(throttleIndex).toMillis());
@@ -79,7 +80,7 @@ public class BatchThrottler implements LogEventObserver {
         if (batchToSend.isEmpty()) {
             throttleIndex = 0;
         } else {
-            batchProcessor.processBatch(batchToSend);
+            batchProcessor.accept(batchToSend);
         }
     }
 

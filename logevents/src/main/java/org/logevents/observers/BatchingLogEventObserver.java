@@ -5,7 +5,6 @@ import org.logevents.config.Configuration;
 import org.logevents.observers.batch.BatchThrottler;
 import org.logevents.observers.batch.ExecutorScheduler;
 import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.observers.batch.LogEventShutdownHook;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.Marker;
@@ -33,8 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@link #idleThreshold} (minimum time between log events in the batch)
  * and {@link #maximumWaitTime} (maximum time from the first message in a batch
  * was generated until the batch is processed). When processing, the
- * {@link BatchingLogEventObserver} sends the whole batch to a
- * {@link LogEventBatchProcessor} for processing. Consecutive Log events with
+ * {@link BatchingLogEventObserver} calls {@link #processBatch(LogEventBatch)}
+ * with the whole batch to process the log events. Consecutive Log events with
  * the same message pattern and log level are grouped together so the processor
  * can easily ignore duplicate messages.
  *
@@ -44,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Johannes Brodwall
  */
-public class BatchingLogEventObserver extends FilteredLogEventObserver {
+public abstract class BatchingLogEventObserver extends FilteredLogEventObserver {
 
     protected static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
             new ThreadFactory() {
@@ -59,12 +58,11 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
                 }
             });
 
-    static LogEventShutdownHook shutdownHook = new LogEventShutdownHook();
+    protected static LogEventShutdownHook shutdownHook = new LogEventShutdownHook();
     static {
         Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
 
-    private final LogEventBatchProcessor batchProcessor;
     protected final ExecutorScheduler scheduler;
 
     protected Duration cooldownTime = Duration.ofSeconds(15);
@@ -77,8 +75,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
     private Map<Marker, BatchThrottler> markerBatchers = new HashMap<>();
     private ScheduledFuture<?> scheduledTask;
 
-    public BatchingLogEventObserver(LogEventBatchProcessor batchProcessor) {
-        this.batchProcessor = batchProcessor;
+    public BatchingLogEventObserver() {
         scheduler = new ExecutorScheduler(scheduledExecutorService, shutdownHook);
         scheduler.setAction(this::execute);
     }
@@ -88,7 +85,6 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
 
         configureFilter(configuration);
         configureBatching(configuration);
-        batchProcessor = configuration.createInstance("batchProcessor", LogEventBatchProcessor.class);
         configuration.checkForUnknownFields();
 
         scheduler = new ExecutorScheduler(scheduledExecutorService, shutdownHook);
@@ -149,9 +145,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
         }
     }
 
-    protected void processBatch(LogEventBatch batch) {
-        batchProcessor.processBatch(batch);
-    }
+    protected abstract void processBatch(LogEventBatch batch);
 
     synchronized LogEventBatch takeCurrentBatch() {
         lastSendTime = Instant.now();
@@ -197,13 +191,9 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
         this.idleThreshold = idleThreshold;
     }
 
-    public LogEventBatchProcessor getBatchProcessor() {
-        return batchProcessor;
-    }
-
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{batchProcessor=" + this.batchProcessor + "}";
+        return getClass().getSimpleName();
     }
 
     /**
@@ -222,7 +212,7 @@ public class BatchingLogEventObserver extends FilteredLogEventObserver {
 
     protected BatchThrottler createBatcher(Configuration configuration, String markerName) {
         String throttle = configuration.getString("markers." + markerName + ".throttle");
-        return new BatchThrottler(new ExecutorScheduler(scheduledExecutorService, shutdownHook), batchProcessor)
+        return new BatchThrottler(new ExecutorScheduler(scheduledExecutorService, shutdownHook), this::processBatch)
                 .setThrottle(throttle);
     }
 

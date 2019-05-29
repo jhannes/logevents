@@ -1,9 +1,10 @@
 package org.logevents.observers;
 
 import org.logevents.config.Configuration;
-import org.logevents.observers.batch.HttpPostJsonBatchProcessor;
+import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.MicrosoftTeamsMessageFormatter;
 
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -17,20 +18,25 @@ import java.util.Properties;
  *
  * <p><strong>State: Preview.</strong></p>
  */
-public class MicrosoftTeamsLogEventObserver extends BatchingLogEventObserver {
+public class MicrosoftTeamsLogEventObserver extends HttpPostJsonLogEventObserver {
+
+    private final MicrosoftTeamsMessageFormatter formatter;
 
     public MicrosoftTeamsLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 
     public MicrosoftTeamsLogEventObserver(Configuration configuration) {
-        super(new HttpPostJsonBatchProcessor(
-                configuration.getUrl("url"),
-                configuration.createInstanceWithDefault("formatter", MicrosoftTeamsMessageFormatter.class)
-        ));
+        super(configuration.getUrl("url"));
         configureFilter(configuration);
         configureBatching(configuration);
+        this.formatter = configuration.createInstanceWithDefault("formatter", MicrosoftTeamsMessageFormatter.class);
 
         configuration.checkForUnknownFields();
+    }
+
+    @Override
+    protected Map<String, Object> formatBatch(LogEventBatch batch) {
+        return formatter.createMessage(batch);
     }
 }

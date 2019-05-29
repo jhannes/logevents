@@ -1,5 +1,6 @@
-package org.logevents.observers.batch;
+package org.logevents.observers;
 
+import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.NetUtils;
@@ -8,13 +9,15 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 
-public class HttpPostJsonBatchProcessor implements LogEventBatchProcessor {
+public abstract class HttpPostJsonLogEventObserver extends BatchingLogEventObserver {
     private URL url;
-    protected JsonLogEventsBatchFormatter jsonMessageFormatter;
 
-    public HttpPostJsonBatchProcessor(URL url, JsonLogEventsBatchFormatter jsonMessageFormatter) {
+    public HttpPostJsonLogEventObserver(URL url) {
         this.url = url;
-        this.jsonMessageFormatter = jsonMessageFormatter;
+    }
+
+    public URL getUrl() {
+        return url;
     }
 
     @Override
@@ -25,21 +28,35 @@ public class HttpPostJsonBatchProcessor implements LogEventBatchProcessor {
         }
         Map<String, Object> jsonMessage;
         try {
-            jsonMessage = jsonMessageFormatter.createMessage(batch);
+            jsonMessage = formatBatch(batch);
         } catch (Exception e) {
             LogEventStatus.getInstance().addFatal(this, "Runtime error generating message", e);
             return;
         }
         try {
-            String response = NetUtils.postJson(url, JsonUtil.toIndentedJson(jsonMessage));
+            String response = postJson(jsonMessage);
             LogEventStatus.getInstance().addTrace(this, "Sent message to " + url + ": " + response);
         } catch (IOException e) {
             LogEventStatus.getInstance().addError(this, "Failed to send message to " + url, e);
         }
     }
 
+    /**
+     * Override this method to customize how to execute the HTTP Post request.
+     * For example, this is a good place to put authentication logic
+     */
+    protected String postJson(Map<String, Object> jsonMessage) throws IOException {
+        return NetUtils.postJson(url, JsonUtil.toIndentedJson(jsonMessage));
+    }
+
+    /**
+     * Override this method to customize how the {@link LogEventBatch} will be
+     * formatted as JSON.
+     */
+    protected abstract Map<String, Object> formatBatch(LogEventBatch batch);
+
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{jsonMessageFormatter=" + jsonMessageFormatter + ",url=" + url + '}';
+        return getClass().getSimpleName() + "{url=" + url + '}';
     }
 }

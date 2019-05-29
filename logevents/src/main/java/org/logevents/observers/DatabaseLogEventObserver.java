@@ -7,7 +7,6 @@ import org.logevents.extend.servlets.JsonMessageFormatter;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
 import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.observers.batch.LogEventBatchProcessor;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventQueryResult;
 import org.logevents.query.LogEventSummary;
@@ -65,7 +64,7 @@ import java.util.stream.Stream;
  * </pre>
  */
 // TODO: Filter on node
-public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventBatchProcessor, LogEventSource {
+public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventSource {
 
     private final String jdbcUrl;
     private final String jdbcUsername;
@@ -79,7 +78,6 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     }
 
     public DatabaseLogEventObserver(Configuration configuration) {
-        super(null);
         this.jdbcUrl = configuration.getString("jdbcUrl");
         this.jdbcUsername = configuration.getString("jdbcUsername");
         this.jdbcPassword = configuration.optionalString("jdbcPassword").orElse("");

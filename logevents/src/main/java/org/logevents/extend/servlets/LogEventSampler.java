@@ -76,7 +76,7 @@ public class LogEventSampler {
         int length = args.length;
         if (length > 0 && args[length-1] instanceof Throwable) length--;
         String ending = IntStream.range(0, length).mapToObj(i -> "{}").collect(Collectors.joining(" "));
-        return "Here is a " + level + " test message of " + random.nextInt(100) + " with " + ending;
+        return "Here is a " + level + " test message of " + random.nextInt(10000) + " with " + ending;
     }
 
     public LogEventSampler withMarker(Marker marker) {

@@ -5,8 +5,6 @@ import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.observers.batch.LogEventBatchProcessor;
-import org.mockito.Mockito;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -16,6 +14,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -23,23 +22,25 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.verify;
 
 public class BatchingLogEventObserverTest {
 
-
-    public static class Processor implements LogEventBatchProcessor {
+    public static class Observer extends BatchingLogEventObserver {
         List<LogEventBatch> batches = new ArrayList<>();
 
+        public Observer(Properties configuration, String prefix) {
+            super(configuration, prefix);
+        }
+
         @Override
-        public void processBatch(LogEventBatch batch) {
+        protected void processBatch(LogEventBatch batch) {
             batches.add(batch);
         }
     }
 
     @Test
     public void shouldAccumulateSimilarMessages() {
-        BatchingLogEventObserver observer = new BatchingLogEventObserver(null);
+        BatchingLogEventObserver observer = new Observer(new Properties(), "observer.sample");
 
         String messageFormat = "This is a message about {}";
         LogEventSampler sampler = new LogEventSampler()
@@ -65,8 +66,7 @@ public class BatchingLogEventObserverTest {
         configuration.setProperty("observers.batch.idleThreshold", idleThreshold.toString());
         configuration.setProperty("observers.batch.cooldownTime", Duration.ofSeconds(15).toString());
         configuration.setProperty("observers.batch.maximumWaitTime", Duration.ofMinutes(2).toString());
-        configuration.setProperty("observers.batch.batchProcessor", Processor.class.getName());
-        BatchingLogEventObserver observer = new BatchingLogEventObserver(configuration, "observers.batch");
+        BatchingLogEventObserver observer = new Observer(configuration, "observers.batch");
 
         LogEvent message = new LogEventSampler().build();
         Thread.sleep(20);
@@ -76,8 +76,7 @@ public class BatchingLogEventObserverTest {
 
     @Test
     public void shouldProcessMessages() throws InterruptedException {
-        LogEventBatchProcessor processor = Mockito.mock(LogEventBatchProcessor.class);
-        BatchingLogEventObserver observer = new BatchingLogEventObserver(processor);
+        Observer observer = new Observer(new Properties(), "observer.sample");
         Duration maximumWaitTime = Duration.ofMinutes(10);
         observer.setMaximumWaitTime(maximumWaitTime);
 
@@ -95,25 +94,26 @@ public class BatchingLogEventObserverTest {
         assertTrue(secondMessageSend + " should not be after " + secondMessage.getInstant(), !secondMessageSend.isAfter(secondMessage.getInstant()));
 
         observer.awaitTermination(50, TimeUnit.MILLISECONDS);
-        verify(processor).processBatch(new LogEventBatch().add(firstMessage).add(secondMessage));
+        assertEquals(Arrays.asList(new LogEventBatch().add(firstMessage).add((secondMessage))),
+                observer.batches);
     }
 
     @Test
     public void shouldSendSeparateBatchesForThrottledMarkers() throws InterruptedException {
         Marker myMarker = MarkerFactory.getMarker("MY_MARKER");
 
-        LogEventBatchProcessor processor = Mockito.mock(LogEventBatchProcessor.class);
-        BatchingLogEventObserver observer = new BatchingLogEventObserver(processor);
+        ArrayList<LogEventBatch> batches = new ArrayList<>();
+        Observer observer = new Observer(new Properties(), "observer.test");
 
         Properties properties = new Properties();
         properties.put("observer.test.markers.MY_MARKER.throttle", "PT0.1S PT0.3S");
         observer.configureMarkers(new Configuration(properties, "observer.test"));
-        observer.getMarker(myMarker).setBatchProcessor(processor);
+        observer.getMarker(myMarker).setBatchProcessor(batches::add);
 
         LogEvent event = new LogEventSampler().withMarker(myMarker).build();
         observer.logEvent(event);
         observer.awaitTermination(100, TimeUnit.MILLISECONDS);
-        verify(processor).processBatch(new LogEventBatch().add(event));
+        assertEquals(Arrays.asList(new LogEventBatch().add(event)), batches);
     }
 
 

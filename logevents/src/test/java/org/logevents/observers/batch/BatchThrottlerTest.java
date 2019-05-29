@@ -6,8 +6,11 @@ import org.logevents.LogEvent;
 import org.logevents.extend.servlets.LogEventSampler;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -15,9 +18,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class BatchThrottlerTest {
 
+    private List<LogEventBatch> batches = new ArrayList<>();
     private Scheduler mockExecutor = mock(Scheduler.class);
-    private LogEventBatchProcessor mockProcessor = mock(LogEventBatchProcessor.class);
-    private BatchThrottler batcher = new BatchThrottler(mockExecutor, mockProcessor)
+    private BatchThrottler batcher = new BatchThrottler(mockExecutor, batches::add)
             .setThrottle(Arrays.asList(Duration.ofMinutes(1), Duration.ofMinutes(5)));
 
     @Before
@@ -36,7 +39,7 @@ public class BatchThrottlerTest {
         LogEvent logEvent = new LogEventSampler().build();
         batcher.logEvent(logEvent);
         batcher.flush();
-        verify(mockProcessor).processBatch(new LogEventBatch().add(logEvent));
+        assertEquals(Arrays.asList(new LogEventBatch().add(logEvent)), batches);
     }
 
     @Test
