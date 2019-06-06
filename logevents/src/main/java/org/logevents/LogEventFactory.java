@@ -55,6 +55,7 @@ public class LogEventFactory implements ILoggerFactory {
     public synchronized static LogEventFactory getInstance() {
         if (instance == null) {
             instance = new LogEventFactory();
+            instance.configure();
             JavaUtilLoggingAdapter.install(instance);
         }
         return instance;
@@ -67,10 +68,6 @@ public class LogEventFactory implements ILoggerFactory {
     private LoggerDelegator rootLogger = LoggerDelegator.rootLogger();
 
     private Map<String, LoggerDelegator> loggerCache = new HashMap<>();
-
-    public LogEventFactory() {
-        configure();
-    }
 
     @Override
     public synchronized LoggerConfiguration getLogger(String name) {
@@ -196,7 +193,7 @@ public class LogEventFactory implements ILoggerFactory {
      * with {@link ServiceLoader}. If none exists, uses {@link DefaultLogEventConfigurator}.
      * This method is called the first time {@link #getInstance()} is called.
      */
-    public void configure() {
+    public synchronized void configure() {
         reset(new ConsoleLogEventObserver(), Level.INFO);
         for (LogEventConfigurator configurator : getConfigurators()) {
             LogEventStatus.getInstance().addInfo(this, "Loading service loader " + configurator);

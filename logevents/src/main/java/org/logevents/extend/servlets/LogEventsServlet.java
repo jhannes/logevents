@@ -10,15 +10,12 @@ import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.openid.OpenIdConfiguration;
+import org.logevents.web.CryptoVault;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
@@ -29,13 +26,11 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -121,27 +116,15 @@ public class LogEventsServlet extends HttpServlet {
     private static final Marker AUDIT = MarkerFactory.getMarker("AUDIT");
     private static final String LOGEVENTS_API = "/org/logevents/swagger.json";
 
-    private Cipher encryptCipher;
-    private Cipher decryptCipher;
+    private CryptoVault cookieVault;
 
     @Override
     public void init() throws ServletException {
-        setupEncryption(getObserver().getCookieEncryptionKey());
+        setupCookieVault(getObserver().getCookieEncryptionKey());
     }
 
-    void setupEncryption(Optional<String> cookieEncryptionKey) {
-        try {
-            SecretKeySpec keySpec=new SecretKeySpec(
-                    cookieEncryptionKey.orElseGet(() -> randomString(40)).getBytes(),
-                    "Blowfish"
-            );
-            encryptCipher = Cipher.getInstance("Blowfish");
-            encryptCipher.init(Cipher.ENCRYPT_MODE, keySpec);
-            decryptCipher = Cipher.getInstance("Blowfish");
-            decryptCipher.init(Cipher.DECRYPT_MODE, keySpec);
-        } catch (GeneralSecurityException e) {
-            throw new RuntimeException(e);
-        }
+    public void setupCookieVault(Optional<String> encryptionKey) throws ServletException {
+        this.cookieVault = new CryptoVault(encryptionKey);
     }
 
     @Override
@@ -160,12 +143,13 @@ public class LogEventsServlet extends HttpServlet {
             api.put("servers", Collections.singletonList(localServer));
             resp.getWriter().write(JsonUtil.toIndentedJson(api));
         } else if (req.getPathInfo().equals("/login")) {
-            String state = randomString(50);
+            String state = OpenIdConfiguration.randomString(50);
             Cookie cookie = new Cookie("logevents.query", req.getQueryString());
             cookie.setMaxAge(300);
             resp.addCookie(cookie);
-            resp.sendRedirect(getOpenIdConfiguration()
-                    .getAuthorizationUrl(state, getServletUrl(req)));
+            resp.sendRedirect(getOpenIdConfiguration().getAuthorizationUrl(
+                    state, getServletUrl(req) + "/oauth2callback"
+            ));
         } else if (req.getPathInfo().equals("/oauth2callback")) {
             if (req.getParameter("error_description") != null) {
                 resp.getWriter().write("Login failed\n\n");
@@ -226,34 +210,11 @@ public class LogEventsServlet extends HttpServlet {
     Cookie createSessionCookie(Map<String, Object> idToken) {
         String session = "subject=" + idToken.get("sub") + "\n"
                 + "sessionTime=" + Instant.ofEpochSecond(Long.parseLong(idToken.get("iat").toString()));
-        return new Cookie("logevents.session", encrypt(session));
+        return new Cookie("logevents.session", cookieVault.encrypt(session));
     }
 
-
-    private String encrypt(String session) {
-        try {
-            return Base64.getEncoder().encodeToString(encryptCipher.doFinal(session.getBytes()));
-        } catch (GeneralSecurityException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    String decrypt(String value) throws BadPaddingException, IllegalBlockSizeException {
-        return new String(decryptCipher.doFinal(Base64.getDecoder().decode(value)));
-    }
-
-
-    private static final Random random = new Random();
-
-    private static final String CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-
-    private String randomString(int length) {
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(CHARS.charAt(random.nextInt(CHARS.length())));
-        }
-        return sb.toString();
+    String decrypt(String value) throws GeneralSecurityException {
+        return cookieVault.decrypt(value);
     }
 
     boolean authenticated(HttpServletResponse resp, Cookie[] cookies) {
@@ -296,16 +257,8 @@ public class LogEventsServlet extends HttpServlet {
 
     private String getServerUrl(HttpServletRequest req) {
         String scheme = Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
-        String host = Optional.ofNullable(req.getHeader("X-Forwarded-Host")).orElse(req.getServerName());
-        int port = Optional.ofNullable(req.getHeader("X-Forwarded-Port")).map(Integer::parseInt).orElse(req.getServerPort());
-        int defaultSchemePort = scheme.equals("https") ? 443 : 80;
-
-        StringBuilder url = new StringBuilder();
-        url.append(scheme).append("://").append(host);
-        if (port != defaultSchemePort) {
-            url.append(":").append(port);
-        }
-        return url.toString();
+        String host = Optional.ofNullable(req.getHeader("X-Forwarded-Host")).orElse(req.getHeader("Host"));
+        return scheme + "://" + host;
     }
 
     public WebLogEventObserver getObserver() throws ServletException {

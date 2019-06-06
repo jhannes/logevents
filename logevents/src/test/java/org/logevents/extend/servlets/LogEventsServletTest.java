@@ -16,8 +16,6 @@ import org.logevents.util.openid.OpenIdConfiguration;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.Logger;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -25,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -52,8 +51,8 @@ public class LogEventsServletTest extends LogEventsServlet {
     private HttpServletRequest request = mock(HttpServletRequest.class);
 
     @Before
-    public void initServlet() {
-        servlet.setupEncryption(Optional.empty());
+    public void initServlet() throws ServletException {
+        servlet.setupCookieVault(Optional.empty());
     }
 
     @Before
@@ -62,6 +61,7 @@ public class LogEventsServletTest extends LogEventsServlet {
         when(request.getServerName()).thenReturn("www.example.com");
         when(request.getContextPath()).thenReturn("");
         when(request.getServletPath()).thenReturn("/logs");
+        when(request.getHeader("Host")).thenReturn("www.example.com");
     }
 
     @Test
@@ -117,7 +117,7 @@ public class LogEventsServletTest extends LogEventsServlet {
                 .withThrowable(new IOException()).build();
         buffer.logEvent(logEvent);
 
-        servlet.setupEncryption(Optional.empty());
+        servlet.setupCookieVault(Optional.empty());
 
         when(request.getPathInfo()).thenReturn("/events");
         Map<String, Object> idToken = createSessionCookieToken(Instant.now().getEpochSecond());
@@ -148,7 +148,7 @@ public class LogEventsServletTest extends LogEventsServlet {
         HashMap<String, LogEventObserver> observers = new HashMap<>();
         observers.put("servlet", observer);
         LogEventFactory.getInstance().setObservers(observers);
-        servlet.setupEncryption(observer.getCookieEncryptionKey());
+        servlet.setupCookieVault(Optional.empty());
 
         when(request.getPathInfo()).thenReturn("/login");
 
@@ -164,7 +164,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldCompleteLogin() throws IOException, BadPaddingException, IllegalBlockSizeException, ServletException {
+    public void shouldCompleteLogin() throws IOException, GeneralSecurityException, ServletException {
         when(request.getPathInfo()).thenReturn("/oauth2callback");
         when(request.getParameter("code")).thenReturn(String.valueOf(random.nextInt()));
 
@@ -175,7 +175,7 @@ public class LogEventsServletTest extends LogEventsServlet {
                 return openIdConfiguration;
             }
         };
-        servlet.setupEncryption(Optional.empty());
+        servlet.setupCookieVault(Optional.empty());
 
         Instant issueTime = ZonedDateTime.of(2019, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()).plusMinutes(random.nextInt(60 * 24 * 365)).toInstant();
 

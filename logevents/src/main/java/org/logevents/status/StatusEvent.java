@@ -4,6 +4,7 @@ import java.time.Instant;
 
 public class StatusEvent {
 
+    private final Thread thread;
     private Object location;
     private String message;
     private StatusLevel level;
@@ -11,6 +12,7 @@ public class StatusEvent {
     private Instant time;
 
     public StatusEvent(Object location, String message, StatusLevel level, Throwable throwable) {
+        this.thread = Thread.currentThread();
         this.location = location;
         this.message = message;
         this.level = level;
@@ -40,6 +42,10 @@ public class StatusEvent {
 
     public String formatMessage() {
         return location + ": " + message + (throwable != null ? " " + throwable.toString() : "");
+    }
+
+    public Thread getThread() {
+        return thread;
     }
 
     public enum StatusLevel {

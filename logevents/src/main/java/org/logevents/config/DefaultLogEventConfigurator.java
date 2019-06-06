@@ -336,8 +336,8 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         try {
             String name = key.split("\\.")[1];
             String prefix = "observer." + name;
-            LogEventStatus.getInstance().addDebug(this, "Configuring " + prefix);
             if (!observers.containsKey(name)) {
+                LogEventStatus.getInstance().addDebug(this, "Configuring " + prefix);
                 LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", configuration);
                 observers.put(name, observer);
                 LogEventStatus.getInstance().addDebug(this, "Configured " + observer);

@@ -45,7 +45,7 @@ public class Main {
             try {
                 new FileReader(new File("this/file/does/not/exist"));
             } catch (FileNotFoundException e) {
-                logger2.error("Sometime went wrong ", e);
+                logger2.error("Something went wrong ", e);
             }
 
             Thread.sleep(14 * 1000);

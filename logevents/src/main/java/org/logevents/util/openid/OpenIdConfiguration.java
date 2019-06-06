@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 
 /**
  * Supports any standards compliant OpenID Connect provider as identity provider for
@@ -49,6 +50,18 @@ public class OpenIdConfiguration {
         this.clientSecret = clientSecret;
     }
 
+    private static final Random random = new Random();
+
+    private static final String CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    public static String randomString(int length) {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(CHARS.charAt(random.nextInt(CHARS.length())));
+        }
+        return sb.toString();
+    }
+
     private String getRedirectUri(String defaultValue) {
         return redirectUri.orElse(defaultValue);
     }
@@ -61,11 +74,11 @@ public class OpenIdConfiguration {
      * Generate a URL to start the login flow with OpenID Connect. Redirect the web
      * browser to this URL to start the login process.
      */
-    public String getAuthorizationUrl(String state, String baseUrl) throws IOException {
+    public String getAuthorizationUrl(String state, String fallbackRedirectUri) throws IOException {
         return getAuthorizationEndpoint() + "?" +
                 "response_type=code" +
                 "&client_id=" + clientId +
-                "&redirect_uri=" + getRedirectUri(baseUrl + "/oauth2callback") +
+                "&redirect_uri=" + getRedirectUri(fallbackRedirectUri) +
                 "&scope=" + getScopes() +
                 "&state=" + state;
     }
@@ -79,8 +92,8 @@ public class OpenIdConfiguration {
      * Call this when the web browser returns to the <code>redirect_uri</code> in
      * your app with the code query parameter.
      */
-    public Map<String, Object> fetchIdToken(String code, String defaultRedirectUri) throws IOException {
-        Map<String, String> formPayload = createTokenRequestPayload(code, defaultRedirectUri);
+    public Map<String, Object> fetchIdToken(String code, String fallbackRedirectUri) throws IOException {
+        Map<String, String> formPayload = createTokenRequestPayload(code, fallbackRedirectUri);
         Map<String, Object> response = NetUtils.postFormForJson(getTokenUri(), formPayload);
         return getIdToken(response);
     }

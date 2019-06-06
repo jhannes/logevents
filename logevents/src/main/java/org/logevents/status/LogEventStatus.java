@@ -95,7 +95,7 @@ public class LogEventStatus {
         }
 
         if (this.getThreshold(statusEvent.getLocation()).toInt() <= statusEvent.getLevel().toInt()) {
-            System.err.println("LogEvent configuration " + statusEvent.getLevel() + ": " + statusEvent.formatMessage());
+            System.err.println("LogEvent configuration [" + statusEvent.getThread() + "]: " + statusEvent.getLevel() + ": " + statusEvent.formatMessage());
             if (statusEvent.getThrowable() != null) {
                 statusEvent.getThrowable().printStackTrace();
             }
