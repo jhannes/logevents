@@ -70,9 +70,10 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
             return testMethod != -1 ? getMethodRef(stackTrace[testMethod]) : null;
         }
 
-        private Object getMethodRef(StackTraceElement stackTraceElement) {
-            int simpleClassNamePos = stackTraceElement.getClassName().lastIndexOf('.');
-            return stackTraceElement.getClassName().substring(simpleClassNamePos+1) + "." + stackTraceElement.getMethodName();
+        private Object getMethodRef(StackTraceElement callerLocation) {
+            String className = callerLocation.getClassName();
+            className = className.substring(className.lastIndexOf(".")+1);
+            return className + "." + callerLocation.getMethodName() + "(" + callerLocation.getFileName() + ":" + callerLocation.getLineNumber() + ")";
         }
 
     }

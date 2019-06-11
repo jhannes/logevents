@@ -8,6 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Keeps tracks and optionally outputs internal messages from Log Events during configuration and usage.
+ *
+ * Sample configuration (in logevents.properties or as System properties):
+ * <pre>
+ * logevents.status=INFO
+ * logevents.status.SlackLogEventObserver=TRACE
+ * </pre>
+ */
 public class LogEventStatus {
 
     private static LogEventStatus instance = new LogEventStatus();

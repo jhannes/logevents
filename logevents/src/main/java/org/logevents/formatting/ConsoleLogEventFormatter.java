@@ -15,7 +15,7 @@ import java.util.Optional;
  * Example configuration
  *
  * <pre>
- * observer.foo.includeMdcKeys=clientIp
+ * observer.foo.includedMdcKeys=clientIp
  * observer.*.packageFilter=sun.www, com.example.uninteresting
  * </pre>
  *
@@ -28,8 +28,8 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
 
     protected MessageFormatter messageFormatter = new ConsoleMessageFormatter(format);
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
-    private DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
-    private String[] includeMdcKeys = new String[0];
+    protected final DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
+    protected String[] includedMdcKeys = null;
 
     @Override
     public Optional<ExceptionFormatter> getExceptionFormatter() {
@@ -42,8 +42,8 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 e.getZonedDateTime().format(timeOnlyFormatter),
                 e.getThreadName(),
                 colorizedLevel(e),
-                format.bold(e.getLoggerName()),
-                mdc(e, includeMdcKeys),
+                format.bold(e.getSimpleCallerLocation()),
+                mdc(e, includedMdcKeys),
                 messageFormatter.format(e.getMessage(), e.getArgumentArray()))
                 + exceptionFormatter.format(e.getThrowable());
     }
@@ -71,7 +71,9 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     public void configure(Configuration configuration) {
         String[] packageFilter = getPackageFilter(configuration, "packageFilter");
         getExceptionFormatter().ifPresent(exceptionFormatter -> exceptionFormatter.setPackageFilter(packageFilter));
-        includeMdcKeys = configuration.getStringList("includeMdcKeys");
+        includedMdcKeys = configuration.optionalString("includedMdcKeys").isPresent()
+                ? configuration.getStringList("includedMdcKeys")
+                : null;
     }
 
     private String[] getPackageFilter(Configuration configuration, String key) {

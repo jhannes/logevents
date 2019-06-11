@@ -7,6 +7,9 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.Random;
 
+/**
+ * Encrypts and decrypts strings with Blowfish cipher. Used to send encrypted cookies.
+ */
 public class CryptoVault {
     private final Cipher encryptCipher;
     private final Cipher decryptCipher;

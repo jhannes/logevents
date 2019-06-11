@@ -1,5 +1,6 @@
 package org.logevents;
 
+import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.impl.LoggerDelegator;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
@@ -244,9 +245,20 @@ public class LogEvent implements LoggingEvent {
 
                 this.callerLocation = stackTrace[i+1];
                 return callerLocation;
+            } else if (stackTraceElement.getClassName().equals(LogEventSampler.class.getName())) {
+                this.callerLocation = stackTrace[i+1];
+                return callerLocation;
             }
         }
         throw new RuntimeException("Could not find calling stack trace element!");
+    }
+
+    public String getSimpleCallerLocation() {
+        StackTraceElement callerLocation = getCallerLocation();
+        String className = callerLocation.getClassName();
+        className = className.substring(className.lastIndexOf(".")+1);
+        return className + "." + callerLocation.getMethodName()
+                + "(" + callerLocation.getFileName() + ":" + callerLocation.getLineNumber() + ")";
     }
 
     private boolean isLoggingClass(StackTraceElement stackTraceElement) {

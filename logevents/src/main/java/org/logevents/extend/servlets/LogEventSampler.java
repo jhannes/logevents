@@ -40,7 +40,7 @@ public class LogEventSampler {
     private Map<String, String> mdc = new LinkedHashMap<>();
 
     public LogEvent build() {
-        return new LogEvent(
+        LogEvent logEvent = new LogEvent(
                 loggerName.orElseGet(LogEventSampler::sampleLoggerName),
                 level.orElseGet(() -> pickOne(Level.INFO, Level.WARN, Level.ERROR)),
                 threadName.orElseGet(LogEventSampler::sampleThreadName),
@@ -49,6 +49,8 @@ public class LogEventSampler {
                 this.format.orElseGet(() -> sampleMessage(args)),
                 args,
                 mdc);
+        logEvent.getCallerLocation();
+        return logEvent;
     }
 
     public static Marker sampleMarker() {

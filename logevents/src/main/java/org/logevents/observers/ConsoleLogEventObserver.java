@@ -19,7 +19,7 @@ import java.util.Properties;
  * <pre>
  * observer.console.threshold=WARN
  * observer.console.outputToSyserr=true
- * observer.console.includeMdcKeys=clientIp
+ * observer.console.includedMdcKeys=clientIp
  * observer.console.suppressMarkers=UNINTERESTING, PERSONAL_DATA
  * observer.console.packageFilter=sun.www, com.example.uninteresting
  * </pre>

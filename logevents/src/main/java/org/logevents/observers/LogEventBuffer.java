@@ -59,6 +59,6 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
         Collection<LogEvent> allEvents = filter(filter.getThreshold(), filter.getStartTime(), filter.getEndTime());
         LogEventSummary summary = new LogEventSummary();
         allEvents.forEach(summary::add);
-        return new LogEventQueryResult(summary, allEvents.stream().map(jsonFormatter).collect(Collectors.toList()));
+        return new LogEventQueryResult(summary, allEvents.stream().filter(filter).map(jsonFormatter).collect(Collectors.toList()));
     }
 }

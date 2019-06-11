@@ -25,17 +25,17 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
-            <version>9.4.15.v20190215</version>
+            <version>9.4.18.v20190429</version>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>swagger-ui</artifactId>
-            <version>3.20.5</version>
+            <version>3.22.1</version>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.4.197</version>
+            <version>1.4.199</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>

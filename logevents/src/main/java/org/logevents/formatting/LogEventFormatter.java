@@ -38,9 +38,13 @@ public interface LogEventFormatter extends Function<LogEvent, String> {
 
     default String mdc(LogEvent e, String[] includeMdcKeys) {
         List<String> mdcValue = new ArrayList<>();
-        for (String key : includeMdcKeys) {
-            if (e.getMdcProperties().containsKey(key)) {
-                mdcValue.add(key + "=" + e.getMdcProperties().get(key));
+        if (includeMdcKeys == null) {
+            e.getMdcProperties().forEach((k, v) -> mdcValue.add(k + "=" + v));
+        } else {
+            for (String key : includeMdcKeys) {
+                if (e.getMdcProperties().containsKey(key)) {
+                    mdcValue.add(key + "=" + e.getMdcProperties().get(key));
+                }
             }
         }
         return mdcValue.isEmpty() ? "" : " {" + String.join(", ", mdcValue) + "}";

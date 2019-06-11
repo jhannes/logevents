@@ -245,7 +245,7 @@ public class DefaultLogEventConfiguratorTest {
                 .getFormatter()
                 .apply(logEvent);
         assertTrue(formattedMessage + " should start with test name",
-                formattedMessage.contains("TEST(DefaultLogEventConfiguratorTest.shouldFindTestMethod)"));
+                formattedMessage.contains("TEST(DefaultLogEventConfiguratorTest.shouldFindTestMethod(DefaultLogEventConfiguratorTest.java:"));
     }
 
     @Rule

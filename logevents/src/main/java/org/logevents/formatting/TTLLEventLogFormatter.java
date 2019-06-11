@@ -14,7 +14,7 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
     protected MessageFormatter messageFormatter = new MessageFormatter();
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
 
-    private String[] includeMdcKeys = new String[0];
+    protected String[] includedMdcKeys = null;
 
     @Override
     public String apply(LogEvent e) {
@@ -23,7 +23,7 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
                 e.getThreadName(),
                 LogEventFormatter.rightPad(e.getLevel(), 5, ' '),
                 e.getLoggerName(),
-                mdc(e, includeMdcKeys),
+                mdc(e, includedMdcKeys),
                 messageFormatter.format(e.getMessage(), e.getArgumentArray()))
                 + exceptionFormatter.format(e.getThrowable());
     }
@@ -36,7 +36,9 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
     public void configure(Configuration configuration) {
         getExceptionFormatter().ifPresent(
                 exceptionFormatter -> exceptionFormatter.setPackageFilter(configuration.getStringList("packageFilter")));
-        includeMdcKeys = configuration.getStringList("includeMdcKeys");
+        includedMdcKeys = configuration.optionalString("includedMdcKeys").isPresent()
+                ? configuration.getStringList("includedMdcKeys")
+                : null;
     }
 
 }

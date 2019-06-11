@@ -16,7 +16,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -24,7 +24,7 @@ import java.util.function.Function;
 
 public abstract class AbstractExceptionFormatter {
 
-    protected final Map<String, Function<StackTraceElement, String>> sourcePackagePatterns = new HashMap<>();
+    protected final Map<String, Function<StackTraceElement, String>> sourcePackagePatterns = new LinkedHashMap<>();
     protected final boolean includePackagingData;
     private String[] packageFilter = new String[0];
     protected int maxLength = Integer.MAX_VALUE;

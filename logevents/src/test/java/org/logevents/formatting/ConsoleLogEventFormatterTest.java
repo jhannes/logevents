@@ -30,7 +30,7 @@ public class ConsoleLogEventFormatterTest {
                 .withLoggerName(loggerName)
                 .withFormat("Hello {}").withArgs("there")
                 .build());
-        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mcom.example.LoggerName\033[m]: Hello \033[4;mthere\033[m\n",
+        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mConsoleLogEventFormatterTest.shouldLogMessage(ConsoleLogEventFormatterTest.java:32)\033[m]: Hello \033[4;mthere\033[m\n",
                 message);
     }
 
@@ -45,8 +45,10 @@ public class ConsoleLogEventFormatterTest {
     @Test
     public void shouldDisplayMdc() {
         Properties properties = new Properties();
-        properties.put("observer.console.includeMdcKeys", "operation,user");
-        formatter.configure(new Configuration(properties, "observer.console"));
+        properties.put("observer.console.includedMdcKeys", "operation,user");
+        Configuration configuration = new Configuration(properties, "observer.console");
+        formatter.configure(configuration);
+        configuration.checkForUnknownFields();
 
         String message = formatter.apply(new LogEventSampler()
                 .withMdc("operation", "op13")
@@ -56,6 +58,16 @@ public class ConsoleLogEventFormatterTest {
 
         assertContains("{operation=op13, user=userOne}", message);
         assertDoesNotContain("secret value", message);
+    }
+
+    @Test
+    public void shouldIncludeAllMdcKeysByDefault() {
+        formatter.configure(new Configuration(new Properties(), "observer.console"));
+        String message = formatter.apply(new LogEventSampler()
+                .withMdc("op", "read")
+                .withMdc("uid", "userFive")
+                .build());
+        assertContains("{op=read, uid=userFive}", message);
     }
 
     private void assertContains(String substring, String fullString) {
