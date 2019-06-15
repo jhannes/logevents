@@ -25,7 +25,7 @@ import java.util.Random;
  *     <li>Click "Create a resource" and enter "active directory" to create a new directory. You can name the directory what you want.</li>
  *     <li>You have to wait a little while for the directory to be created, then click the funnel + book icon to switch to your new directory</li>
  *     <li>Select "Azure Active Directory" from the menu in your new directory to go to directory management</li>
- *     <li>Select "App Registration (preview)" and "New registration" to create your application</li>
+ *     <li>Select "App Registration" and "New registration" to create your application</li>
  *     <li>In the application configuration, you need to find the Application (client) ID, generate a new client secret (under Certificates and secrets) and setup your redirect URI (under Authentication) and use this to configure {@link org.logevents.observers.WebLogEventObserver}</li>
  *     <li>In the Azure Active Directory menu, you can select "Users" and add a guest user from your organization to add to your limited Active Directory (this feature of Active Directory is known as B2B)</li>
  *     <li>In the Azure Active Directory menu, you can select "Enterprise Applications" to limited the users that can access the logging application</li>
@@ -83,7 +83,7 @@ public class OpenIdConfiguration {
                 "&state=" + state;
     }
 
-    private String getAuthorizationEndpoint() throws IOException {
+    protected String getAuthorizationEndpoint() throws IOException {
         return (String) loadOpenIdConfiguration().get("authorization_endpoint");
     }
 
@@ -94,8 +94,12 @@ public class OpenIdConfiguration {
      */
     public Map<String, Object> fetchIdToken(String code, String fallbackRedirectUri) throws IOException {
         Map<String, String> formPayload = createTokenRequestPayload(code, fallbackRedirectUri);
-        Map<String, Object> response = NetUtils.postFormForJson(getTokenUri(), formPayload);
+        Map<String, Object> response = postTokenRequest(formPayload);
         return getIdToken(response);
+    }
+
+    protected Map<String, Object> postTokenRequest(Map<String, String> formPayload) throws IOException {
+        return NetUtils.postFormForJson(getTokenEndpoint(), formPayload);
     }
 
     public Map<String, String> createTokenRequestPayload(String code, String defaultRedirectUri) {
@@ -113,7 +117,7 @@ public class OpenIdConfiguration {
         return (Map<String, Object>) JsonParser.parseFromBase64encodedString(idToken.split("\\.")[1]);
     }
 
-    private URL getTokenUri() throws IOException {
+    protected URL getTokenEndpoint() throws IOException {
         return new URL((String) loadOpenIdConfiguration().get("token_endpoint"));
     }
 

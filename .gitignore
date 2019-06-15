@@ -10,3 +10,5 @@ release.properties
 logs
 logevents-config-demo/logevents-*.properties
 logevents-servlets-demo/logevents*.properties
+*.crt
+*.p12

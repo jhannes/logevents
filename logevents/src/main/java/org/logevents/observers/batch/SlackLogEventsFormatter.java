@@ -24,6 +24,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     private SlackExceptionFormatter exceptionFormatter = new SlackExceptionFormatter();
     private Optional<String> username;
     private Optional<String> channel;
+    private Optional<String> iconEmoji = Optional.empty();
     private boolean showRepeatsIndividually;
     private Optional<String> detailUrl = Optional.empty();
     private final String nodeName;
@@ -46,6 +47,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
             message.put("username", nodeName);
         }
         channel.ifPresent(c -> message.put("channel", c));
+        iconEmoji.ifPresent(i -> message.put("icon_emoji", i));
 
         message.put("attachments", createAttachments(batch));
         message.put("text", createText(batch.firstHighestLevelLogEventGroup()));
@@ -213,6 +215,10 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
     public void setChannel(Optional<String> channel) {
         this.channel = channel;
+    }
+
+    public void setIconEmoji(Optional<String> iconEmoji) {
+        this.iconEmoji = iconEmoji;
     }
 
     public void setShowRepeatsIndividually(boolean showRepeatsIndividually) {

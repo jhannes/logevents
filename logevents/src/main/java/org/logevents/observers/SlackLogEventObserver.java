@@ -26,6 +26,7 @@ import java.util.Properties;
  * observer.slack.slackLogEventsFormatter={@link SlackLogEventsFormatter}
  * observer.slack.showRepeatsIndividually=false
  * observer.slack.channel=alertChannel
+ * observer.slack.iconEmoji=:ant:
  * observer.slack.cooldownTime=PT10S
  * observer.slack.maximumWaitTime=PT5M
  * observer.slack.idleThreshold=PT5S
@@ -71,8 +72,12 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
             packageFilters = configuration.getDefaultStringList("packageFilter");
         }
         formatter.setPackageFilter(packageFilters);
-        formatter.setUsername(configuration.optionalString("username"));
+        formatter.setUsername(
+                Optional.ofNullable(configuration.optionalString("username")
+                        .orElseGet(configuration::getApplicationNode))
+        );
         formatter.setChannel(configuration.optionalString("channel"));
+        formatter.setIconEmoji(configuration.optionalString("iconEmoji"));
         formatter.setShowRepeatsIndividually(configuration.getBoolean("showRepeatsIndividually"));
         formatter.setDetailUrl(configuration.optionalString("detailUrl"));
         formatter.configureSourceCode(configuration);

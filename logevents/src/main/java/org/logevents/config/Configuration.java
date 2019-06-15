@@ -218,22 +218,28 @@ public class Configuration {
                 .collect(Collectors.toSet());
     }
 
+    public String getServerUser() {
+        return optionalString("nodeName")
+                .orElseGet(() -> System.getProperty("user.name") + "@" + getNodeName());
+    }
+
+    public String getApplicationNode() {
+        return getApplicationName() + "@" + getNodeName();
+    }
+
     public String getNodeName() {
         return optionalString("nodeName")
                 .orElseGet(Configuration::calculateNodeName);
     }
 
     public static String calculateNodeName() {
-        String hostname = "unknown host";
         try {
-            hostname = Optional.ofNullable(System.getenv("HOSTNAME"))
+            return Optional.ofNullable(System.getenv("HOSTNAME"))
                     .orElse(Optional.ofNullable(System.getenv("HTTP_HOST"))
                             .orElse(Optional.ofNullable(System.getenv("COMPUTERNAME"))
                                     .orElse(InetAddress.getLocalHost().getHostName())));
         } catch (UnknownHostException ignored) {
+            return "unknown host";
         }
-
-        String username = System.getProperty("user.name");
-        return username + "@" + hostname;
     }
 }

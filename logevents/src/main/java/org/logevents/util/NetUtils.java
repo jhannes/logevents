@@ -47,7 +47,7 @@ public class NetUtils {
         return (Map<String,Object>)JsonParser.parse(connection);
     }
 
-    static String readAsString(InputStream inputStream) throws IOException {
+    public static String readAsString(InputStream inputStream) throws IOException {
         StringBuilder builder = new StringBuilder();
 
         Reader reader = new BufferedReader(new InputStreamReader(inputStream));
