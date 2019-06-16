@@ -6,6 +6,7 @@ import org.logevents.observers.ConsoleLogEventObserver;
 import org.slf4j.event.Level;
 
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -29,7 +30,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     protected MessageFormatter messageFormatter = new ConsoleMessageFormatter(format);
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     protected final DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
-    protected String[] includedMdcKeys = null;
+    protected List<String> includedMdcKeys = null;
 
     @Override
     public Optional<ExceptionFormatter> getExceptionFormatter() {
@@ -69,16 +70,16 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     }
 
     public void configure(Configuration configuration) {
-        String[] packageFilter = getPackageFilter(configuration, "packageFilter");
+        List<String> packageFilter = getPackageFilter(configuration, "packageFilter");
         getExceptionFormatter().ifPresent(exceptionFormatter -> exceptionFormatter.setPackageFilter(packageFilter));
         includedMdcKeys = configuration.optionalString("includedMdcKeys").isPresent()
                 ? configuration.getStringList("includedMdcKeys")
                 : null;
     }
 
-    private String[] getPackageFilter(Configuration configuration, String key) {
-        String[] packageFilter = configuration.getStringList(key);
-        if (packageFilter.length == 0) {
+    private List<String> getPackageFilter(Configuration configuration, String key) {
+        List<String> packageFilter = configuration.getStringList(key);
+        if (packageFilter.isEmpty()) {
             packageFilter = configuration.getDefaultStringList(key);
         }
         return packageFilter;

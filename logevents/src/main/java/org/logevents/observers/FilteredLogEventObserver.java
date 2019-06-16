@@ -10,7 +10,6 @@ import org.slf4j.event.Level;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public abstract class FilteredLogEventObserver implements LogEventObserver {
     private Level threshold = Level.TRACE;
@@ -26,8 +25,8 @@ public abstract class FilteredLogEventObserver implements LogEventObserver {
 
     protected void configureFilter(Configuration configuration) {
         this.threshold = configuration.optionalString("threshold").map(Level::valueOf).orElse(Level.TRACE);
-        setSuppressMarkers(configuration.getStringList("suppressMarkers"));
-        setRequireMarker(configuration.getStringList("requireMarker"));
+        this.setSuppressMarkerStrings(configuration.getStringList("suppressMarkers"));
+        this.setRequireMarkerName(configuration.getStringList("requireMarker"));
     }
 
 
@@ -60,19 +59,19 @@ public abstract class FilteredLogEventObserver implements LogEventObserver {
         return threshold;
     }
 
-    public void setSuppressMarkers(String[] markerNames) {
-        setSuppressMarkers(Stream.of(markerNames).map(MarkerFactory::getMarker).collect(Collectors.toList()));
+    public void setSuppressMarkerStrings(List<String> markerNames) {
+        setSuppressMarkers(markerNames.stream().map(MarkerFactory::getMarker).collect(Collectors.toList()));
     }
 
     public void setSuppressMarkers(List<Marker> markers) {
         this.suppressedMarkers = markers;
     }
 
-    public void setRequireMarker(String[] markerNames) {
-        setRequireMarker(Stream.of(markerNames).map(MarkerFactory::getMarker).collect(Collectors.toList()));
+    public void setRequireMarkerName(List<String> markerNames) {
+        setRequireMarker(markerNames.stream().map(MarkerFactory::getMarker).collect(Collectors.toList()));
     }
 
-    private void setRequireMarker(List<Marker> requireMarker) {
+    public void setRequireMarker(List<Marker> requireMarker) {
         this.requireMarker = requireMarker;
     }
 

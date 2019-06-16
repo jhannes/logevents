@@ -8,6 +8,7 @@ import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -67,8 +68,8 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
 
     private static SlackLogEventsFormatter createFormatter(Configuration configuration) {
         SlackLogEventsFormatter formatter = configuration.createInstanceWithDefault("formatter", SlackLogEventsFormatter.class);
-        String[] packageFilters = configuration.getStringList("packageFilter");
-        if (packageFilters.length == 0) {
+        List<String> packageFilters = configuration.getStringList("packageFilter");
+        if (packageFilters.isEmpty()) {
             packageFilters = configuration.getDefaultStringList("packageFilter");
         }
         formatter.setPackageFilter(packageFilters);

@@ -16,7 +16,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -26,13 +28,13 @@ public abstract class AbstractExceptionFormatter {
 
     protected final Map<String, Function<StackTraceElement, String>> sourcePackagePatterns = new LinkedHashMap<>();
     protected final boolean includePackagingData;
-    private String[] packageFilter = new String[0];
+    private List<String> packageFilter = new ArrayList<>();
     protected int maxLength = Integer.MAX_VALUE;
 
     public AbstractExceptionFormatter(Properties properties, String prefix) {
         Configuration configuration = new Configuration(properties, prefix);
         packageFilter = configuration.getStringList("packageFilter");
-        if (packageFilter.length == 0) {
+        if (packageFilter.isEmpty()) {
             packageFilter = configuration.getDefaultStringList("packageFilter");
         }
         includePackagingData = configuration.getBoolean("includePackagingData");
@@ -125,7 +127,7 @@ public abstract class AbstractExceptionFormatter {
         return i;
     }
 
-    public void setPackageFilter(String[] packageFilter) {
+    public void setPackageFilter(List<String> packageFilter) {
         this.packageFilter = packageFilter;
     }
 

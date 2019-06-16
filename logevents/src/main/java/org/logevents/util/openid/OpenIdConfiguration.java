@@ -7,9 +7,11 @@ import org.logevents.util.NetUtils;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * Supports any standards compliant OpenID Connect provider as identity provider for
@@ -30,6 +32,24 @@ import java.util.Random;
  *     <li>In the Azure Active Directory menu, you can select "Users" and add a guest user from your organization to add to your limited Active Directory (this feature of Active Directory is known as B2B)</li>
  *     <li>In the Azure Active Directory menu, you can select "Enterprise Applications" to limited the users that can access the logging application</li>
  * </ol>
+ *
+ * <h2>To set up authorization with Google</h2>
+ *
+ * <ol>
+ *     <li>Go to <a href="https://console.developers.google.com/apis/credentials">Google API Console</a></li>
+ *     <li>From the "Select a project" dropdown, click "New project"</li>
+ *     <li>Select "Credentials" from the left menu, click "Create credentials" and select "OAuth client ID"</li>
+ *     <li>Select "Web application" as the type of application and enter the Redirect URI where you would access your {@link org.logevents.extend.servlets.LogEventsServlet}
+ *     (e.g. <code>https://myserver.com/myapp/logs/oauth2callback</code>
+ *     </li>
+ *     <li>Copy the Client ID and Client secret to your <code>observer.servlet.clientId</code> and <code>observer.servlet.clientSecret</code></li>
+ *     <li>Set <code>observer.web.openIdIssuer=https://accounts.google.com</code></li>
+ *     <li>
+ *         <strong>Important:</strong> Your log console is currently open to <em>anyone</em> with a Google Account,
+ *         ie. everyone. You have to restrict it with e.g. <code>observer.web.requiredClaim.email_verified=true</code>
+ *         and <code>observer.web.requiredClaim.email=alice@example.com, bob@example.com</code>
+ *     </li>
+ * </ol>
  */
 public class OpenIdConfiguration {
     private final String clientId;
@@ -37,11 +57,16 @@ public class OpenIdConfiguration {
     private final String openIdIssuer;
     private Optional<String> redirectUri = Optional.empty();
     private Optional<String> scopes = Optional.empty();
+    private Map<String, List<String>> requiredClaims = new HashMap<>();
 
     public OpenIdConfiguration(Configuration configuration) {
         this(configuration.getString("openIdIssuer"), configuration.getString("clientId"), configuration.getString("clientSecret"));
         this.redirectUri = configuration.optionalString("redirectUri");
         this.scopes = configuration.optionalString("scopes");
+        Set<String> requiredClaims = configuration.listProperties("requiredClaim");
+        for (String requiredClaim : requiredClaims) {
+            addRequiredClaim(requiredClaim, configuration.getStringList("requiredClaim." + requiredClaim));
+        }
     }
 
     public OpenIdConfiguration(String openIdIssuer, String clientId, String clientSecret) {
@@ -131,5 +156,18 @@ public class OpenIdConfiguration {
         return getClass().getSimpleName() + "{" +
                 "openIdIssuer='" + openIdIssuer + '\'' +
                 '}';
+    }
+
+    public void addRequiredClaim(String claimName, List<String> acceptedValues) {
+        requiredClaims.put(claimName, acceptedValues);
+    }
+
+    public boolean isAuthorizedToken(Map<String, Object> idToken) {
+        for (Map.Entry<String, List<String>> entry : requiredClaims.entrySet()) {
+            if (!idToken.containsKey(entry.getKey()) || !entry.getValue().contains(idToken.get(entry.getKey()).toString())) {
+                return false;
+            }
+        }
+        return true;
     }
 }

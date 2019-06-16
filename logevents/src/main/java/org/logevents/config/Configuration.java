@@ -8,6 +8,8 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -127,10 +129,11 @@ public class Configuration {
                 .orElse(false);
     }
 
-    public String[] getStringList(String key) {
+    public List<String> getStringList(String key) {
         return optionalString(key)
                 .map(s -> s.split(",\\s*"))
-                .orElse(new String[0]);
+                .map(Arrays::asList)
+                .orElse(Collections.emptyList());
     }
 
     public Optional<String> optionalString(String key) {
@@ -139,10 +142,11 @@ public class Configuration {
         return property == null || property.isEmpty() ? Optional.empty() : Optional.of(property);
     }
 
-    public String[] getDefaultStringList(String key) {
+    public List<String> getDefaultStringList(String key) {
         return optionalDefaultString(key)
                 .map(s -> s.split(",\\s*"))
-                .orElse(new String[0]);
+                .map(Arrays::asList)
+                .orElse(Collections.emptyList());
     }
 
     public Optional<String> optionalDefaultString(String key) {

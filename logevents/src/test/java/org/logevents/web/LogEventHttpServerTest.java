@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -123,19 +124,24 @@ public class LogEventHttpServerTest {
     public void shouldCreateSessionOnOpenIdConnectCallback() throws IOException, URISyntaxException, GeneralSecurityException {
         when(mockExchange.getRequestURI()).thenReturn(new URI("http://localhost/logs/oauth2callback?code=abcd"));
         long iat = System.currentTimeMillis() / 1000;
-        logEventHttpServer.setOpenIdConfiguration(new OpenIdConfiguration(null, null, null) {
+        OpenIdConfiguration openIdConfiguration = new OpenIdConfiguration(null, null, null) {
             @Override
             protected Map<String, Object> postTokenRequest(Map<String, String> formPayload) {
                 HashMap<String, Object> tokenResponse = new HashMap<>();
                 Map<String, Object> idToken = new HashMap<>();
                 idToken.put("iat", iat);
+                idToken.put("email_verified", true);
+                idToken.put("email", "bob@example.com");
                 String payload = Base64.getEncoder().encodeToString(JsonUtil.toIndentedJson(idToken).getBytes());
-                tokenResponse.put("id_token", "sdgslnl." + payload +".dgs");
+                tokenResponse.put("id_token", "sdgslnl." + payload + ".dgs");
                 return tokenResponse;
             }
-        });
+        };
+        openIdConfiguration.addRequiredClaim("email", Arrays.asList("alice@example.com", "bob@example.com"));
+        logEventHttpServer.setOpenIdConfiguration(openIdConfiguration);
 
         logEventHttpServer.httpHandler(mockExchange);
+        verify(mockExchange).sendResponseHeaders(eq(302), anyLong());
 
         String cookie = responseHeaders.getFirst("Set-Cookie");
         int equalsPos = cookie.indexOf('=');
@@ -148,4 +154,31 @@ public class LogEventHttpServerTest {
         assertEquals(Instant.ofEpochSecond(iat),
                 Instant.parse(sessionInfo.get("sessionTime").toString()));
     }
+
+    @Test
+    public void shouldRejectIdTokensWithoutRequiredClaims() throws IOException, URISyntaxException {
+        when(mockExchange.getRequestURI()).thenReturn(new URI("http://localhost/logs/oauth2callback?code=abcd"));
+        OpenIdConfiguration openIdConfiguration = new OpenIdConfiguration(null, null, null) {
+            @Override
+            protected Map<String, Object> postTokenRequest(Map<String, String> formPayload) {
+                HashMap<String, Object> tokenResponse = new HashMap<>();
+                Map<String, Object> idToken = new HashMap<>();
+                idToken.put("iat", System.currentTimeMillis() / 1000);
+                idToken.put("email", "stranger@example.org");
+                idToken.put("email_verified", true);
+                String payload = Base64.getEncoder().encodeToString(JsonUtil.toIndentedJson(idToken).getBytes());
+                tokenResponse.put("id_token", "sdgslnl." + payload + ".dgs");
+                return tokenResponse;
+            }
+        };
+        openIdConfiguration.addRequiredClaim("email_verified", Arrays.asList("true"));
+        openIdConfiguration.addRequiredClaim("email", Arrays.asList("johannes@example.org", "user@example.org"));
+        logEventHttpServer.setOpenIdConfiguration(openIdConfiguration);
+
+        logEventHttpServer.httpHandler(mockExchange);
+
+        verify(mockExchange).sendResponseHeaders(eq(403), anyLong());
+        assertNull(responseHeaders.getFirst("Set-Cookie"));
+    }
+
 }

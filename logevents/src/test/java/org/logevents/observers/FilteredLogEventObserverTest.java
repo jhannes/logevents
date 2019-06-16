@@ -11,6 +11,8 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
+import java.util.Arrays;
+
 public class FilteredLogEventObserverTest {
 
     private LogEventRule logEventRule = new LogEventRule(Level.INFO, FilteredLogEventObserverTest.class);
@@ -51,7 +53,7 @@ public class FilteredLogEventObserverTest {
 
     @Test
     public void shouldSuppressUnwantedMarkers() {
-        observer.setSuppressMarkers(new String[] { PERSONAL_DATA.getName() });
+        observer.setSuppressMarkers(Arrays.asList(PERSONAL_DATA));
 
         logger.warn(PERSONAL_DATA, "Don't log my personal data");
         logger.warn(AUDIT, "Audit should not be logged");
@@ -66,7 +68,7 @@ public class FilteredLogEventObserverTest {
 
     @Test
     public void shouldRequestDesiredMarkers() {
-        observer.setRequireMarker(new String[] { SECURITY.getName() });
+        observer.setRequireMarker(Arrays.asList(SECURITY));
 
         logger.warn(PERSONAL_DATA, "Don't log my unrelated markers");
         logger.warn("Don't log if no markers");

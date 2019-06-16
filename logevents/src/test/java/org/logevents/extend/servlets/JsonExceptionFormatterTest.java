@@ -5,6 +5,7 @@ import org.logevents.util.JsonUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,9 +53,7 @@ public class JsonExceptionFormatterTest {
                 internalMethod, publicMethod, mainMethod
         });
 
-        formatter.setPackageFilter(new String[] {
-                "sun.nio.fs", "java.nio"
-        });
+        formatter.setPackageFilter(Arrays.asList("sun.nio.fs", "java.nio"));
         List<Map<String, Object>> stackTrace = formatter.createStackTrace(exception);
         Map<String, Object> frameAfterFilter = JsonUtil.getObject(stackTrace, 2);
         assertEquals(internalMethod.getMethodName(), frameAfterFilter.get("methodName"));

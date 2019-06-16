@@ -160,6 +160,13 @@ public class LogEventsServlet extends HttpServlet {
             Map<String, Object> idToken = getOpenIdConfiguration()
                     .fetchIdToken(req.getParameter("code"), getServletUrl(req) + "/oauth2callback");
 
+            if (!getOpenIdConfiguration().isAuthorizedToken(idToken)) {
+                logger.warn(AUDIT, "Unknown user tried to log in {}", idToken);
+                resp.sendError(403, "Unauthorized");
+                return;
+            }
+
+
             logger.warn(AUDIT, "User logged in {}", idToken);
             LogEventStatus.getInstance().addInfo(this, "User logged in " + idToken);
 

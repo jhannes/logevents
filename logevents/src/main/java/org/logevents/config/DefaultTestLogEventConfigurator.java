@@ -6,6 +6,7 @@ import org.logevents.observers.ConsoleLogEventObserver;
 import org.slf4j.event.Level;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -14,13 +15,13 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
     private static class ConsoleLogEventTestFormatter extends ConsoleLogEventFormatter {
 
         public ConsoleLogEventTestFormatter() {
-            exceptionFormatter.setPackageFilter(new String[] {
+            exceptionFormatter.setPackageFilter(Arrays.asList(
                     "org.junit.runners",
                     "org.junit.internal.runners",
                     "jdk.internal.reflect",
                     "com.intellij.junit4",
                     "com.intellij.rt.execution.junit"
-            });
+            ));
         }
 
         @Override

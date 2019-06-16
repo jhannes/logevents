@@ -27,6 +27,7 @@ import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +38,11 @@ import java.util.Random;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -152,7 +156,6 @@ public class LogEventsServletTest extends LogEventsServlet {
 
         when(request.getPathInfo()).thenReturn("/login");
 
-
         servlet.doGet(request, response);
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
@@ -168,7 +171,22 @@ public class LogEventsServletTest extends LogEventsServlet {
         when(request.getPathInfo()).thenReturn("/oauth2callback");
         when(request.getParameter("code")).thenReturn(String.valueOf(random.nextInt()));
 
-        OpenIdConfiguration openIdConfiguration = mock(OpenIdConfiguration.class);
+        Instant issueTime = ZonedDateTime.of(2019, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()).plusMinutes(random.nextInt(60 * 24 * 365)).toInstant();
+        long subject = random.nextLong();
+        OpenIdConfiguration openIdConfiguration = new OpenIdConfiguration(null, null, null) {
+            @Override
+            protected Map<String, Object> postTokenRequest(Map<String, String> formPayload) {
+                HashMap<String, Object> tokenResponse = new HashMap<>();
+
+                Map<String, Object> idToken = new HashMap<>();
+                idToken.put("iat", issueTime.toEpochMilli()/1000);
+                idToken.put("sub", subject);
+                String payload = Base64.getEncoder().encodeToString(JsonUtil.toIndentedJson(idToken).getBytes());
+                tokenResponse.put("id_token", "sdgslnl." + payload + ".dgs");
+                return tokenResponse;
+            }
+        };
+
         LogEventsServlet servlet = new LogEventsServlet() {
             @Override
             protected OpenIdConfiguration getOpenIdConfiguration() {
@@ -177,21 +195,52 @@ public class LogEventsServletTest extends LogEventsServlet {
         };
         servlet.setupCookieVault(Optional.empty());
 
-        Instant issueTime = ZonedDateTime.of(2019, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()).plusMinutes(random.nextInt(60 * 24 * 365)).toInstant();
-
-        Map<String, Object> idToken = new HashMap<>();
-        idToken.put("iat", issueTime.toEpochMilli()/1000);
-        idToken.put("sub", random.nextLong());
-        when(openIdConfiguration.fetchIdToken(anyString(), anyString()))
-                .thenReturn(idToken);
         servlet.doGet(request, response);
 
         ArgumentCaptor<Cookie> cookieCaptor = ArgumentCaptor.forClass(Cookie.class);
         verify(response).addCookie(cookieCaptor.capture());
         String cookieValue = servlet.decrypt(cookieCaptor.getValue().getValue());
 
-        assertEquals("subject=" + idToken.get("sub") + "\nsessionTime=" + issueTime,
+        assertEquals("subject=" + subject + "\nsessionTime=" + issueTime,
                 cookieValue);
+    }
+
+    @Test
+    public void shouldRejectIdTokensWithoutRequiredClaims() throws ServletException, IOException {
+        Properties properties = new Properties();
+        properties.put("observer.servlet.clientId", "my-application");
+        properties.put("observer.servlet.clientSecret", "abc123");
+        properties.put("observer.servlet.openIdIssuer", "https://login.microsoftonline.com/common");
+        properties.put("observer.servlet.requiredClaim.email_verified", "true");
+        properties.put("observer.servlet.requiredClaim.email", "alice@example.com, bob@example.com");
+
+        OpenIdConfiguration openIdConfiguration = new OpenIdConfiguration(new Configuration(properties, "observer.servlet")) {
+            @Override
+            protected Map<String, Object> postTokenRequest(Map<String, String> formPayload) {
+                HashMap<String, Object> tokenResponse = new HashMap<>();
+                Map<String, Object> idToken = new HashMap<>();
+                idToken.put("iat", System.currentTimeMillis() / 1000);
+                idToken.put("email", "stranger@example.org");
+                idToken.put("email_verified", true);
+                String payload = Base64.getEncoder().encodeToString(JsonUtil.toIndentedJson(idToken).getBytes());
+                tokenResponse.put("id_token", "sdgslnl." + payload + ".dgs");
+                return tokenResponse;
+            }
+        };
+        LogEventsServlet servlet = new LogEventsServlet() {
+            @Override
+            protected OpenIdConfiguration getOpenIdConfiguration() {
+                return openIdConfiguration;
+            }
+        };
+        servlet.setupCookieVault(Optional.empty());
+
+        when(request.getPathInfo()).thenReturn("/oauth2callback");
+        when(request.getParameter("code")).thenReturn(String.valueOf(random.nextInt()));
+        servlet.doGet(request, response);
+
+        verify(response, never()).addCookie(any());
+        verify(response).sendError(eq(403), anyString());
     }
 
     @Test

@@ -32,8 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 
 // TODO state
-// TODO observer...openIdRequire.email=jhannes@gmail.com,someone@example.com
-
 /**
  * The simplest way to expose your logs in your web browser, LogEventHttpServer runs an embedded http server
  * in your application for the logs app console. Requires that you configure an {@link OpenIdConfiguration}
@@ -233,6 +231,11 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
                 Map<String, Object> idToken = openIdConfiguration.fetchIdToken(
                         parameters.get("code")[0],getAuthority(exchange) + "/logs/oauth2callback"
                 );
+                if (!openIdConfiguration.isAuthorizedToken(idToken)) {
+                    logger.warn(AUDIT, "Unknown user tried to log in {}", idToken);
+                    exchange.sendResponseHeaders(403, 0);
+                    return;
+                }
 
                 logger.warn(AUDIT, "User logged in {}", idToken);
                 LogEventStatus.getInstance().addInfo(this, "User logged in " + idToken);

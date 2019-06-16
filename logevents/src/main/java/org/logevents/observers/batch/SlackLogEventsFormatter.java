@@ -205,7 +205,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         exceptionFormatter.addPackageMavenLocation(sourcePackages, mavenLocation);
     }
 
-    public void setPackageFilter(String[] packageFilter) {
+    public void setPackageFilter(List<String> packageFilter) {
         exceptionFormatter.setPackageFilter(packageFilter);
     }
 
