@@ -11,16 +11,16 @@ Setting up and configuring logging should be *easy*, whether you want to do it w
 configuration files or in code. Log Events is a small (250kb, no dependencies) logging framework
 built on top of SLF4J - the logging lingua franka for Java. It include nice formatting,
 [file observers](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html),
-as well as logging to [Slack]((https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html),
+as well as logging to [Slack](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html),
 [Microsoft Teams](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html),
 [database](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/DatabaseLogEventObserver.html),
-a [web dashboard](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlet/LogEventServlet.html)
+a [web dashboard](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/LogEventsServlet.html)
 and [SMTP](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SmtpLogEventObserver.html)
 out of [the box](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/).
 
 ## Quick start:
 
-1. Add `org.logevents:logevents:0.1.19` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
+1. Add `org.logevents:logevents:0.1.18` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
 2. Add `logevents.properties` to your current working directory or `src/main/java` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level. Read more about [logevents.properties](https://jhannes.github.io/logevents/apidocs/org/logevents/config/DefaultLogEventConfigurator.html). If you want to get messages from the internals of LogEvents, add `logevents.status=DEBUG`.
 3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to [the file](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) `logs/<your-app-name>-%date.log` and warning events to [console](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html).
 4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html">PatternEventLogFormatter</a> for more details.
@@ -245,7 +245,7 @@ Include Logevents maven dependency:
 <dependency>
     <groupId>org.logevents</groupId>
     <artifactId>logevents</artifactId>
-    <version>0.1.19</version>
+    <version>0.1.18</version>
 </dependency>
 ```
 
