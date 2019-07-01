@@ -140,7 +140,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                     "thread varchar(100) not null," +
                     "arguments text not null," +
                     "marker varchar(100)," +
-                    "throwable varchar(100)," +
+                    "throwable text," +
                     "stack_trace text," +
                     "node_name varchar(100) not null," +
                     "application_name varchar(100) not null" +
