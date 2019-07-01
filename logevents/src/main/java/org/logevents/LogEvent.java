@@ -61,7 +61,7 @@ public class LogEvent implements LoggingEvent {
         this.level = level;
         this.marker = marker;
         this.format = format;
-        this.args = args;
+        this.args = args != null ? args : new Object[0];
         this.throwable = throwable;
         this.threadName = threadName;
         this.timestamp = timestamp.toEpochMilli();
@@ -263,8 +263,12 @@ public class LogEvent implements LoggingEvent {
 
     private boolean isLoggingClass(StackTraceElement stackTraceElement) {
         String className = stackTraceElement.getClassName();
-        return className.startsWith("org.apache.commons.logging.") || className.startsWith("org.flywaydb.core.internal.util.logging.")
-                || className.startsWith("java.util.logging.") || className.startsWith("org.log4j.");
+        return className.startsWith("org.apache.commons.logging.")
+                || className.startsWith("org.flywaydb.core.internal.util.logging.")
+                || className.startsWith("org.flywaydb.core.internal.logging.")
+                || className.startsWith("org.eclipse.jetty.util.log")
+                || className.startsWith("java.util.logging.")
+                || className.startsWith("org.log4j.");
     }
 
     public StackTraceElement[] getStackTrace() {
