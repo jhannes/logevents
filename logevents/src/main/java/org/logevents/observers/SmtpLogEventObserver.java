@@ -56,7 +56,7 @@ public class SmtpLogEventObserver extends BatchingLogEventObserver {
         this.smtpUsername = configuration.optionalString("username").orElse(fromAddress);
         this.smtpPassword = configuration.getString("password");
         this.messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
-        this.nodeName = configuration.getServerUser();
+        this.nodeName = configuration.getNodeName();
 
         configureFilter(configuration);
         idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);

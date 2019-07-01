@@ -2,6 +2,7 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.config.Configuration;
 import org.logevents.query.JsonLogEventFormatter;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventQueryResult;
@@ -16,6 +17,7 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class LogEventBuffer implements LogEventObserver, LogEventSource {
@@ -24,7 +26,10 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
      */
     private final static EnumMap<Level, CircularBuffer<LogEvent>> messages = new EnumMap<>(Level.class);
 
+    private final JsonLogEventFormatter jsonFormatter;
+
     public LogEventBuffer(int capacity) {
+        this(Configuration.calculateNodeName(), Configuration.calculateApplicationName());
         for (Level level : Level.values()) {
             messages.put(level, new CircularBuffer<>(capacity));
         }
@@ -32,6 +37,18 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
 
     public LogEventBuffer() {
         this(2000);
+    }
+
+    public LogEventBuffer(Properties properties, String prefix) {
+        this(new Configuration(properties, prefix));
+    }
+
+    public LogEventBuffer(Configuration config) {
+        this(config.getNodeName(), config.getApplicationName());
+    }
+
+    public LogEventBuffer(String nodeName, String applicationName) {
+        this.jsonFormatter = new JsonLogEventFormatter(nodeName, applicationName);
     }
 
     private Collection<LogEvent> filter(Level threshold, Instant start, Instant end) {
@@ -52,8 +69,6 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
     public void logEvent(LogEvent logEvent) {
         messages.get(logEvent.getLevel()).add(logEvent);
     }
-
-    private final JsonLogEventFormatter jsonFormatter = new JsonLogEventFormatter();
 
     public LogEventQueryResult query(LogEventFilter filter) {
         Collection<LogEvent> allEvents = filter(filter.getThreshold(), filter.getStartTime(), filter.getEndTime());

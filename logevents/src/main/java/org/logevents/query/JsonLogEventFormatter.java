@@ -20,6 +20,13 @@ public class JsonLogEventFormatter implements Function<LogEvent, Map<String, Obj
     private final MessageFormatter messageFormatter = new MessageFormatter();
     private final JsonExceptionFormatter exceptionFormatter = new JsonExceptionFormatter();
     private final JsonMessageFormatter jsonFormatter = new JsonMessageFormatter();
+    private String nodeName;
+    private String applicationName;
+
+    public JsonLogEventFormatter(String nodeName, String applicationName) {
+        this.nodeName = nodeName;
+        this.applicationName = applicationName;
+    }
 
     @Override
     public Map<String, Object> apply(LogEvent event) {
@@ -37,6 +44,8 @@ public class JsonLogEventFormatter implements Function<LogEvent, Map<String, Obj
         jsonEvent.put("marker", Optional.ofNullable(event.getMarker()).map(Marker::getName).orElse(null));
         jsonEvent.put("arguments", Stream.of(event.getArgumentArray()).map(Object::toString).collect(Collectors.toList()));
         jsonEvent.put("mdc", formatMdc(event));
+        jsonEvent.put("node", this.nodeName);
+        jsonEvent.put("application", this.applicationName);
 
         if (event.getThrowable() != null) {
             jsonEvent.put("throwable", event.getThrowable().toString());

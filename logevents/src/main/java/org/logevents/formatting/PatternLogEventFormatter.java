@@ -124,6 +124,13 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             return s -> s.replaceAll(regex, replacement);
         });
 
+        factory.put("application", spec ->
+                s -> Configuration.calculateApplicationName()
+        );
+        factory.put("node", spec ->
+                s -> Configuration.calculateNodeName()
+        );
+
 
         // TODO
 

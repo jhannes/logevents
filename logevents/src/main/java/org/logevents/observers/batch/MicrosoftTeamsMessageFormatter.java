@@ -31,7 +31,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
     public MicrosoftTeamsMessageFormatter(Configuration configuration) {
         detailUrl = configuration.optionalString("detailUrl");
         messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
-        nodeName = configuration.getServerUser();
+        nodeName = configuration.getNodeName();
         configuration.checkForUnknownFields();
     }
 

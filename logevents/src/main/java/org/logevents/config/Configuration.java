@@ -223,8 +223,7 @@ public class Configuration {
     }
 
     public String getServerUser() {
-        return optionalString("nodeName")
-                .orElseGet(() -> System.getProperty("user.name") + "@" + getNodeName());
+        return System.getProperty("user.name") + "@" + getNodeName();
     }
 
     public String getApplicationNode() {
@@ -232,8 +231,7 @@ public class Configuration {
     }
 
     public String getNodeName() {
-        return optionalString("nodeName")
-                .orElseGet(Configuration::calculateNodeName);
+        return optionalString("nodeName").orElseGet(Configuration::calculateNodeName);
     }
 
     public static String calculateNodeName() {

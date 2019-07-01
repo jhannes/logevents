@@ -245,6 +245,7 @@ function showLogEventTable() {
         ul.appendChild(listItem("Logger", logEvent.logger, "logger"));
         ul.appendChild(listItem("Thread", logEvent.thread, "thread"));
         ul.appendChild(listItem("Node", logEvent.node, "node"));
+        ul.appendChild(listItem("Application", logEvent.application, "application"));
         if (logEvent.marker) {
             ul.appendChild(listItem("Marker", logEvent.marker, "marker"));
         }
