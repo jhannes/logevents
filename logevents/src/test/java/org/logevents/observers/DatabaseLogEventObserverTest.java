@@ -41,7 +41,7 @@ public class DatabaseLogEventObserverTest {
     {
         properties.setProperty("observer.db.jdbcUrl", "jdbc:h2:mem:logevents-test;DB_CLOSE_DELAY=-1");
         properties.setProperty("observer.db.jdbcUsername", "sa");
-        properties.setProperty("observer.db.jdbcPassword", "");
+        properties.setProperty("observer.db.jdbcPassword", "sa");
         properties.setProperty("observer.db.logEventsTable", "test_log_events");
         properties.setProperty("observer.db.logEventsTable", "test_log_mdc");
     }
@@ -104,7 +104,7 @@ public class DatabaseLogEventObserverTest {
                 .findFirst()
                 .orElseThrow(() -> new AssertionFailedError("Didn't find <" + event.getMessage() + ">"));
 
-        assertEquals(getServerUser(), savedEvent.get("node"));
+        assertEquals(Configuration.calculateNodeName(), savedEvent.get("node"));
         assertEquals(Configuration.calculateApplicationName(), savedEvent.get("application"));
     }
 
@@ -157,7 +157,7 @@ public class DatabaseLogEventObserverTest {
         HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
         parameters.put("node", new String[] { "some.example.org" });
         assertDoesNotContain(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
-        parameters.put("node", new String[] { "some.example.org", getServerUser() });
+        parameters.put("node", new String[] { "some.example.org", Configuration.calculateNodeName() });
         assertContains(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
     }
 
@@ -297,7 +297,7 @@ public class DatabaseLogEventObserverTest {
                 summary.getLoggers());
         assertEquals(new HashSet<>(Arrays.asList(event1.getThreadName(), event2.getThreadName(), event3.getThreadName())),
                 summary.getThreads());
-        assertEquals(new HashSet<>(Arrays.asList(getServerUser())), summary.getNodes());
+        assertEquals(new HashSet<>(Arrays.asList(Configuration.calculateNodeName())), summary.getNodes());
         assertEquals(new HashSet<>(Arrays.asList(Configuration.calculateApplicationName())), summary.getApplications());
     }
 

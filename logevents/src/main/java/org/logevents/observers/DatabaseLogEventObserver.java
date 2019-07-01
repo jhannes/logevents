@@ -80,10 +80,10 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     public DatabaseLogEventObserver(Configuration configuration) {
         this.jdbcUrl = configuration.getString("jdbcUrl");
         this.jdbcUsername = configuration.getString("jdbcUsername");
-        this.jdbcPassword = configuration.optionalString("jdbcPassword").orElse("");
+        this.jdbcPassword = configuration.getString("jdbcPassword");
         this.logEventsTable = configuration.optionalString("logEventsTable").orElse("LOG_EVENTS").toUpperCase();
         this.logEventsMdcTable = configuration.optionalString("logEventsMdcTable").orElse(logEventsTable + "_MDC").toUpperCase();
-        this.nodeName = configuration.getServerUser();
+        this.nodeName = configuration.getNodeName();
         this.applicationName = configuration.getApplicationName();
 
         try (Connection connection = getConnection()) {
@@ -119,7 +119,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
             statement.executeUpdate("create table " + logEventsMdcTable + " (" +
                     "event_id varchar(100) not null references " + logEventsTable + "(event_id), " +
                     "name varchar(100) not null, " +
-                    "value varchar(20) not null" +
+                    "value varchar(1000) not null" +
                     ")"
             );
             statement.executeUpdate("create index " + logEventsMdcTable + "_idx on " + logEventsMdcTable + "(name, value)");
@@ -138,7 +138,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                     "message_json text not null, " +
                     "instant bigint not null, " +
                     "thread varchar(100) not null," +
-                    "arguments varchar(1000) not null," +
+                    "arguments text not null," +
                     "marker varchar(100)," +
                     "throwable varchar(100)," +
                     "stack_trace text," +
