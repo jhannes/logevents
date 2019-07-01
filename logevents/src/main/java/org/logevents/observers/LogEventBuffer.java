@@ -29,10 +29,7 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
     private final JsonLogEventFormatter jsonFormatter;
 
     public LogEventBuffer(int capacity) {
-        this(Configuration.calculateNodeName(), Configuration.calculateApplicationName());
-        for (Level level : Level.values()) {
-            messages.put(level, new CircularBuffer<>(capacity));
-        }
+        this(capacity, Configuration.calculateNodeName(), Configuration.calculateApplicationName());
     }
 
     public LogEventBuffer() {
@@ -44,11 +41,14 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
     }
 
     public LogEventBuffer(Configuration config) {
-        this(config.getNodeName(), config.getApplicationName());
+        this(config.optionalInt("capacity").orElse(2000), config.getNodeName(), config.getApplicationName());
     }
 
-    public LogEventBuffer(String nodeName, String applicationName) {
+    public LogEventBuffer(int capacity, String nodeName, String applicationName) {
         this.jsonFormatter = new JsonLogEventFormatter(nodeName, applicationName);
+        for (Level level : Level.values()) {
+            messages.put(level, new CircularBuffer<>(capacity));
+        }
     }
 
     private Collection<LogEvent> filter(Level threshold, Instant start, Instant end) {
