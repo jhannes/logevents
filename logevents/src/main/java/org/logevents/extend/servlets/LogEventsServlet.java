@@ -49,7 +49,7 @@ import java.util.stream.Stream;
  *     <li>
  *         In order to run LogEventsServlet needs security configuration in your logevents*.properties.
  *         You need to set <code>observer.servlet.openIdIssuer</code>, <code>observer.servlet.clientId</code>
- *         and <code>observer.servlet.clientSecret</code>.
+ *         and <code>observer.servlet.clientSecret</code>. See {@link WebLogEventObserver}
  *     </li>
  *     <li>
  *         If you mount LogEventsServlet on "/logs", the API will be at "/logs/events", the OpenAPI documentation
