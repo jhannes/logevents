@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.logevents</groupId>
         <artifactId>logevents-parent</artifactId>
-        <version>0.1.19</version>
+        <version>0.1.20-SNAPSHOT</version>
     </parent>
     <artifactId>logevents-servlets-demo</artifactId>
     <dependencies>
