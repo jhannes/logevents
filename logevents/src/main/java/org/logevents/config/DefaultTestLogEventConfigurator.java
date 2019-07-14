@@ -14,14 +14,22 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
 
     private static class ConsoleLogEventTestFormatter extends ConsoleLogEventFormatter {
 
-        public ConsoleLogEventTestFormatter() {
-            exceptionFormatter.setPackageFilter(Arrays.asList(
+        public ConsoleLogEventTestFormatter(Properties properties, String prefix) {
+            this(new Configuration(properties, prefix));
+        }
+
+        public ConsoleLogEventTestFormatter(Configuration configuration) {
+            List<String> defaultPackageFilter = Arrays.asList(
                     "org.junit.runners",
                     "org.junit.internal.runners",
                     "jdk.internal.reflect",
                     "com.intellij.junit4",
                     "com.intellij.rt.execution.junit"
-            ));
+            );
+            List<String> packageFilter = new ArrayList<>(getPackageFilter(configuration, "packageFilter"));
+            packageFilter.addAll(defaultPackageFilter);
+
+            exceptionFormatter.setPackageFilter(packageFilter);
         }
 
         @Override
@@ -88,7 +96,7 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
 
     @Override
     protected ConsoleLogEventObserver createConsoleLogEventObserver(Properties configuration) {
-        return new ConsoleLogEventObserver(new ConsoleLogEventTestFormatter());
+        return new ConsoleLogEventObserver(new ConsoleLogEventTestFormatter(configuration, "observer.test"));
     }
 
     @Override

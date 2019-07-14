@@ -77,7 +77,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 : null;
     }
 
-    private List<String> getPackageFilter(Configuration configuration, String key) {
+    protected List<String> getPackageFilter(Configuration configuration, String key) {
         List<String> packageFilter = configuration.getStringList(key);
         if (packageFilter.isEmpty()) {
             packageFilter = configuration.getDefaultStringList(key);
