@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Supplier;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -268,14 +269,14 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         Configuration logeventsConfig = new Configuration(configuration, "logevents");
         LogEventStatus.getInstance().configure(logeventsConfig);
         new Configuration(configuration, toString());
-        Map<String, LogEventObserver> observers = new HashMap<>();
+        Map<String, Supplier<? extends LogEventObserver>> observers = new HashMap<>();
         for (Object key : configuration.keySet()) {
             if (key.toString().matches("observer\\.\\w+")) {
                 configureObserver(observers, key.toString(), configuration);
             }
         }
-        observers.putIfAbsent("console", createConsoleLogEventObserver(configuration));
-        observers.putIfAbsent("file", createFileObserver(configuration));
+        observers.putIfAbsent("console", () -> createConsoleLogEventObserver(configuration));
+        observers.putIfAbsent("file", () -> createFileObserver(configuration));
         factory.setObservers(observers);
         factory.reset("console", getDefaultRootLevel());
         configureLogger(factory, factory.getRootLogger(), configuration.getProperty("root"), false);
@@ -332,18 +333,21 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    private void configureObserver(Map<String, LogEventObserver> observers, String key, Properties configuration) {
-        try {
-            String name = key.split("\\.")[1];
-            String prefix = "observer." + name;
-            if (!observers.containsKey(name)) {
-                LogEventStatus.getInstance().addDebug(this, "Configuring " + prefix);
-                LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", configuration);
-                observers.put(name, observer);
-                LogEventStatus.getInstance().addDebug(this, "Configured " + observer);
-            }
-        } catch (RuntimeException e) {
-            LogEventStatus.getInstance().addError(this, "Failed to create " + key, e);
+    private void configureObserver(Map<String, Supplier<? extends LogEventObserver>> observers, String key, Properties configuration) {
+        String name = key.split("\\.")[1];
+        if (!observers.containsKey(name)) {
+            observers.put(name, () -> {
+                String prefix = "observer." + name;
+                try {
+                    LogEventStatus.getInstance().addDebug(this, "Configuring " + prefix);
+                    LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", configuration);
+                    LogEventStatus.getInstance().addDebug(this, "Configured " + observer);
+                    return observer;
+                } catch (RuntimeException e) {
+                    LogEventStatus.getInstance().addError(this, "Failed to create " + key, e);
+                    throw e;
+                }
+            });
         }
     }
 

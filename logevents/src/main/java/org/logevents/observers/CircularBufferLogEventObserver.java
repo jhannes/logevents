@@ -34,7 +34,7 @@ public class CircularBufferLogEventObserver implements LogEventObserver {
 
     public String singleMessage() {
         if (circularBuffer.size() != 1) {
-            throw new IllegalStateException("Expected 1 message, but was " + circularBuffer.size());
+            throw new AssertionError("Expected 1 message, but was " + circularBuffer.size());
         }
         return circularBuffer.get(0).getMessage();
     }

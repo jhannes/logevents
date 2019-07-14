@@ -18,8 +18,10 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,6 +49,7 @@ import java.util.stream.Stream;
 public class LogEventFactory implements ILoggerFactory {
 
     private static LogEventFactory instance;
+    private Map<String, Supplier<? extends LogEventObserver>> observerSuppliers = new HashMap<>();
     private Map<String, LogEventObserver> observers = new HashMap<>();
 
     /**
@@ -61,8 +64,8 @@ public class LogEventFactory implements ILoggerFactory {
         return instance;
     }
 
-    public void setObservers(Map<String, LogEventObserver> observers) {
-        this.observers = observers;
+    public void setObservers(Map<String, Supplier<? extends LogEventObserver>> observers) {
+        this.observerSuppliers = observers;
     }
 
     private LoggerDelegator rootLogger = LoggerDelegator.rootLogger();
@@ -137,9 +140,17 @@ public class LogEventFactory implements ILoggerFactory {
     }
 
     public LogEventObserver getObserver(String observerName) {
-        return observers.computeIfAbsent(observerName, key -> {
-            throw new LogEventConfigurationException("Unknown observer <" + key + ">");
-        });
+        if (!observers.containsKey(observerName)) {
+            try {
+                observers.put(observerName, observerSuppliers.computeIfAbsent(observerName, k -> {
+                    throw new LogEventConfigurationException("Unknown observer <" + k + ">");
+                }).get());
+            } catch (RuntimeException e) {
+                LogEventStatus.getInstance().addFatal(this, "Failed to load " + observerName, e);
+                return null;
+            }
+        }
+        return observers.get(observerName);
     }
 
     /**
@@ -161,6 +172,7 @@ public class LogEventFactory implements ILoggerFactory {
         Set<LogEventObserver> observers =
                 Stream.of(observerNames.split(","))
                         .map(s -> getObserver(s.trim()))
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toCollection(LinkedHashSet::new));
         LogEventObserver observer = CompositeLogEventObserver.combineList(observers);
         setObserver(logger, observer, includeParent);

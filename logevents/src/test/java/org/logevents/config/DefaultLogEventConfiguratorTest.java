@@ -26,10 +26,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class DefaultLogEventConfiguratorTest {
 
@@ -137,11 +140,60 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(
                 "CircularBufferLogEventObserver{size=1}",
                 factory.getLogger("org.example").getObserver());
-
     }
 
     @Test
+    public void shouldWarnOnMisconfiguredObserver() {
+        configuration.setProperty("logger.org.example", "ERROR faulty");
+        configuration.setProperty("observer.faulty", "ConsoleLogEventObserver");
+        configuration.setProperty("observer.faulty.nonExistingProperty", "Non existing property value");
+
+        configurator.applyConfigurationProperties(factory, configuration);
+
+        assertEquals(Collections.singletonList("Failed to create observer.faulty"),
+                LogEventStatus.getInstance().getHeadMessages(configurator, StatusEvent.StatusLevel.ERROR)
+                .stream().map(StatusEvent::getMessage).collect(Collectors.toList()));
+    }
+
+    @Test
+    public void shouldUseOtherObserversOnMisconfiguredObserver() {
+        LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
+
+        configuration.setProperty("logger.org.example", "ERROR console2,buffer");
+        configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.setProperty("observer.console2", "ConsoleLogEventObserver");
+        configuration.setProperty("observer.console2.formatter", "PatternLogEventFormatter");
+
+        configurator.applyConfigurationProperties(factory, configuration);
+        assertEquals(Collections.singletonList(new StatusEvent(
+                configurator,
+                "Failed to create observer.console2",
+                StatusEvent.StatusLevel.ERROR,
+                new LogEventConfigurationException("Missing required key <observer.console2.formatter.pattern> in <[observer.console2.formatter, logger.org.example, observer.buffer, observer.console2]>"))
+            ), LogEventStatus.getInstance().getHeadMessages(configurator, StatusEvent.StatusLevel.ERROR));
+
+        factory.getLogger("org.example").error("Hello");
+        assertEquals("Hello",
+                ((CircularBufferLogEventObserver) factory.getObserver("buffer")).singleMessage());
+    }
+
+
+    @Test
+    public void shouldNotFailOnUnusedMisconfiguredObserver() {
+        configuration.setProperty("logger.org.example", "ERROR console");
+        configuration.setProperty("observer.faulty", "ConsoleLogEventFormatter");
+        configuration.setProperty("observer.faulty.nonExistingProperty", "Non existing property value");
+
+        configurator.applyConfigurationProperties(factory, configuration);
+
+        assertEquals(Collections.emptyList(),
+                LogEventStatus.getInstance().getHeadMessages(configurator, StatusEvent.StatusLevel.ERROR));
+    }
+
+
+    @Test
     public void shouldScanPropertiesFilesWhenFileIsChanged() throws IOException, InterruptedException {
+        LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
         propertiesDir = Paths.get("target", "test-data", "scan-change", "properties");
         deleteConfigFiles();
         Files.createDirectories(propertiesDir);
@@ -214,6 +266,7 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldScanPropertiesFilesWhenHigherPriorityFileIsAdded() throws IOException, InterruptedException {
+        LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
         propertiesDir = Paths.get("target", "test-data", "scan-new", "properties");
         deleteConfigFiles();
         Files.createDirectories(propertiesDir);
@@ -278,7 +331,7 @@ public class DefaultLogEventConfiguratorTest {
 
     @BeforeClass
     public static void turnOffStatusLogging() {
-        oldThreshold = LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
+        oldThreshold = LogEventStatus.getInstance().getThreshold(null);
     }
 
     @AfterClass

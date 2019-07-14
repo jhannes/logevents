@@ -1,6 +1,7 @@
 package org.logevents.status;
 
 import java.time.Instant;
+import java.util.Objects;
 
 public class StatusEvent {
 
@@ -42,6 +43,35 @@ public class StatusEvent {
 
     public String formatMessage() {
         return location + ": " + message + (throwable != null ? " " + throwable.toString() : "");
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + formatMessage() + "]";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        StatusEvent that = (StatusEvent) o;
+        return Objects.equals(location, that.location) &&
+                Objects.equals(message, that.message) &&
+                level == that.level &&
+                exceptionEquals(throwable, that.throwable);
+    }
+
+    boolean exceptionEquals(Throwable self, Throwable other) {
+        if (self == null || other == null) {
+            return other == self;
+        }
+        return Objects.equals(self.getMessage(), other.getMessage()) &&
+                Objects.equals(self.getClass(), other.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(location, message, level);
     }
 
     public Thread getThread() {
