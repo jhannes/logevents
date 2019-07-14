@@ -86,6 +86,8 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         this.nodeName = configuration.getNodeName();
         this.applicationName = configuration.getApplicationName();
 
+        LogEventStatus.getInstance().addDebug(this, "Connecting to " + jdbcUrl + " as " + jdbcUsername);
+
         try (Connection connection = getConnection()) {
             if (!tableExists(connection, logEventsTable)) {
                 LogEventStatus.getInstance().addInfo(this, "Creating table " + logEventsTable);

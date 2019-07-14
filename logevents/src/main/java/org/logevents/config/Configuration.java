@@ -1,5 +1,7 @@
 package org.logevents.config;
 
+import org.logevents.status.LogEventStatus;
+
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -164,12 +166,14 @@ public class Configuration {
     public <T> T createInstance(String key, Class<T> clazz) {
         optionalString(key)
             .orElseThrow(() -> new IllegalArgumentException("Missing configuration for " + clazz.getSimpleName() + " in " + fullKey(key)));
+        LogEventStatus.getInstance().addDebug(this, "Creating " + key);
         return ConfigUtil.create(fullKey(key), clazz.getPackage().getName(), properties);
     }
 
     public <T> T createInstance(String key, Class<T> clazz, String defaultPackage) {
         optionalString(key)
             .orElseThrow(() -> new IllegalArgumentException("Missing configuration for " + clazz.getSimpleName() + " in " + fullKey(key)));
+        LogEventStatus.getInstance().addDebug(this, "Creating " + key);
         return ConfigUtil.create(fullKey(key), defaultPackage, properties);
     }
 
@@ -177,6 +181,7 @@ public class Configuration {
         expectedFields.add(key);
         Class<?> clazz = ConfigUtil.getClass(fullKey(key), defaultClass.getPackage().getName(), properties)
                 .orElse(defaultClass);
+        LogEventStatus.getInstance().addDebug(this, "Creating " + key);
         return ConfigUtil.create(fullKey(key), clazz, properties);
     }
 
@@ -184,6 +189,7 @@ public class Configuration {
         expectedFields.add(key);
         Class<?> clazz = ConfigUtil.getClass(fullKey(key), targetType.getPackage().getName(), properties)
                 .orElse(defaultClass);
+        LogEventStatus.getInstance().addDebug(this, "Creating " + key);
         return ConfigUtil.create(fullKey(key), clazz, properties);
     }
 
