@@ -3,8 +3,10 @@ package org.logevents.web;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.LogEventBuffer;
 import org.logevents.util.JsonParser;
@@ -12,6 +14,7 @@ import org.logevents.util.JsonUtil;
 import org.logevents.util.openid.OpenIdConfiguration;
 import org.mockito.Mockito;
 import org.slf4j.MarkerFactory;
+import org.slf4j.event.Level;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -120,6 +123,9 @@ public class LogEventHttpServerTest {
         assertEquals("Please log in", output.toString());
     }
 
+    @Rule
+    public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
+
     @Test
     public void shouldCreateSessionOnOpenIdConnectCallback() throws IOException, URISyntaxException, GeneralSecurityException {
         when(mockExchange.getRequestURI()).thenReturn(new URI("http://localhost/logs/oauth2callback?code=abcd"));
@@ -153,6 +159,8 @@ public class LogEventHttpServerTest {
         Map<String, Object> sessionInfo = JsonParser.parseObject(logEventHttpServer.getSessionVault().decrypt(cookieValue));
         assertEquals(Instant.ofEpochSecond(iat),
                 Instant.parse(sessionInfo.get("sessionTime").toString()));
+
+        expectedLogEvents.expectPattern(LogEventHttpServer.class, Level.WARN, "User logged in {}");
     }
 
     @Test
@@ -179,6 +187,9 @@ public class LogEventHttpServerTest {
 
         verify(mockExchange).sendResponseHeaders(eq(403), anyLong());
         assertNull(responseHeaders.getFirst("Set-Cookie"));
+
+        expectedLogEvents.expectPattern(LogEventHttpServer.class, Level.WARN,
+                "Unknown user tried to log in {}");
     }
 
 }

@@ -35,7 +35,7 @@ public class LevelThresholdConditionalObserver implements LogEventObserver {
 
     @Override
     public void logEvent(LogEvent event) {
-        if (threshold.toInt() <= event.getLevel().toInt()) {
+        if (!event.isBelowThreshold(threshold)) {
             delegate.logEvent(event);
         }
     }

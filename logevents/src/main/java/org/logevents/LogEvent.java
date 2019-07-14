@@ -296,7 +296,7 @@ public class LogEvent implements LoggingEvent {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + level + "," + format + "}";
+        return getClass().getSimpleName() + "{" + loggerName + "," + level + "," + format + "}";
     }
 
     public String getMdc() {
@@ -331,5 +331,9 @@ public class LogEvent implements LoggingEvent {
     @Override
     public int hashCode() {
         return Objects.hash(loggerName, level, marker, format, threadId, threadName, timestamp);
+    }
+
+    public boolean isBelowThreshold(Level threshold) {
+        return getLevel().compareTo(threshold) > 0;
     }
 }

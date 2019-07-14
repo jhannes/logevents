@@ -33,7 +33,7 @@ public abstract class FilteredLogEventObserver implements LogEventObserver {
     protected abstract void doLogEvent(LogEvent logEvent);
 
     protected boolean shouldLogEvent(LogEvent logEvent) {
-        if (logEvent.getLevel().compareTo(threshold) > 0) return false;
+        if (logEvent.isBelowThreshold(threshold)) return false;
         for (Marker suppressedMarker : suppressedMarkers) {
             if (logEvent.getMarker() != null && suppressedMarker.contains(logEvent.getMarker())) {
                 return false;

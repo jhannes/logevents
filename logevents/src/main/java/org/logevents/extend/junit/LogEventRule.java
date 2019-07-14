@@ -80,14 +80,22 @@ public class LogEventRule implements TestRule, LogEventObserver {
     public void assertContainsMessage(Level level, String message, Throwable throwable) {
         assertFalse("Expected <" + message + "> but no messages were logged",
                 events.isEmpty());
+        List<String> messages = new ArrayList<>();
         for (LogEvent event : events) {
-            if (formatMessage(event).equals(message)) {
+            String logMessage = formatMessage(event);
+            if (logMessage.equals(message)) {
                 assertEquals("Log level for " + message, level, event.getLevel());
-                assertEquals("Exception for " + message, throwable, event.getThrowable());
+                assertExceptionEquals(message, throwable, event);
                 return;
             }
+            messages.add(logMessage);
         }
-        fail("Could not find <" + message + "> in logged messages: " + events);
+        fail("Could not find <" + message + "> in logged messages: " + messages);
+    }
+
+    void assertExceptionEquals(String message, Throwable throwable, LogEvent event) {
+        assertEquals("Exception for " + message, throwable.getClass(), event.getThrowable().getClass());
+        assertEquals("Exception for " + message, throwable.getMessage(), event.getThrowable().getMessage());
     }
 
     public void assertDoesNotContainMessage(String message) {
