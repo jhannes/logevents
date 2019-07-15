@@ -25,34 +25,32 @@ import org.slf4j.event.Level;
  * public class ExampleTest {
  *    private static final Logger logger = LoggerFactory.getLogger(ExampleTest.class)
  *
- *    Rule
+ *    &#064;Rule
  *    public ExpectedLogEventsRule expectLogEvents = new ExpectedLogEventsRule(Level.WARN);
  *
- *    Test
+ *    &#064;Test
  *    public void willFailBecauseOfUnexpectedLogEvent() {
  *        logger.warn("Whoa there!");
  *    }
  *
- *    Test
+ *    &#064;Test
  *    public void willFailBecauseExpectedEventWasNotLogged() {
  *        expectLogEvents.expect(ExampleTest.class, Level.WARN, "Whoa there!");
  *    }
  *
- *    Test
+ *    &#064;Test
  *    public void willFailBecauseLogMessageDidNotMatch() {
  *        expectLogEvents.expect(ExampleTest.class, Level.WARN, "Whoa there!");
  *        logger.warn("Another message!");
  *    }
  *
- *    Test
+ *    &#064;Test
  *    public void willPass() {
  *        expectLogEvents.expect(ExampleTest.class, Level.WARN, "Whoa there!");
  *        logger.warn("Whoa there!");
  *    }
  * }
  * </pre>
- *
- *
  */
 public class ExpectedLogEventsRule implements TestRule, LogEventObserver {
 
