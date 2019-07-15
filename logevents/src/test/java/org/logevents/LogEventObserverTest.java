@@ -11,19 +11,16 @@ import org.slf4j.event.Level;
 
 public class LogEventObserverTest {
 
-    private Logger childLogger = LoggerFactory.getLogger("org.logevents.testing.parent.Child");
+    private LogEventFactory factory = new LogEventFactory();
 
-    private Logger parentLogger = LoggerFactory.getLogger("org.logevents.testing.parent");
+    private Logger childLogger = factory.getLogger("org.logevents.testing.parent.Child");
 
-    private Logger grandParentLogger = LoggerFactory.getLogger("org.logevents.testing");
+    private Logger parentLogger = factory.getLogger("org.logevents.testing.parent");
 
-    private LogEventFactory factory = LogEventFactory.getInstance();
-
+    private Logger grandParentLogger = factory.getLogger("org.logevents.testing");
 
     @Test
     public void shouldSendEventToObserver() {
-        factory.configure();
-
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
         factory.setObserver(childLogger, observer, false);
 
@@ -33,8 +30,6 @@ public class LogEventObserverTest {
 
     @Test
     public void shouldSendEventToParent() {
-        factory.configure();
-
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
         factory.setObserver(parentLogger, observer, false);
         childLogger.warn("Message sent to parent");
@@ -45,8 +40,6 @@ public class LogEventObserverTest {
 
     @Test
     public void shouldSendEventToGrandParent() {
-        factory.configure();
-
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
         factory.setObserver(grandParentLogger, observer, false);
         childLogger.error("Message sent to grandparent");
@@ -57,7 +50,6 @@ public class LogEventObserverTest {
 
     @Test
     public void shouldSendEventToMultipleObservers() {
-        factory.configure();
         factory.setRootObserver(new NullLogEventObserver());
 
         CircularBufferLogEventObserver parentObserver = new CircularBufferLogEventObserver();

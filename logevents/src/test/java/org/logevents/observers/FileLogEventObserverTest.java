@@ -25,7 +25,7 @@ public class FileLogEventObserverTest {
 
     private static final String CWD = Paths.get("").toAbsolutePath().getFileName().toString();
 
-    private LogEventFactory factory = LogEventFactory.getInstance();
+    private LogEventFactory factory = new LogEventFactory();
     private LoggerConfiguration logger = factory.getLogger(getClass().getName());
 
     @Test
@@ -87,7 +87,7 @@ public class FileLogEventObserverTest {
 
     @Test
     public void shouldLogToFileWithPattern() throws IOException {
-        Path logDirectory = Paths.get("target", "test", "log");
+        Path logDirectory = Paths.get("target", "test", "file-test-log");
         if (Files.exists(logDirectory)) {
             Files.walk(logDirectory).map(Path::toFile).forEach(File::delete);
         }

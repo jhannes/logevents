@@ -168,7 +168,7 @@ public class LogEventsServlet extends HttpServlet {
 
 
             logger.warn(AUDIT, "User logged in {}", idToken);
-            LogEventStatus.getInstance().addInfo(this, "User logged in " + idToken);
+            LogEventStatus.getInstance().addConfig(this, "User logged in " + idToken);
 
             resp.addCookie(createSessionCookie(idToken));
             String location = req.getContextPath() + req.getServletPath() + "/";

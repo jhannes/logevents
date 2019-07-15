@@ -90,13 +90,13 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
 
         try (Connection connection = getConnection()) {
             if (!tableExists(connection, logEventsTable)) {
-                LogEventStatus.getInstance().addInfo(this, "Creating table " + logEventsTable);
+                LogEventStatus.getInstance().addConfig(this, "Creating table " + logEventsTable);
                 createLogEventsTable(connection);
             } else {
                 LogEventStatus.getInstance().addDebug(this, "Table " + logEventsMdcTable + " already exists");
             }
             if (!tableExists(connection, logEventsMdcTable)) {
-                LogEventStatus.getInstance().addInfo(this, "Creating table " + logEventsMdcTable);
+                LogEventStatus.getInstance().addConfig(this, "Creating table " + logEventsMdcTable);
                 createMdcTable(connection);
             } else {
                 LogEventStatus.getInstance().addDebug(this, "Table " + logEventsMdcTable + " already exists");

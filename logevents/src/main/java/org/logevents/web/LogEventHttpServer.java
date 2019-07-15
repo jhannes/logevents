@@ -139,7 +139,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
     }
 
     public void start() {
-        LogEventStatus.getInstance().addInfo(this, "Starting server on port " + httpPort);
+        LogEventStatus.getInstance().addConfig(this, "Starting server on port " + httpPort);
         try {
             if (hostname == null) {
                 hostname = InetAddress.getLocalHost().getHostName();
@@ -159,7 +159,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
                 LogEventStatus.getInstance().addError(this, "httpPort or httpsPort must be configured", null);
                 return;
             }
-            LogEventStatus.getInstance().addInfo(this, "Started on " + getUrl());
+            LogEventStatus.getInstance().addConfig(this, "Started on " + getUrl());
 
             this.httpServer.createContext("/", this::httpHandler);
             this.httpServer.start();
@@ -190,7 +190,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
         }
         File crtFile = new File("key-" + hostName + ".crt");
         if (!crtFile.exists()) {
-            LogEventStatus.getInstance().addInfo(this, "Please import " + crtFile.getAbsolutePath()
+            LogEventStatus.getInstance().addConfig(this, "Please import " + crtFile.getAbsolutePath()
                 + " as a root CA to access logevents console with your browser over https");
         }
         hostKeyStore.writeCertificate(crtFile);
@@ -238,7 +238,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
                 }
 
                 logger.warn(AUDIT, "User logged in {}", idToken);
-                LogEventStatus.getInstance().addInfo(this, "User logged in " + idToken);
+                LogEventStatus.getInstance().addConfig(this, "User logged in " + idToken);
 
                 exchange.getResponseHeaders().set("Set-Cookie", createSessionCookie(idToken));
                 exchange.getResponseHeaders().add("Location", getAuthority(exchange) + "/logs");
@@ -291,7 +291,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
                 }
             }
         } catch (Exception e) {
-            LogEventStatus.getInstance().addInfo(this, "Failed to decode session cookie");
+            LogEventStatus.getInstance().addConfig(this, "Failed to decode session cookie");
         }
         exchange.getResponseHeaders().set("Set-Cookie", "logevents.session=; max-age=-1");
         return false;

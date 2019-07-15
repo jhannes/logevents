@@ -1,14 +1,12 @@
 package org.logevents.config;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
-import org.logevents.extend.junit.LogEventRule;
+import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.status.LogEventStatus;
@@ -26,13 +24,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class DefaultLogEventConfiguratorTest {
 
@@ -43,10 +39,27 @@ public class DefaultLogEventConfiguratorTest {
     private DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
     private Properties configuration = new Properties();
     private Path propertiesDir = Paths.get("target", "test-data", "properties");
-    private static StatusEvent.StatusLevel oldThreshold;
+
+    @Test
+    public void shouldPrintWelcomeMessageIfNoConfiguration() {
+        LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.ERROR);
+        configurator.applyConfigurationProperties(factory, new Properties());
+
+        assertEquals(
+                Arrays.asList("Logging by LogEvents (http://logevents.org). Create a file logevents.properties with the line logevents.status=ERROR to suppress this message"),
+                LogEventStatus.getInstance().getHeadMessageTexts(configurator, StatusEvent.StatusLevel.INFO));
+    }
+
+    @Test
+    public void shouldNotPrintWelcomeMessageIfConfiguration() {
+        configuration.setProperty("root", "WARN");
+        configurator.applyConfigurationProperties(factory, configuration);
+        assertEquals(Collections.emptyList(), LogEventStatus.getInstance().getHeadMessageTexts(configurator, StatusEvent.StatusLevel.INFO));
+    }
 
     @Test
     public void shouldSetRootLevelFromProperties() {
+        configuration.setProperty("logevents.status", "ERROR");
         configurator.applyConfigurationProperties(factory, configuration);
         String oldObserver = factory.getRootLogger().getObserver();
         configuration.setProperty("root", "TRACE");
@@ -144,6 +157,8 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldWarnOnMisconfiguredObserver() {
+        LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
+
         configuration.setProperty("logger.org.example", "ERROR faulty");
         configuration.setProperty("observer.faulty", "ConsoleLogEventObserver");
         configuration.setProperty("observer.faulty.nonExistingProperty", "Non existing property value");
@@ -159,7 +174,8 @@ public class DefaultLogEventConfiguratorTest {
     public void shouldUseOtherObserversOnMisconfiguredObserver() {
         LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
 
-        configuration.setProperty("logger.org.example", "ERROR console2,buffer");
+        configuration.setProperty("logger.org.example", "DEBUG console2,buffer");
+        configuration.setProperty("includeParent.org.example", "false");
         configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
         configuration.setProperty("observer.console2", "ConsoleLogEventObserver");
         configuration.setProperty("observer.console2.formatter", "PatternLogEventFormatter");
@@ -169,10 +185,10 @@ public class DefaultLogEventConfiguratorTest {
                 configurator,
                 "Failed to create observer.console2",
                 StatusEvent.StatusLevel.ERROR,
-                new LogEventConfigurationException("Missing required key <observer.console2.formatter.pattern> in <[observer.console2.formatter, logger.org.example, observer.buffer, observer.console2]>"))
+                new LogEventConfigurationException("Missing required key <observer.console2.formatter.pattern> in <[observer.console2.formatter, logger.org.example, includeParent.org.example, observer.buffer, observer.console2]>"))
             ), LogEventStatus.getInstance().getHeadMessages(configurator, StatusEvent.StatusLevel.ERROR));
 
-        factory.getLogger("org.example").error("Hello");
+        factory.getLogger("org.example").debug("Hello");
         assertEquals("Hello",
                 ((CircularBufferLogEventObserver) factory.getObserver("buffer")).singleMessage());
     }
@@ -189,7 +205,6 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(Collections.emptyList(),
                 LogEventStatus.getInstance().getHeadMessages(configurator, StatusEvent.StatusLevel.ERROR));
     }
-
 
     @Test
     public void shouldScanPropertiesFilesWhenFileIsChanged() throws IOException, InterruptedException {
@@ -209,24 +224,24 @@ public class DefaultLogEventConfiguratorTest {
         writeProps(propertiesDir.resolve("logevents-profile1.properties"), firstProfileProperty);
 
         System.setProperty("profiles", "profile1");
-        DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
-        LogEventFactory logEventFactory = new LogEventFactory();
-        configurator.configure(logEventFactory);
+        configurator = new DefaultLogEventConfigurator(propertiesDir);
+        configurator.configure(factory);
 
-        assertEquals("ERROR", logEventFactory.getRootLogger().getLevelThreshold().toString());
-        assertEquals("ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}", logEventFactory.getRootLogger().getObserver());
+        assertEquals("ERROR", factory.getRootLogger().getLevelThreshold().toString());
+        assertEquals("ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}", factory.getRootLogger().getObserver());
 
         firstProfileProperty.setProperty("root", "TRACE null");
         writeProps(propertiesDir.resolve("logevents-profile1.properties"), firstProfileProperty);
         Thread.sleep(20);
 
-        assertEquals("TRACE", logEventFactory.getRootLogger().getLevelThreshold().toString());
-        assertEquals("NullLogEventObserver", logEventFactory.getRootLogger().getObserver());
+        assertEquals("TRACE", factory.getRootLogger().getLevelThreshold().toString());
+        assertEquals("NullLogEventObserver", factory.getRootLogger().getObserver());
     }
 
     @Test
     public void shouldWriteStatusLogIfConfigFileIsLocked() throws IOException {
         Assume.assumeTrue("File locking is not supported on Linux", isWindows());
+        LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
 
         propertiesDir = Paths.get("target", "test-data", "faulty" + System.currentTimeMillis());
         deleteConfigFiles();
@@ -235,7 +250,7 @@ public class DefaultLogEventConfiguratorTest {
         writeProps(propsFile, new Properties());
 
         try(RandomAccessFile file = new RandomAccessFile(propsFile.toFile(), "rw")) {
-            try (FileLock lock = file.getChannel().lock()) {
+            try (FileLock ignored = file.getChannel().lock()) {
                 DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
                 configurator.loadPropertiesFromFiles(Arrays.asList("logevents-faultyconfig.properties"));
             }
@@ -249,13 +264,15 @@ public class DefaultLogEventConfiguratorTest {
     public void shouldWriteStatusLogIfConfigResourceIsLocked() throws IOException {
         Assume.assumeTrue("File locking is not supported on Linux", isWindows());
 
+        LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
+
         String filename = "faulty" + System.currentTimeMillis() + ".properties";
         propertiesDir = Paths.get("target", "test-classes");
         Path propsFile = propertiesDir.resolve(filename);
         writeProps(propsFile, new Properties());
 
         try(RandomAccessFile file = new RandomAccessFile(propsFile.toFile(), "rw")) {
-            try (FileLock lock = file.getChannel().lock()) {
+            try (FileLock ignored = file.getChannel().lock()) {
                 DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
                 configurator.loadPropertiesFromFiles(Arrays.asList(filename));
             }
@@ -276,17 +293,16 @@ public class DefaultLogEventConfiguratorTest {
         writeProps(propertiesDir.resolve("logevents.properties"), defaultProperties);
 
         System.setProperty("profiles", "production");
-        DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
-        LogEventFactory logEventFactory = new LogEventFactory();
-        configurator.configure(logEventFactory);
+        configurator = new DefaultLogEventConfigurator(propertiesDir);
+        configurator.configure(factory);
 
-        assertEquals("DEBUG", logEventFactory.getRootLogger().getLevelThreshold().toString());
+        assertEquals("DEBUG", factory.getRootLogger().getLevelThreshold().toString());
         Properties newPropertiesFile = new Properties();
         newPropertiesFile.setProperty("root", "INFO");
         writeProps(propertiesDir.resolve("logevents-production.properties"), newPropertiesFile);
 
         Thread.sleep(20);
-        assertEquals("INFO", logEventFactory.getRootLogger().getLevelThreshold().toString());
+        assertEquals("INFO", factory.getRootLogger().getLevelThreshold().toString());
     }
 
     @Test
@@ -301,15 +317,12 @@ public class DefaultLogEventConfiguratorTest {
                 formattedMessage.contains("TEST(DefaultLogEventConfiguratorTest.shouldFindTestMethod(DefaultLogEventConfiguratorTest.java:"));
     }
 
-    @Rule
-    public LogEventRule captureLogEvents = new LogEventRule(Level.ERROR, LogEventFactory.getInstance().getRootLogger());
-
     @Test
     public void shouldInstallDefaultExceptionHandler() throws InterruptedException {
-        Properties properties = new Properties();
-        properties.put("logevents.installExceptionHandler", "true");
-        new DefaultLogEventConfigurator().applyConfigurationProperties(factory, properties);
-        factory.setRootObserver(captureLogEvents);
+        configuration.put("logevents.installExceptionHandler", "true");
+        configurator.applyConfigurationProperties(factory, configuration);
+        CircularBufferLogEventObserver rootObserver = new CircularBufferLogEventObserver();
+        factory.setRootObserver(rootObserver);
 
         NumberFormatException exception = new NumberFormatException("Something happened");
         Thread thread = new Thread(() -> {
@@ -319,7 +332,9 @@ public class DefaultLogEventConfiguratorTest {
         thread.start();
         thread.join();
 
-        captureLogEvents.assertContainsMessage(Level.ERROR, "Thread SomeThread-121 terminated with unhandled exception", exception);
+        assertEquals("Thread {} terminated with unhandled exception",
+                rootObserver.singleMessage());
+        assertEquals(exception, rootObserver.singleException());
     }
 
 
@@ -329,22 +344,16 @@ public class DefaultLogEventConfiguratorTest {
         }
     }
 
-    @BeforeClass
-    public static void turnOffStatusLogging() {
-        oldThreshold = LogEventStatus.getInstance().getThreshold(null);
-    }
-
-    @AfterClass
-    public static void restoreStatusLogging() {
-        LogEventStatus.getInstance().setThreshold(oldThreshold);
-    }
-
     @After
     public void deleteConfigFiles() throws IOException {
+        configurator.stopFileScanner();
         if (Files.isDirectory(propertiesDir)) {
             Files.list(propertiesDir).map(Path::toFile).forEach(File::delete);
         }
     }
+
+    @Rule
+    public LogEventStatusRule logEventStatusRule = new LogEventStatusRule();
 
     private boolean isWindows() {
         return System.getProperty("os.name").startsWith("Windows");

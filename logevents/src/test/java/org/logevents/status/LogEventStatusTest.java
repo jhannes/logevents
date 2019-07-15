@@ -2,9 +2,8 @@ package org.logevents.status;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestRule;
-import org.junit.runners.model.Statement;
 import org.logevents.config.Configuration;
+import org.logevents.extend.junit.LogEventStatusRule;
 
 import java.util.Properties;
 
@@ -16,22 +15,12 @@ public class LogEventStatusTest {
     private LogEventStatus instance = LogEventStatus.getInstance();
 
     @Rule
-    public TestRule resetLogEventStatus = (base, description) -> new Statement() {
-        @Override
-        public void evaluate() throws Throwable {
-            String oldStatus = System.getProperty("logevents.status");
-            try {
-                base.evaluate();
-            } finally {
-                System.setProperty("logevents.status", oldStatus);
-            }
-        }
-    };
+    public LogEventStatusRule statusRule = new LogEventStatusRule();
 
     @Test
     public void shouldConfigureLogEventStatusLevelForClass() {
         Properties properties = new Properties();
-        properties.setProperty("logevents.status", "INFO");
+        statusRule.setStatusLevel(StatusEvent.StatusLevel.INFO);
         instance.configure(new Configuration(properties, "logevents"));
         assertEquals(StatusEvent.StatusLevel.INFO, instance.getThreshold(this));
 

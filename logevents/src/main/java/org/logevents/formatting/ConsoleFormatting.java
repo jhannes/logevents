@@ -29,7 +29,7 @@ public class ConsoleFormatting {
                     AnsiConsole.systemInstall();
                     instance = new ConsoleFormatting();
                 } catch (ClassNotFoundException e) {
-                    LogEventStatus.getInstance().addInfo(ConsoleFormatting.class, "Could not load jansi - color output not supported on Windows ");
+                    LogEventStatus.getInstance().addConfig(ConsoleFormatting.class, "Could not load jansi - color output not supported on Windows ");
                     instance = nullConsoleFormatting();
                 }
             }

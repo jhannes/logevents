@@ -38,4 +38,11 @@ public class CircularBufferLogEventObserver implements LogEventObserver {
         }
         return circularBuffer.get(0).getMessage();
     }
+
+    public Throwable singleException() {
+        if (circularBuffer.size() != 1) {
+            throw new AssertionError("Expected 1 message, but was " + circularBuffer.size());
+        }
+        return circularBuffer.get(0).getThrowable();
+    }
 }

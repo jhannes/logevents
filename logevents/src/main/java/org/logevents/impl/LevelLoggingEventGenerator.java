@@ -86,4 +86,10 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
         }
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" +
+                "observer=" + observer +
+                '}';
+    }
 }

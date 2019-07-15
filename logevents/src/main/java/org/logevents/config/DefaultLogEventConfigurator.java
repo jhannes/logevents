@@ -10,6 +10,7 @@ import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -64,8 +65,9 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  */
 public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
+    public static final String WELCOME_MESSAGE = "Logging by LogEvents (http://logevents.org). Create a file logevents.properties with the line logevents.status=ERROR to suppress this message";
     private Path propertiesDir;
-    private WatchService newWatchService;
+    private Thread configurationWatcher;
 
     public DefaultLogEventConfigurator(Path propertiesDir) {
         this.propertiesDir = propertiesDir;
@@ -93,13 +95,13 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      */
     protected void startConfigurationFileWatcher(LogEventFactory factory) {
         try {
-            newWatchService = propertiesDir.getFileSystem().newWatchService();
-            propertiesDir.register(newWatchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            WatchService watchService = propertiesDir.getFileSystem().newWatchService();
+            propertiesDir.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
 
-            Thread configurationWatcher = new Thread(() -> {
+            configurationWatcher = new Thread(() -> {
                 try {
                     while (true) {
-                        WatchKey key = newWatchService.take();
+                        WatchKey key = watchService.take();
                         boolean shouldReload = false;
                         List<String> fileNames = getConfigurationFileNames();
                         for (WatchEvent<?> watchEvent : key.pollEvents()) {
@@ -115,7 +117,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                         }
                     }
                 } catch (InterruptedException e) {
-                    LogEventStatus.getInstance().addInfo(DefaultLogEventConfigurator.this,
+                    LogEventStatus.getInstance().addConfig(DefaultLogEventConfigurator.this,
                             this + " interrupted, exiting");
                 }
             });
@@ -124,6 +126,12 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
             configurationWatcher.start();
         } catch (IOException e) {
             LogEventStatus.getInstance().addError(this, "Could not start file watcher", e);
+        }
+    }
+
+    void stopFileScanner() {
+        if (configurationWatcher != null) {
+            configurationWatcher.interrupt();
         }
     }
 
@@ -193,7 +201,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @return Properties with the configuration of all files merged together
      */
     protected Properties loadPropertiesFromFiles(List<String> configurationFileNames) {
-        LogEventStatus.getInstance().addInfo(this, "Loading configuration from " + configurationFileNames);
+        LogEventStatus.getInstance().addConfig(this, "Loading configuration from " + configurationFileNames);
         Properties properties = new Properties();
         for (String filename : configurationFileNames) {
             loadConfigResource(properties, filename);
@@ -230,6 +238,8 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
             try (InputStream propertiesFile = new FileInputStream(this.propertiesDir.resolve(fileName).toFile())) {
                 LogEventStatus.getInstance().addDebug(this, "Loading file:" + propertiesDir.resolve(fileName));
                 properties.load(propertiesFile);
+            } catch (FileNotFoundException ignored) {
+                // Can happen if the file is deleted after the if-check
             } catch (IOException e) {
                 LogEventStatus.getInstance().addError(this, "Can't load " + fileName, e);
             }
@@ -268,7 +278,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     public void applyConfigurationProperties(LogEventFactory factory, Properties configuration) {
         Configuration logeventsConfig = new Configuration(configuration, "logevents");
         LogEventStatus.getInstance().configure(logeventsConfig);
-        new Configuration(configuration, toString());
+        showWelcomeMessage(configuration);
         Map<String, Supplier<? extends LogEventObserver>> observers = new HashMap<>();
         for (Object key : configuration.keySet()) {
             if (key.toString().matches("observer\\.\\w+")) {
@@ -293,15 +303,20 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         if (logeventsConfig.getBoolean("installExceptionHandler")) {
             if (Thread.getDefaultUncaughtExceptionHandler() == null) {
                 Thread.setDefaultUncaughtExceptionHandler((thread, e) -> {
-                    LogEventFactory.getInstance().getRootLogger()
-                            .error("Thread {} terminated with unhandled exception", thread.getName(), e);
+                    factory.getRootLogger().error("Thread {} terminated with unhandled exception", thread.getName(), e);
                 });
-                LogEventStatus.getInstance().addInfo(this, "Installing default uncaught exception handler");
+                LogEventStatus.getInstance().addConfig(this, "Installing default uncaught exception handler");
             } else {
                 LogEventStatus.getInstance().addDebug(this, "Uncaught exception handler already set to " + Thread.getDefaultUncaughtExceptionHandler());
             }
         }
         logeventsConfig.checkForUnknownFields();
+    }
+
+    protected void showWelcomeMessage(Properties configuration) {
+        if (configuration.isEmpty()) {
+            LogEventStatus.getInstance().addInfo(this, WELCOME_MESSAGE);
+        }
     }
 
     protected FileLogEventObserver createFileObserver(Properties configuration) {

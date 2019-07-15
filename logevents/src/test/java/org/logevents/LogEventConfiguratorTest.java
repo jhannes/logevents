@@ -1,7 +1,10 @@
 package org.logevents;
 
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.logevents.extend.junit.LogEventStatusRule;
+import org.logevents.status.StatusEvent;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
@@ -45,6 +48,10 @@ public class LogEventConfiguratorTest {
         }
     }
 
+    @Rule
+    public LogEventStatusRule logEventStatusRule = new LogEventStatusRule();
+
+
     @Test
     public void shouldRegisterConfiguratorWithServiceLoader() throws IOException {
         Files.createDirectories(serviceLoaderDir);
@@ -64,6 +71,8 @@ public class LogEventConfiguratorTest {
 
     @Test
     public void shouldResetToDefault() throws IOException {
+        logEventStatusRule.setStatusLevel(StatusEvent.StatusLevel.ERROR);
+
         Files.deleteIfExists(serviceLoaderDir.resolve(LogEventConfigurator.class.getName()));
         Files.deleteIfExists(serviceLoaderDir2.resolve(LogEventConfigurator.class.getName()));
 
@@ -77,7 +86,6 @@ public class LogEventConfiguratorTest {
     public void deleteFiles() throws IOException {
         Files.deleteIfExists(serviceLoaderDir.resolve(LogEventConfigurator.class.getName()));
         Files.deleteIfExists(serviceLoaderDir2.resolve(LogEventConfigurator.class.getName()));
-        LogEventFactory.getInstance().configure();
     }
 
 }

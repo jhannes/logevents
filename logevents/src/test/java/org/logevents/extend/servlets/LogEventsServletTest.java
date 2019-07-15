@@ -262,7 +262,6 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    @Ignore
     public void shouldReturnHtmlPage() throws IOException, ServletException {
         when(request.getPathInfo()).thenReturn("/");
 

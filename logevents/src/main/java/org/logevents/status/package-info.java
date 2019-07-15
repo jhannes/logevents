@@ -5,8 +5,8 @@
  * {@link org.logevents.status.LogEventStatus#getHeadMessages}
  * (which stores the first 1000 messages) and
  * {@link org.logevents.status.LogEventStatus#lastMessage}.
- * In order to debug LogEvents, either put <code>status=[DEBUG|TRACE|INFO]</code>
+ * In order to debug LogEvents, either put <code>status=[DEBUG|TRACE|CONFIG]</code>
  * in your <code>logevents.properties</code> or start your Java-process
- * with <code>-Dlogevents.status=[DEBUG|TRACE|INFO]</code>
+ * with <code>-Dlogevents.status=[DEBUG|TRACE|CONFIG]</code>
  */
 package org.logevents.status;

@@ -79,7 +79,7 @@ public class StatusEvent {
     }
 
     public enum StatusLevel {
-        TRACE(10), DEBUG(20), INFO(30), ERROR(40), FATAL(50), NONE(100);
+        TRACE(10), DEBUG(20), CONFIG(30), INFO(40), ERROR(50), FATAL(60), NONE(100);
 
         private int levelInt;
 

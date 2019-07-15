@@ -20,7 +20,7 @@ public class LogEventShutdownHook extends Thread {
 
     @Override
     public void run() {
-        LogEventStatus.getInstance().addInfo(this, "Flushing up to " + actions.size() + " observers");
+        LogEventStatus.getInstance().addConfig(this, "Flushing up to " + actions.size() + " observers");
         for (WeakReference<Runnable> action : actions) {
             Runnable runnable = action.get();
             if (runnable != null) {

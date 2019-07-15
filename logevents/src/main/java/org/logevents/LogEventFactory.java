@@ -209,7 +209,7 @@ public class LogEventFactory implements ILoggerFactory {
     public synchronized void configure() {
         reset(new ConsoleLogEventObserver(), Level.INFO);
         for (LogEventConfigurator configurator : getConfigurators()) {
-            LogEventStatus.getInstance().addInfo(this, "Loading service loader " + configurator);
+            LogEventStatus.getInstance().addConfig(this, "Loading service loader " + configurator);
             configurator.configure(this);
         }
     }

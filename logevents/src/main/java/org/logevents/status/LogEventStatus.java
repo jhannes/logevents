@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  *
  * Sample configuration (in logevents.properties or as System properties):
  * <pre>
- * logevents.status=INFO
+ * logevents.status=CONFIG
  * logevents.status.SlackLogEventObserver=TRACE
  * </pre>
  */
@@ -53,7 +53,7 @@ public class LogEventStatus {
     }
 
     private StatusLevel getThreshold() {
-        return StatusLevel.valueOf(System.getProperty("logevents.status", StatusLevel.ERROR.toString()));
+        return StatusLevel.valueOf(System.getProperty("logevents.status", StatusLevel.INFO.toString()));
     }
 
     public StatusLevel setThreshold(StatusLevel threshold) {
@@ -71,10 +71,17 @@ public class LogEventStatus {
     }
 
     /**
-     * Used to notify that significant events have occurred, such as a configuration reload
+     * Used to notify that significant events have occurred, such as a configuration reload. Enabled by default.
      */
     public void addInfo(Object location, String message) {
-        add(new StatusEvent(location, message, StatusEvent.StatusLevel.INFO, null));
+        add(new StatusEvent(location, message, StatusLevel.INFO, null));
+    }
+
+    /**
+     * Used to provide details about configuration such as files that have been loaded
+     */
+    public void addConfig(Object location, String message) {
+        add(new StatusEvent(location, message, StatusEvent.StatusLevel.CONFIG, null));
     }
 
     /**
@@ -104,7 +111,7 @@ public class LogEventStatus {
         }
 
         if (this.getThreshold(statusEvent.getLocation()).toInt() <= statusEvent.getLevel().toInt()) {
-            System.err.println("LogEvent configuration [" + statusEvent.getThread() + "]: " + statusEvent.getLevel() + ": " + statusEvent.formatMessage());
+            System.err.println(statusEvent.getLevel() + ": " + statusEvent.formatMessage());
             if (statusEvent.getThrowable() != null) {
                 statusEvent.getThrowable().printStackTrace();
             }
@@ -139,4 +146,9 @@ public class LogEventStatus {
         headMessages.clear();
         tailMessages.clear();
     }
+
+    public List<String> getHeadMessageTexts(Object target, StatusLevel level) {
+        return getHeadMessages(target, level).stream().map(StatusEvent::getMessage).collect(Collectors.toList());
+    }
+
 }
