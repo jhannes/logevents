@@ -66,6 +66,7 @@ public class LogEventFactory implements ILoggerFactory {
 
     public void setObservers(Map<String, Supplier<? extends LogEventObserver>> observers) {
         this.observerSuppliers = observers;
+        this.observers.clear();
     }
 
     private LoggerDelegator rootLogger = LoggerDelegator.rootLogger();
