@@ -59,7 +59,7 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
     private Optional<String> cookieEncryptionKey = Optional.empty();
     private final OpenIdConfiguration openIdConfiguration;
     private JsonExceptionFormatter exceptionFormatter = new JsonExceptionFormatter();
-    private String logEventsHtml;
+    private String logEventsHtml = "/org/logevents/logevents.html";
     private static final Logger logger = LoggerFactory.getLogger(WebLogEventObserver.class);
 
     public WebLogEventObserver(Properties properties, String prefix) {
