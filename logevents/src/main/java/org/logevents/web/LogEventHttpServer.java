@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -117,6 +118,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
     private Optional<String> keyStore = Optional.empty();
     private Optional<String> keyStorePassword = Optional.empty();
     private Optional<String> hostKeyPassword = Optional.empty();
+    private X509Certificate certificate;
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
@@ -194,6 +196,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
                 + " as a root CA to access logevents console with your browser over https");
         }
         hostKeyStore.writeCertificate(crtFile);
+        this.certificate = hostKeyStore.getCertificate();
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(hostKeyStore.getKeyManagers(), null, null);
@@ -269,7 +272,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
         return scheme + "://" + exchange.getRequestHeaders().getFirst("Host");
     }
 
-    private String createSessionCookie(Map<String, Object> idToken) {
+    public String createSessionCookie(Map<String, Object> idToken) {
         Map<String, Object> session = new HashMap<>();
         session.put("subject", idToken.get("sub"));
         Instant sessionTime = Instant.ofEpochSecond(Long.parseLong(idToken.get("iat").toString()));
@@ -327,5 +330,9 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
 
     public void setHostKeyPassword(Optional<String> hostKeyPassword) {
         this.hostKeyPassword = hostKeyPassword;
+    }
+
+    public X509Certificate getCertificate() {
+        return certificate;
     }
 }

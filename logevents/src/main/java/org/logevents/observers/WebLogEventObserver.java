@@ -7,9 +7,9 @@ import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.util.openid.OpenIdConfiguration;
 import org.logevents.web.LogEventHttpServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -60,7 +60,6 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
     private final OpenIdConfiguration openIdConfiguration;
     private JsonExceptionFormatter exceptionFormatter = new JsonExceptionFormatter();
     private String logEventsHtml = "/org/logevents/logevents.html";
-    private static final Logger logger = LoggerFactory.getLogger(WebLogEventObserver.class);
 
     public WebLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
@@ -88,7 +87,7 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
             logEventServer.setOpenIdConfiguration(openIdConfiguration);
             logEventServer.setLogEventSource(source);
             logEventServer.setCookieEncryptionKey(cookieEncryptionKey);
-            logEventServer.setKeyStore( configuration.optionalString("keyStore"));
+            logEventServer.setKeyStore(configuration.optionalString("keyStore"));
             logEventServer.setKeyStorePassword(configuration.optionalString("keyStorePassword"));
             logEventServer.setHostKeyPassword(configuration.optionalString("hostKeyPassword"));
             logEventServer.start();
@@ -146,5 +145,20 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         return getClass().getSimpleName() + "{" +
                 "openIdConfiguration=" + openIdConfiguration +
                 '}';
+    }
+
+    public String getServerUrl() {
+        return logEventServer.getUrl();
+    }
+
+    public X509Certificate getCertificate() {
+        return logEventServer.getCertificate();
+    }
+
+    String createSessionCookie(String subject) {
+        HashMap<String, Object> idToken = new HashMap<>();
+        idToken.put("sub", subject);
+        idToken.put("iat", System.currentTimeMillis()/1000);
+        return logEventServer.createSessionCookie(idToken);
     }
 }

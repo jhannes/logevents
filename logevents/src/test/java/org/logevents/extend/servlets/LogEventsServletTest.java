@@ -145,7 +145,6 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    @Ignore
     public void shouldGenerateAuthenticationUrl() throws IOException, ServletException {
         Properties properties = new Properties();
         properties.put("observer.servlet.clientId", "my-application");

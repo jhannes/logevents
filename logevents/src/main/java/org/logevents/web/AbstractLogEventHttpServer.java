@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpCookie;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,18 +41,12 @@ public class AbstractLogEventHttpServer {
     }
 
     protected Optional<String> getCookie(HttpExchange exchange, String cookieName) {
-        if (!exchange.getRequestHeaders().containsKey("Cookie")) {
-            return Optional.empty();
-        }
-        String[] cookies = exchange.getRequestHeaders().getFirst("Cookie").split(";\\s+");
-        for (String cookie : cookies) {
-            int equalPos = cookie.indexOf('=');
-            if (equalPos < 0) continue;
-            if (cookie.substring(0, equalPos).equals(cookieName)) {
-                return Optional.of(cookie.substring(equalPos + 1));
-            }
-        }
-        return Optional.empty();
+        return Optional.ofNullable(exchange.getRequestHeaders().getFirst("Cookie"))
+                .map(HttpCookie::parse)
+                .flatMap(cookies -> cookies.stream()
+                        .filter(c -> c.getName().equals(cookieName))
+                        .map(HttpCookie::getValue)
+                        .findFirst());
     }
 
     protected void sendResponse(HttpExchange exchange, String text, int responseCode) throws IOException {

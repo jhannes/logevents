@@ -8,12 +8,24 @@ import org.logevents.status.StatusEvent;
 
 public class LogEventStatusRule implements TestRule {
 
+    private StatusEvent.StatusLevel level;
+
+    public LogEventStatusRule(StatusEvent.StatusLevel level) {
+        this.level = level;
+    }
+
+    public LogEventStatusRule() {
+    }
+
     @Override
     public Statement apply(Statement base, Description description) {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
                 StatusEvent.StatusLevel oldThreshold = LogEventStatus.getInstance().getThreshold(null);
+                if (level != null) {
+                    LogEventStatus.getInstance().setThreshold(level);
+                }
                 try {
                     base.evaluate();
                 } finally {
