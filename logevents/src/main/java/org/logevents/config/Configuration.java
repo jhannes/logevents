@@ -9,8 +9,10 @@ import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -122,7 +124,11 @@ public class Configuration {
 
     public String getString(String key) {
         return optionalString(key)
-                .orElseThrow(() -> new LogEventConfigurationException("Missing required key <" + fullKey(key) + "> in <" + properties.keySet() + ">"));
+                .orElseThrow(() -> new LogEventConfigurationException("Missing required key <" + fullKey(key) + "> in <" + sorted(properties.keySet()) + ">"));
+    }
+
+    private List<String> sorted(Set<Object> strings) {
+        return strings.stream().map(Object::toString).sorted().collect(Collectors.toList());
     }
 
     public boolean getBoolean(String key) {

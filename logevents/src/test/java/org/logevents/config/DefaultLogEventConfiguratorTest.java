@@ -185,7 +185,7 @@ public class DefaultLogEventConfiguratorTest {
                 configurator,
                 "Failed to create observer.console2",
                 StatusEvent.StatusLevel.ERROR,
-                new LogEventConfigurationException("Missing required key <observer.console2.formatter.pattern> in <[observer.console2.formatter, logger.org.example, includeParent.org.example, observer.buffer, observer.console2]>"))
+                new LogEventConfigurationException("Missing required key <observer.console2.formatter.pattern> in <[includeParent.org.example, logger.org.example, observer.buffer, observer.console2, observer.console2.formatter]>"))
             ), LogEventStatus.getInstance().getHeadMessages(configurator, StatusEvent.StatusLevel.ERROR));
 
         factory.getLogger("org.example").debug("Hello");
