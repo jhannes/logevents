@@ -1,14 +1,18 @@
-package org.logevents.observers.batch;
+package org.logevents.observers;
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.extend.servlets.LogEventSampler;
-import org.logevents.observers.SlackLogEventObserver;
+import org.logevents.observers.batch.BatchThrottler;
+import org.logevents.observers.batch.LogEventBatch;
+import org.logevents.observers.batch.LogEventGroup;
+import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.logevents.status.StatusEvent.StatusLevel;
+import org.slf4j.MarkerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("restriction")
-public class SlackLogEventBatchProcessorTest {
+public class SlackLogEventObserverTest {
 
     public static class Formatter extends SlackLogEventsFormatter {
         @Override
@@ -108,6 +112,20 @@ public class SlackLogEventBatchProcessorTest {
 
         assertEquals("SlackLogEventObserver{formatter=SlackLogEventsFormatter{username=MyTestApp,channel=general},url=http://localhost:1234}",
                 observer.toString());
+    }
+
+    @Test
+    public void shouldConfigureMarkerBatcher() {
+        Properties properties = new Properties();
+        properties.put("observer.slack.slackUrl", "http://localhost:1234");
+        properties.put("observer.slack.markers.FOO.throttle", "PT30S");
+        properties.put("observer.slack.markers.FOO.channel", "fooMessages");
+
+        SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack");
+        BatchThrottler markerBatcher = observer.getMarker(MarkerFactory.getMarker("FOO"));
+        markerBatcher.logEvent(new LogEventSampler().build());
+
+        // TODO: Verify that log goes to correct channel
     }
 
     private HttpServer startServer(HttpHandler httpHandler) throws IOException {

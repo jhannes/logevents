@@ -7,6 +7,7 @@ import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
+import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.LogEventBuffer;
 import org.logevents.observers.WebLogEventObserver;
 import org.logevents.status.LogEventStatus;
@@ -43,6 +44,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -188,13 +190,12 @@ public class LogEventsServletTest extends LogEventsServlet {
                 return tokenResponse;
             }
         };
+        WebLogEventObserver observer = new WebLogEventObserver(openIdConfiguration, new MessageFormatter(), new LogEventBuffer());
+        HashMap<String, Supplier<? extends LogEventObserver>> observers = new HashMap<>();
+        observers.put("servlet", () -> observer);
+        LogEventFactory.getInstance().setObservers(observers);
 
-        LogEventsServlet servlet = new LogEventsServlet() {
-            @Override
-            protected OpenIdConfiguration getOpenIdConfiguration() {
-                return openIdConfiguration;
-            }
-        };
+        LogEventsServlet servlet = new LogEventsServlet();
         servlet.setupCookieVault(Optional.empty());
 
         servlet.doGet(request, response);
@@ -243,6 +244,28 @@ public class LogEventsServletTest extends LogEventsServlet {
 
         verify(response, never()).addCookie(any());
         verify(response).sendError(eq(403), anyString());
+    }
+
+
+    @Test
+    public void shouldGenerateLoginUrl() throws ServletException, IOException {
+        OpenIdConfiguration openIdConfiguration = new OpenIdConfiguration(null, null, null) {
+            @Override
+            protected String getAuthorizationEndpoint() {
+                return "https://accounts.example.com/authorize";
+            }
+        };
+        LogEventsServlet servlet = new LogEventsServlet() {
+            @Override
+            protected OpenIdConfiguration getOpenIdConfiguration() {
+                return openIdConfiguration;
+            }
+        };
+        when(request.getPathInfo()).thenReturn("/login");
+
+        servlet.doGet(request, response);
+        verify(response).addCookie(any());
+        verify(response).sendRedirect(startsWith("https://accounts.example.com"));
     }
 
     @Test

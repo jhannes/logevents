@@ -52,6 +52,25 @@ public class WebLogEventObserverTest {
         assertEquals(logEvent.getMessage(), loggedMessage);
     }
 
+    @Test
+    public void shouldRejectFakeSessionCookie() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("observer.web.httpsPort", "0");
+        properties.setProperty("observer.web.openIdIssuer", "https://accounts.google.com");
+        properties.setProperty("observer.web.clientId", "dummy");
+        properties.setProperty("observer.web.clientSecret", "dummy");
+
+        WebLogEventObserver observer = new WebLogEventObserver(properties, "observer.web");
+        LogEvent logEvent = new LogEventSampler().build();
+        observer.logEvent(logEvent);
+
+        HttpsURLConnection connection = (HttpsURLConnection) new URL(observer.getServerUrl() + "/events").openConnection();
+        connection.setSSLSocketFactory(createSSLContext(observer.getCertificate()).getSocketFactory());
+        connection.setRequestProperty("Cookie", "logevents.session=dsgse93922");
+
+        assertEquals(401, connection.getResponseCode());
+    }
+
     SSLContext createSSLContext(Certificate certificate) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, KeyManagementException {
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         keyStore.load(null, null);

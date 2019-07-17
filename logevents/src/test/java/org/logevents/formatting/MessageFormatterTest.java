@@ -32,10 +32,21 @@ public class MessageFormatterTest {
 
     @Test
     public void shouldDisplayPrimitiveArrays() {
-        assertEquals("This is a message with number [1, 2, 4] included",
+        assertEquals(
+                "Message with ints [1, 2, 4], bytes [1, 2, 3], shorts [10], and longs [10000]",
                 messageFormatter.format(
-                        "This is a message with number {} included",
-                        new Object[] { new int[] {1, 2, 4} }
+                        "Message with ints {}, bytes {}, shorts {}, and longs {}",
+                    new int[] {1, 2, 4}, new byte[] { 1, 2, 3 }, new short[] {10}, new long[] { 10000 }
+                )
+        );
+        assertEquals("Message with doubles [10.25, 1000.5] and floats [1000.25]",
+                messageFormatter.format("Message with doubles {} and floats {}",
+                        new double[] { 10.25, 1000.5 }, new float[] {1000.25f})
+        );
+        assertEquals("Message with bools [false, false, true] and chars [a, b]",
+                messageFormatter.format(
+                        "Message with bools {} and chars {}",
+                        new boolean[] { false, false, true}, new char[] { 'a', 'b' }
                 ));
     }
 

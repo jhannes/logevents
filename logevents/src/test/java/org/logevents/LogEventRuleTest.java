@@ -1,7 +1,10 @@
 package org.logevents;
 
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertTrue;
 
+import org.hamcrest.CoreMatchers;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.LogEventRule;
@@ -28,6 +31,17 @@ public class LogEventRuleTest {
         logger.debug("Hello world");
         logger.info("Hello world");
         logEventRule.assertContainsMessage(Level.DEBUG, "Hello world");
+    }
+
+    @Test
+    public void shouldFailOnMissingLogEvent() {
+        logger.debug("Not this one");
+        try {
+            logEventRule.assertContainsMessage(Level.DEBUG, "Hello world");
+            fail("Expected error");
+        } catch (AssertionError e) {
+            Assert.assertThat(e.getMessage(), CoreMatchers.containsString("Could not find <Hello world"));
+        }
     }
 
     @Test

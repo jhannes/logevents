@@ -1,5 +1,6 @@
 package org.logevents.util;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,10 @@ public class JsonUtil {
 
     public static String toIndentedJson(Iterable<?> jsonArray) {
         return new JsonUtil("  ", "\n").toJson(jsonArray);
+    }
+
+    public static String base64Encode(Object jsonObject) {
+        return Base64.getUrlEncoder().encodeToString(new JsonUtil("", "").toJson(jsonObject).getBytes());
     }
 
     public String toJson(Object jsonObject) {

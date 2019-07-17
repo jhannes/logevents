@@ -132,6 +132,7 @@ public class LogEventMatcherTest {
                 expect -> expect.exception(event.getThrowable().getClass(), event.getThrowable().getMessage())
         );
         assertNotExactMatch(event, expect -> expect.exception(MessagingException.class));
+        assertNotExactMatch(new LogEventSampler().build(), expect -> expect.exception(MessagingException.class));
         assertNotExactMatch(event,
                 expect -> expect.exception(MessagingException.class, event.getThrowable().getMessage())
         );
