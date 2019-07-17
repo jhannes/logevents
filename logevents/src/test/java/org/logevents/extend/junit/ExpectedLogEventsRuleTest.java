@@ -4,45 +4,59 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.slf4j.LoggerFactory;
+import org.logevents.LogEventFactory;
+import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
 
+import static org.junit.Assert.fail;
+
 public class ExpectedLogEventsRuleTest {
 
-    @Rule
-    public ExpectedLogEventsRule rule = new ExpectedLogEventsRule(Level.WARN);
+    private LogEventFactory factory = new LogEventFactory();
 
+    private Logger logger = factory.getLogger(getClass().getName());
+
+    @Rule
+    public ExpectedLogEventsRule rule = new ExpectedLogEventsRule(Level.WARN, factory);
 
     @Test
     public void shouldSucceedWhenLoggingAsExpected() {
         rule.expectPattern(ExpectedLogEventsRuleTest.class, Level.WARN, "This is a {} test for {}");
 
-        LoggerFactory.getLogger(getClass()).warn("This is a {} test for {}", "nice", "LogEvents");
+        logger.warn("This is a {} test for {}", "nice", "LogEvents");
         rule.verifyCompletion();
     }
 
     @Test
     public void shouldMatchExactly() {
         rule.expect(ExpectedLogEventsRuleTest.class, Level.WARN, "This is a nice test");
-        LoggerFactory.getLogger(getClass()).warn("This is a {} test", "nice");
+        logger.warn("This is a {} test", "nice");
         rule.verifyCompletion();
     }
 
+    @Test
+    public void shouldFailWhenNoEventsAreLogged() {
+        rule.expectMatch(expect -> expect.level(Level.WARN).logger(getClass()).pattern("Test message"));
+        try {
+            rule.verifyCompletion();
+            fail("Expected exception");
+        } catch (AssertionError e) {
+            Assert.assertThat(e.getMessage(), CoreMatchers.containsString("Test message"));
+        }
+    }
 
     @Test
     public void shouldFailWhenNotMatchedExactly() {
         rule.expect(ExpectedLogEventsRuleTest.class, Level.WARN, "This is a bad test");
-        LoggerFactory.getLogger(getClass()).warn("This is a {} test", "nice");
-        AssertionError caughtException = null;
+        logger.warn("This is a {} test", "nice");
         try {
             rule.verifyCompletion();
+            fail("Expected exception");
         } catch (AssertionError e) {
-            caughtException = e;
+            Assert.assertThat(e.getMessage(), CoreMatchers.containsString("This is a nice test"));
         }
-        Assert.assertNotNull(caughtException);
-        Assert.assertThat(caughtException.getMessage(), CoreMatchers.containsString("This is a nice test"));
     }
 
     @Test
@@ -50,7 +64,7 @@ public class ExpectedLogEventsRuleTest {
         rule.expect(ExpectedLogEventsRuleTest.class, Level.WARN, "This is a nice test",
                 new IOException("Uh oh!"));
 
-        LoggerFactory.getLogger(getClass()).warn("This is a {} test", "nice", new IOException("Uh oh!"));
+        logger.warn("This is a {} test", "nice", new IOException("Uh oh!"));
         rule.verifyCompletion();
     }
 
@@ -58,7 +72,7 @@ public class ExpectedLogEventsRuleTest {
     public void shouldFailWhenExceptionDoesntMatch() {
         rule.expect(ExpectedLogEventsRuleTest.class, Level.WARN, "This is a nice test",
                 new IOException("Uh oh!"));
-        LoggerFactory.getLogger(getClass()).warn("This is a {} test", "nice", new IOException("Another message!"));
+        logger.warn("This is a {} test", "nice", new IOException("Another message!"));
         AssertionError caughtException = null;
         try {
             rule.verifyCompletion();
@@ -73,7 +87,7 @@ public class ExpectedLogEventsRuleTest {
     public void shouldFailWhenWrongLoglevel() {
         rule.expectPattern(ExpectedLogEventsRuleTest.class, Level.WARN, "This is a {} test for {}");
 
-        LoggerFactory.getLogger(getClass()).debug("This is a {} test for {}", "nice", "LogEvents");
+        logger.debug("This is a {} test for {}", "nice", "LogEvents");
 
         AssertionError caughtException = null;
         try {
@@ -88,7 +102,7 @@ public class ExpectedLogEventsRuleTest {
 
     @Test
     public void shouldFailWhenUnexpectedEvent() {
-        LoggerFactory.getLogger(getClass()).warn("This is a {} test for {}", "nice", "LogEvents");
+        logger.warn("This is a {} test for {}", "nice", "LogEvents");
 
         AssertionError caughtException = null;
         try {
@@ -103,7 +117,7 @@ public class ExpectedLogEventsRuleTest {
 
     @Test
     public void shouldIgnoreUnmatchedEventsBelowThreshold() {
-        LoggerFactory.getLogger(getClass()).debug("This is a {} test for {}", "nice", "LogEvents");
+        logger.debug("This is a {} test for {}", "nice", "LogEvents");
         rule.verifyCompletion();
     }
 }
