@@ -9,8 +9,11 @@
 
 Setting up and configuring logging should be *easy*, whether you want to do it with
 configuration files or in code. Log Events is a small (250kb, no dependencies) logging framework
-built on top of SLF4J - the logging lingua franka for Java. It include nice formatting,
-[file observers](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html),
+built on top of SLF4J - the logging lingua franka for Java.
+
+It include nice formatting,
+[file observers](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) and
+[JUnit support](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/junit/ExpectedLogEventsRule.html)
 as well as logging to [Slack](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html),
 [Microsoft Teams](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html),
 [database](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/DatabaseLogEventObserver.html),
@@ -494,27 +497,28 @@ and `count`.  (TODO)
 ### JUnit
 
 If no configuration is loaded, Logevents logs at WARN level to the console.
-This is appropriate for most test scenarios. If you want to suppress
-warn and error logging or if you want to capture log events to assert,
-you can use the included `org.logevents.extend.junit.LogEventRule`.
+This is appropriate for most test scenarios. If you want your tests to suppress
+and specify which log messages they expect, you can use the included
+[ExpectedLogEventsRule](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/junit/ExpectedLogEventsRule.html).
 
 For example:
 
 ```java
-public class LogEventRuleTest {
+public class ExpectedLogEventsRuleTest {
 
     private Logger logger = LoggerFactory.getLogger("com.example.application.Service");
 
     @Rule
-    public LogEventRule logEventRule = new LogEventRule("com.example", Level.DEBUG);
+    public ExpectedLogEventsRule rule = new ExpectedLogEventsRule(Level.WARN, factory);
 
     @Test
     public void shouldCaptureLogEvent() {
-        logger.debug("Hello world");
-        logEventRule.assertSingleMessage("Hello world", Level.DEBUG);
-        logger.error("Even though this is an error event, it is not displayed");
-    }
+        rule.expectMatch(expect -> expect
+                .level(Level.WARN).logger(ExpectedLogEventsRuleTest.class)
+                .pattern("This is a {} test for {}").args("nice", "LogEvents"));
 
+        logger.warn("This is a {} test for {}", "nice", "LogEvents");
+    }
 }
 ```
 

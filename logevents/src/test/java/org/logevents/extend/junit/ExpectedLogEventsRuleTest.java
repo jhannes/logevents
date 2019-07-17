@@ -23,7 +23,9 @@ public class ExpectedLogEventsRuleTest {
 
     @Test
     public void shouldSucceedWhenLoggingAsExpected() {
-        rule.expectPattern(ExpectedLogEventsRuleTest.class, Level.WARN, "This is a {} test for {}");
+        rule.expectMatch(expect -> expect
+                .level(Level.WARN).logger(ExpectedLogEventsRuleTest.class)
+                .pattern("This is a {} test for {}").args("nice", "LogEvents"));
 
         logger.warn("This is a {} test for {}", "nice", "LogEvents");
         rule.verifyCompletion();
