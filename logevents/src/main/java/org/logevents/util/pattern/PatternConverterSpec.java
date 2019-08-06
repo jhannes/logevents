@@ -1,5 +1,6 @@
 package org.logevents.util.pattern;
 
+import org.logevents.config.Configuration;
 import org.logevents.formatting.PatternLogEventFormatter;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.function.Function;
  */
 public class PatternConverterSpec<T extends Function<?, String>> {
 
+    private final Configuration configuration;
     private Optional<Integer> minLength;
     private Optional<Integer> maxLength;
     private String conversionWord;
@@ -26,7 +28,8 @@ public class PatternConverterSpec<T extends Function<?, String>> {
     private StringScanner scanner;
     private BiFunction<Throwable, Optional<Integer>, String> throwableFormatter;
 
-    public PatternConverterSpec(StringScanner scanner) {
+    public PatternConverterSpec(Configuration configuration, StringScanner scanner) {
+        this.configuration = configuration;
         this.scanner = scanner;
     }
 
@@ -165,4 +168,9 @@ public class PatternConverterSpec<T extends Function<?, String>> {
     public BiFunction<Throwable, Optional<Integer>, String> getThrowableFormatter() {
         return throwableFormatter;
     }
+
+    public Configuration getConfiguration() {
+        return configuration;
+    }
+
 }

@@ -562,5 +562,4 @@ If you're using logback today and would like to check out logevents, here's a si
   * [ ] Implement default throttler as separate batcher class
   * [ ] Implement MDC-based throttler
     * [ ] Needs ThrottlerTracker to close old throttlers
-* [ ] Support application name and node name in pattern filter
 * [ ] Show LogEventStatus in logevents.html

@@ -62,17 +62,20 @@ public class FileLogEventObserver implements LogEventObserver {
     }
 
     public FileLogEventObserver(Configuration configuration) {
-        this(Optional.of(createFormatter(configuration)),
-                configuration.optionalString("filename").orElse(defaultFilename(configuration)));
+        this(
+                configuration,
+                Optional.of(createFormatter(configuration)),
+                configuration.optionalString("filename").orElse(defaultFilename(configuration))
+        );
         formatter.configure(configuration);
         configuration.checkForUnknownFields();
     }
 
-    public FileLogEventObserver(Optional<LogEventFormatter> formatter, String path) {
+    public FileLogEventObserver(Configuration configuration, Optional<LogEventFormatter> formatter, String path) {
         this.formatter = formatter.orElse(new TTLLEventLogFormatter());
         this.path = Paths.get(path);
 
-        this.filenameGenerator = new PatternReader<>(factory).readPattern(this.path.getFileName().toString());
+        this.filenameGenerator = new PatternReader<>(configuration, factory).readPattern(this.path.getFileName().toString());
         this.destination = new FileDestination(this.path.getParent());
     }
 

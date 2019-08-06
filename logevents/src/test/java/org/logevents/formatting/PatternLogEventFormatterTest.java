@@ -1,6 +1,5 @@
 package org.logevents.formatting;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
@@ -32,7 +31,12 @@ public class PatternLogEventFormatterTest {
 
     private Marker MARKER = MarkerFactory.getMarker("MY_MARKER");
     private Instant time = Instant.ofEpochMilli(1535056492088L);
-    private PatternLogEventFormatter formatter = new PatternLogEventFormatter("No pattern");
+    private Properties properties = new Properties();
+    {
+        properties.put("observer.foo.formatter.pattern", "No pattern");
+    }
+    private Configuration configuration = new Configuration(properties, "observer.foo.formatter");
+    private PatternLogEventFormatter formatter = new PatternLogEventFormatter(configuration);
     private LogEvent event = new LogEventSampler()
         .withLevel(Level.INFO)
         .withLoggerName("some.logger.name")
@@ -111,7 +115,7 @@ public class PatternLogEventFormatterTest {
         LogEvent event = buffer.getEvents().get(0);
 
         formatter.setPattern("%file:%line - %class#%method");
-        assertEquals("PatternLogEventFormatterTest.java:110 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
+        assertEquals("PatternLogEventFormatterTest.java:114 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
                 formatter.apply(event));
     }
 
@@ -219,9 +223,9 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(event.getMessage(), lines[0]);
         assertEquals(ex.toString(), lines[1]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:210)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:214)",
                 lines[2]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:216)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:220)",
                 lines[3]);
     }
 
@@ -234,7 +238,7 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(2+2, lines.length);
         assertEquals(event.getMessage(), lines[0]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:210)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:214)",
                 lines[2]);
     }
 
@@ -247,16 +251,15 @@ public class PatternLogEventFormatterTest {
     }
 
     @Test
-    @Ignore("Not implemented yet as LogEventFormatter cannot reach Configuration yet")
     public void shouldOverrideApplicationAndNodeInformation() {
-        Properties properties = new Properties();
         properties.setProperty("observer.console.formatter.pattern", "%application@%node");
         properties.setProperty("observer.*.nodeName", "my-node");
         properties.setProperty("observer.*.applicationName", "my-app");
+
         formatter = new PatternLogEventFormatter(properties, "observer.console.formatter");
-        assertEquals("my-app@my-node", formatter.apply(new LogEventSampler().build()));
+        assertEquals("my-app@my-node\n", formatter.apply(new LogEventSampler().build()));
         formatter.setPattern("%applicationNode");
-        assertEquals("my-app@my-node", formatter.apply(new LogEventSampler().build()));
+        assertEquals("my-app@my-node\n", formatter.apply(new LogEventSampler().build()));
     }
 
     private List<String> findDuplicates(List<String> resultingStrings) {

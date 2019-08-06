@@ -125,10 +125,13 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         });
 
         factory.put("application", spec ->
-                s -> Configuration.calculateApplicationName()
+                s -> spec.getConfiguration().getApplicationName()
         );
         factory.put("node", spec ->
-                s -> Configuration.calculateNodeName()
+                s -> spec.getConfiguration().getNodeName()
+        );
+        factory.put("applicationNode", spec ->
+                s -> spec.getConfiguration().getApplicationName() + "@" + spec.getConfiguration().getNodeName()
         );
 
 
@@ -167,6 +170,8 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         factory.putTransformer("underline", spec -> s -> ansiFormat.underline(s));
     }
 
+    private final Configuration configuration;
+
     private static String formatMessage(LogEvent logEvent) {
         return new MessageFormatter().format(logEvent.getMessage(), logEvent.getArgumentArray());
     }
@@ -180,16 +185,12 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         return factory.getConversionWords();
     }
 
-    public PatternLogEventFormatter(String pattern) {
-        setPattern(pattern);
-        this.exceptionFormatter = new ExceptionFormatter();
-    }
-
     public PatternLogEventFormatter(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 
     public PatternLogEventFormatter(Configuration configuration) {
+        this.configuration = configuration;
         this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", ExceptionFormatter.class);
         setPattern(configuration.getString("pattern"));
         configuration.checkForUnknownFields();
@@ -202,7 +203,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
     public void setPattern(String pattern) {
         this.pattern = pattern;
-        this.converter = new PatternReader<>(factory).readPattern(pattern);
+        this.converter = new PatternReader<>(configuration, factory).readPattern(pattern);
     }
 
     @Override

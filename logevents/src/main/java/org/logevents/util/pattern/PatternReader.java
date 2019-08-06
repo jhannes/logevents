@@ -1,5 +1,7 @@
 package org.logevents.util.pattern;
 
+import org.logevents.config.Configuration;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -7,8 +9,10 @@ import java.util.function.Function;
 public class PatternReader<T extends Function<?, String>> {
 
     private PatternFactory<T> factory;
+    private Configuration configuration;
 
-    public PatternReader(PatternFactory<T> factory) {
+    public PatternReader(Configuration configuration, PatternFactory<T> factory) {
+        this.configuration = configuration;
         this.factory = factory;
     }
 
@@ -25,7 +29,7 @@ public class PatternReader<T extends Function<?, String>> {
                 converters.add(factory.getConstant(text));
             }
             if (scanner.hasMoreCharacters() && scanner.current() != terminator) {
-                PatternConverterSpec<T> patternSpec = new PatternConverterSpec<>(scanner);
+                PatternConverterSpec<T> patternSpec = new PatternConverterSpec<>(configuration, scanner);
                 patternSpec.readConversion(this);
                 converters.add(factory.create(patternSpec));
             }
