@@ -139,7 +139,7 @@ public class OpenIdConfiguration {
 
     private Map<String, Object> getIdToken(Map<String, Object> response) throws IOException {
         String idToken = response.get("id_token").toString();
-        return (Map<String, Object>) JsonParser.parseFromBase64encodedString(idToken.split("\\.")[1]);
+        return JsonParser.parseFromBase64encodedString(idToken.split("\\.")[1]);
     }
 
     protected URL getTokenEndpoint() throws IOException {
@@ -147,8 +147,7 @@ public class OpenIdConfiguration {
     }
 
     private Map<String, Object> loadOpenIdConfiguration() throws IOException {
-        return (Map<String, Object>)
-                JsonParser.parse(new URL(this.openIdIssuer + "/.well-known/openid-configuration"));
+        return JsonParser.parseObject(new URL(this.openIdIssuer + "/.well-known/openid-configuration"));
     }
 
     @Override

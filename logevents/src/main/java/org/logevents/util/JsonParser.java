@@ -33,15 +33,15 @@ public class JsonParser {
         return parse(new InputStreamReader(input));
     }
 
-    public static Object parse(URL url) throws IOException {
-        return parse(url.openConnection());
+    public static Map<String, Object> parseObject(URL url) throws IOException {
+        return parseObject(url.openConnection());
     }
 
-    public static Object parse(URLConnection connection) throws IOException {
+    public static Map<String, Object> parseObject(URLConnection connection) throws IOException {
         HttpURLConnection httpConnection = (HttpURLConnection) connection;
         if (httpConnection.getResponseCode() < 400) {
             try (InputStream input = connection.getInputStream()) {
-                return parse(input);
+                return parseObject(input);
             }
         } else {
             throw new IOException("Failed to POST to " + connection.getURL() + ", status code: " + httpConnection.getResponseCode()
@@ -49,8 +49,8 @@ public class JsonParser {
         }
     }
 
-    public static Object parseFromBase64encodedString(String base64encodedJson) throws IllegalArgumentException, IOException {
-        return parse(new String(Base64.getUrlDecoder().decode(base64encodedJson)));
+    public static Map<String, Object> parseFromBase64encodedString(String base64encodedJson) throws IllegalArgumentException, IOException {
+        return parseObject(new String(Base64.getUrlDecoder().decode(base64encodedJson)));
     }
 
     private Reader reader;

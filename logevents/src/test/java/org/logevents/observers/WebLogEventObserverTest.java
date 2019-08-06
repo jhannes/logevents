@@ -7,6 +7,7 @@ import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.status.StatusEvent;
 import org.logevents.util.JsonParser;
+import org.logevents.util.JsonUtil;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -20,7 +21,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -47,8 +47,8 @@ public class WebLogEventObserverTest {
         connection.setSSLSocketFactory(createSSLContext(observer.getCertificate()).getSocketFactory());
         connection.setRequestProperty("Cookie", observer.createSessionCookie("jhannes"));
 
-        Map<String, Object> objects = (Map<String, Object>)JsonParser.parse(connection);
-        String loggedMessage = ((List<Map<String, Object>>) objects.get("events")).get(0).get("messageTemplate").toString();
+        Map<String, Object> objects = JsonParser.parseObject(connection);
+        String loggedMessage = JsonUtil.getObjectList(objects, "events").get(0).get("messageTemplate").toString();
         assertEquals(logEvent.getMessage(), loggedMessage);
     }
 
