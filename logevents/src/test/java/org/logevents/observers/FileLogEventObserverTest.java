@@ -1,6 +1,8 @@
 package org.logevents.observers;
 
+import org.junit.Ignore;
 import org.junit.Test;
+import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
@@ -106,6 +108,45 @@ public class FileLogEventObserverTest {
         assertEquals(Arrays.asList(path),
                 Files.walk(logDirectory).filter(Files::isRegularFile).collect(Collectors.toList()));
         assertEquals(Arrays.asList("A warning message"), Files.readAllLines(path));
+    }
+
+    @Test
+    @Ignore("Implementation not ready yet")
+    public void shouldSwitchFilenameOnMdcVariable() throws IOException {
+        Path logDirectory = Paths.get("target", "test", "file-test-log");
+        if (Files.exists(logDirectory)) {
+            Files.walk(logDirectory).map(Path::toFile).forEach(File::delete);
+        }
+
+        Properties properties = new Properties();
+        properties.setProperty("observer.file.filename", logDirectory.toString() + "/%mdc{user:-unidentified}/log-%mdc{op}.log");
+        properties.setProperty("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
+        properties.setProperty("observer.file.formatter.pattern", "%message");
+        LogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
+
+        factory.setObserver(logger, observer, false);
+
+        LogEventSampler aliceEvents = new LogEventSampler().withMdc("user", "alice");
+        LogEvent aliceAddEvent1 = aliceEvents.withMdc("op", "add").build();
+        LogEvent aliceAddEvent2 = aliceEvents.withMdc("op", "add").build();
+        LogEvent aliceListEvent = aliceEvents.withMdc("op", "list").build();
+        LogEvent bobAddEvent = new LogEventSampler().withMdc("user", "bob").withMdc("op", "add").build();
+        LogEvent simpleEvent = new LogEventSampler().build();
+
+        observer.logEvent(aliceAddEvent1);
+        observer.logEvent(aliceAddEvent2);
+        observer.logEvent(aliceListEvent);
+        observer.logEvent(bobAddEvent);
+        observer.logEvent(simpleEvent);
+
+        assertEquals(Arrays.asList(aliceAddEvent1.getMessage(), aliceAddEvent2.getMessage()),
+                Files.readAllLines(logDirectory.resolve("alice/log-add.log")));
+        assertEquals(Arrays.asList(aliceListEvent),
+                Files.readAllLines(logDirectory.resolve("alice/log-list.log")));
+        assertEquals(Arrays.asList(bobAddEvent),
+                Files.readAllLines(logDirectory.resolve("bob/log-add.log")));
+        assertEquals(Arrays.asList(simpleEvent),
+                Files.readAllLines(logDirectory.resolve("unidentified/log-.log")));
     }
 
 }
