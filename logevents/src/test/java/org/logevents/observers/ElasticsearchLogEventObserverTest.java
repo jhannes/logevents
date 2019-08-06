@@ -108,11 +108,11 @@ public class ElasticsearchLogEventObserverTest {
         logEventStatusRule.setStatusLevel(StatusEvent.StatusLevel.NONE);
         observer.logEvent(new LogEventSampler().build(),
                 Instant.now().plus(maximumWaitTime).plus(Duration.ofMillis(100)));
-
         observer.execute();
 
         List<StatusEvent> events = LogEventStatus.getInstance().getHeadMessages(observer, StatusEvent.StatusLevel.ERROR);
-        assertTrue("Expected 1 event, was " + events, events.size() == 1);
+        assertTrue("Expected 1 event, was " + events
+                + "(all events " + LogEventStatus.getInstance().getHeadMessages() + ")", events.size() == 1);
         assertEquals("Failed to send message to " + observer.getUrl(), events.get(0).getMessage());
     }
 
@@ -145,7 +145,7 @@ public class ElasticsearchLogEventObserverTest {
         try {
             ((HttpURLConnection) observer.getUrl().openConnection()).getResponseCode();
         } catch (ConnectException e) {
-            Assume.assumeNoException("Elasticsearch is not running", e);
+            Assume.assumeNoException("Elasticsearch is not running - try 'docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e \"discovery.type=single-node\" elasticsearch:7.2.0'", e);
         }
     }
 

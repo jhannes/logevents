@@ -124,6 +124,10 @@ public class LogEventStatus {
                 .collect(Collectors.toList());
     }
 
+    public List<StatusEvent> getHeadMessages() {
+        return headMessages;
+    }
+
     public StatusEvent lastMessage() {
         if (!tailMessages.isEmpty()) {
             return tailMessages.get(tailMessages.size()-1);
