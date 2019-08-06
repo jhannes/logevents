@@ -112,7 +112,7 @@ public class ElasticsearchLogEventObserverTest {
 
         List<StatusEvent> events = LogEventStatus.getInstance().getHeadMessages(observer, StatusEvent.StatusLevel.ERROR);
         assertTrue("Expected 1 event, was " + events
-                + "(all events " + LogEventStatus.getInstance().getHeadMessages() + ")", events.size() == 1);
+                + " (all events " + LogEventStatus.getInstance().getHeadMessages() + ")", events.size() == 1);
         assertEquals("Failed to send message to " + observer.getUrl(), events.get(0).getMessage());
     }
 

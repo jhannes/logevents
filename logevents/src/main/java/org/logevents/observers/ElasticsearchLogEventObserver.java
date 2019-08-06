@@ -49,6 +49,7 @@ public class ElasticsearchLogEventObserver extends BatchingLogEventObserver {
     protected void processBatch(LogEventBatch batch) {
         try {
             indexDocuments(batch);
+            LogEventStatus.getInstance().addDebug(this, "Flushed " + batch.size() + " messages to " + getUrl());
         } catch (IOException e) {
             LogEventStatus.getInstance().addError(this, "Failed to send message to " + getUrl(), e);
         }
