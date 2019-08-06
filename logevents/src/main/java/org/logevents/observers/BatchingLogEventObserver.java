@@ -134,7 +134,7 @@ public abstract class BatchingLogEventObserver extends FilteredLogEventObserver 
         return nextSendDelay(now);
     }
 
-    private void execute() {
+    void execute() {
         LogEventBatch batch = takeCurrentBatch();
         if (!batch.isEmpty()) {
             try {
