@@ -34,22 +34,12 @@ class FileDestination {
     }
 
     public synchronized void writeEvent(String filename, String message) {
-        Path path = logDirectory.resolve(filename);
         if (isCircuitBroken()) {
             return;
         }
+        Path path = logDirectory.resolve(filename);
         try {
-            if (channel == null) {
-                try {
-                    Files.createDirectories(this.logDirectory);
-                } catch (IOException e) {
-                    LogEventStatus.getInstance().addFatal(this, "Can't create directory " + logDirectory, e);
-                }
-                openedPath = path;
-                channel = FileChannel.open(openedPath, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-            } else if (!openedPath.equals(path)) {
-                rollOver(path);
-            }
+            FileChannel channel = getChannel(path);
             ByteBuffer src = ByteBuffer.wrap(message.getBytes());
             try(FileLock ignored = channel.tryLock()) {
                 channel.write(src);
@@ -61,13 +51,24 @@ class FileDestination {
         }
     }
 
-    public void rollOver(Path path) throws IOException {
-        try {
-            channel.close();
-        } catch (IOException ignored) {
+    FileChannel getChannel(Path path) throws IOException {
+        if (channel == null) {
+            try {
+                Files.createDirectories(this.logDirectory);
+            } catch (IOException e) {
+                LogEventStatus.getInstance().addFatal(this, "Can't create directory " + logDirectory, e);
+            }
+            openedPath = path;
+            channel = FileChannel.open(openedPath, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+        } else if (!openedPath.equals(path)) {
+            try {
+                channel.close();
+            } catch (IOException ignored) {
+            }
+            openedPath = path;
+            channel = FileChannel.open(openedPath, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
         }
-        openedPath = path;
-        channel = FileChannel.open(openedPath, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+        return channel;
     }
 
 

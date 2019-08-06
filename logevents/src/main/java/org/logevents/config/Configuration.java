@@ -33,8 +33,9 @@ public class Configuration {
     }
 
     public String getApplicationName() {
-        return optionalString("application")
-                .orElseGet(Configuration::calculateApplicationName);
+        return optionalString("applicationName")
+                .orElseGet(() -> optionalDefaultString("applicationName")
+                    .orElseGet(Configuration::calculateApplicationName));
     }
 
     public static String calculateApplicationName() {
@@ -243,7 +244,9 @@ public class Configuration {
     }
 
     public String getNodeName() {
-        return optionalString("nodeName").orElseGet(Configuration::calculateNodeName);
+        return optionalString("nodeName")
+                .orElseGet(() -> optionalDefaultString("nodeName")
+                    .orElseGet(Configuration::calculateNodeName));
     }
 
     public static String calculateNodeName() {

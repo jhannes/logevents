@@ -13,15 +13,19 @@ import java.util.stream.Collectors;
 
 public class NetUtils {
 
-    public static String postJson(URL url, String json) throws IOException {
+    public static HttpURLConnection post(URL url, String contentBody, String contentType) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
         connection.setRequestMethod("POST");
         connection.setDoInput(true);
         connection.setDoOutput(true);
-        connection.setRequestProperty("Content-Type", "application/json");
-        connection.getOutputStream().write(json.getBytes());
+        connection.setRequestProperty("Content-Type", contentType);
+        connection.getOutputStream().write(contentBody.getBytes());
         connection.getOutputStream().flush();
+        return connection;
+    }
+
+    public static String postJson(URL url, String json) throws IOException {
+        HttpURLConnection connection = post(url, json, "application/json");
 
         int statusCode = connection.getResponseCode();
         if (statusCode >= 400) {
@@ -36,15 +40,8 @@ public class NetUtils {
                 .map(entry -> entry.getKey() + "=" + URLEncoder.encode(entry.getValue()))
                 .collect(Collectors.joining("&"));
 
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
-        connection.setDoInput(true);
-        connection.setDoOutput(true);
-        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        connection.getOutputStream().write(payload.getBytes());
-        connection.getOutputStream().flush();
-
-        return (Map<String,Object>)JsonParser.parse(connection);
+        HttpURLConnection connection = post(url, payload, "application/x-www-form-urlencoded");
+        return JsonParser.parseObject(connection);
     }
 
     public static String readAsString(InputStream inputStream) throws IOException {

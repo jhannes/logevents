@@ -115,7 +115,7 @@ public class SlackLogMessageFormatterTest {
     }
 
     @Test
-    @Ignore
+    @Ignore("How do we reliably find a pom.xml-file in classpath?")
     public void shouldCreateSourceLinkInStackTrace() {
         SlackExceptionFormatter formatter = new SlackExceptionFormatter();
         formatter.addPackageMavenLocation("org.logevents", "org.logevents/logevents");

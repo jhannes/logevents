@@ -27,8 +27,8 @@ public class ExecutorScheduler implements Scheduler {
     }
 
     @Override
-    public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        executor.awaitTermination(timeout, unit);
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        return executor.awaitTermination(timeout, unit);
     }
 
     @Override

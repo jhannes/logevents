@@ -29,7 +29,6 @@ public abstract class FilteredLogEventObserver implements LogEventObserver {
         this.setRequireMarkerName(configuration.getStringList("requireMarker"));
     }
 
-
     protected abstract void doLogEvent(LogEvent logEvent);
 
     protected boolean shouldLogEvent(LogEvent logEvent) {

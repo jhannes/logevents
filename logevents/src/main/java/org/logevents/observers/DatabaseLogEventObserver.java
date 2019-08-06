@@ -85,6 +85,8 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         this.logEventsMdcTable = configuration.optionalString("logEventsMdcTable").orElse(logEventsTable + "_MDC").toUpperCase();
         this.nodeName = configuration.getNodeName();
         this.applicationName = configuration.getApplicationName();
+        this.messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
+        configuration.checkForUnknownFields();
 
         LogEventStatus.getInstance().addDebug(this, "Connecting to " + jdbcUrl + " as " + jdbcUsername);
 
@@ -330,7 +332,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         }
     }
 
-    private final MessageFormatter messageFormatter = new MessageFormatter();
+    private final MessageFormatter messageFormatter;
     private final JsonMessageFormatter jsonMessageFormatter = new JsonMessageFormatter();
     private final JsonExceptionFormatter exceptionFormatter = new JsonExceptionFormatter();
 

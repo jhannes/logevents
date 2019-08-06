@@ -554,6 +554,13 @@ If you're using logback today and would like to check out logevents, here's a si
 
 ### TODO
 
-* JMX
-* Logback features that logevents is missing:
-  * SiftingAppender
+* [ ] Support MDC (plus application name, node name) in filename pattern (matches Logback's SiftingAppender)
+  * [ ] Implement FileChannelTracker in FileDestination
+* [ ] Split JavaScript and style from logevents.html
+* [ ] Make BatchingLogEventObserver delegate all batching to a batching strategy
+  * [ ] Move maximumWait, cooldown and idle threshold to separate batcher class
+  * [ ] Implement default throttler as separate batcher class
+  * [ ] Implement MDC-based throttler
+    * [ ] Needs ThrottlerTracker to close old throttlers
+* [ ] Support application name and node name in pattern filter
+* [ ] Show LogEventStatus in logevents.html

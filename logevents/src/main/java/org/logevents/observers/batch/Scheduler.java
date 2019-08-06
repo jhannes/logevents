@@ -8,5 +8,5 @@ public interface Scheduler {
 
     void setAction(Runnable action);
 
-    void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
+    boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
 }
