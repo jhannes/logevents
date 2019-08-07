@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
  *    &#064;Test
  *    public void willFailBecauseTheExceptionClassWasDifferent() {
  *        // The expectations can be highly customized
- *        expectLogEvents.expect(expect ->
+ *        expectLogEvents.expect(expect -&gt;
  *          expect.level(Level.WARN).logger(ExampleTest.class).pattern("Whoa there!").exception(IOException.class)
  *        );
  *        logger.warn("Whoa there!", new RuntimeException("Uh oh"));
