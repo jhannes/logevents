@@ -31,25 +31,25 @@ public class BatchThrottlerTest {
     @Test
     public void shouldScheduleFirstEventForImmediateExecution() {
         batcher.logEvent(new LogEventSampler().build());
-        verify(mockExecutor).schedule(Duration.ZERO);
+        verify(mockExecutor).scheduleFlush(Duration.ZERO);
     }
 
     @Test
     public void shouldSendOnFlush() {
         LogEvent logEvent = new LogEventSampler().build();
         batcher.logEvent(logEvent);
-        batcher.flush();
+        batcher.execute();
         assertEquals(Arrays.asList(new LogEventBatch().add(logEvent)), batches);
     }
 
     @Test
     public void shouldDelaySubsequentEvents() {
         batcher.logEvent(new LogEventSampler().build());
-        verify(mockExecutor).schedule(Duration.ZERO);
-        batcher.flush();
+        verify(mockExecutor).scheduleFlush(Duration.ZERO);
+        batcher.execute();
 
         batcher.logEvent(new LogEventSampler().build());
-        verify(mockExecutor).schedule(Duration.ofMinutes(1));
+        verify(mockExecutor).scheduleFlush(Duration.ofMinutes(1));
         batcher.logEvent(new LogEventSampler().build());
         verifyNoMoreInteractions(mockExecutor);
     }
@@ -57,18 +57,18 @@ public class BatchThrottlerTest {
     @Test
     public void shouldIncreaseDelay() {
         batcher.logEvent(new LogEventSampler().build());
-        verify(mockExecutor).schedule(Duration.ZERO);
+        verify(mockExecutor).scheduleFlush(Duration.ZERO);
 
-        batcher.flush();
+        batcher.execute();
         batcher.logEvent(new LogEventSampler().build());
-        verify(mockExecutor).schedule(Duration.ofMinutes(1));
+        verify(mockExecutor).scheduleFlush(Duration.ofMinutes(1));
 
-        batcher.flush();
+        batcher.execute();
         batcher.logEvent(new LogEventSampler().build());
-        verify(mockExecutor).schedule(Duration.ofMinutes(5));
+        verify(mockExecutor).scheduleFlush(Duration.ofMinutes(5));
 
-        batcher.flush();
-        verify(mockExecutor).schedule(Duration.ofMinutes(5));
+        batcher.execute();
+        verify(mockExecutor).scheduleFlush(Duration.ofMinutes(5));
     }
 
 }

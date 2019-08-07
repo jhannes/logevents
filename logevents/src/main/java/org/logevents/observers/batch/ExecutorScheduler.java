@@ -19,16 +19,11 @@ public class ExecutorScheduler implements Scheduler {
     }
 
     @Override
-    public void schedule(Duration delay) {
+    public void scheduleFlush(Duration delay) {
         if (scheduledTask != null && !scheduledTask.isDone()) {
             scheduledTask.cancel(false);
         }
         scheduledTask = executor.schedule(action, delay.toMillis(), TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        return executor.awaitTermination(timeout, unit);
     }
 
     @Override

@@ -59,9 +59,6 @@ public class SmtpLogEventObserver extends BatchingLogEventObserver {
         this.nodeName = configuration.getNodeName();
 
         configureFilter(configuration);
-        idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);
-        cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
-        maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
 
         props = new Properties();
         props.put("mail.smtp.starttls.enable", "true");

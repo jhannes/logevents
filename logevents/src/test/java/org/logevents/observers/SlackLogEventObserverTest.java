@@ -5,13 +5,13 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.extend.servlets.LogEventSampler;
-import org.logevents.observers.batch.BatchThrottler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventGroup;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.logevents.status.StatusEvent.StatusLevel;
+import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import java.io.BufferedReader;
@@ -122,8 +122,8 @@ public class SlackLogEventObserverTest {
         properties.put("observer.slack.markers.FOO.channel", "fooMessages");
 
         SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack");
-        BatchThrottler markerBatcher = observer.getMarker(MarkerFactory.getMarker("FOO"));
-        markerBatcher.logEvent(new LogEventSampler().build());
+        Marker marker = MarkerFactory.getMarker("FOO");
+        observer.logEvent(new LogEventSampler().withMarker(marker).build());
 
         // TODO: Verify that log goes to correct channel
     }

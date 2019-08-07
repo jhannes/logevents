@@ -1,7 +1,7 @@
 package org.logevents.extend.servlets;
 
+import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
@@ -25,6 +25,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -148,10 +151,19 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     @Test
     public void shouldGenerateAuthenticationUrl() throws IOException, ServletException {
+        String openIdIssuer = "https://login.microsoftonline.com/common";
         Properties properties = new Properties();
         properties.put("observer.servlet.clientId", "my-application");
         properties.put("observer.servlet.clientSecret", "abc123");
-        properties.put("observer.servlet.openIdIssuer", "https://login.microsoftonline.com/common");
+        properties.put("observer.servlet.openIdIssuer", openIdIssuer);
+
+        try {
+            HttpURLConnection conn = (HttpURLConnection) new URL(openIdIssuer).openConnection();
+            conn.getResponseCode();
+        } catch (UnknownHostException e) {
+            Assume.assumeNoException("Network down", e);
+        }
+
         WebLogEventObserver observer = new WebLogEventObserver(new Configuration(properties, "observer.servlet"));
         HashMap<String, Supplier<? extends LogEventObserver>> observers = new HashMap<>();
         observers.put("servlet", () -> observer);

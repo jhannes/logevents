@@ -1,45 +1,43 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
+import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.observers.batch.BatchThrottler;
+import org.logevents.observers.batch.CooldownBatcher;
 import org.logevents.observers.batch.ExecutorScheduler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventShutdownHook;
-import org.logevents.status.LogEventStatus;
+import org.logevents.observers.batch.Scheduler;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 /**
  * Used to gather up a number of log event to process as a batch. This is useful
  * when using logging destinations where high frequency of messages would be
- * inefficient or noisy, such as email or Slack.
+ * inefficient or noisy, such as email or Slack and for logging asynchronously to
+ * external systems over network such as databases or Elasticsearch.
  * <p>
- * The batch observers decides when to process a batch based on
- * {@link #cooldownTime} (minimum time since last processed batch),
- * {@link #idleThreshold} (minimum time between log events in the batch)
- * and {@link #maximumWaitTime} (maximum time from the first message in a batch
- * was generated until the batch is processed). When processing, the
- * {@link BatchingLogEventObserver} calls {@link #processBatch(LogEventBatch)}
- * with the whole batch to process the log events. Consecutive Log events with
- * the same message pattern and log level are grouped together so the processor
- * can easily ignore duplicate messages.
+ * {@link BatchingLogEventObserver} can decide how to batch events with batchers,
+ * for example {@link BatchThrottler} and {@link CooldownBatcher}. When processing,
+ * the {@link BatchingLogEventObserver} calls {@link #processBatch(LogEventBatch)}
+ * with the whole batch to process the log events, which should be overridden by
+ * subclasses. Consecutive Log events with the same message pattern and log level
+ * are grouped together so the processor can easily ignore duplicate messages.
  *
  * @see SlackLogEventObserver
  * @see MicrosoftTeamsLogEventObserver
  * @see SmtpLogEventObserver
+ * @see ElasticsearchLogEventObserver
+ * @see DatabaseLogEventObserver
  *
  * @author Johannes Brodwall
  */
@@ -63,32 +61,17 @@ public abstract class BatchingLogEventObserver extends FilteredLogEventObserver 
         Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
 
-    protected final ExecutorScheduler scheduler;
-
-    protected Duration cooldownTime = Duration.ofSeconds(15);
-    protected Duration maximumWaitTime = Duration.ofMinutes(1);
-    protected Duration idleThreshold = Duration.ofSeconds(5);
-
-    private Instant lastSendTime = Instant.ofEpochMilli(0);
-
-    private LogEventBatch currentBatch = new LogEventBatch();
     private Map<Marker, BatchThrottler> markerBatchers = new HashMap<>();
-    private ScheduledFuture<?> scheduledTask;
+    private CooldownBatcher defaultBatcher;
+    private Supplier<Scheduler> flusherFactory;
 
     public BatchingLogEventObserver() {
-        scheduler = new ExecutorScheduler(scheduledExecutorService, shutdownHook);
-        scheduler.setAction(this::execute);
+        this(() -> new ExecutorScheduler(scheduledExecutorService, shutdownHook));
     }
 
-    public BatchingLogEventObserver(Properties properties, String prefix) {
-        Configuration configuration = new Configuration(properties, prefix);
-
-        configureFilter(configuration);
-        configureBatching(configuration);
-        configuration.checkForUnknownFields();
-
-        scheduler = new ExecutorScheduler(scheduledExecutorService, shutdownHook);
-        scheduler.setAction(this::execute);
+    public BatchingLogEventObserver(Supplier<Scheduler> flusherFactory) {
+        this.flusherFactory = flusherFactory;
+        defaultBatcher = new CooldownBatcher(flusherFactory.get(), this::processBatch);
     }
 
     /**
@@ -96,100 +79,26 @@ public abstract class BatchingLogEventObserver extends FilteredLogEventObserver 
      * from configuration
      */
     protected void configureBatching(Configuration configuration) {
-        idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);
-        cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
-        maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
-    }
-
-    /**
-     * Block until the current batch is processed by the internal scheduler.
-     * Especially useful for testing.
-     */
-    public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        scheduler.awaitTermination(timeout, unit);
+        defaultBatcher.configure(configuration);
     }
 
     @Override
     protected final void doLogEvent(LogEvent logEvent) {
+        getBatcher(logEvent).logEvent(logEvent);
+    }
+
+    protected LogEventObserver getBatcher(LogEvent logEvent) {
         if (logEvent.getMarker() != null) {
             for (Marker marker : markerBatchers.keySet()) {
                 if (marker.contains(logEvent.getMarker())) {
-                    markerBatchers.get(marker).logEvent(logEvent);
-                    return;
+                    return markerBatchers.get(marker);
                 }
             }
         }
-        logEvent(logEvent, Instant.now());
-    }
-
-    Instant logEvent(LogEvent logEvent, Instant now) {
-        Instant sendTime = addToBatch(logEvent, now);
-        Duration duration = Duration.between(now, sendTime);
-        scheduler.schedule(duration);
-        return sendTime;
-    }
-
-    Instant addToBatch(LogEvent logEvent, Instant now) {
-        currentBatch.add(logEvent);
-        return nextSendDelay(now);
-    }
-
-    void execute() {
-        LogEventBatch batch = takeCurrentBatch();
-        if (!batch.isEmpty()) {
-            try {
-                processBatch(batch);
-            } catch (Exception e) {
-                LogEventStatus.getInstance().addFatal(this, "Failed to process batch", e);
-            }
-        }
+        return defaultBatcher;
     }
 
     protected abstract void processBatch(LogEventBatch batch);
-
-    synchronized LogEventBatch takeCurrentBatch() {
-        lastSendTime = Instant.now();
-        LogEventBatch returnedBatch = this.currentBatch;
-        currentBatch = new LogEventBatch();
-
-        return returnedBatch;
-    }
-
-    private Instant nextSendDelay(Instant now) {
-        if (firstEventInBatchTime().plus(maximumWaitTime).isBefore(now)) {
-            // We have waited long enough - send it now!
-            return now;
-        } else {
-            // Wait the necessary time before sending - may be in the past
-            return earliestSendTime();
-        }
-    }
-
-    private Instant earliestSendTime() {
-        Instant idleTimeout = latestEventInBatchTime().plus(idleThreshold);
-        Instant cooldownTimeout = lastSendTime.plus(cooldownTime);
-        return idleTimeout.isAfter(cooldownTimeout) ? idleTimeout : cooldownTimeout;
-    }
-
-    private Instant firstEventInBatchTime() {
-        return currentBatch.firstEventTime();
-    }
-
-    private Instant latestEventInBatchTime() {
-        return currentBatch.latestEventTime();
-    }
-
-    public void setCooldownTime(Duration cooldownTime) {
-        this.cooldownTime = cooldownTime;
-    }
-
-    public void setMaximumWaitTime(Duration maximumWaitTime) {
-        this.maximumWaitTime = maximumWaitTime;
-    }
-
-    public void setIdleThreshold(Duration idleThreshold) {
-        this.idleThreshold = idleThreshold;
-    }
 
     @Override
     public String toString() {
@@ -205,15 +114,13 @@ public abstract class BatchingLogEventObserver extends FilteredLogEventObserver 
      */
     public void configureMarkers(Configuration configuration) {
         for (String markerName : configuration.listProperties("markers")) {
-            markerBatchers.put(MarkerFactory.getMarker(markerName),
-                    createBatcher(configuration, markerName));
+            markerBatchers.put(MarkerFactory.getMarker(markerName), createBatcher(configuration, markerName));
         }
     }
 
     protected BatchThrottler createBatcher(Configuration configuration, String markerName) {
         String throttle = configuration.getString("markers." + markerName + ".throttle");
-        return new BatchThrottler(new ExecutorScheduler(scheduledExecutorService, shutdownHook), this::processBatch)
-                .setThrottle(throttle);
+        return new BatchThrottler(flusherFactory.get(), this::processBatch).setThrottle(throttle);
     }
 
     BatchThrottler getMarker(Marker marker) {

@@ -23,14 +23,14 @@ public class DemoTeams {
 
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
         Properties properties = configurator.loadConfigurationProperties();
+        properties.setProperty("observer.teams.idleThreshold", Duration.ofSeconds(3).toString());
+        properties.setProperty("observer.teams.cooldownTime", Duration.ofSeconds(5).toString());
+        properties.setProperty("observer.teams.maximumWaitTime", Duration.ofMinutes(3).toString());
 
         MicrosoftTeamsLogEventObserver teamsObserver = new MicrosoftTeamsLogEventObserver(
                 properties, "observer.teams"
         );
         teamsObserver.setThreshold(Level.INFO);
-        teamsObserver.setCooldownTime(Duration.ofSeconds(5));
-        teamsObserver.setMaximumWaitTime(Duration.ofMinutes(3));
-        teamsObserver.setIdleThreshold(Duration.ofSeconds(3));
 
         factory.setRootLevel(Level.INFO);
         factory.setRootObserver(CompositeLogEventObserver.combine(

@@ -55,7 +55,6 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
 
         configureFilter(configuration);
         configureBatching(configuration);
-
         configureMarkers(configuration);
 
         configuration.checkForUnknownFields();

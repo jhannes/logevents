@@ -166,7 +166,11 @@ public class LogEventSampler {
     }
 
     public LogEventSampler withRandomTime() {
-        return this.withTime(Instant.now().minusSeconds(random.nextInt(3600) + 60));
+        return this.withTime(randomTime());
+    }
+
+    public static Instant randomTime() {
+        return Instant.now().minusSeconds(random.nextInt(3600) + 60);
     }
 
 }

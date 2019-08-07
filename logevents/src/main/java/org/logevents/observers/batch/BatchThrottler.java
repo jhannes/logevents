@@ -25,11 +25,11 @@ public class BatchThrottler implements LogEventObserver {
     private int throttleIndex = 0;
     private LogEventBatch currentBatch = new LogEventBatch();
     private Consumer<LogEventBatch> batchProcessor;
-    private Instant lastFlush = Instant.ofEpochMilli(0);
+    private Instant lastSendTime = Instant.ofEpochMilli(0);
 
     public BatchThrottler(Scheduler executor, Consumer<LogEventBatch> batchProcessor) {
         this.executor = executor;
-        this.executor.setAction(this::flush);
+        this.executor.setAction(this::execute);
         this.batchProcessor = batchProcessor;
     }
 
@@ -62,26 +62,29 @@ public class BatchThrottler implements LogEventObserver {
     private synchronized void doLogEvent(LogEvent logEvent, Instant now) {
         if (currentBatch.isEmpty()) {
             // schedule for execution
-            Instant nextFlush = lastFlush.plusMillis(throttle.get(throttleIndex).toMillis());
+            Instant nextFlush = lastSendTime.plusMillis(throttle.get(throttleIndex).toMillis());
             if (now.isAfter(nextFlush)) {
                 throttleIndex = 0;
             }
-            executor.schedule(throttle.get(throttleIndex));
+            executor.scheduleFlush(throttle.get(throttleIndex));
             throttleIndex = Math.min(throttleIndex+1, throttle.size()-1);
         }
         currentBatch.add(logEvent);
     }
 
-    synchronized void flush() {
-        lastFlush = Instant.now();
-        LogEventBatch batchToSend = this.currentBatch;
-        currentBatch = new LogEventBatch();
-        LogEventStatus.getInstance().addTrace(this,"flush " + batchToSend.size() + " messages");
-        if (batchToSend.isEmpty()) {
-            throttleIndex = 0;
-        } else {
-            batchProcessor.accept(batchToSend);
-        }
+    synchronized void execute() {
+        LogEventBatch batchToSend = takeCurrentBatch();
+        LogEventStatus.getInstance().addTrace(this, "flush " + batchToSend.size() + " messages");
+        batchProcessor.accept(batchToSend);
     }
 
+    LogEventBatch takeCurrentBatch() {
+        lastSendTime = Instant.now();
+        LogEventBatch returnedBatch = this.currentBatch;
+        currentBatch = new LogEventBatch();
+        if (returnedBatch.isEmpty()) {
+            throttleIndex = 0;
+        }
+        return returnedBatch;
+    }
 }

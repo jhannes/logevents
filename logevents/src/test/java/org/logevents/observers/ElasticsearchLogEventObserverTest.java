@@ -102,13 +102,11 @@ public class ElasticsearchLogEventObserverTest {
         Properties properties = new Properties();
         properties.put("observer.elastic.elasticsearchUrl", "http://localhost:-1");
         properties.put("observer.elastic.index", "my-test-index");
-        properties.put("observer.maximumWaitTime", maximumWaitTime.toString());
+        properties.put("observer.elastic.maximumWaitTime", maximumWaitTime.toString());
         observer = new ElasticsearchLogEventObserver(properties, "observer.elastic");
 
         logEventStatusRule.setStatusLevel(StatusEvent.StatusLevel.NONE);
-        observer.logEvent(new LogEventSampler().build(),
-                Instant.now().plus(maximumWaitTime).plus(Duration.ofMillis(100)));
-        observer.execute();
+        observer.processBatch(new LogEventBatch().add(new LogEventSampler().build()));
 
         List<StatusEvent> events = LogEventStatus.getInstance().getHeadMessages(observer, StatusEvent.StatusLevel.ERROR);
         assertTrue("Expected 1 event, was " + events
@@ -149,40 +147,36 @@ public class ElasticsearchLogEventObserverTest {
         }
     }
 
+    @FunctionalInterface
+    public interface FunctionWithCheckedException<T, U, EXCEPTION extends Exception> {
+        U apply(T o) throws EXCEPTION;
+    }
+
     private <T, U, E extends Exception> Function<T, U> handleException(
             FunctionWithCheckedException<T, U, E> f,
-            Function<E, U> handler
+            Function<Exception, U> handler
         ) {
         return o -> {
             try {
                 return f.apply(o);
             } catch (Exception e) {
-                return handler.apply((E)e);
+                return handler.apply(e);
             }
         };
     }
 
     private <T, U> Function<T, U> softenExceptions(FunctionWithCheckedException<T, U, Exception> f) {
-        return o -> {
-            try {
-                return f.apply(o);
-            } catch (Exception e) {
-                throw softenException(e);
-            }
-        };
+        return handleException(f, e -> {
+            throw softenException(e);
+        });
     }
 
     private RuntimeException softenException(Exception e) {
-        return softenExceptionHandler(e);
+        return softenExceptionHelper(e);
     }
 
-    private <E extends Exception> E softenExceptionHandler(Exception e) throws E {
+    private <E extends Exception> E softenExceptionHelper(Exception e) throws E {
         throw (E)e;
     }
 
-
-    @FunctionalInterface
-    private interface FunctionWithCheckedException<T, U, EXCEPTION extends Exception> {
-        U apply(T o) throws EXCEPTION;
-    }
 }
