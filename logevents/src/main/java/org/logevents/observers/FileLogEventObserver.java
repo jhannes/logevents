@@ -40,13 +40,13 @@ import java.util.Properties;
  *         Optionally supports a date formatting pattern from {@link DateTimeFormatter#ofPattern}
  *         e.g. %date{DD-MMM HH:mm:ss}. Default format is <code>yyyy-MM-dd HH:mm:ss.SSS</code>.
  *     </li>
- *     <li><code>%marker</code>: {@link Marker} (if any) (not implemented yet)</li>
+ *     <li><code>%marker[{defaultValue}]</code>: {@link Marker} (if any)</li>
  *     <li>
  *         <code>%mdc{key:-default}</code>:
  *         the specified {@link org.slf4j.MDC} variable or default value if not set
  *     </li>
- *     <li><code>%application</code>: The value of {@link Configuration#getApplicationName()} (not implemented yet)</li>
- *     <li><code>%node</code>: The value of {@link Configuration#getNodeName()} ()} (not implemented yet)</li>
+ *     <li><code>%application</code>: The value of {@link Configuration#getApplicationName()}</li>
+ *     <li><code>%node</code>: The value of {@link Configuration#getNodeName()} ()}</li>
  * </ul>
  *
  * @see org.logevents.formatting.PatternLogEventFormatter
@@ -127,8 +127,8 @@ public class FileLogEventObserver implements LogEventObserver {
                     .orElse(ZoneId.systemDefault());
             return e -> formatter.format(Instant.now().atZone(zone));
         });
-
         factory.put("d", factory.get("date"));
+
         factory.put("mdc", spec -> {
             if (spec.getParameters().isEmpty()) {
                 return LogEvent::getMdc;
@@ -141,6 +141,16 @@ public class FileLogEventObserver implements LogEventObserver {
         });
         factory.putAliases("mdc", new String[] { "X" });
 
+        factory.put("marker", spec ->
+                e -> Optional.ofNullable(e.getMarker()).map(Marker::toString).orElse(spec.getParameter(0).orElse("")));
+
+
+        factory.put("application", spec ->
+                s -> spec.getConfiguration().getApplicationName()
+        );
+        factory.put("node", spec ->
+                s -> spec.getConfiguration().getNodeName()
+        );
     }
 
 }
