@@ -29,7 +29,6 @@ import static org.junit.Assert.assertTrue;
 
 public class PatternLogEventFormatterTest {
 
-    private Marker MARKER = MarkerFactory.getMarker("MY_MARKER");
     private Instant time = Instant.ofEpochMilli(1535056492088L);
     private Properties properties = new Properties();
     {
@@ -41,7 +40,7 @@ public class PatternLogEventFormatterTest {
         .withLevel(Level.INFO)
         .withLoggerName("some.logger.name")
         .withTime(time)
-        .withMarker(MARKER)
+        .withMarker()
         .withFormat("A messages from {} to {}")
         .withArgs("A", "B")
         .build();
@@ -88,7 +87,8 @@ public class PatternLogEventFormatterTest {
     @Test
     public void shouldOutputColors() {
         formatter.setPattern("%cyan( [level=%level] ) %underline(%marker) %logger");
-        assertEquals("\033[36m [level=INFO] \033[m \033[4;mMY_MARKER\033[m some.logger.name\n",
+        String marker = event.getMarker().getName();
+        assertEquals("\033[36m [level=INFO] \033[m \033[4;m" + marker + "\033[m some.logger.name\n",
                 formatter.apply(event));
     }
 

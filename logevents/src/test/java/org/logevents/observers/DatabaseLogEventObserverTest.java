@@ -58,6 +58,7 @@ public class DatabaseLogEventObserverTest {
     public void shouldSaveAllFields() {
         LogEvent event = new LogEventSampler().withFormat(UUID.randomUUID().toString())
                 .withArgs(LogEventSampler.randomString(), LogEventSampler.randomString())
+                .withMarker()
                 .build();
         observer.processBatch(new LogEventBatch().add(event));
 

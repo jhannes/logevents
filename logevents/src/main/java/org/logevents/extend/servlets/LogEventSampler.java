@@ -16,10 +16,20 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class LogEventSampler {
+    public static final Marker PERSONAL_DATA = MarkerFactory.getMarker("PERSONAL_DATA");
+    public static final Marker SECURITY = MarkerFactory.getMarker("SECURITY");
+    public static final Marker AUDIT = MarkerFactory.getMarker("AUDIT");
+    public static final Marker LIFECYCLE = MarkerFactory.getMarker("LIFECYCLE");
+    public static final Marker OPS = MarkerFactory.getMarker("OPS");
+    static {
+        SECURITY.add(AUDIT);
+        PERSONAL_DATA.add(AUDIT);
+    }
+
     private static final Marker[] SAMPLE_MARKERS = new Marker[] {
-            MarkerFactory.getMarker("AUDIT"), MarkerFactory.getMarker("SECURITY"),
-            MarkerFactory.getMarker("LIFECYCLE"), MarkerFactory.getMarker("OPS")
+            AUDIT, SECURITY, PERSONAL_DATA, LIFECYCLE, OPS
     };
+
     private static Random random = new Random();
 
     public static String sampleLoggerName() {
@@ -54,7 +64,7 @@ public class LogEventSampler {
     }
 
     public static Marker sampleMarker() {
-        return random.nextInt(100) < 30 ? pickOne(SAMPLE_MARKERS) : null;
+        return SAMPLE_MARKERS[0];
     }
 
     private Object[] sampleArgs() {

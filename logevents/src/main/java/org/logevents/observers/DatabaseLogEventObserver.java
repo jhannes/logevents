@@ -14,7 +14,6 @@ import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
 import java.sql.Connection;
@@ -270,10 +269,6 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         List<String> result = new ArrayList<>();
         for (int i = 0; i< size; i++) result.add("?");
         return String.join(",", result);
-    }
-
-    private Marker getMarker(String marker) {
-        return marker != null ? MarkerFactory.getMarker(marker) : null;
     }
 
     /**

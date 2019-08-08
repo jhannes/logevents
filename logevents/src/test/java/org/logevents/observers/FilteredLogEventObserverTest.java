@@ -13,6 +13,10 @@ import org.slf4j.event.Level;
 
 import java.util.Arrays;
 
+import static org.logevents.extend.servlets.LogEventSampler.AUDIT;
+import static org.logevents.extend.servlets.LogEventSampler.PERSONAL_DATA;
+import static org.logevents.extend.servlets.LogEventSampler.SECURITY;
+
 public class FilteredLogEventObserverTest {
 
     private LogEventRule logEventRule = new LogEventRule(Level.INFO, FilteredLogEventObserverTest.class);
@@ -40,15 +44,6 @@ public class FilteredLogEventObserverTest {
 
         logEventRule.assertContainsMessage(Level.ERROR, "Error");
         logEventRule.assertDoesNotContainMessage("Suppressed");
-    }
-
-    private static final Marker PERSONAL_DATA = MarkerFactory.getMarker("PERSONAL_DATA");
-    private static final Marker SECURITY = MarkerFactory.getMarker("SECURITY");
-    private static final Marker AUDIT = MarkerFactory.getMarker("AUDIT");
-
-    static {
-        SECURITY.add(AUDIT);
-        PERSONAL_DATA.add(AUDIT);
     }
 
     @Test
