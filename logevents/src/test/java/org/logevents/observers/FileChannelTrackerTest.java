@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
 
 public class FileChannelTrackerTest {
 
-    private FileChannelTracker tracker = new FileChannelTracker();
+    private FileChannelTracker tracker = new FileChannelTracker(true);
 
     private Path directory = Paths.get("target", "test", "logs", "directory");
 

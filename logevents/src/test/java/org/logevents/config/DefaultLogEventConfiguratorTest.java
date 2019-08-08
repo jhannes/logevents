@@ -46,7 +46,7 @@ public class DefaultLogEventConfiguratorTest {
         configurator.applyConfigurationProperties(factory, new Properties());
 
         assertEquals(
-                Arrays.asList("Logging by LogEvents (http://logevents.org). Create a file logevents.properties with the line logevents.status=ERROR to suppress this message"),
+                Arrays.asList("Logging by LogEvents (http://logevents.org). Create a file logevents.properties with the line logevents.status=INFO to suppress this message"),
                 LogEventStatus.getInstance().getHeadMessageTexts(configurator, StatusEvent.StatusLevel.INFO));
     }
 

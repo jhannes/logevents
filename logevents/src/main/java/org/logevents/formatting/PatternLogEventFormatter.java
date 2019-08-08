@@ -186,8 +186,10 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
     private LogEventFormatter converter;
 
-    public Collection<String> getConversionWords() {
-        return factory.getConversionWords();
+    public PatternLogEventFormatter(String pattern) {
+        this.configuration = new Configuration();
+        this.exceptionFormatter = new ExceptionFormatter();
+        setPattern(pattern);
     }
 
     public PatternLogEventFormatter(Properties properties, String prefix) {
@@ -199,6 +201,10 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", ExceptionFormatter.class);
         setPattern(configuration.getString("pattern"));
         configuration.checkForUnknownFields();
+    }
+
+    public Collection<String> getConversionWords() {
+        return factory.getConversionWords();
     }
 
     @Override

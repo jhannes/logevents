@@ -116,7 +116,7 @@ public class FileDestinationTest {
         BufferedReader processReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         processReader.readLine();
 
-        FileDestination file = new FileDestination();
+        FileDestination file = new FileDestination(true);
 
         file.writeEvent(path, "Test message\n");
 
@@ -149,7 +149,7 @@ public class FileDestinationTest {
 
     private FileDestination createFileDestination(Path path) throws IOException {
         Files.deleteIfExists(path);
-        return new FileDestination();
+        return new FileDestination(true);
     }
 
     private boolean isWindows() {

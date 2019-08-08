@@ -12,9 +12,8 @@ import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.formatting.PatternLogEventFormatter;
-import org.logevents.util.ExceptionUtil;
+import org.logevents.formatting.TTLLEventLogFormatter;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -92,9 +91,7 @@ public class FileLogEventObserverTest {
         Files.deleteIfExists(path);
         Files.deleteIfExists(path.getParent());
 
-        Properties properties = new Properties();
-        properties.setProperty("observer.file.filename", path.toString());
-        LogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
+        LogEventObserver observer = new FileLogEventObserver(path.toString(), new TTLLEventLogFormatter());
         factory.setObserver(logger, observer, false);
 
         assertFalse(Files.exists(path.getParent()));
@@ -143,11 +140,10 @@ public class FileLogEventObserverTest {
 
     @Test
     public void shouldIncludeDefaultMarkerInFilename() throws IOException {
-        Properties properties = new Properties();
-        properties.setProperty("observer.file.filename", logDirectory.toString() + "/log-%marker{NO_MARKER}.log");
-        properties.setProperty("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
-        properties.setProperty("observer.file.formatter.pattern", "%message");
-        LogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
+        LogEventObserver observer = new FileLogEventObserver(
+                logDirectory.toString() + "/log-%marker{NO_MARKER}.log",
+                new PatternLogEventFormatter("%message")
+        );
 
         LogEvent markerEvent = new LogEventSampler().withMarker().build();
         observer.logEvent(markerEvent);
@@ -162,11 +158,10 @@ public class FileLogEventObserverTest {
 
     @Test
     public void shouldSwitchFilenameOnMdcVariable() throws IOException {
-        Properties properties = new Properties();
-        properties.setProperty("observer.file.filename", logDirectory.toString() + "/%mdc{user:-unidentified}/log-%mdc{op}.log");
-        properties.setProperty("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
-        properties.setProperty("observer.file.formatter.pattern", "%message");
-        LogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
+        LogEventObserver observer = new FileLogEventObserver(
+                logDirectory.toString() + "/%mdc{user:-unidentified}/log-%mdc{op}.log",
+                new PatternLogEventFormatter("%message")
+        );
 
         factory.setObserver(logger, observer, false);
 

@@ -1,9 +1,6 @@
 package org.logevents.observers;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.nio.file.Path;
 import java.time.Instant;
 
@@ -15,25 +12,22 @@ import org.logevents.status.LogEventStatus;
  * @author Johannes Brodwall
  *
  */
-class FileDestination {
+public class FileDestination {
 
-    private FileChannelTracker fileChannelTracker = new FileChannelTracker();
+    private FileChannelTracker fileTracker;
     private Instant circuitBrokenUntil;
     private int successiveErrors;
 
+    public FileDestination(boolean lockOnWrite) {
+        fileTracker = new FileChannelTracker(lockOnWrite);
+    }
 
-
-    public synchronized void writeEvent(Path path, String message) {
+    public void writeEvent(Path path, String message) {
         if (isCircuitBroken()) {
             return;
         }
         try {
-            ByteBuffer src = ByteBuffer.wrap(message.getBytes());
-            fileChannelTracker.doWithChannel(path, channel -> {
-                try(FileLock ignored = channel.tryLock()) {
-                    channel.write(src);
-                }
-            });
+            fileTracker.writeToFile(path, message);
             successiveErrors = 0;
         } catch (IOException e) {
             LogEventStatus.getInstance().addError(this, e.getMessage(), e);

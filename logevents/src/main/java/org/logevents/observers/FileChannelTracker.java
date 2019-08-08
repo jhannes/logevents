@@ -3,8 +3,14 @@ package org.logevents.observers;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.ExceptionUtil;
 
+import java.io.BufferedOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -18,21 +24,26 @@ import java.util.Map;
 public class FileChannelTracker {
 
     private int maxOpenChannels = 100;
+    private boolean lockOnWrite;
+
+    public FileChannelTracker(boolean lockOnWrite) {
+        this.lockOnWrite = lockOnWrite;
+    }
 
     public void setMaxOpenChannels(int maxOpenChannels) {
         this.maxOpenChannels = maxOpenChannels;
     }
 
-    static class Entry {
-        private final FileChannel channel;
+    static class Entry<T> {
+        private final T target;
         private Instant accessTime;
 
-        private Entry(FileChannel channel) {
-            this.channel = channel;
+        private Entry(T target) {
+            this.target = target;
         }
 
-        public FileChannel getChannel() {
-            return channel;
+        public T getTarget() {
+            return target;
         }
 
         public Instant getAccessTime() {
@@ -45,14 +56,21 @@ public class FileChannelTracker {
     }
 
 
-    private Map<Path, Entry> channels = new LinkedHashMap<>();
+    private Map<Path, Entry<FileChannel>> channels = new LinkedHashMap<>();
 
     private Duration timeout = Duration.ofMinutes(10);
 
-    public void doWithChannel(Path path, ExceptionUtil.ConsumerWithCheckedException<FileChannel, IOException> channelConsumer) throws IOException {
+    public void writeToFile(Path path, String message) throws IOException {
         FileChannel channel = getChannel(path, Instant.now());
         try {
-            channelConsumer.apply(channel);
+            ByteBuffer src = ByteBuffer.wrap(message.getBytes());
+            if (lockOnWrite) {
+                try(FileLock ignored = channel.tryLock()) {
+                    channel.write(src);
+                }
+            } else {
+                channel.write(src);
+            }
         } catch (IOException e) {
             try {
                 channel.close();
@@ -73,16 +91,16 @@ public class FileChannelTracker {
      * @throws IOException if openChannel throws
      */
     FileChannel getChannel(Path path, Instant now) throws IOException {
-        Entry result = channels.computeIfAbsent(path, ExceptionUtil.softenFunctionExceptions(p -> openChannel(p, now)));
+        Entry<FileChannel> result = channels.computeIfAbsent(path, ExceptionUtil.softenFunctionExceptions(p -> openChannel(p, now)));
         result.setAccessTime(now);
-        return result.getChannel();
+        return result.getTarget();
     }
 
-    Entry openChannel(Path p, Instant now) throws IOException {
-        for (Iterator<Map.Entry<Path, Entry>> iterator = channels.entrySet().iterator(); iterator.hasNext(); ) {
-            Map.Entry<Path, Entry> e = iterator.next();
+    Entry<FileChannel> openChannel(Path p, Instant now) throws IOException {
+        for (Iterator<Map.Entry<Path, Entry<FileChannel>>> iterator = channels.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry<Path, Entry<FileChannel>> e = iterator.next();
             if (e.getValue().getAccessTime().isBefore(now.minus(getTimeout()))) {
-                e.getValue().getChannel().close();
+                e.getValue().getTarget().close();
                 iterator.remove();
             }
         }
@@ -92,10 +110,10 @@ public class FileChannelTracker {
                     .sorted(Comparator.comparing(a -> a.getValue().getAccessTime()))
                     .limit(mustBeRemoved)
                     .map(Map.Entry::getKey)
-                    .forEach(ExceptionUtil.softenExceptions(k -> channels.remove(k).getChannel().close()));
+                    .forEach(ExceptionUtil.softenExceptions(k -> channels.remove(k).getTarget().close()));
         }
         createDirectory(p.getParent());
-        return new Entry(FileChannel.open(p, StandardOpenOption.APPEND, StandardOpenOption.CREATE));
+        return new Entry<>(FileChannel.open(p, StandardOpenOption.APPEND, StandardOpenOption.CREATE));
     }
 
     private void createDirectory(Path directory) {

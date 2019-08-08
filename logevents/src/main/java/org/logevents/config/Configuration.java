@@ -32,6 +32,10 @@ public class Configuration {
         this.prefix = prefix;
     }
 
+    public Configuration() {
+        this(new Properties(), "");
+    }
+
     /**
      * If <code>observer.whatever.applicationName</code> or <code>observer.*.applicationName</code>
      * is set, returns that value, otherwise calculates the name of the application based on the JAR-file of

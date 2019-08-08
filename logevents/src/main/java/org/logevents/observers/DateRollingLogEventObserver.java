@@ -21,7 +21,7 @@ public class DateRollingLogEventObserver extends FileLogEventObserver {
     private final String filename;
 
     public DateRollingLogEventObserver(String filename, LogEventFormatter formatter) {
-        super(new Configuration(new Properties(), ""), Optional.of(formatter), filename);
+        super(new Configuration(new Properties(), ""), filename, Optional.of(formatter));
         this.filename = filename;
     }
 
@@ -32,8 +32,8 @@ public class DateRollingLogEventObserver extends FileLogEventObserver {
     public DateRollingLogEventObserver(Configuration configuration) {
         super(
                 configuration,
-                Optional.of(configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class)),
-                configuration.getString("filename")
+                configuration.getString("filename"),
+                Optional.of(configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class))
         );
         this.filename = configuration.getString("filename");
         configuration.checkForUnknownFields();

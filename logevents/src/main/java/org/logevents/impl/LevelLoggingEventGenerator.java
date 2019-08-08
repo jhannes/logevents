@@ -30,8 +30,7 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
 
     @Override
     public void log(String msg) {
-        Object[] arg = new Object[0];
-        log(createEvent(msg, null, arg));
+        log(createEvent(msg, null, new Object[0]));
     }
 
     @Override

@@ -83,19 +83,22 @@ public class FileLogEventObserver implements LogEventObserver {
     public FileLogEventObserver(Configuration configuration) {
         this(
                 configuration,
-                Optional.of(createFormatter(configuration)),
-                configuration.optionalString("filename").orElse(defaultFilename(configuration))
+                configuration.optionalString("filename").orElse(defaultFilename(configuration)), Optional.of(createFormatter(configuration))
         );
         formatter.configure(configuration);
         configuration.checkForUnknownFields();
     }
 
-    public FileLogEventObserver(Configuration configuration, Optional<LogEventFormatter> formatter, String filenamePattern) {
-        this.formatter = formatter.orElse(new TTLLEventLogFormatter());
+    public FileLogEventObserver(Configuration configuration, String filenamePattern, Optional<LogEventFormatter> formatter) {
         this.filenamePattern = filenamePattern;
+        this.formatter = formatter.orElse(new TTLLEventLogFormatter());
 
         this.filenameGenerator = new PatternReader<>(configuration, factory).readPattern(filenamePattern);
-        this.destination = new FileDestination();
+        this.destination = new FileDestination(configuration.getBoolean("lockOnWrite"));
+    }
+
+    public FileLogEventObserver(String filenamePattern, LogEventFormatter formatter) {
+        this(new Configuration(), filenamePattern, Optional.of(formatter));
     }
 
     @Override
