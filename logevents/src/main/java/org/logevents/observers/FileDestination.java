@@ -21,33 +21,29 @@ class FileDestination {
     private Instant circuitBrokenUntil;
     private int successiveErrors;
 
+
+
     public synchronized void writeEvent(Path path, String message) {
         if (isCircuitBroken()) {
             return;
         }
-        FileChannel channel = null;
         try {
-            channel = fileChannelTracker.getChannel(path, Instant.now());
             ByteBuffer src = ByteBuffer.wrap(message.getBytes());
-            try(FileLock ignored = channel.tryLock()) {
-                channel.write(src);
-            }
+            fileChannelTracker.doWithChannel(path, channel -> {
+                try(FileLock ignored = channel.tryLock()) {
+                    channel.write(src);
+                }
+            });
             successiveErrors = 0;
         } catch (IOException e) {
             LogEventStatus.getInstance().addError(this, e.getMessage(), e);
-            checkIfCircuitShouldBreak(channel);
+            checkIfCircuitShouldBreak();
         }
     }
 
-    private void checkIfCircuitShouldBreak(FileChannel channel) {
+    private void checkIfCircuitShouldBreak() {
         if (successiveErrors++ >= getCircuitBreakThreshold()) {
             setCircuitBrokenUntil(Instant.now().plusSeconds(10));
-            try {
-                if (channel != null)  {
-                    channel.close();
-                }
-            } catch (IOException ignored) {
-            }
         }
     }
 

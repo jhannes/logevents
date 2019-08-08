@@ -49,12 +49,28 @@ public class FileChannelTracker {
 
     private Duration timeout = Duration.ofMinutes(10);
 
+    public void doWithChannel(Path path, ExceptionUtil.ConsumerWithCheckedException<FileChannel, IOException> channelConsumer) throws IOException {
+        FileChannel channel = getChannel(path, Instant.now());
+        try {
+            channelConsumer.apply(channel);
+        } catch (IOException e) {
+            try {
+                channel.close();
+            } catch (IOException ignored) {
+            }
+            channels.remove(path);
+            throw e;
+        }
+    }
+
     /**
      * Returns a channel for the specified path, considering it as opened with the now parameter. If the
      * requested channel is already opened, this is returned, otherwise a new channel is returned. If a
      * new channel is opened, the {@link FileChannelTracker} reviews existing opened channels and make sure
      * that no channel has been idle for longer than {@link #timeout} and that now more than {@link #maxOpenChannels}
      * are opened. If channels need to be closed, the least recently accessed channels are closed first.
+     *
+     * @throws IOException if openChannel throws
      */
     FileChannel getChannel(Path path, Instant now) throws IOException {
         Entry result = channels.computeIfAbsent(path, ExceptionUtil.softenFunctionExceptions(p -> openChannel(p, now)));
