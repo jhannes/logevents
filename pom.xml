@@ -12,6 +12,7 @@
         <module>logevents-config-demo</module>
         <module>logevents-smtp-demo</module>
         <module>logevents-servlets-demo</module>
+        <module>logevents-benchmark</module>
     </modules>
 
     <url>https://github.com/jhannes/logevents/tree/master/README.md</url>
