@@ -22,6 +22,9 @@ public abstract class HttpPostJsonLogEventObserver extends BatchingLogEventObser
 
     @Override
     public void processBatch(LogEventBatch batch) {
+        if (batch.isEmpty()) {
+            return;
+        }
         if (url == null) {
             LogEventStatus.getInstance().addInfo(this, "No url - batch discarded");
             return;

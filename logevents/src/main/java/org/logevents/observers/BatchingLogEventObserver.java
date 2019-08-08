@@ -63,7 +63,7 @@ public abstract class BatchingLogEventObserver extends FilteredLogEventObserver 
 
     private Map<Marker, BatchThrottler> markerBatchers = new HashMap<>();
     private CooldownBatcher defaultBatcher;
-    private Supplier<Scheduler> flusherFactory;
+    protected Supplier<Scheduler> flusherFactory;
 
     public BatchingLogEventObserver() {
         this(() -> new ExecutorScheduler(scheduledExecutorService, shutdownHook));

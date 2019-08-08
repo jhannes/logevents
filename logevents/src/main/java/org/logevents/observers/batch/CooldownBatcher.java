@@ -26,7 +26,7 @@ import java.util.function.Consumer;
  * @author Johannes Brodwall
  */
 public class CooldownBatcher implements LogEventObserver {
-    private Instant lastSendTime = Instant.ofEpochMilli(0);
+    private Instant lastFlushTime = Instant.ofEpochMilli(0);
     private LogEventBatch currentBatch = new LogEventBatch();
 
     protected Duration cooldownTime = Duration.ofSeconds(15);
@@ -42,50 +42,6 @@ public class CooldownBatcher implements LogEventObserver {
         flusher.setAction(this::execute);
     }
 
-    @Override
-    public void logEvent(LogEvent e) {
-        Instant now = Instant.now();
-        Instant sendTime = addToBatch(e, now);
-        Duration duration = Duration.between(now, sendTime);
-        flusher.scheduleFlush(duration);
-    }
-
-    public Instant addToBatch(LogEvent logEvent, Instant now) {
-        currentBatch.add(logEvent);
-        return nextSendDelay(now);
-    }
-
-    public LogEventBatch takeCurrentBatch() {
-        lastSendTime = Instant.now();
-        LogEventBatch returnedBatch = this.currentBatch;
-        currentBatch = new LogEventBatch();
-        return returnedBatch;
-    }
-
-    private Instant nextSendDelay(Instant now) {
-        if (firstEventInBatchTime().plus(maximumWaitTime).isBefore(now)) {
-            // We have waited long enough - send it now!
-            return now;
-        } else {
-            // Wait the necessary time before sending - may be in the past
-            return earliestSendTime();
-        }
-    }
-
-    private Instant earliestSendTime() {
-        Instant idleTimeout = latestEventInBatchTime().plus(idleThreshold);
-        Instant cooldownTimeout = lastSendTime.plus(cooldownTime);
-        return idleTimeout.isAfter(cooldownTimeout) ? idleTimeout : cooldownTimeout;
-    }
-
-    private Instant firstEventInBatchTime() {
-        return currentBatch.firstEventTime();
-    }
-
-    private Instant latestEventInBatchTime() {
-        return currentBatch.latestEventTime();
-    }
-
     /**
      * Read <code>idleThreshold</code>, <code>cooldownTime</code> and <code>maximumWaitTime</code>
      * from configuration
@@ -96,7 +52,60 @@ public class CooldownBatcher implements LogEventObserver {
         maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
     }
 
-    public void execute() {
+    /**
+     * Minimum time from a flush until the next flush
+     */
+    public void setCooldownTime(Duration cooldownTime) {
+        this.cooldownTime = cooldownTime;
+    }
+
+    /**
+     * Minimum time from a flush until the next flush
+     */
+    public void setIdleThreshold(Duration idleThreshold) {
+        this.idleThreshold = idleThreshold;
+    }
+
+    /**
+     * Maximum time from the first event in a batch until the batch is flushed
+     */
+    public void setMaximumWaitTime(Duration maximumWaitTime) {
+        this.maximumWaitTime = maximumWaitTime;
+    }
+
+    @Override
+    public void logEvent(LogEvent e) {
+        Instant now = Instant.now();
+        Instant sendTime = addToBatch(e, now);
+        Duration duration = Duration.between(now, sendTime);
+        flusher.scheduleFlush(duration);
+    }
+
+    protected Instant addToBatch(LogEvent logEvent, Instant now) {
+        currentBatch.add(logEvent);
+        return nextSendDelay(now);
+    }
+
+    protected Instant nextSendDelay(Instant now) {
+        if (currentBatch.firstEventTime().plus(maximumWaitTime).isBefore(now)) {
+            // We have waited long enough - send it now!
+            return now;
+        } else {
+            // Wait the necessary time before sending - may be in the past
+            return earliestSendTime();
+        }
+    }
+
+    /**
+     * Returns lastFlushTime + cooldownTime or lastEventTime + idleThreshold, whichever is latest
+     */
+    protected Instant earliestSendTime() {
+        Instant idleTimeout = currentBatch.latestEventTime().plus(idleThreshold);
+        Instant cooldownTimeout = lastFlushTime.plus(cooldownTime);
+        return idleTimeout.isAfter(cooldownTimeout) ? idleTimeout : cooldownTimeout;
+    }
+
+    protected void execute() {
         LogEventBatch batch = takeCurrentBatch();
         if (!batch.isEmpty()) {
             try {
@@ -107,15 +116,10 @@ public class CooldownBatcher implements LogEventObserver {
         }
     }
 
-    public void setCooldownTime(Duration cooldownTime) {
-        this.cooldownTime = cooldownTime;
-    }
-
-    public void setMaximumWaitTime(Duration maximumWaitTime) {
-        this.maximumWaitTime = maximumWaitTime;
-    }
-
-    public void setIdleThreshold(Duration idleThreshold) {
-        this.idleThreshold = idleThreshold;
+    protected synchronized LogEventBatch takeCurrentBatch() {
+        lastFlushTime = Instant.now();
+        LogEventBatch returnedBatch = this.currentBatch;
+        currentBatch = new LogEventBatch();
+        return returnedBatch;
     }
 }

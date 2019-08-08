@@ -128,6 +128,8 @@ public class LogEventHttpServerTest {
 
     @Test
     public void shouldCreateSessionOnOpenIdConnectCallback() throws IOException, URISyntaxException, GeneralSecurityException {
+        expectedLogEvents.expectPattern(LogEventHttpServer.class, Level.WARN, "User logged in {}");
+
         when(mockExchange.getRequestURI()).thenReturn(new URI("http://localhost/logs/oauth2callback?code=abcd"));
         long iat = System.currentTimeMillis() / 1000;
         OpenIdConfiguration openIdConfiguration = new OpenIdConfiguration(null, null, null) {
@@ -159,12 +161,13 @@ public class LogEventHttpServerTest {
         Map<String, Object> sessionInfo = JsonParser.parseObject(logEventHttpServer.getSessionVault().decrypt(cookieValue));
         assertEquals(Instant.ofEpochSecond(iat),
                 Instant.parse(sessionInfo.get("sessionTime").toString()));
-
-        expectedLogEvents.expectPattern(LogEventHttpServer.class, Level.WARN, "User logged in {}");
     }
 
     @Test
     public void shouldRejectIdTokensWithoutRequiredClaims() throws IOException, URISyntaxException {
+        expectedLogEvents.expectPattern(LogEventHttpServer.class, Level.WARN,
+                "Unknown user tried to log in {}");
+
         when(mockExchange.getRequestURI()).thenReturn(new URI("http://localhost/logs/oauth2callback?code=abcd"));
         OpenIdConfiguration openIdConfiguration = new OpenIdConfiguration(null, null, null) {
             @Override
@@ -187,9 +190,6 @@ public class LogEventHttpServerTest {
 
         verify(mockExchange).sendResponseHeaders(eq(403), anyLong());
         assertNull(responseHeaders.getFirst("Set-Cookie"));
-
-        expectedLogEvents.expectPattern(LogEventHttpServer.class, Level.WARN,
-                "Unknown user tried to log in {}");
     }
 
 }

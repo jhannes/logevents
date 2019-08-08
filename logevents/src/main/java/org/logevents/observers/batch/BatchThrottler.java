@@ -25,7 +25,7 @@ public class BatchThrottler implements LogEventObserver {
     private int throttleIndex = 0;
     private LogEventBatch currentBatch = new LogEventBatch();
     private Consumer<LogEventBatch> batchProcessor;
-    private Instant lastSendTime = Instant.ofEpochMilli(0);
+    private Instant lastFlushTime = Instant.ofEpochMilli(0);
 
     public BatchThrottler(Scheduler executor, Consumer<LogEventBatch> batchProcessor) {
         this.executor = executor;
@@ -55,15 +55,11 @@ public class BatchThrottler implements LogEventObserver {
     }
 
     @Override
-    public void logEvent(LogEvent logEvent) {
-        doLogEvent(logEvent, Instant.now());
-    }
-
-    private synchronized void doLogEvent(LogEvent logEvent, Instant now) {
+    public synchronized void logEvent(LogEvent logEvent) {
         if (currentBatch.isEmpty()) {
             // schedule for execution
-            Instant nextFlush = lastSendTime.plusMillis(throttle.get(throttleIndex).toMillis());
-            if (now.isAfter(nextFlush)) {
+            Instant nextFlush = lastFlushTime.plusMillis(throttle.get(throttleIndex).toMillis());
+            if (Instant.now().isAfter(nextFlush)) {
                 throttleIndex = 0;
             }
             executor.scheduleFlush(throttle.get(throttleIndex));
@@ -72,14 +68,14 @@ public class BatchThrottler implements LogEventObserver {
         currentBatch.add(logEvent);
     }
 
-    synchronized void execute() {
+    protected synchronized void execute() {
         LogEventBatch batchToSend = takeCurrentBatch();
         LogEventStatus.getInstance().addTrace(this, "flush " + batchToSend.size() + " messages");
         batchProcessor.accept(batchToSend);
     }
 
-    LogEventBatch takeCurrentBatch() {
-        lastSendTime = Instant.now();
+    protected LogEventBatch takeCurrentBatch() {
+        lastFlushTime = Instant.now();
         LogEventBatch returnedBatch = this.currentBatch;
         currentBatch = new LogEventBatch();
         if (returnedBatch.isEmpty()) {
