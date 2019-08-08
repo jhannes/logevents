@@ -13,6 +13,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -60,15 +61,17 @@ public class BatchThrottlerTest {
         verify(mockExecutor).scheduleFlush(Duration.ZERO);
 
         batcher.execute();
-        batcher.logEvent(new LogEventSampler().build());
         verify(mockExecutor).scheduleFlush(Duration.ofMinutes(1));
-
-        batcher.execute();
         batcher.logEvent(new LogEventSampler().build());
-        verify(mockExecutor).scheduleFlush(Duration.ofMinutes(5));
-
         batcher.execute();
         verify(mockExecutor).scheduleFlush(Duration.ofMinutes(5));
+
+        batcher.logEvent(new LogEventSampler().build());
+        batcher.execute();
+        verify(mockExecutor, times(2)).scheduleFlush(Duration.ofMinutes(5));
+
+        batcher.execute();
+        verifyNoMoreInteractions(mockExecutor);
     }
 
 }
