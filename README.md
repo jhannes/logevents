@@ -557,9 +557,8 @@ If you're using logback today and would like to check out logevents, here's a si
 * [ ] Support MDC (plus application name, node name) in filename pattern (matches Logback's SiftingAppender)
   * [ ] Implement FileChannelTracker in FileDestination
 * [ ] Split JavaScript and style from logevents.html
+* [ ] Show LogEventStatus in logevents.html
 * [ ] Make BatchingLogEventObserver delegate all batching to a batching strategy
-  * [ ] Move maximumWait, cooldown and idle threshold to separate batcher class
   * [ ] Implement default throttler as separate batcher class
   * [ ] Implement MDC-based throttler
     * [ ] Needs ThrottlerTracker to close old throttlers
-* [ ] Show LogEventStatus in logevents.html

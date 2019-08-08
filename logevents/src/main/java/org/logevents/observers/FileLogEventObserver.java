@@ -7,6 +7,7 @@ import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.LogEventFormatterBuilderFactory;
 import org.logevents.formatting.TTLLEventLogFormatter;
 import org.logevents.util.pattern.PatternReader;
+import org.slf4j.Marker;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,13 +31,31 @@ import java.util.Properties;
  * observer.file.formatter.exceptionFormatter.packageFilter=sun.www,uninterestingPackage
  * </pre>
  *
+ * <h2>File name pattern</h2>
+ *
+ * The following conversion words are supported in the filename:
+ * <ul>
+ *     <li>
+ *         <code>%date</code>: The date and time of the log event.
+ *         Optionally supports a date formatting pattern from {@link DateTimeFormatter#ofPattern}
+ *         e.g. %date{DD-MMM HH:mm:ss}. Default format is <code>yyyy-MM-dd HH:mm:ss.SSS</code>.
+ *     </li>
+ *     <li><code>%marker</code>: {@link Marker} (if any) (not implemented yet)</li>
+ *     <li>
+ *         <code>%mdc{key:-default}</code>:
+ *         the specified {@link org.slf4j.MDC} variable or default value if not set
+ *     </li>
+ *     <li><code>%application</code>: The value of {@link Configuration#getApplicationName()} (not implemented yet)</li>
+ *     <li><code>%node</code>: The value of {@link Configuration#getNodeName()} ()} (not implemented yet)</li>
+ * </ul>
+ *
  * @see org.logevents.formatting.PatternLogEventFormatter
  */
 public class FileLogEventObserver implements LogEventObserver {
 
-    protected final Path path;
     private final LogEventFormatter filenameGenerator;
     private final LogEventFormatter formatter;
+    private String filenamePattern;
     private final FileDestination destination;
 
     public static LogEventFormatter createFormatter(Configuration configuration) {
@@ -71,12 +90,12 @@ public class FileLogEventObserver implements LogEventObserver {
         configuration.checkForUnknownFields();
     }
 
-    public FileLogEventObserver(Configuration configuration, Optional<LogEventFormatter> formatter, String path) {
+    public FileLogEventObserver(Configuration configuration, Optional<LogEventFormatter> formatter, String filenamePattern) {
         this.formatter = formatter.orElse(new TTLLEventLogFormatter());
-        this.path = Paths.get(path);
+        this.filenamePattern = filenamePattern;
 
-        this.filenameGenerator = new PatternReader<>(configuration, factory).readPattern(this.path.getFileName().toString());
-        this.destination = new FileDestination(this.path.getParent());
+        this.filenameGenerator = new PatternReader<>(configuration, factory).readPattern(filenamePattern);
+        this.destination = new FileDestination();
     }
 
     @Override
@@ -84,14 +103,14 @@ public class FileLogEventObserver implements LogEventObserver {
         destination.writeEvent(getFilename(logEvent), formatter.apply(logEvent));
     }
 
-    protected String getFilename(LogEvent logEvent) {
-        return filenameGenerator.apply(logEvent);
+    protected Path getFilename(LogEvent logEvent) {
+        return Paths.get(filenameGenerator.apply(logEvent));
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName()
-                + "{filename=" + path
+                + "{filename=" + filenamePattern
                 + ",formatter=" + formatter + "}";
     }
 
@@ -110,6 +129,18 @@ public class FileLogEventObserver implements LogEventObserver {
         });
 
         factory.put("d", factory.get("date"));
+        factory.put("mdc", spec -> {
+            if (spec.getParameters().isEmpty()) {
+                return LogEvent::getMdc;
+            } else {
+                String[] parts = spec.getParameters().get(0).split(":-");
+                String key = parts[0];
+                String defaultValue = parts.length > 1 ? parts[1] : "";
+                return e -> e.getMdc(key, defaultValue);
+            }
+        });
+        factory.putAliases("mdc", new String[] { "X" });
+
     }
 
 }

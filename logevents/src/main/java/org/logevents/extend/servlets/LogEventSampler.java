@@ -8,6 +8,7 @@ import org.slf4j.event.Level;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -58,7 +59,7 @@ public class LogEventSampler {
                 marker,
                 this.format.orElseGet(() -> sampleMessage(args)),
                 args,
-                mdc);
+                new HashMap<>(mdc));
         logEvent.getCallerLocation();
         return logEvent;
     }

@@ -11,6 +11,7 @@ import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
+import org.logevents.util.ExceptionUtil;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 
@@ -19,13 +20,13 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -40,7 +41,7 @@ public class ElasticsearchLogEventObserverTest {
         try {
             return new URL(s);
         } catch (MalformedURLException e) {
-            throw softenException(e);
+            throw ExceptionUtil.softenException(e);
         }
     }
 
@@ -130,7 +131,7 @@ public class ElasticsearchLogEventObserverTest {
 
         List<String> insertedDocuments = observer.indexDocuments(new LogEventBatch().add(logEvent1).add(logEvent2));
         List<Object> insertedMessages = insertedDocuments.stream()
-                .map(softenExceptions(docUrl -> JsonParser.parseObject(new URL(observer.getUrl(), docUrl))))
+                .map(ExceptionUtil.softenFunctionExceptions(docUrl -> JsonParser.parseObject(new URL(observer.getUrl(), docUrl))))
                 .map(o -> JsonUtil.getObject(o, "_source"))
                 .map(source -> source.get("message"))
                 .collect(Collectors.toList());
@@ -145,38 +146,6 @@ public class ElasticsearchLogEventObserverTest {
         } catch (ConnectException e) {
             Assume.assumeNoException("Elasticsearch is not running - try 'docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e \"discovery.type=single-node\" elasticsearch:7.2.0'", e);
         }
-    }
-
-    @FunctionalInterface
-    public interface FunctionWithCheckedException<T, U, EXCEPTION extends Exception> {
-        U apply(T o) throws EXCEPTION;
-    }
-
-    private <T, U, E extends Exception> Function<T, U> handleException(
-            FunctionWithCheckedException<T, U, E> f,
-            Function<Exception, U> handler
-        ) {
-        return o -> {
-            try {
-                return f.apply(o);
-            } catch (Exception e) {
-                return handler.apply(e);
-            }
-        };
-    }
-
-    private <T, U> Function<T, U> softenExceptions(FunctionWithCheckedException<T, U, Exception> f) {
-        return handleException(f, e -> {
-            throw softenException(e);
-        });
-    }
-
-    private RuntimeException softenException(Exception e) {
-        return softenExceptionHelper(e);
-    }
-
-    private <E extends Exception> E softenExceptionHelper(Exception e) throws E {
-        throw (E)e;
     }
 
 }

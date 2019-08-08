@@ -33,7 +33,7 @@ public class FileDestinationTest {
         Path path = Paths.get("target", "logs", "file-test.log");
         FileDestination file = createFileDestination(path);
 
-        file.writeEvent(path.getFileName().toString(), "Hello world\n");
+        file.writeEvent(path, "Hello world\n");
 
         assertEquals(Arrays.asList("Hello world"), Files.readAllLines(path));
     }
@@ -45,33 +45,33 @@ public class FileDestinationTest {
 
         // Now we can't log to path, because it's an existing DIRECTORY
         Files.createDirectories(path);
-        file.writeEvent(path.getFileName().toString(), "Test message - dropped because log file is blocked by existing directory\n");
-        file.writeEvent(path.getFileName().toString(), "Test message - also dropped\n");
+        file.writeEvent(path, "Test message - dropped because log file is blocked by existing directory\n");
+        file.writeEvent(path, "Test message - also dropped\n");
 
         Files.delete(path);
-        file.writeEvent(path.getFileName().toString(), "Test message - written as we recover\n");
+        file.writeEvent(path, "Test message - written as we recover\n");
 
         assertEquals(Arrays.asList("Test message - written as we recover"), Files.readAllLines(path));
     }
 
     @Test
     public void shouldBreakCircuitAfterSuccessiveFailures() throws IOException {
-        Path path = Paths.get("target", "logs", "file-test-4.log");
+        Path path = Paths.get("target", "test", "logs", "file-test-4.log");
         FileDestination file = createFileDestination(path);
 
         // Now we can't log to path, because it's an existing DIRECTORY
         Files.createDirectories(path);
 
         for (int i = 0; i < file.getCircuitBreakThreshold() + 1; i++) {
-            file.writeEvent(path.getFileName().toString(), "Test message - file can't be created\n");
+            file.writeEvent(path, "Test message - file can't be created\n");
         }
 
         // Now we can write...
         Files.deleteIfExists(path);
-        file.writeEvent(path.getFileName().toString(), "Test message - won't be written because circuit is broken\n");
+        file.writeEvent(path, "Test message - won't be written because circuit is broken\n");
 
         file.setCircuitBrokenUntil(Instant.now().minusMillis(1));
-        file.writeEvent(path.getFileName().toString(), "Test message - circuit is recovered\n");
+        file.writeEvent(path, "Test message - circuit is recovered\n");
 
         assertEquals(Arrays.asList("Test message - circuit is recovered"), Files.readAllLines(path));
     }
@@ -84,9 +84,9 @@ public class FileDestinationTest {
 
         FileDestination file = createFileDestination(first);
 
-        file.writeEvent(first.getFileName().toString(), "Written to old file\n");
+        file.writeEvent(first, "Written to old file\n");
 
-        file.writeEvent(second.getFileName().toString(), "Written to new file\n");
+        file.writeEvent(second, "Written to new file\n");
         assertEquals(Arrays.asList("Written to new file"), Files.readAllLines(second));
 
     }
@@ -114,11 +114,11 @@ public class FileDestinationTest {
         Process process = builder.start();
 
         BufferedReader processReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        System.out.println(processReader.readLine());
+        processReader.readLine();
 
-        FileDestination file = new FileDestination(path.getParent());
+        FileDestination file = new FileDestination();
 
-        file.writeEvent(path.getFileName().toString(), "Test message\n");
+        file.writeEvent(path, "Test message\n");
 
         assertTrue(process.isAlive());
         process.destroy();
@@ -132,7 +132,7 @@ public class FileDestinationTest {
 
         assertEquals(Collections.emptyList(), Files.readAllLines(path));
 
-        file.writeEvent(path.getFileName().toString(), "Test message\n");
+        file.writeEvent(path, "Test message\n");
         assertEquals(Arrays.asList("Test message"), Files.readAllLines(path));
     }
 
@@ -149,7 +149,7 @@ public class FileDestinationTest {
 
     private FileDestination createFileDestination(Path path) throws IOException {
         Files.deleteIfExists(path);
-        return new FileDestination(path.getParent());
+        return new FileDestination();
     }
 
     private boolean isWindows() {

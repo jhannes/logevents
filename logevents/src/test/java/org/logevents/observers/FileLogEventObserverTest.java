@@ -1,12 +1,12 @@
 package org.logevents.observers;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.formatting.MessageFormatter;
 import org.logevents.formatting.PatternLogEventFormatter;
 
 import java.io.File;
@@ -49,7 +49,7 @@ public class FileLogEventObserverTest {
         Properties properties = new Properties();
         FileLogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
 
-        assertEquals(CWD + "-test.log", observer.getFilename(new LogEventSampler().build()));
+        assertEquals(CWD + "-test.log", observer.getFilename(new LogEventSampler().build()).getFileName().toString());
     }
 
     @Test
@@ -110,8 +110,9 @@ public class FileLogEventObserverTest {
         assertEquals(Arrays.asList("A warning message"), Files.readAllLines(path));
     }
 
+    private MessageFormatter formatter = new MessageFormatter();
+
     @Test
-    @Ignore("Implementation not ready yet")
     public void shouldSwitchFilenameOnMdcVariable() throws IOException {
         Path logDirectory = Paths.get("target", "test", "file-test-log");
         if (Files.exists(logDirectory)) {
@@ -139,14 +140,18 @@ public class FileLogEventObserverTest {
         observer.logEvent(bobAddEvent);
         observer.logEvent(simpleEvent);
 
-        assertEquals(Arrays.asList(aliceAddEvent1.getMessage(), aliceAddEvent2.getMessage()),
+        assertEquals(Arrays.asList(formatMessage(aliceAddEvent1), formatMessage(aliceAddEvent2)),
                 Files.readAllLines(logDirectory.resolve("alice/log-add.log")));
-        assertEquals(Arrays.asList(aliceListEvent),
+        assertEquals(Arrays.asList(formatMessage(aliceListEvent)),
                 Files.readAllLines(logDirectory.resolve("alice/log-list.log")));
-        assertEquals(Arrays.asList(bobAddEvent),
+        assertEquals(Arrays.asList(formatMessage(bobAddEvent)),
                 Files.readAllLines(logDirectory.resolve("bob/log-add.log")));
-        assertEquals(Arrays.asList(simpleEvent),
+        assertEquals(Arrays.asList(formatMessage(simpleEvent)),
                 Files.readAllLines(logDirectory.resolve("unidentified/log-.log")));
+    }
+
+    private String formatMessage(LogEvent event) {
+        return formatter.format(event.getMessage(), event.getArgumentArray());
     }
 
 }

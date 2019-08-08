@@ -42,6 +42,13 @@ import java.util.Properties;
  *         <code>%mdc</code>: will print all {@link org.slf4j.MDC} variables.
  *          Use %mdc{key:-default} to display a single mdc variable (or default if not set)
  *     </li>
+ *     <li><code>%application</code>: The value of {@link Configuration#getApplicationName()}</li>
+ *     <li><code>%node</code>: The value of {@link Configuration#getNodeName()} ()}</li>
+ *     <li>
+ *         <code>%highlight(&lt;subpattern&lt;)</code>:
+ *         Highlights the subpattern based on the log level of the message: ERROR is bold red, WARN is red,
+ *         and INFO is blue
+ *     </li>
  *     <li>Colors: E.g. %boldGreen{%thread}</li>
  * </ul>
  *
@@ -97,10 +104,12 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             return e -> formatter.format(e.getInstant().atZone(zone));
         });
 
-
         factory.put("level", spec -> e -> e.getLevel().toString());
         factory.put("coloredLevel", spec -> e -> e.getLevel().toString());
-        factory.put("message", spec -> PatternLogEventFormatter::formatMessage);
+        factory.put("message", spec -> {
+            MessageFormatter formatter = spec.getConfiguration().createInstanceWithDefault("messageFormatter", MessageFormatter.class);
+            return logEvent -> formatter.format(logEvent.getMessage(), logEvent.getArgumentArray());
+        });
         factory.putAliases("message", new String[] { "m", "msg" });
         factory.put("thread", spec -> LogEvent::getThreadName);
         factory.putAliases("thread", new String[] { "t" });
@@ -171,10 +180,6 @@ public class PatternLogEventFormatter implements LogEventFormatter {
     }
 
     private final Configuration configuration;
-
-    private static String formatMessage(LogEvent logEvent) {
-        return new MessageFormatter().format(logEvent.getMessage(), logEvent.getArgumentArray());
-    }
 
     private String pattern;
     private final ExceptionFormatter exceptionFormatter;

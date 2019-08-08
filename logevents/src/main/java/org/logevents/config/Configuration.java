@@ -32,12 +32,21 @@ public class Configuration {
         this.prefix = prefix;
     }
 
+    /**
+     * If <code>observer.whatever.applicationName</code> or <code>observer.*.applicationName</code>
+     * is set, returns that value, otherwise calculates the name of the application based on the JAR-file of
+     * the main class. If run from a directory classpath, use the name of the current working directory instead
+     */
     public String getApplicationName() {
         return optionalString("applicationName")
                 .orElseGet(() -> optionalDefaultString("applicationName")
                     .orElseGet(Configuration::calculateApplicationName));
     }
 
+    /**
+     * Calculates the name of the application based on the JAR-file of the main class.
+     * If run from a directory classpath, use the name of the current working directory instead
+     */
     public static String calculateApplicationName() {
         return Thread.getAllStackTraces().entrySet().stream()
                 .filter(pair -> pair.getKey().getName().equals("main"))
@@ -243,6 +252,11 @@ public class Configuration {
         return getApplicationName() + "@" + getNodeName();
     }
 
+    /**
+     * If <code>observer.whatever.nodeName</code> or <code>observer.*.nodeName</code>
+     * is set, returns that value, otherwise returns the hostname of the computer running
+     * this JVM.
+     */
     public String getNodeName() {
         return optionalString("nodeName")
                 .orElseGet(() -> optionalDefaultString("nodeName")

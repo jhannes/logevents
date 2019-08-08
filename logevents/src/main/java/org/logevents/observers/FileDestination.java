@@ -4,10 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 
 import org.logevents.status.LogEventStatus;
@@ -20,26 +17,17 @@ import org.logevents.status.LogEventStatus;
  */
 class FileDestination {
 
-    protected Path logDirectory;
-    private FileChannel channel;
-    private Path openedPath;
+    private FileChannelTracker fileChannelTracker = new FileChannelTracker();
     private Instant circuitBrokenUntil;
     private int successiveErrors;
 
-    public FileDestination(Path logDirectory) {
-        this.logDirectory = logDirectory;
-        if (this.logDirectory == null) {
-            this.logDirectory = Paths.get(".");
-        }
-    }
-
-    public synchronized void writeEvent(String filename, String message) {
+    public synchronized void writeEvent(Path path, String message) {
         if (isCircuitBroken()) {
             return;
         }
-        Path path = logDirectory.resolve(filename);
+        FileChannel channel = null;
         try {
-            FileChannel channel = getChannel(path);
+            channel = fileChannelTracker.getChannel(path, Instant.now());
             ByteBuffer src = ByteBuffer.wrap(message.getBytes());
             try(FileLock ignored = channel.tryLock()) {
                 channel.write(src);
@@ -47,39 +35,19 @@ class FileDestination {
             successiveErrors = 0;
         } catch (IOException e) {
             LogEventStatus.getInstance().addError(this, e.getMessage(), e);
-            checkIfCircuitShouldBreak();
+            checkIfCircuitShouldBreak(channel);
         }
     }
 
-    FileChannel getChannel(Path path) throws IOException {
-        if (channel == null) {
-            try {
-                Files.createDirectories(this.logDirectory);
-            } catch (IOException e) {
-                LogEventStatus.getInstance().addFatal(this, "Can't create directory " + logDirectory, e);
-            }
-            openedPath = path;
-            channel = FileChannel.open(openedPath, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-        } else if (!openedPath.equals(path)) {
-            try {
-                channel.close();
-            } catch (IOException ignored) {
-            }
-            openedPath = path;
-            channel = FileChannel.open(openedPath, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-        }
-        return channel;
-    }
-
-
-    private void checkIfCircuitShouldBreak() {
+    private void checkIfCircuitShouldBreak(FileChannel channel) {
         if (successiveErrors++ >= getCircuitBreakThreshold()) {
             setCircuitBrokenUntil(Instant.now().plusSeconds(10));
             try {
-                if (channel != null) channel.close();
+                if (channel != null)  {
+                    channel.close();
+                }
             } catch (IOException ignored) {
             }
-            channel = null;
         }
     }
 
@@ -105,6 +73,6 @@ class FileDestination {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{dir=" + this.logDirectory + "}";
+        return getClass().getSimpleName();
     }
 }

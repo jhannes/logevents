@@ -5,6 +5,8 @@ import org.logevents.config.Configuration;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.TTLLEventLogFormatter;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.Properties;
@@ -16,8 +18,11 @@ import java.util.Properties;
  */
 public class DateRollingLogEventObserver extends FileLogEventObserver {
 
-    public DateRollingLogEventObserver(String fileName, LogEventFormatter formatter) {
-        super(new Configuration(new Properties(), ""), Optional.of(formatter), fileName);
+    private final String filename;
+
+    public DateRollingLogEventObserver(String filename, LogEventFormatter formatter) {
+        super(new Configuration(new Properties(), ""), Optional.of(formatter), filename);
+        this.filename = filename;
     }
 
     public DateRollingLogEventObserver(String fileName) {
@@ -30,6 +35,7 @@ public class DateRollingLogEventObserver extends FileLogEventObserver {
                 Optional.of(configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class)),
                 configuration.getString("filename")
         );
+        this.filename = configuration.getString("filename");
         configuration.checkForUnknownFields();
     }
 
@@ -39,7 +45,7 @@ public class DateRollingLogEventObserver extends FileLogEventObserver {
     }
 
     @Override
-    protected String getFilename(LogEvent logEvent) {
-        return path.getFileName() + LocalDate.now().toString();
+    protected Path getFilename(LogEvent logEvent) {
+        return Paths.get(filename + LocalDate.now().toString());
     }
 }

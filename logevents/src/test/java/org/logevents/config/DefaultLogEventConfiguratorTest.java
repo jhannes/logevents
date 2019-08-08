@@ -96,7 +96,7 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(
                 "CompositeLogEventObserver{["
                 +"ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, "
-                +"FileLogEventObserver{filename=logs" + FS + CWD + "-test.log,formatter=TTLLEventLogFormatter}]}",
+                +"FileLogEventObserver{filename=logs/" + CWD + "-test.log,formatter=TTLLEventLogFormatter}]}",
                 factory.getRootLogger().getObserver());
     }
 
@@ -111,7 +111,7 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(
                 "CompositeLogEventObserver{["
                 +"ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, "
-                +"FileLogEventObserver{filename=logs" + FS + CWD + "-test.log,formatter=ConsoleLogEventFormatter}]}",
+                +"FileLogEventObserver{filename=logs/" + CWD + "-test.log,formatter=ConsoleLogEventFormatter}]}",
                 factory.getRootLogger().getObserver());
     }
 
