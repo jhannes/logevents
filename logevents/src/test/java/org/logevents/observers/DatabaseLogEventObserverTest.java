@@ -77,6 +77,18 @@ public class DatabaseLogEventObserverTest {
     }
 
     @Test
+    public void shouldSaveEventsWithNullArguments() {
+        LogEvent event = new LogEventSampler().withArgs("123", null, "321").build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        LogEvent savedEvent = listEvents(event.getLevel(), event.getZonedDateTime(), Duration.ofSeconds(1))
+                .stream().filter(e -> e.getMessage().equals(event.getMessage()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionFailedError("Didn't find <" + event.getMessage() + ">"));
+        assertArrayEquals(event.getArgumentArray(), savedEvent.getArgumentArray());
+    }
+
+    @Test
     public void shouldSaveExceptionInformation() {
         LogEvent event = new LogEventSampler().withThrowable().build();
         observer.processBatch(new LogEventBatch().add(event));

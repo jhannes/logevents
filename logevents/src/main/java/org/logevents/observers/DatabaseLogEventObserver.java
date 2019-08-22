@@ -301,7 +301,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                     eventStmt.setLong(8, logEvent.getTimeStamp());
                     eventStmt.setString(9, logEvent.getThreadName());
                     eventStmt.setString(10, JsonUtil.toIndentedJson(
-                            Stream.of(logEvent.getArgumentArray()).map(Object::toString).collect(Collectors.toList())
+                            Stream.of(logEvent.getArgumentArray()).map(o -> o != null ? o.toString() : null).collect(Collectors.toList())
                     ));
                     eventStmt.setString(11, toString(logEvent.getMarker()));
                     eventStmt.setString(12, logEvent.getThrowable() != null ? logEvent.getThrowable().toString() : null);

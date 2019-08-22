@@ -38,7 +38,7 @@ public class LogEventQueryResult {
                 json.get("thread").toString(),
                 Instant.parse(json.get("time").toString()),
                 json.get("marker") != null ? MarkerFactory.getMarker(json.get("marker").toString()) : null,
-                json.get("formattedMessage").toString(),
+                json.get("messageTemplate").toString(),
                 ((List)json.get("arguments")).toArray(),
                 null,
                 parseMdc((List<Map<String, String>>) json.get("mdc"))
