@@ -51,7 +51,7 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
 
     public SlackLogEventObserver(Configuration configuration) {
         super(configuration.optionalUrl("slackUrl").orElse(null));
-        this.formatter = createFormatter(configuration);
+        this.formatter = setupFormatter(configuration);
 
         configureFilter(configuration);
         configureBatching(configuration);
@@ -65,8 +65,8 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
         this.formatter = new SlackLogEventsFormatter(username, channel);
     }
 
-    private static SlackLogEventsFormatter createFormatter(Configuration configuration) {
-        SlackLogEventsFormatter formatter = configuration.createInstanceWithDefault("formatter", SlackLogEventsFormatter.class);
+    protected SlackLogEventsFormatter setupFormatter(Configuration configuration) {
+        SlackLogEventsFormatter formatter = createFormatter(configuration);
         List<String> packageFilters = configuration.getStringList("packageFilter");
         if (packageFilters.isEmpty()) {
             packageFilters = configuration.getDefaultStringList("packageFilter");
@@ -85,9 +85,13 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
         return formatter;
     }
 
+    protected SlackLogEventsFormatter createFormatter(Configuration configuration) {
+        return configuration.createInstanceWithDefault("formatter", SlackLogEventsFormatter.class);
+    }
+
     @Override
     protected BatchThrottler createBatcher(Configuration configuration, String markerName) {
-        SlackLogEventsFormatter formatter = createFormatter(configuration);
+        SlackLogEventsFormatter formatter = setupFormatter(configuration);
         configuration.optionalString("markers." + markerName + ".channel")
                 .ifPresent(channel -> formatter.setChannel(Optional.of(channel)));
         String throttle = configuration.getString("markers." + markerName + ".throttle");

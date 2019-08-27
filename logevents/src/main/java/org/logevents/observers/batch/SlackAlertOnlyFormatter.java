@@ -27,9 +27,8 @@ public class SlackAlertOnlyFormatter extends SlackLogEventsFormatter {
 
     @Override
     protected List<Map<String, Object>> createAttachments(LogEventBatch batch) {
-        LogEvent event = batch.firstHighestLevelLogEventGroup().headMessage();
         ArrayList<Map<String, Object>> result = new ArrayList<>();
-        result.add(createDetailsAttachment(event));
+        result.add(createDetailsAttachment(batch));
         return result;
     }
 }

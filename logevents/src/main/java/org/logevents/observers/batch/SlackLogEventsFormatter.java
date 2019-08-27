@@ -22,11 +22,11 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
     private MessageFormatter messageFormatter = new MessageFormatter();
     private SlackExceptionFormatter exceptionFormatter = new SlackExceptionFormatter();
-    private Optional<String> username;
-    private Optional<String> channel;
-    private Optional<String> iconEmoji = Optional.empty();
+    protected Optional<String> username;
+    protected Optional<String> channel;
+    protected Optional<String> iconEmoji = Optional.empty();
     private boolean showRepeatsIndividually;
-    private Optional<String> detailUrl = Optional.empty();
+    protected Optional<String> detailUrl = Optional.empty();
     private final String nodeName;
 
     public SlackLogEventsFormatter() {
@@ -78,7 +78,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     protected List<Map<String, Object>> createAttachments(LogEventBatch batch) {
         LogEvent event = batch.firstHighestLevelLogEventGroup().headMessage();
         ArrayList<Map<String, Object>> result = new ArrayList<>();
-        result.add(createDetailsAttachment(event));
+        result.add(createDetailsAttachment(batch));
         if (!event.getMdcProperties().isEmpty()) {
             result.add(createMdcAttachment(event));
         }
@@ -91,7 +91,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         return result;
     }
 
-    private Map<String, Object> createMdcAttachment(LogEvent event) {
+    protected Map<String, Object> createMdcAttachment(LogEvent event) {
         Map<String, Object> attachment = new HashMap<>();
         attachment.put("title", "MDC");
         attachment.put("color", getColor(event.getLevel()));
@@ -146,15 +146,15 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         return messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray());
     }
 
-    private String getColor(Level level) {
+    protected String getColor(Level level) {
         return level == Level.ERROR ? "danger" : (level == Level.WARN ? "warning" : "good");
     }
 
-    protected Map<String, Object> createDetailsAttachment(LogEvent event) {
+    protected Map<String, Object> createDetailsAttachment(LogEventBatch batch) {
+        LogEvent event = batch.firstHighestLevelLogEventGroup().headMessage();
         Map<String, Object> attachment = new HashMap<>();
         attachment.put("title", "Details");
-        detailUrl.ifPresent(url -> attachment.put("title_link",
-                url + "?instant=" + event.getInstant() + "&thread=" + event.getThreadName() + "&interval=PT10S"));
+        detailUrl.ifPresent(url -> attachment.put("title_link", detailLink(event, url)));
         attachment.put("color", getColor(event.getLevel()));
         List<Map<String, Object>> fields = new ArrayList<>();
         fields.add(slackMessageField("Level", event.getLevel().toString(), true));
@@ -165,6 +165,10 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         }
         attachment.put("fields", fields);
         return attachment;
+    }
+
+    protected String detailLink(LogEvent event, String url) {
+        return url + "?instant=" + event.getInstant() + "&thread=" + event.getThreadName() + "&interval=PT10S";
     }
 
     protected Map<String, Object> createStackTraceAttachment(LogEvent event) {
