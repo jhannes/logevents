@@ -79,7 +79,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     public DatabaseLogEventObserver(Configuration configuration) {
         this.jdbcUrl = configuration.getString("jdbcUrl");
         this.jdbcUsername = configuration.getString("jdbcUsername");
-        this.jdbcPassword = configuration.getString("jdbcPassword");
+        this.jdbcPassword = configuration.optionalString("jdbcPassword").orElse("");
         this.logEventsTable = configuration.optionalString("logEventsTable").orElse("LOG_EVENTS").toUpperCase();
         this.logEventsMdcTable = configuration.optionalString("logEventsMdcTable").orElse(logEventsTable + "_MDC").toUpperCase();
         this.nodeName = configuration.getNodeName();
