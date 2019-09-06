@@ -25,8 +25,9 @@ public class JsonUtilTest {
         jsonObject.put("age", 29L);
         jsonObject.put("sith", true);
         jsonObject.put("weakness", null);
-        assertJsonOutput("{\"firstName\": \"Darth\",\"lastName\": \"Vader\",\"age\": 29,\"sith\": true,\"weakness\": null}", jsonObject);
+        assertJsonOutput("{\"firstName\": \"Darth\",\"lastName\": \"Vader\",\"age\": 29,\"sith\": true}", jsonObject);
 
+        jsonObject.remove("weakness");
         String s = new JsonUtil("", "").toJson(jsonObject);
         assertEquals(JsonParser.parse(s), jsonObject);
     }

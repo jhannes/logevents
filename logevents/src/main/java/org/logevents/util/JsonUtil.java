@@ -49,6 +49,7 @@ public class JsonUtil {
         result.append("{").append(newline);
         boolean first = true;
         for (Map.Entry<String, Object> entry : json.entrySet()) {
+            if (entry.getValue() == null) continue;
             if (!first) result.append(",").append(newline);
             result.append(currentIndent).append(indent).append("\"").append(jsonEscape(entry.getKey())).append("\": ");
             objectToJson(entry.getValue(), result, currentIndent + indent);
