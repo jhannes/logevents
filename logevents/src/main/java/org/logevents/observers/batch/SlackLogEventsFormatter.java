@@ -7,11 +7,14 @@ import org.slf4j.event.Level;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static java.util.Collections.singletonList;
 
 /**
  * Formats log event batches for suitable display on Slack. Writes the most important
@@ -28,6 +31,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     private boolean showRepeatsIndividually;
     protected Optional<String> detailUrl = Optional.empty();
     private final String nodeName;
+    private List<String> includedMdcKeys = null;
 
     public SlackLogEventsFormatter() {
         this(Optional.empty(), Optional.empty());
@@ -50,7 +54,6 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         iconEmoji.ifPresent(i -> message.put("icon_emoji", i));
 
         message.put("attachments", createAttachments(batch));
-        message.put("text", createText(batch.firstHighestLevelLogEventGroup()));
         return message;
     }
 
@@ -64,9 +67,12 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         if (throwable != null) {
             exceptionInfo = throwable.getMessage() + " <" + throwable.getClass().getName() + "> ";
         }
+        String formattedMessage = detailUrl
+                .map(url -> "<" + detailLink(event, url) + "|" + formatMessage(event) + ">")
+                .orElseGet(() -> formatMessage(event));
         return JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()) + " "
             + exceptionInfo
-            + formatMessage(event)
+            + formattedMessage
             + " [" + event.getAbbreviatedLoggerName(10) + "]"
             + (mainGroup.size() > 1 ? " (" + mainGroup.size() + " repetitions)" : "")
             + (event.getLevel() == Level.ERROR ? " <!channel>" : "");
@@ -79,8 +85,9 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         LogEvent event = batch.firstHighestLevelLogEventGroup().headMessage();
         ArrayList<Map<String, Object>> result = new ArrayList<>();
         result.add(createDetailsAttachment(batch));
-        if (!event.getMdcProperties().isEmpty()) {
-            result.add(createMdcAttachment(event));
+        Map<String, Object> mdcAttachment = createMdcAttachment(event);
+        if (!mdcAttachment.isEmpty()) {
+            result.add(mdcAttachment);
         }
         if (event.getThrowable() != null) {
             result.add(createStackTraceAttachment(event));
@@ -92,13 +99,18 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     }
 
     protected Map<String, Object> createMdcAttachment(LogEvent event) {
+        List<Map<String, Object>> fields = new ArrayList<>();
+        for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()){
+            if (includedMdcKeys == null || includedMdcKeys.contains(entry.getKey())) {
+                fields.add(slackMessageField(entry.getKey(), entry.getValue(), false));
+            }
+        }
+        if (fields.isEmpty()) {
+            return new HashMap<>();
+        }
         Map<String, Object> attachment = new HashMap<>();
         attachment.put("title", "MDC");
         attachment.put("color", getColor(event.getLevel()));
-        List<Map<String, Object>> fields = new ArrayList<>();
-        for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()){
-            fields.add(slackMessageField(entry.getKey(), entry.getValue(), false));
-        }
         attachment.put("fields", fields);
         return attachment;
     }
@@ -108,7 +120,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         attachment.put("title", "Throttled log events");
         Level level = batch.firstHighestLevelLogEventGroup().headMessage().getLevel();
         attachment.put("color", getColor(level));
-        attachment.put("mrkdwn_in", Arrays.asList("text"));
+        attachment.put("mrkdwn_in", singletonList("text"));
 
         StringBuilder text = new StringBuilder();
         if (showRepeatsIndividually) {
@@ -121,7 +133,6 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
             }
         } else {
             for (LogEventGroup group : batch.groups()) {
-                LogEvent logEvent = group.headMessage();
                 text.append("* ").append(italic(group.headMessage().getZonedDateTime().toLocalTime())).append(": ");
                 if (group.size() > 1) {
                     String message = group.headMessage().getMessage();
@@ -153,18 +164,17 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     protected Map<String, Object> createDetailsAttachment(LogEventBatch batch) {
         LogEvent event = batch.firstHighestLevelLogEventGroup().headMessage();
         Map<String, Object> attachment = new HashMap<>();
-        attachment.put("title", "Details");
-        detailUrl.ifPresent(url -> attachment.put("title_link", detailLink(event, url)));
-        attachment.put("color", getColor(event.getLevel()));
-        List<Map<String, Object>> fields = new ArrayList<>();
-        fields.add(slackMessageField("Level", event.getLevel().toString(), true));
-        fields.add(slackMessageField("Source", nodeName, true));
-        fields.add(slackMessageField("Main", System.getProperty("sun.java.command"), true));
         if (event.getMarker() != null) {
-            fields.add(slackMessageField("Marker", event.getMarker().getName(), true));
+            attachment.put("title", event.getMarker().getName());
         }
-        attachment.put("fields", fields);
+        attachment.put("text", createText(batch.firstHighestLevelLogEventGroup()));
+        attachment.put("color", getColor(event.getLevel()));
+        attachment.put("fields", createDetailsField(event));
         return attachment;
+    }
+
+    protected List<Map<String, Object>> createDetailsField(LogEvent event) {
+        return new ArrayList<>();
     }
 
     protected String detailLink(LogEvent event, String url) {
@@ -179,7 +189,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
                 slackMessageField("Exception", event.getThrowable().getClass().getSimpleName(), true),
                 slackMessageField("Message", event.getThrowable().getMessage(), false)
                 ));
-        attachment.put("mrkdwn_in", Arrays.asList("text"));
+        attachment.put("mrkdwn_in", singletonList("text"));
         attachment.put("text",
                 "```\n" + exceptionFormatter.format(event.getThrowable()) + "```");
         return attachment;
@@ -240,5 +250,9 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
     public void setDetailUrl(Optional<String> detailUrl) {
         this.detailUrl = detailUrl;
+    }
+
+    public void setIncludedMdcKeys(List<String> includedMdcKeys) {
+        this.includedMdcKeys = includedMdcKeys;
     }
 }

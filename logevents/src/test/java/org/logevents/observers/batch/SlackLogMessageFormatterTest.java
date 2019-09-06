@@ -29,14 +29,15 @@ public class SlackLogMessageFormatterTest {
         String userName = randomString();
         String channelName = randomString();
 
-        LogEvent event = new LogEventSampler().build();
+        LogEvent event = new LogEventSampler().withLevel(Level.INFO).build();
 
         Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.of(userName), Optional.of(channelName)).createMessage(new LogEventBatch().add(event));
         assertEquals(channelName, JsonUtil.getField(slackMessage, "channel"));
-        assertContains(event.getMessage(), JsonUtil.getField(slackMessage, "text").toString());
+        Map<String, Object> detailsAttachment = JsonUtil.getObjectList(slackMessage, "attachments").get(0);
+        assertContains(event.getMessage(), JsonUtil.getField(detailsAttachment, "text").toString());
 
-        List<Object> fields = JsonUtil.getList(JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 0), "fields");
-        assertEquals(event.getLevel().toString(), JsonUtil.getField(JsonUtil.getObject(fields, 0), "value"));
+        Map<String, Object> mainAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 0);
+        assertEquals("good", mainAttachment.get("color"));
     }
 
     private String randomString() {

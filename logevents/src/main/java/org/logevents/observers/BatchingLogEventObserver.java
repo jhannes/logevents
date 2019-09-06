@@ -62,7 +62,7 @@ public abstract class BatchingLogEventObserver extends FilteredLogEventObserver 
     }
 
     private Map<Marker, BatchThrottler> markerBatchers = new HashMap<>();
-    private CooldownBatcher defaultBatcher;
+    private LogEventObserver defaultBatcher;
     protected Supplier<Scheduler> flusherFactory;
 
     public BatchingLogEventObserver() {
@@ -79,7 +79,9 @@ public abstract class BatchingLogEventObserver extends FilteredLogEventObserver 
      * from configuration
      */
     protected void configureBatching(Configuration configuration) {
-        defaultBatcher.configure(configuration);
+        CooldownBatcher cooldownBatcher = new CooldownBatcher(flusherFactory.get(), this::processBatch);
+        cooldownBatcher.configure(configuration);
+        this.defaultBatcher = cooldownBatcher;
     }
 
     @Override

@@ -33,8 +33,11 @@ import java.util.Properties;
  * observer.slack.idleThreshold=PT5S
  * observer.slack.suppressMarkers=BORING_MARKER
  * observer.slack.requireMarker=MY_MARKER, MY_OTHER_MARKER
- * observer.slack.markers.MY_MARKER.throttle=PT1M PT10M PT30M
  * observer.slack.detailUrl=link to your {@link LogEventsServlet}
+ * observer.slack.packageFilter=sun.www, com.example.uninteresting
+ * observer.slack.includedMdcKeys=clientIp
+ * observer.slack.markers.MY_MARKER.throttle=PT1M PT10M PT30M
+ * observer.slack.markers.MY_MARKER.emoji=:rocket:
  * </pre>
  *
  * @see BatchingLogEventObserver
@@ -61,21 +64,30 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
     }
 
     public SlackLogEventObserver(URL slackUrl, Optional<String> username, Optional<String> channel) {
+        this(slackUrl, new SlackLogEventsFormatter(username, channel));
+    }
+
+    public SlackLogEventObserver(URL slackUrl, SlackLogEventsFormatter formatter) {
         super(slackUrl);
-        this.formatter = new SlackLogEventsFormatter(username, channel);
+        this.formatter = formatter;
     }
 
     protected SlackLogEventsFormatter setupFormatter(Configuration configuration) {
         SlackLogEventsFormatter formatter = createFormatter(configuration);
+        formatter.setUsername(
+                Optional.ofNullable(configuration.optionalString("username")
+                        .orElseGet(configuration::getApplicationNode))
+        );
         List<String> packageFilters = configuration.getStringList("packageFilter");
         if (packageFilters.isEmpty()) {
             packageFilters = configuration.getDefaultStringList("packageFilter");
         }
         formatter.setPackageFilter(packageFilters);
-        formatter.setUsername(
-                Optional.ofNullable(configuration.optionalString("username")
-                        .orElseGet(configuration::getApplicationNode))
-        );
+        List<String> includedMdcKeys = configuration.getStringList("includedMdcKeys");
+        if (includedMdcKeys.isEmpty()) {
+            includedMdcKeys = configuration.getDefaultStringList("includedMdcKeys");
+        }
+        formatter.setIncludedMdcKeys(includedMdcKeys);
         formatter.setChannel(configuration.optionalString("channel"));
         formatter.setIconEmoji(configuration.optionalString("iconEmoji"));
         formatter.setShowRepeatsIndividually(configuration.getBoolean("showRepeatsIndividually"));
@@ -94,6 +106,8 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
         SlackLogEventsFormatter formatter = setupFormatter(configuration);
         configuration.optionalString("markers." + markerName + ".channel")
                 .ifPresent(channel -> formatter.setChannel(Optional.of(channel)));
+        configuration.optionalString("markers." + markerName + ".emoji")
+                .ifPresent(emoji -> formatter.setIconEmoji(Optional.of(emoji)));
         String throttle = configuration.getString("markers." + markerName + ".throttle");
         return new BatchThrottler(
                 new ExecutorScheduler(scheduledExecutorService, shutdownHook),

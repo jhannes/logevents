@@ -13,6 +13,7 @@ import org.logevents.status.StatusEvent;
 import org.logevents.status.StatusEvent.StatusLevel;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
+import org.slf4j.event.Level;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,13 +22,13 @@ import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -36,7 +37,7 @@ public class SlackLogEventObserverTest {
 
     public static class Formatter extends SlackLogEventsFormatter {
         @Override
-        protected List<Map<String, Object>> createAttachments(LogEventBatch batch) {
+        protected List<Map<String, Object>> createDetailsField(LogEvent event) {
             return null;
         }
 
@@ -65,12 +66,19 @@ public class SlackLogEventObserverTest {
 
         SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack");
 
-        LogEvent logEvent = new LogEventSampler().withFormat("Nothing").build();
+        LogEvent logEvent = new LogEventSampler().withMarker(null).withLevel(Level.WARN).withFormat("Nothing").build();
         observer.processBatch(new LogEventBatch().add(logEvent));
 
-        assertEquals(Arrays.asList("{\n"
-                + "  \"username\": \"loguser\",\n" + "  \"channel\": \"general\",\n"
-                + "  \"attachments\": null,\n"+ "  \"text\": \"Nothing\"\n" +  "}"),
+        assertEquals(singletonList("{\n" +
+                        "  \"username\": \"loguser\",\n" +
+                        "  \"channel\": \"general\",\n" +
+                        "  \"attachments\": [\n" +
+                        "    {\n" +
+                        "      \"color\": \"warning\",\n" +
+                        "      \"text\": \"Nothing\"\n" +
+                        "    }\n" +
+                        "  ]\n" +
+                        "}"),
             buffer);
     }
 
