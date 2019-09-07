@@ -2,7 +2,7 @@
 
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents)
-[![Javadocs](https://www.javadoc.io/badge/org.logevents/logevents.svg)](http://www.javadoc.io/doc/org.logevents/logevents)
+[![Javadoc](https://www.javadoc.io/badge/org.logevents/logevents.svg)](http://www.javadoc.io/doc/org.logevents/logevents)
 [![Build Status](https://travis-ci.org/jhannes/logevents.png)](https://travis-ci.org/jhannes/logevents)
 [![Coverage Status](https://coveralls.io/repos/github/jhannes/logevents/badge.svg?branch=master)](https://coveralls.io/github/jhannes/logevents?branch=master)
 [![Vulnerability scan](https://snyk.io/test/github/jhannes/logevents/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/jhannes/logevents?targetFile=pom.xml)
@@ -83,9 +83,9 @@ logger.org.example=DEBUG
 
 ![Web dashboard filter screenshot](doc/web-dashboard-filter.png)
 
-You can also set up environment specific logging with a file named `logevents-<profile>.properties` or you can configure Logevents programatically:
+You can also set up environment specific logging with a file named `logevents-<profile>.properties` or you can configure Logevents programmatically:
 
-```java
+```
 LogEventFactory logEventFactory = LogEventFactory.getInstance();
 
 logEventFactory.setRootLevel(Level.ERROR);
@@ -159,7 +159,7 @@ You can include data in your logging statement - if the event is never printed
 (for example if `debug` level is not active), `toString()` is never called
 on the message arguments:
 
-```java
+```
 logger.debug("Response from {}: {}", url, responseCode);
 ```
 
@@ -167,7 +167,7 @@ logger.debug("Response from {}: {}", url, responseCode);
 You can include an exception. A logging implementation will generally print the
 whole stack trace of the exception:
 
-```java
+```
 try {
     ...
 } catch (IOException e) {
@@ -179,7 +179,7 @@ If you want to avoid a costly operation when the event is suppressed, you can
 use `isDebugEnabled`, `isWarnEnabled` etc. In this example, if the logging
 level is warn or error, `parsePayload` is never called.
 
-```java
+```
 if (logger.isInfoEnabled()) {
 	logger.info("Message payload: {}", parsePayload());
 }
@@ -199,7 +199,7 @@ another request.
 Example of usage:
 
 ```java
-public LoggingFilter implements javax.servlet.Filter {
+public class LoggingFilter implements javax.servlet.Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse resp, FilterChain chain)
             throws IOException, ServletException {
@@ -221,7 +221,7 @@ public LoggingFilter implements javax.servlet.Filter {
 You can configure the logging implementation (logevents or logback) to use the MDC, or you
 can even use it from your own code:
 
-```java
+```
 HttpURLConnection connection = (HttpURLConnection) serviceUrl.openConnection();
 connection.setRequestProperty("X-Request-Context", MDC.get("RequestContext"));
 
@@ -258,7 +258,7 @@ Use `LogEventFactory` to set up the configuration from your
 main method before calling any logging code:
 
 
-```java
+```
 LogEventFactory factory = LogEventFactory.getInstance();
 factory.setRootLevel(Level.WARN);
 factory.setRootObserver(CompositeLogEventObserver.combine(
@@ -417,7 +417,7 @@ of log messages in one email) or Slack (where you may want to have a cool down
 period before sending more messages). Here is an example of how you can set up
 a batching log event observer:
 
-```java
+```
 LogEventFactory factory = LogEventFactory.getInstance();
 factory.setRootLevel(Level.INFO);
 
@@ -463,17 +463,17 @@ Examples:
 
 ```properties
 observer.slack.sourceCode.1.packages=org.logevents
-; See if META-INF/maven/org.logevents/logevents/pom.xml is available
-;  If so, look for the <scm> tag in the pom-file
+# See if META-INF/maven/org.logevents/logevents/pom.xml is available
+#  If so, look for the <scm> tag in the pom-file
 observer.slack.sourceCode.1.maven=org.logevents/logevents
 
 observer.slack.sourceCode.2.packages=org.slf4j
-; Link to Github
+# Link to Github
 observer.slack.sourceCode.2.github=https://github.com/qos-ch/slf4j
 observer.slack.sourceCode.2.tag=v_1.7.25
 
-observer.slack.sourceCode.3.packages=com.myproject
-; Link to Bitbucket: https://bitbucket.example.com/EX/project/src/main/java/<java-path>?at=release#<line>
+observer.slack.sourceCode.3.packages=com.example
+# Link to Bitbucket: https://bitbucket.example.com/EX/project/src/main/java/<java-path>?at=release#<line>
 observer.slack.sourceCode.3.github=https://bitbucket.example.com/EX/project/
 observer.slack.sourceCode.3.tag=release
 ```
@@ -530,7 +530,7 @@ public class ExpectedLogEventsRuleTest {
 
 ### Why not logback
 
-When designed, logback was created with a lot of flexibilty for mind for
+When designed, logback was created with a lot of flexibility for mind for
 possible future requirements. As it has become in wider use, much of this
 flexibility has remained untapped, while the architecture is paying the cost in
 increased indirection.
