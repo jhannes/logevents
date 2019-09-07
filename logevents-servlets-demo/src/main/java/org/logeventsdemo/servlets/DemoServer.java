@@ -14,11 +14,13 @@ import org.slf4j.spi.LocationAwareLogger;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Random;
 import java.util.TimeZone;
 
-public class Main {
+public class DemoServer {
 
     private static final Marker OPS = MarkerFactory.getMarker("OPS");
     private static final Marker LIFECYCLE = MarkerFactory.getMarker("LIFECYCLE");
@@ -28,7 +30,7 @@ public class Main {
         OPS.add(LIFECYCLE); OPS.add(HTTP);
     }
 
-    private static LocationAwareLogger logger = (LocationAwareLogger) LoggerFactory.getLogger(Main.class);
+    private static LocationAwareLogger logger = (LocationAwareLogger) LoggerFactory.getLogger(DemoServer.class);
 
     public static void main(String[] args) throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
@@ -36,7 +38,7 @@ public class Main {
         factory.setLevel(factory.getLogger("org.logeventsdemo"), Level.DEBUG);
         factory.setLevel(factory.getRootLogger(), Level.INFO);
 
-        new Thread(Main::makeNoise).start();
+        new Thread(DemoServer::makeNoise).start();
 
         Server server = new Server(Integer.parseInt(System.getProperty("httpPort", "4000")));
         server.setHandler(demoContext());
@@ -48,9 +50,16 @@ public class Main {
     private static WebAppContext demoContext() {
         WebAppContext context = new WebAppContext();
         context.setContextPath("/");
-        context.setBaseResource(Resource.newClassPathResource("/webapp-logevents"));
-        //context.setBaseResource(Resource.newResource("src/main/resources/webapp-logevents"));
-        context.getInitParams().put("org.eclipse.jetty.servlet.Default.useFileMappedBuffer", "false");
+
+        URL webAppResource = DemoServer.class.getResource("/webapp-logevents");
+        File webAppSource = new File(webAppResource.getPath().replaceAll("/target/classes/", "/src/main/resources/"));
+        if (webAppSource.isDirectory()) {
+            context.setBaseResource(Resource.newResource(webAppSource));
+            context.getInitParams().put("org.eclipse.jetty.servlet.Default.useFileMappedBuffer", "false");
+        } else {
+            context.setBaseResource(Resource.newResource(webAppResource));
+        }
+
         context.addEventListener(new ApplicationContext());
         return context;
     }

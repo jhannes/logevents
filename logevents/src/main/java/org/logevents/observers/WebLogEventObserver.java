@@ -79,17 +79,7 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         Optional<Integer> httpPort = configuration.optionalInt("httpPort");
         Optional<Integer> httpsPort = configuration.optionalInt("httpsPort");
         if (httpPort.isPresent() || httpsPort.isPresent()) {
-            this.logEventServer = new LogEventHttpServer();
-            logEventServer.setHostname(configuration.optionalString("hostname").orElse(null));
-            logEventServer.setHttpPort(httpPort);
-            logEventServer.setHttpsPort(httpsPort);
-            logEventServer.setLogEventsHtml(logEventsHtml);
-            logEventServer.setOpenIdConfiguration(openIdConfiguration);
-            logEventServer.setLogEventSource(source);
-            logEventServer.setCookieEncryptionKey(cookieEncryptionKey);
-            logEventServer.setKeyStore(configuration.optionalString("keyStore"));
-            logEventServer.setKeyStorePassword(configuration.optionalString("keyStorePassword"));
-            logEventServer.setHostKeyPassword(configuration.optionalString("hostKeyPassword"));
+            logEventServer = createHttpServer(configuration, httpPort, httpsPort);
             logEventServer.start();
         }
         configuration.checkForUnknownFields();
@@ -105,6 +95,21 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         messageFormatter = new MessageFormatter();
         openIdConfiguration = null;
         source = new LogEventBuffer();
+    }
+
+    protected LogEventHttpServer createHttpServer(Configuration configuration, Optional<Integer> httpPort, Optional<Integer> httpsPort) {
+        LogEventHttpServer logEventServer = new LogEventHttpServer();
+        logEventServer.setHostname(configuration.optionalString("hostname").orElse(null));
+        logEventServer.setHttpPort(httpPort);
+        logEventServer.setHttpsPort(httpsPort);
+        logEventServer.setLogEventsHtml(logEventsHtml);
+        logEventServer.setOpenIdConfiguration(openIdConfiguration);
+        logEventServer.setLogEventSource(source);
+        logEventServer.setCookieEncryptionKey(cookieEncryptionKey);
+        logEventServer.setKeyStore(configuration.optionalString("keyStore"));
+        logEventServer.setKeyStorePassword(configuration.optionalString("keyStorePassword"));
+        logEventServer.setHostKeyPassword(configuration.optionalString("hostKeyPassword"));
+        return logEventServer;
     }
 
     public Optional<String> getCookieEncryptionKey() {
@@ -155,7 +160,7 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         return logEventServer.getCertificate();
     }
 
-    String createSessionCookie(String subject) {
+    protected String createSessionCookie(String subject) {
         HashMap<String, Object> idToken = new HashMap<>();
         idToken.put("sub", subject);
         idToken.put("iat", System.currentTimeMillis()/1000);

@@ -27,7 +27,7 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
         Logger logger = LoggerFactory.getLogger(Main.class);
 
-        try (MDC.MDCCloseable mdcCloseable = MDC.putCloseable("Context", "The context of the thread")) {
+        try (MDC.MDCCloseable ignored = MDC.putCloseable("Context", "The context of the thread")) {
             logger.info("While connecting to database", new NoRouteToHostException("Connection refused"));
             logger.warn("Database failure with error message: {}", "AA39111");
 

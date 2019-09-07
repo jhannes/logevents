@@ -1,6 +1,7 @@
 package org.logevents.util.openid;
 
 import org.logevents.config.Configuration;
+import org.logevents.config.LogEventConfigurationException;
 import org.logevents.util.JsonParser;
 import org.logevents.util.NetUtils;
 
@@ -29,6 +30,7 @@ import java.util.Set;
  *     <li>Select "Azure Active Directory" from the menu in your new directory to go to directory management</li>
  *     <li>Select "App Registration" and "New registration" to create your application</li>
  *     <li>In the application configuration, you need to find the Application (client) ID, generate a new client secret (under Certificates and secrets) and setup your redirect URI (under Authentication) and use this to configure {@link org.logevents.observers.WebLogEventObserver}</li>
+ *     <li>Set <code>observer.servlet.openIdIssuer=https://login.microsoftonline.com/{tenantId}/v2.0/</code></li>
  *     <li>In the Azure Active Directory menu, you can select "Users" and add a guest user from your organization to add to your limited Active Directory (this feature of Active Directory is known as B2B)</li>
  *     <li>In the Azure Active Directory menu, you can select "Enterprise Applications" to limited the users that can access the logging application</li>
  * </ol>
@@ -39,15 +41,15 @@ import java.util.Set;
  *     <li>Go to <a href="https://console.developers.google.com/apis/credentials">Google API Console</a></li>
  *     <li>From the "Select a project" dropdown, click "New project"</li>
  *     <li>Select "Credentials" from the left menu, click "Create credentials" and select "OAuth client ID"</li>
- *     <li>Select "Web application" as the type of application and enter the Redirect URI where you would access your {@link org.logevents.extend.servlets.LogEventsServlet}
+ *     <li>Select "Web application" as the type of application and enter the Redirect URI where you would access your {@link org.logevents.extend.servlets.LogEventsServlet} + "/oauth2callback"
  *     (e.g. <code>https://myserver.com/myapp/logs/oauth2callback</code>
  *     </li>
  *     <li>Copy the Client ID and Client secret to your <code>observer.servlet.clientId</code> and <code>observer.servlet.clientSecret</code></li>
- *     <li>Set <code>observer.web.openIdIssuer=https://accounts.google.com</code></li>
+ *     <li>Set <code>observer.servlet.openIdIssuer=https://accounts.google.com</code></li>
  *     <li>
  *         <strong>Important:</strong> Your log console is currently open to <em>anyone</em> with a Google Account,
- *         ie. everyone. You have to restrict it with e.g. <code>observer.web.requiredClaim.email_verified=true</code>
- *         and <code>observer.web.requiredClaim.email=alice@example.com, bob@example.com</code>
+ *         ie. everyone. You have to restrict it with e.g. <code>observer.servlet.requiredClaim.email_verified=true</code>
+ *         and <code>observer.servlet.requiredClaim.email=alice@example.com, bob@example.com</code>
  *     </li>
  * </ol>
  */
@@ -60,13 +62,33 @@ public class OpenIdConfiguration {
     private Map<String, List<String>> requiredClaims = new HashMap<>();
 
     public OpenIdConfiguration(Configuration configuration) {
-        this(configuration.getString("openIdIssuer"), configuration.getString("clientId"), configuration.getString("clientSecret"));
+        this(getOpenIdIssuer(configuration), getClientId(configuration), configuration.getString("clientSecret"));
         this.redirectUri = configuration.optionalString("redirectUri");
         this.scopes = configuration.optionalString("scopes");
         Set<String> requiredClaims = configuration.listProperties("requiredClaim");
         for (String requiredClaim : requiredClaims) {
             addRequiredClaim(requiredClaim, configuration.getStringList("requiredClaim." + requiredClaim));
         }
+
+        if (!openIdIssuer.startsWith("https://login.microsoftonline.com/") && requiredClaims.isEmpty()) {
+            throw new LogEventConfigurationException(configuration.fullKey("requiredClaim") + ".<someClaim> must be set unless openIdIssues is an organization (like Active Directory)");
+        }
+    }
+
+    private static String getClientId(Configuration configuration) {
+        return configuration.optionalString("clientId")
+                .orElseThrow(() -> {
+                    String message = "Missing required key <" + configuration.fullKey("clientId") + ">.";
+                    if (getOpenIdIssuer(configuration).startsWith("https://accounts.google.com")) {
+                        message += " Create your credentials at https://console.developers.google.com/apis/credentials";
+                    }
+                    return new LogEventConfigurationException(message);
+                });
+    }
+
+    private static String getOpenIdIssuer(Configuration configuration) {
+        return configuration.optionalString("openIdIssuer")
+                .orElseThrow(() -> new LogEventConfigurationException("Missing require key <" + configuration.fullKey("openIdIssuer") + ">. Try https://accounts.google.com for Google or https://login.microsoftonline.com/{tenantId}/v2.0/ for Active Directory"));
     }
 
     public OpenIdConfiguration(String openIdIssuer, String clientId, String clientSecret) {

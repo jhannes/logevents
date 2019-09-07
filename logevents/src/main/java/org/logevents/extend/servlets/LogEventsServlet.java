@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.security.GeneralSecurityException;
@@ -123,26 +124,33 @@ public class LogEventsServlet extends HttpServlet {
         setupCookieVault(getObserver().getCookieEncryptionKey());
     }
 
-    public void setupCookieVault(Optional<String> encryptionKey) throws ServletException {
+    public void setupCookieVault(Optional<String> encryptionKey) {
         this.cookieVault = new CryptoVault(encryptionKey);
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
-        if (req.getPathInfo() == null) {
+        String path = req.getPathInfo();
+        if (path == null) {
             resp.sendRedirect(req.getContextPath() + req.getServletPath() + "/" +
                     (req.getQueryString() != null ? "?" + req.getQueryString() : ""));
-        } else if (req.getPathInfo().equals("/")) {
+        } else if (path.equals("/")) {
             resp.setContentType("text/html");
             copyResource(resp, getObserver().getLogEventsHtml());
-        } else if (req.getPathInfo().equals("/swagger.json")) {
+        } else if (path.matches("/[a-zA-Z._-]+\\.css")) {
+            resp.setContentType("text/css");
+            copyResource(resp, "/org/logevents" + path);
+        } else if (path.matches("/[a-zA-Z._-]+\\.js")) {
+            resp.setContentType("text/javascript");
+            copyResource(resp, "/org/logevents" + path);
+        } else if (path.equals("/swagger.json")) {
             resp.setContentType("application/json");
             Map<String, Object> api = JsonParser.parseObject(getClass().getResourceAsStream(LOGEVENTS_API));
             HashMap<Object, Object> localServer = new HashMap<>();
             localServer.put("url", req.getContextPath() + req.getServletPath());
             api.put("servers", Collections.singletonList(localServer));
             resp.getWriter().write(JsonUtil.toIndentedJson(api));
-        } else if (req.getPathInfo().equals("/login")) {
+        } else if (path.equals("/login")) {
             String state = OpenIdConfiguration.randomString(50);
             Cookie cookie = new Cookie("logevents.query", req.getQueryString());
             cookie.setMaxAge(300);
@@ -150,7 +158,7 @@ public class LogEventsServlet extends HttpServlet {
             resp.sendRedirect(getOpenIdConfiguration().getAuthorizationUrl(
                     state, getServletUrl(req) + "/oauth2callback"
             ));
-        } else if (req.getPathInfo().equals("/oauth2callback")) {
+        } else if (path.equals("/oauth2callback")) {
             if (req.getParameter("error_description") != null) {
                 resp.getWriter().write("Login failed\n\n");
                 resp.getWriter().write(req.getParameter("error_description"));
@@ -178,7 +186,7 @@ public class LogEventsServlet extends HttpServlet {
             resp.sendRedirect(redirectTo);
         } else if (!authenticated(resp, req.getCookies())) {
             resp.sendError(401, "Please log in");
-        } else if (req.getPathInfo().equals("/events")) {
+        } else if (path.equals("/events")) {
             LogEventFilter filter = new LogEventFilter(req.getParameterMap());
             LogEventQueryResult queryResult = getLogEventSource().query(filter);
 
@@ -189,7 +197,7 @@ public class LogEventsServlet extends HttpServlet {
             resp.setContentType("application/json");
             resp.getWriter().write(JsonUtil.toIndentedJson(result));
         } else {
-            resp.sendError(404, "Not found " + req.getPathInfo());
+            resp.sendError(404, "Not found " + path);
         }
     }
 
@@ -201,7 +209,7 @@ public class LogEventsServlet extends HttpServlet {
         return getObserver().getOpenIdConfiguration();
     }
 
-    private Optional<String> findCookie(Cookie[] reqCookies, String name) {
+    protected Optional<String> findCookie(Cookie[] reqCookies, String name) {
         return Optional.ofNullable(reqCookies)
                 .flatMap(cookies -> Stream.of(cookies)
                         .filter(c -> c.getName().equals(name))
@@ -214,17 +222,17 @@ public class LogEventsServlet extends HttpServlet {
         return getServerUrl(req) + req.getContextPath() + req.getServletPath();
     }
 
-    Cookie createSessionCookie(Map<String, Object> idToken) {
+    protected Cookie createSessionCookie(Map<String, Object> idToken) {
         String session = "subject=" + idToken.get("sub") + "\n"
                 + "sessionTime=" + Instant.ofEpochSecond(Long.parseLong(idToken.get("iat").toString()));
         return new Cookie("logevents.session", cookieVault.encrypt(session));
     }
 
-    String decrypt(String value) throws GeneralSecurityException {
+    protected String decrypt(String value) throws GeneralSecurityException {
         return cookieVault.decrypt(value);
     }
 
-    boolean authenticated(HttpServletResponse resp, Cookie[] cookies) {
+    protected boolean authenticated(HttpServletResponse resp, Cookie[] cookies) {
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if (cookie.getName().equals("logevents.session")) {
@@ -241,7 +249,7 @@ public class LogEventsServlet extends HttpServlet {
                             }
                         }
                     } catch (GeneralSecurityException|IllegalArgumentException|ArrayIndexOutOfBoundsException e) {
-                        LogEventStatus.getInstance().addError(this, "Decoding session failed", e);
+                        LogEventStatus.getInstance().addInfo(this, "Decoding session failed, invalidating session " + e);
                     }
                     cookie.setValue("");
                     cookie.setMaxAge(0);
@@ -253,8 +261,13 @@ public class LogEventsServlet extends HttpServlet {
         return false;
     }
 
-    private void copyResource(HttpServletResponse resp, String resource) throws IOException {
-        try (Reader html = new InputStreamReader(getClass().getResourceAsStream(resource))) {
+    protected void copyResource(HttpServletResponse resp, String resource) throws IOException {
+        InputStream resourceAsStream = getClass().getResourceAsStream(resource);
+        if (resourceAsStream == null) {
+            resp.sendError(404);
+            return;
+        }
+        try (Reader html = new InputStreamReader(resourceAsStream)) {
             int c;
             while ((c = html.read()) != -1) {
                 resp.getWriter().write((char) c);
@@ -262,7 +275,7 @@ public class LogEventsServlet extends HttpServlet {
         }
     }
 
-    private String getServerUrl(HttpServletRequest req) {
+    protected String getServerUrl(HttpServletRequest req) {
         String scheme = Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
         String host = Optional.ofNullable(req.getHeader("X-Forwarded-Host")).orElse(req.getHeader("Host"));
         return scheme + "://" + host;

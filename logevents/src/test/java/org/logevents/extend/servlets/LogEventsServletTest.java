@@ -16,7 +16,6 @@ import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.openid.OpenIdConfiguration;
 import org.mockito.ArgumentCaptor;
-import org.slf4j.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -56,7 +55,6 @@ import static org.mockito.Mockito.when;
 public class LogEventsServletTest extends LogEventsServlet {
 
     private LogEventsServlet servlet = new LogEventsServlet();
-    private Logger logger = LogEventFactory.getInstance().getLogger(getClass().getName());
     private Random random = new Random();
     private HttpServletResponse response = mock(HttpServletResponse.class);
     private HttpServletRequest request = mock(HttpServletRequest.class);
@@ -282,30 +280,49 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     @Test
     public void shouldReturnOpenApiDefinition() throws IOException, ServletException {
-        when(request.getPathInfo()).thenReturn("/swagger.json");
-
-        StringWriter output = new StringWriter();
-        when(response.getWriter()).thenReturn(new PrintWriter(output));
-
-        servlet.doGet(request, response);
+        String output = requestUrl("/swagger.json");
         verify(response).setContentType("application/json");
-        Map<String, Object> openApiDefinition = JsonParser.parseObject(output.toString());
-
+        Map<String, Object> openApiDefinition = JsonParser.parseObject(output);
         assertEquals("Log Events - a simple Java Logging library",
                 JsonUtil.getField(JsonUtil.getObject(openApiDefinition, "info"), "description"));
     }
 
     @Test
     public void shouldReturnHtmlPage() throws IOException, ServletException {
-        when(request.getPathInfo()).thenReturn("/");
+        String output = requestUrl("/");
+        verify(response).setContentType("text/html");
+        assertTrue("Should be an HTML file: " + output, output.startsWith("<!DOCTYPE html>\n<html"));
+    }
 
+    @Test
+    public void shouldReturnJavaScript() throws IOException, ServletException {
+        String output = requestUrl("/logevents-common.js");
+        verify(response).setContentType("text/javascript");
+        assertTrue(output + " should contain 'function createElementWithText'",
+                output.contains("function createElementWithText"));
+    }
+
+    @Test
+    public void shouldReturnCss() throws IOException, ServletException {
+        String output = requestUrl("/logevents.css");
+        verify(response).setContentType("text/css");
+        assertTrue(output + " should contain 'nav .closeDrawer {'",
+                output.contains("nav .closeDrawer {"));
+    }
+
+    @Test
+    public void shouldGive404OnUnknownUrl() throws IOException, ServletException {
+        when(request.getPathInfo()).thenReturn("/logevents-missing.js");
+        servlet.doGet(request, response);
+        verify(response).sendError(404);
+    }
+
+    private String requestUrl(String s) throws IOException, ServletException {
+        when(request.getPathInfo()).thenReturn(s);
         StringWriter output = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(output));
-
         servlet.doGet(request, response);
-        verify(response).setContentType("text/html");
-        assertTrue("Should be an HTML file: " + output,
-                output.toString().startsWith("<!DOCTYPE html>\n<html>"));
+        return output.toString();
     }
 
     public Map<String, Object> createSessionCookieToken(long epochSecond) {

@@ -181,6 +181,15 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
     }
 
     public SSLContext createSslContext(String hostName) throws GeneralSecurityException, IOException {
+        HostKeyStore hostKeyStore = createHostKeyStore(hostName);
+        this.certificate = hostKeyStore.getCertificate();
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(hostKeyStore.getKeyManagers(), null, null);
+        return sslContext;
+    }
+
+    protected HostKeyStore createHostKeyStore(String hostName) throws GeneralSecurityException, IOException {
         HostKeyStore hostKeyStore = new HostKeyStore(
                 new File(keyStore.orElse("key-" + hostName + ".p12")),
                 keyStorePassword.orElse("")
@@ -194,25 +203,23 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
         if (!crtFile.exists()) {
             LogEventStatus.getInstance().addConfig(this, "Please import " + crtFile.getAbsolutePath()
                 + " as a root CA to access logevents console with your browser over https");
+            hostKeyStore.writeCertificate(crtFile);
         }
-        hostKeyStore.writeCertificate(crtFile);
-        this.certificate = hostKeyStore.getCertificate();
-
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(hostKeyStore.getKeyManagers(), null, null);
-        return sslContext;
+        return hostKeyStore;
     }
 
-    void httpHandler(HttpExchange exchange) throws IOException {
+    protected void httpHandler(HttpExchange exchange) throws IOException {
         try {
             String path = exchange.getRequestURI().getPath();
             if (path.equals("/logs")) {
                 exchange.getResponseHeaders().add("Location", getAuthority(exchange) + "/logs/");
                 exchange.sendResponseHeaders(302, 0);
             } else if (path.equals("/logs/")) {
-                String text = getResourceFileAsString(logEventsHtml);
-                exchange.getResponseHeaders().add("Content-type", "text/html");
-                sendResponse(exchange, text, 200);
+                serveResource(exchange, logEventsHtml, "text/html");
+            } else if (path.matches("/logs/[a-zA-Z._-]+\\.css")) {
+                serveResource(exchange, "/org/logevents" + path.substring("/logs".length()), "text/css");
+            } else if (path.matches("/logs/[a-zA-Z._-]+\\.js")) {
+                serveResource(exchange, "/org/logevents" + path.substring("/logs".length()), "text/javascript");
             } else if (path.equals("/logs/swagger.json")) {
                 Map<String, Object> api = JsonParser.parseObject(getResourceFileAsString("/org/logevents/swagger.json"));
                 HashMap<Object, Object> localServer = new HashMap<>();
@@ -264,6 +271,16 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
         } catch (Exception e) {
             logger.error("While processing {}", exchange, e);
             sendResponse(exchange, e.toString(), 500);
+        }
+    }
+
+    private void serveResource(HttpExchange exchange, String logEventsHtml, String s) throws IOException {
+        String text = getResourceFileAsString(logEventsHtml);
+        if (text != null) {
+            exchange.getResponseHeaders().add("Content-type", s);
+            sendResponse(exchange, text, 200);
+        } else {
+            sendResponse(exchange, "File not found", 404);
         }
     }
 

@@ -38,6 +38,7 @@ public class WebLogEventObserverTest {
         properties.setProperty("observer.web.openIdIssuer", "https://accounts.google.com");
         properties.setProperty("observer.web.clientId", "dummy");
         properties.setProperty("observer.web.clientSecret", "dummy");
+        properties.setProperty("observer.web.requiredClaim.email", "my@example.com");
 
         WebLogEventObserver observer = new WebLogEventObserver(properties, "observer.web");
         LogEvent logEvent = new LogEventSampler().build();
@@ -59,6 +60,7 @@ public class WebLogEventObserverTest {
         properties.setProperty("observer.web.openIdIssuer", "https://accounts.google.com");
         properties.setProperty("observer.web.clientId", "dummy");
         properties.setProperty("observer.web.clientSecret", "dummy");
+        properties.setProperty("observer.web.requiredClaim.email", "my@example.com");
 
         WebLogEventObserver observer = new WebLogEventObserver(properties, "observer.web");
         LogEvent logEvent = new LogEventSampler().build();

@@ -179,7 +179,7 @@ public class Configuration {
         return "observer.*." + key;
     }
 
-    private String fullKey(String key) {
+    public String fullKey(String key) {
         return prefix + "." + key;
     }
 
