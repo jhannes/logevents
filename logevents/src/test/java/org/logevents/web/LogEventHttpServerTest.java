@@ -48,7 +48,7 @@ public class LogEventHttpServerTest {
 
     @Before
     public void setUp() {
-        logEventHttpServer.setupCookieVault();
+        logEventHttpServer.setCookieVault(new CryptoVault(CryptoVault.randomString(50)));
         logEventHttpServer.setLogEventSource(logEventSource);
 
         when(mockExchange.getRequestHeaders()).thenReturn(requestHeaders);
@@ -79,7 +79,7 @@ public class LogEventHttpServerTest {
     public void shouldReturnLogEventFacets() throws IOException, URISyntaxException {
         Map<String, Object> sessionData = new HashMap<>();
         sessionData.put("sessionTime", Instant.now().toString());
-        String encrypted = logEventHttpServer.getSessionVault().encrypt(JsonUtil.toIndentedJson(sessionData));
+        String encrypted = logEventHttpServer.getCookieVault().encrypt(JsonUtil.toIndentedJson(sessionData));
         requestHeaders.set("Cookie", "logevents.session=" + encrypted);
 
         when(mockExchange.getRequestURI()).thenReturn(new URI("http://localhost/logs/events"));
@@ -94,7 +94,7 @@ public class LogEventHttpServerTest {
     public void shouldFilterLogEvents() throws URISyntaxException, IOException {
         Map<String, Object> sessionData = new HashMap<>();
         sessionData.put("sessionTime", Instant.now().toString());
-        String encrypted = logEventHttpServer.getSessionVault().encrypt(JsonUtil.toIndentedJson(sessionData));
+        String encrypted = logEventHttpServer.getCookieVault().encrypt(JsonUtil.toIndentedJson(sessionData));
         requestHeaders.set("Cookie", "logevents.session=" + encrypted);
 
         LogEvent includedEvent = new LogEventSampler().withMarker(MarkerFactory.getMarker("TEST")).build();
@@ -158,7 +158,7 @@ public class LogEventHttpServerTest {
         if (semiPos < 0) semiPos = cookie.length();
 
         String cookieValue = cookie.substring(equalsPos + 1, semiPos);
-        Map<String, Object> sessionInfo = JsonParser.parseObject(logEventHttpServer.getSessionVault().decrypt(cookieValue));
+        Map<String, Object> sessionInfo = JsonParser.parseObject(logEventHttpServer.getCookieVault().decrypt(cookieValue));
         assertEquals(Instant.ofEpochSecond(iat),
                 Instant.parse(sessionInfo.get("sessionTime").toString()));
     }

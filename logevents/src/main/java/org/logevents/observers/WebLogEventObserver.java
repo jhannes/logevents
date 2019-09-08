@@ -5,6 +5,7 @@ import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.util.openid.OpenIdConfiguration;
+import org.logevents.web.CryptoVault;
 import org.logevents.web.LogEventHttpServer;
 
 import java.security.cert.X509Certificate;
@@ -53,9 +54,9 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
 
     private final MessageFormatter messageFormatter;
     private final LogEventSource source;
+    private CryptoVault cookieVault;
     private LogEventHttpServer logEventServer;
 
-    private Optional<String> cookieEncryptionKey = Optional.empty();
     private final OpenIdConfiguration openIdConfiguration;
     private String logEventsHtml = "/org/logevents/logevents.html";
 
@@ -72,7 +73,8 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         configureFilter(configuration);
         this.logEventsHtml = configuration.optionalString("logEventsHtml")
                 .orElse("/org/logevents/logevents.html");
-        this.cookieEncryptionKey = configuration.optionalString("cookieEncryptionKey");
+        cookieVault = new CryptoVault(configuration.optionalString("cookieEncryptionKey")
+                .orElseGet(() -> CryptoVault.randomString(40)));
         Optional<Integer> httpPort = configuration.optionalInt("httpPort");
         Optional<Integer> httpsPort = configuration.optionalInt("httpsPort");
         if (httpPort.isPresent() || httpsPort.isPresent()) {
@@ -86,12 +88,14 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         this.openIdConfiguration = openIdConfiguration;
         this.messageFormatter = messageFormatter;
         this.source = source;
+        cookieVault = new CryptoVault(CryptoVault.randomString(40));
     }
 
     public WebLogEventObserver() {
         messageFormatter = new MessageFormatter();
         openIdConfiguration = null;
         source = new LogEventBuffer();
+        cookieVault = new CryptoVault(CryptoVault.randomString(40));
     }
 
     protected LogEventHttpServer createHttpServer(Configuration configuration, Optional<Integer> httpPort, Optional<Integer> httpsPort) {
@@ -102,15 +106,15 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         logEventServer.setLogEventsHtml(logEventsHtml);
         logEventServer.setOpenIdConfiguration(openIdConfiguration);
         logEventServer.setLogEventSource(source);
-        logEventServer.setCookieEncryptionKey(cookieEncryptionKey);
+        logEventServer.setCookieVault(cookieVault);
         logEventServer.setKeyStore(configuration.optionalString("keyStore"));
         logEventServer.setKeyStorePassword(configuration.optionalString("keyStorePassword"));
         logEventServer.setHostKeyPassword(configuration.optionalString("hostKeyPassword"));
         return logEventServer;
     }
 
-    public Optional<String> getCookieEncryptionKey() {
-        return cookieEncryptionKey;
+    public CryptoVault getCookieVault() {
+        return cookieVault;
     }
 
     @Override

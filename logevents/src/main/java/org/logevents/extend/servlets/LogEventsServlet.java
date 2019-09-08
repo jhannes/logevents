@@ -195,11 +195,11 @@ public class LogEventsServlet extends HttpServlet {
         resp.sendRedirect(redirectTo);
     }
 
-    private LogEventSource getLogEventSource() throws ServletException {
+    private LogEventSource getLogEventSource() {
         return getObserver().getLogEventSource();
     }
 
-    protected OpenIdConfiguration getOpenIdConfiguration() throws ServletException {
+    protected OpenIdConfiguration getOpenIdConfiguration() {
         return getObserver().getOpenIdConfiguration();
     }
 
@@ -231,20 +231,8 @@ public class LogEventsServlet extends HttpServlet {
     }
 
     private synchronized CryptoVault getCookieVault() {
-        getObserver().getCookieEncryptionKey().ifPresent(k -> {
-            if (!k.equals(cookieVaultEncryptionKey)) {
-                cookieVaultEncryptionKey = k;
-                cookieVault = null;
-            }
-        });
-        if (cookieVault == null) {
-            this.cookieVault = new CryptoVault(cookieVaultEncryptionKey);
-        }
-        return cookieVault;
+        return getObserver().getCookieVault();
     }
-
-    private String cookieVaultEncryptionKey = randomString(40);
-    private CryptoVault cookieVault;
 
     protected boolean authenticated(HttpServletResponse resp, Cookie[] cookies) {
         if (cookies != null) {

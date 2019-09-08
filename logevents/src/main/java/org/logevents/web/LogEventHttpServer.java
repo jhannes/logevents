@@ -32,8 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.logevents.web.CryptoVault.randomString;
-
 // TODO state
 /**
  * The simplest way to expose your logs in your web browser, LogEventHttpServer runs an embedded http server
@@ -115,8 +113,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
     private String logEventsHtml = "/org/logevents/logevents.html";
     private OpenIdConfiguration openIdConfiguration;
     private LogEventSource logEventSource;
-    private Optional<String> cookieEncryptionKey = Optional.empty();
-    private CryptoVault sessionVault;
+    private CryptoVault cookieVault;
     private Optional<String> keyStore = Optional.empty();
     private Optional<String> keyStorePassword = Optional.empty();
     private Optional<String> hostKeyPassword = Optional.empty();
@@ -170,16 +167,11 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
         } catch (IOException e) {
             LogEventStatus.getInstance().addError(this, "Failed to start server", e);
         }
-        setupCookieVault();
     }
 
     public String getUrl() {
         String scheme = httpServer instanceof HttpsServer ? "https" : "http";
         return scheme + "://" + hostname + ":" + httpServer.getAddress().getPort() + "/logs";
-    }
-
-    void setupCookieVault() {
-        this.sessionVault = new CryptoVault(cookieEncryptionKey.orElseGet(() -> randomString(40)));
     }
 
     public SSLContext createSslContext(String hostName) throws GeneralSecurityException, IOException {
@@ -296,7 +288,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
         session.put("subject", idToken.get("sub"));
         Instant sessionTime = Instant.ofEpochSecond(Long.parseLong(idToken.get("iat").toString()));
         session.put("sessionTime", sessionTime.toString());
-        return "logevents.session=" + sessionVault.encrypt(JsonUtil.toIndentedJson(session));
+        return "logevents.session=" + cookieVault.encrypt(JsonUtil.toIndentedJson(session));
     }
 
     private boolean isAuthenticated(HttpExchange exchange) {
@@ -305,7 +297,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
             return false;
         }
         try {
-            Map<String, Object> session = JsonParser.parseObject(sessionVault.decrypt(sessionCookie.get()));
+            Map<String, Object> session = JsonParser.parseObject(cookieVault.decrypt(sessionCookie.get()));
             if (session.containsKey("sessionTime")) {
                 Instant sessionTime = Instant.parse(session.get("sessionTime").toString());
                 if (Instant.now().isBefore(sessionTime.plusSeconds(60*60))) {
@@ -331,12 +323,12 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
         this.httpsPort = httpsPort;
     }
 
-    public CryptoVault getSessionVault() {
-        return sessionVault;
+    public CryptoVault getCookieVault() {
+        return cookieVault;
     }
 
-    public void setCookieEncryptionKey(Optional<String> cookieEncryptionKey) {
-        this.cookieEncryptionKey = cookieEncryptionKey;
+    public void setCookieVault(CryptoVault cookieVault) {
+        this.cookieVault = cookieVault;
     }
 
     public void setKeyStore(Optional<String> keyStore) {
