@@ -5,16 +5,16 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.security.GeneralSecurityException;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.logevents.web.CryptoVault.randomString;
 
 public class CryptoVaultTest {
 
     @Test
     public void shouldDecryptEncryptedValue() throws GeneralSecurityException {
-        CryptoVault vault = new CryptoVault(Optional.empty());
+        CryptoVault vault = new CryptoVault(randomString(40));
         String clearString = "This is a test";
         assertEquals(clearString, vault.decrypt(vault.encrypt(clearString)));
     }
@@ -23,8 +23,8 @@ public class CryptoVaultTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void shouldThrowWhenValueIsTampered() throws GeneralSecurityException {
-        CryptoVault vault = new CryptoVault(Optional.empty());
+    public void shouldThrowWhenValueIsTampered() {
+        CryptoVault vault = new CryptoVault(randomString(40));
         String clearText = "This is a test with different characters that will be encrypted";
         String cryptoText = vault.encrypt(clearText);
         try {
@@ -36,9 +36,9 @@ public class CryptoVaultTest {
 
     @Test
     public void shouldThrowOnWrongKey() throws GeneralSecurityException {
-        CryptoVault vault = new CryptoVault(Optional.empty());
+        CryptoVault vault = new CryptoVault(randomString(40));
         String cryptoText = vault.encrypt("This is a test");
-        CryptoVault otherVault = new CryptoVault(Optional.empty());
+        CryptoVault otherVault = new CryptoVault(randomString(40));
         expectedException.expect(GeneralSecurityException.class);
         otherVault.decrypt(cryptoText);
     }

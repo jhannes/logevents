@@ -3,3 +3,11 @@ observer.servlet.clientId=...
 observer.servlet.clientSecret=...
 observer.servlet.requiredClaim.email=
 observer.servlet.requiredClaim.email_verified=true
+
+observer.servlet.source=DatabaseLogEventObserver
+observer.servlet.source.jdbcUrl=jdbc:h2:mem:.;DB_CLOSE_DELAY=-1
+observer.servlet.source.jdbcUsername=sa
+
+root=DEBUG file,console,servlet
+
+logEvents.status=INFO

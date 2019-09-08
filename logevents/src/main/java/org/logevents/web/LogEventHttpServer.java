@@ -32,6 +32,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.logevents.web.CryptoVault.randomString;
+
 // TODO state
 /**
  * The simplest way to expose your logs in your web browser, LogEventHttpServer runs an embedded http server
@@ -177,7 +179,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
     }
 
     void setupCookieVault() {
-        this.sessionVault = new CryptoVault(cookieEncryptionKey);
+        this.sessionVault = new CryptoVault(cookieEncryptionKey.orElseGet(() -> randomString(40)));
     }
 
     public SSLContext createSslContext(String hostName) throws GeneralSecurityException, IOException {

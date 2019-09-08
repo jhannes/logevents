@@ -141,16 +141,22 @@ public class LogEventFactory implements ILoggerFactory {
     }
 
     public LogEventObserver getObserver(String observerName) {
-        if (!observers.containsKey(observerName)) {
-            try {
-                observers.put(observerName, observerSuppliers.computeIfAbsent(observerName, k -> {
-                    throw new LogEventConfigurationException("Unknown observer <" + k + ">");
-                }).get());
-            } catch (RuntimeException e) {
-                LogEventStatus.getInstance().addFatal(this, "Failed to load " + observerName, e);
-                return null;
-            }
+        try {
+            return tryGetObserver(observerName);
+        } catch (RuntimeException e) {
+            LogEventStatus.getInstance().addFatal(this, "Failed to load " + observerName, e);
+            return null;
         }
+    }
+
+    public LogEventObserver tryGetObserver(String observerName) {
+        if (observers.containsKey(observerName)) {
+            return observers.get(observerName);
+        }
+        if (!observerSuppliers.containsKey(observerName)) {
+            throw new LogEventConfigurationException("Unknown observer <" + observerName + ">");
+        }
+        observers.put(observerName, observerSuppliers.get(observerName).get());
         return observers.get(observerName);
     }
 

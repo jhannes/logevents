@@ -1,7 +1,6 @@
 package org.logevents.extend.servlets;
 
 import org.logevents.LogEventFactory;
-import org.logevents.config.LogEventConfigurationException;
 import org.logevents.observers.LogEventSource;
 import org.logevents.observers.WebLogEventObserver;
 import org.logevents.query.LogEventFilter;
@@ -34,6 +33,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.logevents.web.CryptoVault.randomString;
 
 /**
  * A servlet that exposes log information to administrative users via a built in web page. To use, you need to:
@@ -117,17 +118,6 @@ public class LogEventsServlet extends HttpServlet {
     private static final Marker AUDIT = MarkerFactory.getMarker("AUDIT");
     private static final String LOGEVENTS_API = "/org/logevents/swagger.json";
 
-    private CryptoVault cookieVault;
-
-    @Override
-    public void init() throws ServletException {
-        setupCookieVault(getObserver().getCookieEncryptionKey());
-    }
-
-    public void setupCookieVault(Optional<String> encryptionKey) {
-        this.cookieVault = new CryptoVault(encryptionKey);
-    }
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
         String path = req.getPathInfo();
@@ -159,31 +149,7 @@ public class LogEventsServlet extends HttpServlet {
                     state, getServletUrl(req) + "/oauth2callback"
             ));
         } else if (path.equals("/oauth2callback")) {
-            if (req.getParameter("error_description") != null) {
-                resp.getWriter().write("Login failed\n\n");
-                resp.getWriter().write(req.getParameter("error_description"));
-                return;
-            }
-
-            Map<String, Object> idToken = getOpenIdConfiguration()
-                    .fetchIdToken(req.getParameter("code"), getServletUrl(req) + "/oauth2callback");
-
-            if (!getOpenIdConfiguration().isAuthorizedToken(idToken)) {
-                logger.warn(AUDIT, "Unknown user tried to log in {}", idToken);
-                resp.sendError(403, "Unauthorized");
-                return;
-            }
-
-
-            logger.warn(AUDIT, "User logged in {}", idToken);
-            LogEventStatus.getInstance().addConfig(this, "User logged in " + idToken);
-
-            resp.addCookie(createSessionCookie(idToken));
-            String location = req.getContextPath() + req.getServletPath() + "/";
-            String redirectTo = findCookie(req.getCookies(), "logevents.query")
-                .map(query -> location + "?" + query)
-                .orElse(location);
-            resp.sendRedirect(redirectTo);
+            establishSession(req, resp);
         } else if (!authenticated(resp, req.getCookies())) {
             resp.sendError(401, "Please log in");
         } else if (path.equals("/events")) {
@@ -199,6 +165,34 @@ public class LogEventsServlet extends HttpServlet {
         } else {
             resp.sendError(404, "Not found " + path);
         }
+    }
+
+    protected void establishSession(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+        if (req.getParameter("error_description") != null) {
+            resp.getWriter().write("Login failed\n\n");
+            resp.getWriter().write(req.getParameter("error_description"));
+            return;
+        }
+
+        Map<String, Object> idToken = getOpenIdConfiguration()
+                .fetchIdToken(req.getParameter("code"), getServletUrl(req) + "/oauth2callback");
+
+        if (!getOpenIdConfiguration().isAuthorizedToken(idToken)) {
+            logger.warn(AUDIT, "Unknown user tried to log in {}", idToken);
+            resp.sendError(403, "Unauthorized");
+            return;
+        }
+
+
+        logger.warn(AUDIT, "User logged in {}", idToken);
+        LogEventStatus.getInstance().addConfig(this, "User logged in " + idToken);
+
+        resp.addCookie(createSessionCookie(idToken));
+        String location = req.getContextPath() + req.getServletPath() + "/";
+        String redirectTo = findCookie(req.getCookies(), "logevents.query")
+            .map(query -> location + "?" + query)
+            .orElse(location);
+        resp.sendRedirect(redirectTo);
     }
 
     private LogEventSource getLogEventSource() throws ServletException {
@@ -225,12 +219,32 @@ public class LogEventsServlet extends HttpServlet {
     protected Cookie createSessionCookie(Map<String, Object> idToken) {
         String session = "subject=" + idToken.get("sub") + "\n"
                 + "sessionTime=" + Instant.ofEpochSecond(Long.parseLong(idToken.get("iat").toString()));
-        return new Cookie("logevents.session", cookieVault.encrypt(session));
+        return new Cookie("logevents.session", encrypt(session));
+    }
+
+    private String encrypt(String session) {
+        return getCookieVault().encrypt(session);
     }
 
     protected String decrypt(String value) throws GeneralSecurityException {
-        return cookieVault.decrypt(value);
+        return getCookieVault().decrypt(value);
     }
+
+    private synchronized CryptoVault getCookieVault() {
+        getObserver().getCookieEncryptionKey().ifPresent(k -> {
+            if (!k.equals(cookieVaultEncryptionKey)) {
+                cookieVaultEncryptionKey = k;
+                cookieVault = null;
+            }
+        });
+        if (cookieVault == null) {
+            this.cookieVault = new CryptoVault(cookieVaultEncryptionKey);
+        }
+        return cookieVault;
+    }
+
+    private String cookieVaultEncryptionKey = randomString(40);
+    private CryptoVault cookieVault;
 
     protected boolean authenticated(HttpServletResponse resp, Cookie[] cookies) {
         if (cookies != null) {
@@ -281,12 +295,8 @@ public class LogEventsServlet extends HttpServlet {
         return scheme + "://" + host;
     }
 
-    public WebLogEventObserver getObserver() throws ServletException {
-        try {
-            return (WebLogEventObserver) LogEventFactory.getInstance().getObserver("servlet");
-        } catch (LogEventConfigurationException e) {
-            throw new ServletException("logevents.properties must contain observer.servlet=WebLogEventObserver to use " + this);
-        }
+    public WebLogEventObserver getObserver() {
+        return (WebLogEventObserver) LogEventFactory.getInstance().tryGetObserver("servlet");
     }
 
 }

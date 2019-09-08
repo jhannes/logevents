@@ -3,6 +3,8 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
+import org.logevents.extend.servlets.JsonExceptionFormatter;
+import org.logevents.extend.servlets.JsonMessageFormatter;
 import org.logevents.query.JsonLogEventFormatter;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventQueryResult;
@@ -16,7 +18,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -25,15 +26,16 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
      * In order to survive reload of configuration, it's useful to have a static message buffer
      */
     private final static EnumMap<Level, CircularBuffer<LogEvent>> messages = new EnumMap<>(Level.class);
+    static {
+        for (Level level : Level.values()) {
+            messages.put(level, new CircularBuffer<>(2000));
+        }
+    }
 
     private final JsonLogEventFormatter jsonFormatter;
 
-    public LogEventBuffer(int capacity) {
-        this(capacity, Configuration.calculateNodeName(), Configuration.calculateApplicationName());
-    }
-
     public LogEventBuffer() {
-        this(2000);
+        this(Configuration.calculateNodeName(), Configuration.calculateApplicationName(), new JsonMessageFormatter(), new JsonExceptionFormatter());
     }
 
     public LogEventBuffer(Properties properties, String prefix) {
@@ -41,26 +43,25 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
     }
 
     public LogEventBuffer(Configuration config) {
-        this(config.optionalInt("capacity").orElse(2000), config.getNodeName(), config.getApplicationName());
+        this(
+                config.getNodeName(),
+                config.getApplicationName(),
+                config.createInstanceWithDefault("jsonMessageFormatter", JsonMessageFormatter.class),
+                config.createInstanceWithDefault("exceptionFormatter", JsonExceptionFormatter.class));
     }
 
-    public LogEventBuffer(int capacity, String nodeName, String applicationName) {
-        this.jsonFormatter = new JsonLogEventFormatter(nodeName, applicationName);
-        for (Level level : Level.values()) {
-            messages.put(level, new CircularBuffer<>(capacity));
-        }
+    public LogEventBuffer(String nodeName, String applicationName, JsonMessageFormatter jsonMessageFormatter, JsonExceptionFormatter exceptionFormatter) {
+        this.jsonFormatter = new JsonLogEventFormatter(nodeName, applicationName, jsonMessageFormatter, exceptionFormatter);
     }
 
     private Collection<LogEvent> filter(Level threshold, Instant start, Instant end) {
-        List<LogEvent> logEvents = new ArrayList<>();
-        for (Map.Entry<Level, ? extends Collection<LogEvent>> entry : messages.entrySet()) {
-            if (entry.getKey().compareTo(threshold) <= 0) {
-                // TODO It may be worth the effort to implement a binary search here
-                entry.getValue().stream()
-                        .filter(event -> event.getInstant().isAfter(start) && event.getInstant().isBefore(end))
-                        .forEach(logEvents::add);
-            }
-        }
+        List<LogEvent> allEvents = new ArrayList<>();
+        messages.entrySet().stream()
+                .filter(level -> level.getKey().compareTo(threshold) <= 0)
+                .forEach(level -> allEvents.addAll(level.getValue()));
+        List<LogEvent> logEvents = allEvents.stream()
+                .filter(event -> event.getInstant().isAfter(start) && event.getInstant().isBefore(end))
+                .collect(Collectors.toList());
         logEvents.sort(Comparator.comparing(LogEvent::getInstant));
         return logEvents;
     }

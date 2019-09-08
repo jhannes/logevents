@@ -35,7 +35,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.function.Supplier;
@@ -58,11 +57,6 @@ public class LogEventsServletTest extends LogEventsServlet {
     private Random random = new Random();
     private HttpServletResponse response = mock(HttpServletResponse.class);
     private HttpServletRequest request = mock(HttpServletRequest.class);
-
-    @Before
-    public void initServlet() throws ServletException {
-        servlet.setupCookieVault(Optional.empty());
-    }
 
     @Before
     public void setupRequest() {
@@ -126,8 +120,6 @@ public class LogEventsServletTest extends LogEventsServlet {
                 .withThrowable(new IOException()).build();
         buffer.logEvent(logEvent);
 
-        servlet.setupCookieVault(Optional.empty());
-
         when(request.getPathInfo()).thenReturn("/events");
         Map<String, Object> idToken = createSessionCookieToken(Instant.now().getEpochSecond());
         when(request.getCookies()).thenReturn(new Cookie[] { servlet.createSessionCookie(idToken)});
@@ -166,7 +158,6 @@ public class LogEventsServletTest extends LogEventsServlet {
         HashMap<String, Supplier<? extends LogEventObserver>> observers = new HashMap<>();
         observers.put("servlet", () -> observer);
         LogEventFactory.getInstance().setObservers(observers);
-        servlet.setupCookieVault(Optional.empty());
 
         when(request.getPathInfo()).thenReturn("/login");
 
@@ -206,7 +197,6 @@ public class LogEventsServletTest extends LogEventsServlet {
         LogEventFactory.getInstance().setObservers(observers);
 
         LogEventsServlet servlet = new LogEventsServlet();
-        servlet.setupCookieVault(Optional.empty());
 
         servlet.doGet(request, response);
 
@@ -246,7 +236,6 @@ public class LogEventsServletTest extends LogEventsServlet {
                 return openIdConfiguration;
             }
         };
-        servlet.setupCookieVault(Optional.empty());
 
         when(request.getPathInfo()).thenReturn("/oauth2callback");
         when(request.getParameter("code")).thenReturn(String.valueOf(random.nextInt()));
