@@ -27,6 +27,10 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
      */
     private final static EnumMap<Level, CircularBuffer<LogEvent>> messages = new EnumMap<>(Level.class);
     static {
+        clear();
+    }
+
+    public static void clear() {
         for (Level level : Level.values()) {
             messages.put(level, new CircularBuffer<>(2000));
         }
@@ -78,3 +82,4 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
         return new LogEventQueryResult(summary, allEvents.stream().filter(filter).map(jsonFormatter).collect(Collectors.toList()));
     }
 }
+

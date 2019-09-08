@@ -29,6 +29,9 @@ public class LogEventFilterTest {
     private final Marker MY_MARKER = MarkerFactory.getMarker("MY_MARKER");
     private final Marker OTHER_MARKER = MarkerFactory.getMarker("OTHER_MARKER");
     private LogEventBuffer logsByLevel = new LogEventBuffer();
+    {
+        LogEventBuffer.clear();
+    }
 
     @Test
     public void shouldFilterByThread() {

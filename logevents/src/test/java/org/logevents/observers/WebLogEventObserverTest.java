@@ -33,6 +33,7 @@ public class WebLogEventObserverTest {
 
     @Test
     public void shouldFetchLogEvents() throws IOException, GeneralSecurityException {
+        LogEventBuffer.clear();
         Properties properties = new Properties();
         properties.setProperty("observer.web.httpsPort", "0");
         properties.setProperty("observer.web.openIdIssuer", "https://accounts.google.com");
