@@ -187,7 +187,7 @@ public abstract class AbstractExceptionFormatter {
     }
 
     /**
-     * Links to <code>https://github.com/{project}/blob/{tag}/src/main/java/{filename}#L{line}</code>
+     * Links to <code>https://github.com/{project}/blob/{tag}{/module}/src/main/java/{filename}#L{line}</code>
      */
     public void addPackageGithubLocation(String sourcePackages, String project, Optional<String> tag) {
         String url = project.startsWith("https://") ? project : "https://github.com/" + project;
@@ -197,7 +197,15 @@ public abstract class AbstractExceptionFormatter {
         if (!url.endsWith("/")) {
             url += "/";
         }
-        String pattern = url + "blob/" + tag.orElse("master") + "/src/main/java/%s#L%s";
+        String module = "";
+        int pathStarts = url.indexOf('/', "https://".length())+1;
+        String[] pathSegments = url.substring(pathStarts).split("/");
+        if (pathSegments.length > 2) {
+            url = url.substring(0, pathStarts) + pathSegments[0] + "/" + pathSegments[1] + "/";
+            module = "/" + pathSegments[2];
+        }
+
+        String pattern = url + "blob/" + tag.orElse("master") + module + "/src/main/java/%s#L%s";
         addPackageUrlPattern(sourcePackages,
                 ste -> String.format(pattern, fileName(ste), ste.getLineNumber()));
     }

@@ -5,6 +5,7 @@ import org.logevents.config.Configuration;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -238,6 +239,20 @@ public class ExceptionFormatterTest {
                 "https://github.com/jhannes/logevents/blob/master/src/main/java/org/logevents/formatting/ExceptionFormatterTest.java#L235",
                 sourceLink);
     }
+
+    @Test
+    public void shouldLinkToGithubModule() {
+        ExceptionFormatter formatter = new ExceptionFormatter();
+        formatter.addPackageGithubLocation("org.logevents", "jhannes/logevents/logevents", Optional.empty());
+
+        StackTraceElement stackFrame = new StackTraceElement(getClass().getName(), "shouldLinkToGithubModule", "ExceptionFormatterTest.java", 248);
+        String sourceLink = formatter.getSourceLink(stackFrame);
+        assertEquals(
+                "https://github.com/jhannes/logevents/blob/master/logevents/src/main/java/org/logevents/formatting/ExceptionFormatterTest.java#L248",
+                sourceLink);
+    }
+
+
 
 
     @Test
