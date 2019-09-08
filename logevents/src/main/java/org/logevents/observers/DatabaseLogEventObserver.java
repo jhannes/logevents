@@ -85,6 +85,8 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         this.nodeName = configuration.getNodeName();
         this.applicationName = configuration.getApplicationName();
         this.messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
+        this.jsonMessageFormatter = configuration.createInstanceWithDefault("jsonMessageFormatter", JsonMessageFormatter.class);
+        this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", JsonExceptionFormatter.class);
         configuration.checkForUnknownFields();
 
         LogEventStatus.getInstance().addDebug(this, "Connecting to " + jdbcUrl + " as " + jdbcUsername);
@@ -328,8 +330,8 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     }
 
     private final MessageFormatter messageFormatter;
-    private final JsonMessageFormatter jsonMessageFormatter = new JsonMessageFormatter();
-    private final JsonExceptionFormatter exceptionFormatter = new JsonExceptionFormatter();
+    private final JsonMessageFormatter jsonMessageFormatter;
+    private final JsonExceptionFormatter exceptionFormatter;
 
     @Override
     public LogEventQueryResult query(LogEventFilter filter) {

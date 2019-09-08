@@ -2,7 +2,6 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.extend.servlets.JsonExceptionFormatter;
 import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.util.openid.OpenIdConfiguration;
@@ -58,7 +57,6 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
 
     private Optional<String> cookieEncryptionKey = Optional.empty();
     private final OpenIdConfiguration openIdConfiguration;
-    private JsonExceptionFormatter exceptionFormatter = new JsonExceptionFormatter();
     private String logEventsHtml = "/org/logevents/logevents.html";
 
     public WebLogEventObserver(Properties properties, String prefix) {
@@ -74,7 +72,6 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
         configureFilter(configuration);
         this.logEventsHtml = configuration.optionalString("logEventsHtml")
                 .orElse("/org/logevents/logevents.html");
-        this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", JsonExceptionFormatter.class);
         this.cookieEncryptionKey = configuration.optionalString("cookieEncryptionKey");
         Optional<Integer> httpPort = configuration.optionalInt("httpPort");
         Optional<Integer> httpsPort = configuration.optionalInt("httpsPort");
@@ -131,10 +128,6 @@ public class WebLogEventObserver extends FilteredLogEventObserver {
 
     public MessageFormatter getMessageFormatter() {
         return messageFormatter;
-    }
-
-    public JsonExceptionFormatter getExceptionFormatter() {
-        return exceptionFormatter;
     }
 
     public String getLogEventsHtml() {

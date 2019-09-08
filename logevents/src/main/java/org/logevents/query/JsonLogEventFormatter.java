@@ -18,14 +18,16 @@ import java.util.stream.Stream;
 
 public class JsonLogEventFormatter implements Function<LogEvent, Map<String, Object>> {
     private final MessageFormatter messageFormatter = new MessageFormatter();
-    private final JsonExceptionFormatter exceptionFormatter = new JsonExceptionFormatter();
-    private final JsonMessageFormatter jsonFormatter = new JsonMessageFormatter();
+    private final JsonExceptionFormatter exceptionFormatter;
+    private final JsonMessageFormatter jsonFormatter;
     private String nodeName;
     private String applicationName;
 
-    public JsonLogEventFormatter(String nodeName, String applicationName) {
+    public JsonLogEventFormatter(String nodeName, String applicationName, JsonMessageFormatter jsonFormatter, JsonExceptionFormatter exceptionFormatter) {
         this.nodeName = nodeName;
         this.applicationName = applicationName;
+        this.exceptionFormatter = exceptionFormatter;
+        this.jsonFormatter = jsonFormatter;
     }
 
     @Override
