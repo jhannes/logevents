@@ -101,6 +101,7 @@
                 <version>2.5.3</version>
                 <configuration>
                     <preparationGoals>javadoc</preparationGoals>
+                    <releaseProfiles>release</releaseProfiles>
                 </configuration>
             </plugin>
         </plugins>
