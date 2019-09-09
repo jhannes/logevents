@@ -9,7 +9,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -18,7 +18,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Optional;
 
@@ -57,7 +57,7 @@ public class LogEventHttpServerHttpTest {
     public void shouldGenerateLoginRedirectOnHttps() throws IOException, GeneralSecurityException {
         server.setHttpsPort(java.util.Optional.of(0));
         server.setHostname("localhost");
-        server.setKeyStore(Optional.of("target/test-cert.p12"));
+        server.setKeyStore(Optional.of(new File("target/test-cert.p12").getAbsolutePath()));
         server.setOpenIdConfiguration(new OpenIdConfiguration(null, "the-client", null) {
             @Override
             protected String getAuthorizationEndpoint() {
@@ -67,7 +67,7 @@ public class LogEventHttpServerHttpTest {
         server.start();
 
         HttpsURLConnection connection = (HttpsURLConnection) new URL(server.getUrl() + "/login").openConnection();
-        SSLContext sslContext = createSslContext("key-localhost.crt");
+        SSLContext sslContext = createSslContext(server.getCertificate());
         connection.setSSLSocketFactory(sslContext.getSocketFactory());
         connection.setInstanceFollowRedirects(false);
 
@@ -95,19 +95,16 @@ public class LogEventHttpServerHttpTest {
         return NetUtils.readAsString(connection.getInputStream());
     }
 
-    SSLContext createSslContext(String rootCaFile) throws GeneralSecurityException, IOException {
+    SSLContext createSslContext(X509Certificate rootCa) throws GeneralSecurityException, IOException {
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, createTrustManagers(rootCaFile), null);
+        sslContext.init(null, createTrustManagers(rootCa), null);
         return sslContext;
     }
 
-    private TrustManager[] createTrustManagers(String rootCaFile) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+    private TrustManager[] createTrustManagers(X509Certificate rootCertificate) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
         KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
         trustStore.load(null, null);
-        try (FileInputStream inStream = new FileInputStream(rootCaFile)) {
-            trustStore.setCertificateEntry("ca",
-                    CertificateFactory.getInstance("X.509").generateCertificate(inStream));
-        }
+        trustStore.setCertificateEntry("ca", rootCertificate);
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(trustStore);
         return trustManagerFactory.getTrustManagers();
