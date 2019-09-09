@@ -52,6 +52,11 @@ public class ApplicationInsightsLogEventObserver extends FilteredLogEventObserve
     }
 
     @Override
+    protected boolean shouldLogEvent(LogEvent logEvent) {
+        return telemetryClient != null && super.shouldLogEvent(logEvent);
+    }
+
+    @Override
     protected void doLogEvent(LogEvent event) {
         Telemetry telemetry;
         if (event.getThrowable() != null) {
