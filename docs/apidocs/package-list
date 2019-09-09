@@ -1,5 +1,6 @@
 org.logevents
 org.logevents.config
+org.logevents.extend.azure
 org.logevents.extend.junit
 org.logevents.extend.servlets
 org.logevents.formatting
