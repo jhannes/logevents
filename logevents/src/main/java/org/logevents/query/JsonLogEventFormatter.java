@@ -44,7 +44,7 @@ public class JsonLogEventFormatter implements Function<LogEvent, Map<String, Obj
         jsonEvent.put("messageTemplate", event.getMessage());
         jsonEvent.put("message", jsonFormatter.format(event.getMessage(), event.getArgumentArray()));
         jsonEvent.put("marker", Optional.ofNullable(event.getMarker()).map(Marker::getName).orElse(null));
-        jsonEvent.put("arguments", Stream.of(event.getArgumentArray()).map(Object::toString).collect(Collectors.toList()));
+        jsonEvent.put("arguments", Stream.of(event.getArgumentArray()).map(o -> o != null ? o.toString() : null).collect(Collectors.toList()));
         jsonEvent.put("mdc", formatMdc(event));
         jsonEvent.put("node", this.nodeName);
         jsonEvent.put("application", this.applicationName);

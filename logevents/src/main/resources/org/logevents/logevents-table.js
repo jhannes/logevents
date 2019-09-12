@@ -5,7 +5,7 @@ function showLogEventTable() {
             const currentFilter = new URLSearchParams(window.location.search.substr(1));
             const time = currentFilter.get("time");
             const interval = currentFilter.get("interval");
-            const level = currentFilter.get("level");
+            const level = currentFilter.get("level") || "DEBUG";
             const timezoneOffset = currentFilter.get("timezoneOffset");
             li.innerHTML = `<strong>${header}:</strong>
                 <a href="?time=${time}&interval=${interval}&level=${level}&${filter}=${text}&timezoneOffset=${timezoneOffset}"

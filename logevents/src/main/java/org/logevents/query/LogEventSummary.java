@@ -55,8 +55,11 @@ public class LogEventSummary {
     public void add(LogEvent event) {
         this.loggers.add(event.getLoggerName());
         this.threads.add(event.getThreadName());
-        for (String mdcKey : event.getMdcProperties().keySet()) {
-            mdcMap.computeIfAbsent(mdcKey, k -> new TreeSet<>()).add(event.getMdcProperties().get(mdcKey));
+        Map<String, String> mdc = event.getMdcProperties();
+        for (String mdcKey : mdc.keySet()) {
+            if (mdc.get(mdcKey) != null) {
+                mdcMap.computeIfAbsent(mdcKey, k -> new TreeSet<>()).add(mdc.get(mdcKey));
+            }
         }
         if (event.getMarker() != null) {
             markers.add(event.getMarker().getName());
