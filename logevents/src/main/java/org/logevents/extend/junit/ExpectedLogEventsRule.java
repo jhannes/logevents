@@ -67,6 +67,7 @@ public class ExpectedLogEventsRule implements TestRule, LogEventObserver {
     private List<LogEventMatcher> matchers = new ArrayList<>();
     private List<LogEvent> events = new ArrayList<>();
     private LogEventObserver fallbackObserver;
+    private boolean allowUnexpectedLogs = false;
 
     public ExpectedLogEventsRule(Level threshold) {
         this(threshold, (LogEventFactory)LoggerFactory.getILoggerFactory());
@@ -77,6 +78,9 @@ public class ExpectedLogEventsRule implements TestRule, LogEventObserver {
         this.loggerFactory = loggerFactory;
     }
 
+    public void setAllowUnexpectedLogs(boolean allowUnexpectedLogs){
+        this.allowUnexpectedLogs = allowUnexpectedLogs;
+    }
 
     @Override
     public synchronized void logEvent(LogEvent logEvent) {
@@ -139,22 +143,32 @@ public class ExpectedLogEventsRule implements TestRule, LogEventObserver {
 
     public synchronized void verifyCompletion() {
         try {
-            Optional<LogEventMatcher> firstMissedMatcher = matchers.stream()
-                    .filter(m -> this.events.stream().noneMatch(e -> exactMatch(m, e)))
-                    .findFirst();
-            firstMissedMatcher.ifPresent(matcher -> Assert.fail(failureMessage(matcher)));
+            verifyAllExpectedLogsArePresent();
 
-            List<LogEvent> unexpectedEvents = new ArrayList<>(this.events);
-            unexpectedEvents.removeIf(event -> event.isBelowThreshold(threshold));
-            unexpectedEvents.removeIf(
-                    event -> this.matchers.stream().anyMatch(filter -> exactMatch(filter, event))
-            );
-            if (!unexpectedEvents.isEmpty()) {
-                Assert.fail("Unexpected log message: " + unexpectedEvents.toString());
+            if(!allowUnexpectedLogs){
+                verifyNoUnexpectedLogsArePresent();
             }
         } finally {
             matchers.clear();
             events.clear();
+        }
+    }
+
+    private void verifyAllExpectedLogsArePresent() {
+        Optional<LogEventMatcher> firstMissedMatcher = matchers.stream()
+                .filter(m -> this.events.stream().noneMatch(e -> exactMatch(m, e)))
+                .findFirst();
+        firstMissedMatcher.ifPresent(matcher -> Assert.fail(failureMessage(matcher)));
+    }
+
+    private void verifyNoUnexpectedLogsArePresent() {
+        List<LogEvent> unexpectedEvents = new ArrayList<>(this.events);
+        unexpectedEvents.removeIf(event -> event.isBelowThreshold(threshold));
+        unexpectedEvents.removeIf(
+                event -> this.matchers.stream().anyMatch(filter -> exactMatch(filter, event))
+        );
+        if (!unexpectedEvents.isEmpty()) {
+            Assert.fail("Unexpected log message: " + unexpectedEvents.toString());
         }
     }
 
