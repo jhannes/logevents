@@ -91,7 +91,11 @@ public class FileChannelTracker {
      * @throws IOException if openChannel throws
      */
     FileChannel getChannel(Path path, Instant now) throws IOException {
-        Entry<FileChannel> result = channels.computeIfAbsent(path, ExceptionUtil.softenFunctionExceptions(p -> openChannel(p, now)));
+        Entry<FileChannel> result = channels.get(path);
+        if (result == null) {
+            result = openChannel(path, now);
+            channels.put(path, result);
+        }
         result.setAccessTime(now);
         return result.getTarget();
     }
