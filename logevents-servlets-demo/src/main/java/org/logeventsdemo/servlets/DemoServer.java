@@ -3,7 +3,6 @@ package org.logeventsdemo.servlets;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.logevents.LogEventFactory;
 import org.logevents.extend.servlets.LogEventsServlet;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -16,9 +15,9 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Random;
-import java.util.TimeZone;
 
 public class DemoServer {
 
@@ -31,20 +30,26 @@ public class DemoServer {
     }
 
     private static LocationAwareLogger logger = (LocationAwareLogger) LoggerFactory.getLogger(DemoServer.class);
+    private Server server;
+
+    public DemoServer(int httpPort) {
+        server = new Server(httpPort);
+        server.setHandler(demoContext());
+    }
 
     public static void main(String[] args) throws Exception {
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-        LogEventFactory factory = LogEventFactory.getInstance();
-        factory.setLevel(factory.getLogger("org.logeventsdemo"), Level.DEBUG);
-        factory.setLevel(factory.getRootLogger(), Level.INFO);
-
-        new Thread(DemoServer::makeNoise).start();
-
-        Server server = new Server(Integer.parseInt(System.getProperty("httpPort", "4000")));
-        server.setHandler(demoContext());
-
+        DemoServer server = new DemoServer(Integer.parseInt(System.getProperty("httpPort", "4000")));
         server.start();
         logger.warn(LIFECYCLE, "Started server {}", server.getURI());
+    }
+
+    public URI getURI() {
+        return server.getURI();
+    }
+
+    void start() throws Exception {
+        new Thread(DemoServer::makeNoise).start();
+        server.start();
     }
 
     private static WebAppContext demoContext() {
@@ -74,8 +79,6 @@ public class DemoServer {
     private static void makeNoise() {
         try {
             while (true) {
-                Thread.sleep(random.nextInt(10000));
-
                 try {
                     if (random.nextInt(100) < 80) {
                         MDC.put("clientIp", pickOne("127.0.0.1", "10.10.0." + random.nextInt(255)));
@@ -96,6 +99,7 @@ public class DemoServer {
                 } finally {
                     MDC.clear();
                 }
+                Thread.sleep(random.nextInt(10000));
             }
         } catch (InterruptedException ignore) {
 

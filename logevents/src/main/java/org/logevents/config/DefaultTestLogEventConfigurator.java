@@ -45,13 +45,19 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
         }
 
         private Object getTestMethod(LogEvent logEvent) {
+            List<String> junitExecutors = Arrays.asList(
+                    "org.junit.runners.BlockJUnit4ClassRunner",
+                    "org.junit.runners.ParentRunner",
+                    "org.junit.platform.engine.support.hierarchical.NodeTestTask"
+            );
+
             StackTraceElement[] stackTrace = logEvent.getStackTrace();
 
             // TODO: org.junit.runners.statements.RunBefores -> java.lang.reflect.Method -> not jdk.internal.reflect or java.reflect
             int junitRunnerPos = -1;
             for (int i = 0; i < stackTrace.length-1; i++) {
                 StackTraceElement stackTraceElement = stackTrace[i];
-                if (stackTraceElement.getClassName().equals("org.junit.runners.BlockJUnit4ClassRunner") || stackTraceElement.getClassName().equals("org.junit.runners.ParentRunner")) {
+                if (junitExecutors.contains(stackTraceElement.getClassName())) {
                     junitRunnerPos = i;
                     break;
                 }
