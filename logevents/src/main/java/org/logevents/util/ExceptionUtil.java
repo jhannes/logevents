@@ -47,7 +47,7 @@ public class ExceptionUtil {
         };
     }
 
-    public static <T, U> Function<T, U> softenFunctionExceptions(FunctionWithCheckedException<T, U, Exception> f) {
+    public static <T, U, EX extends Exception> Function<T, U> softenFunctionExceptions(FunctionWithCheckedException<T, U, EX> f) throws EX {
         return handleException(f, e -> {
             throw softenException(e);
         });

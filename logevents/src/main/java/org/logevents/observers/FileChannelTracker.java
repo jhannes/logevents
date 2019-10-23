@@ -3,11 +3,7 @@ package org.logevents.observers;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.ExceptionUtil;
 
-import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -16,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -56,7 +53,7 @@ public class FileChannelTracker {
     }
 
 
-    private Map<Path, Entry<FileChannel>> channels = new LinkedHashMap<>();
+    private Map<Path, Entry<FileChannel>> channels = Collections.synchronizedMap(new LinkedHashMap<>());
 
     private Duration timeout = Duration.ofMinutes(10);
 
@@ -91,7 +88,11 @@ public class FileChannelTracker {
      * @throws IOException if openChannel throws
      */
     FileChannel getChannel(Path path, Instant now) throws IOException {
-        Entry<FileChannel> result = channels.computeIfAbsent(path, ExceptionUtil.softenFunctionExceptions(p -> openChannel(p, now)));
+        Entry<FileChannel> result = channels.get(path);
+        if (result == null) {
+            result = openChannel(path, now);
+            channels.put(path, result);
+        }
         result.setAccessTime(now);
         return result.getTarget();
     }
