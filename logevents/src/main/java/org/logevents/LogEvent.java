@@ -173,7 +173,6 @@ public class LogEvent implements LoggingEvent {
         return result.toString();
     }
 
-
     @Override
     public String getMessage() {
         return format;

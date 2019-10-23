@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 
+import java.io.IOException;
+
 import static org.junit.Assert.assertEquals;
 
 public class MessageFormatterTest {
@@ -91,6 +93,16 @@ public class MessageFormatterTest {
                 );
     }
 
+    @Test
+    public void shouldPrintNullAsBlank() {
+        assertEquals("", messageFormatter.format(null));
+    }
+
+    @Test
+    public void shouldPrintExceptionAsParameterIfNeeded() {
+        assertEquals("Something went wrong: java.io.IOException: File not found",
+                messageFormatter.format("Something went wrong: {}", new IOException("File not found")));
+    }
 
     @BeforeClass
     public static void turnOffStatusLogging() {
