@@ -118,6 +118,35 @@ public class ExpectedLogEventsRuleTest {
     }
 
     @Test
+    public void shouldAllowUnexpectedEventsIfToldExcplicitly() {
+        logger.warn("This is a {} test for {}", "controversal", "the LogEvents author");
+        rule.setAllowUnexpectedLogs(true);
+
+        try {
+            rule.verifyCompletion();
+        } finally {
+            rule.setAllowUnexpectedLogs(false);
+        }
+    }
+
+    @Test
+    public void shouldSucceedWhenLoggingAsExpectedEvenIfThereAreUnexpectedEventsIfToldExcplicitly() {
+        rule.setAllowUnexpectedLogs(true);
+        rule.expectMatch(expect -> expect
+                .level(Level.WARN).logger(ExpectedLogEventsRuleTest.class)
+                .pattern("This is a {} test for {}").args("nice", "LogEvents"));
+
+        logger.warn("This is a {} test for {}", "nice", "LogEvents");
+        logger.warn("This is a {} test for {}", "unexpected", "LogEvents");
+
+        try {
+            rule.verifyCompletion();
+        } finally {
+            rule.setAllowUnexpectedLogs(false);
+        }
+    }
+
+    @Test
     public void shouldIgnoreUnmatchedEventsBelowThreshold() {
         logger.debug("This is a {} test for {}", "nice", "LogEvents");
         rule.verifyCompletion();
