@@ -2,11 +2,13 @@ package org.logevents.observers;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
+import org.slf4j.event.Level;
 
 import static org.junit.Assert.*;
 
@@ -43,6 +45,30 @@ public class CompositeLogEventObserverTest {
         logEventStatusRule.setStatusLevel(StatusEvent.StatusLevel.FATAL);
         observer.logEvent(new LogEventSampler().build());
         assertEquals(exception, LogEventStatus.getInstance().lastMessage().getThrowable());
+    }
+
+    @Test
+    public void shouldFilterObserversOnLowerThreshold() {
+        CircularBufferLogEventObserver debug = new CircularBufferLogEventObserver();
+        LogEventObserver debugObserver = new LevelThresholdConditionalObserver(Level.DEBUG, debug);
+        LogEventObserver warnObserver = new LevelThresholdConditionalObserver(Level.WARN, new CircularBufferLogEventObserver());
+        LogEventObserver infoObserver = new FilteredLogEventObserver() {
+            {
+                setThreshold(Level.INFO);
+            }
+            @Override
+            protected void doLogEvent(LogEvent logEvent) {
+
+            }
+        };
+
+        CompositeLogEventObserver combined = (CompositeLogEventObserver) CompositeLogEventObserver.combine(
+                debugObserver, warnObserver, infoObserver
+        );
+        assertEquals(debug, combined.filteredOn(Level.DEBUG));
+        CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
+        assertEquals(observer,
+                ((CompositeLogEventObserver)CompositeLogEventObserver.combine(observer, infoObserver)).filteredOn(Level.DEBUG));
     }
 
 }

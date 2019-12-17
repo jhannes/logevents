@@ -2,6 +2,7 @@ package org.logevents.impl;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
@@ -15,7 +16,11 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
     public LevelLoggingEventGenerator(String loggerName, Level level, LogEventObserver observer) {
         this.loggerName = loggerName;
         this.level = level;
-        this.observer = observer;
+        if (observer instanceof CompositeLogEventObserver) {
+            this.observer = ((CompositeLogEventObserver)observer).filteredOn(level);
+        } else {
+            this.observer = observer;
+        }
     }
 
     @Override

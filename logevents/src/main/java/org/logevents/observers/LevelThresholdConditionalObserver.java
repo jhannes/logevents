@@ -42,6 +42,14 @@ public class LevelThresholdConditionalObserver implements LogEventObserver {
         }
     }
 
+    public Level getThreshold() {
+        return threshold;
+    }
+
+    public LogEventObserver getDelegate() {
+        return delegate;
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" + threshold + " -> " + delegate + "}";
