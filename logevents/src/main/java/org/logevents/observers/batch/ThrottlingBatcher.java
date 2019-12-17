@@ -49,7 +49,7 @@ public class ThrottlingBatcher<T> implements Batcher<T> {
         }
     }
 
-    private synchronized void flush() {
+    synchronized void flush() {
         List<T> currentBatch = this.batch;
         this.batch = Collections.synchronizedList(new ArrayList<>());
         LogEventStatus.getInstance().addTrace(this, "flush " + currentBatch.size() + " messages");

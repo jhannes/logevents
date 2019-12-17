@@ -3,11 +3,14 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
+import org.logevents.observers.batch.BatcherFactory;
 import org.logevents.observers.batch.CooldownBatcher;
+import org.logevents.observers.batch.CooldownBatcherFactory;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatcher;
 import org.logevents.observers.batch.LogEventBatcherWithMdc;
 import org.logevents.observers.batch.LogEventShutdownHook;
+import org.logevents.observers.batch.ThrottleBatcherFactory;
 import org.logevents.observers.batch.ThrottlingBatcher;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -20,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * Used to gather up a number of log event to process as a batch. This is useful
@@ -71,7 +75,7 @@ public abstract class BatchingLogEventObserver extends FilteredLogEventObserver 
     }
 
     public BatchingLogEventObserver(ScheduledExecutorService executor) {
-        defaultBatcher = new LogEventBatcher(new CooldownBatcher<>(this::processBatch, executor));
+        defaultBatcher = new LogEventBatcher(new CooldownBatcherFactory(executor, shutdownHook).createBatcher(this::processBatch));
         this.executor = executor;
     }
 
@@ -80,7 +84,7 @@ public abstract class BatchingLogEventObserver extends FilteredLogEventObserver 
      * from configuration
      */
     protected void configureBatching(Configuration configuration) {
-        this.defaultBatcher = new LogEventBatcher(createCooldownBatcher(configuration, ""));
+        this.defaultBatcher = new LogEventBatcher(getBatcherFactory(configuration, "").createBatcher(this::processBatch));
     }
 
     @Override
@@ -129,22 +133,24 @@ public abstract class BatchingLogEventObserver extends FilteredLogEventObserver 
     }
 
     protected LogEventObserver createBatcher(Configuration configuration, String markerName) {
-        if (configuration.optionalString("markers." + markerName + ".mdc").isPresent()) {
-            return createMdcBatcher(configuration, markerName);
-        }
-        return configuration.optionalString("markers." + markerName + ".throttle")
-                .map(t -> new LogEventBatcher(new ThrottlingBatcher<>(t, this::processBatch, executor)))
-                .orElseGet(() -> new LogEventBatcher(createCooldownBatcher(configuration, "markers." + markerName)));
+        BatcherFactory batcherFactory = getBatcherFactory(configuration, "markers." + markerName + ".");
+        return configuration.optionalString("markers." + markerName + ".mdc")
+                .map(mdcKey -> createMdcBatcher(batcherFactory, configuration, markerName, configuration.getString("markers." + markerName + ".mdc")))
+                .orElseGet(() -> new LogEventBatcher(batcherFactory.createBatcher(createProcessor(configuration, markerName))));
     }
 
-    private CooldownBatcher<LogEvent> createCooldownBatcher(Configuration configuration, String prefix) {
-        CooldownBatcher<LogEvent> batcher = new CooldownBatcher<>(this::processBatch, executor);
-        batcher.configure(configuration, prefix);
-        return batcher;
+    protected Consumer<List<LogEvent>> createProcessor(Configuration configuration, String markerName) {
+        return this::processBatch;
     }
 
-    protected LogEventObserver createMdcBatcher(Configuration configuration, String markerName) {
-        return new LogEventBatcherWithMdc(executor, configuration, markerName, this::processBatch);
+    protected BatcherFactory getBatcherFactory(Configuration configuration, String prefix) {
+        return configuration.optionalString(prefix + "throttle")
+                .map(t -> (BatcherFactory)new ThrottleBatcherFactory(executor, shutdownHook, t))
+                .orElseGet(() -> new CooldownBatcherFactory(executor, shutdownHook, configuration, prefix));
+    }
+
+    protected LogEventObserver createMdcBatcher(BatcherFactory batcherFactory, Configuration configuration, String markerName, String mdcKey) {
+        return new LogEventBatcherWithMdc(batcherFactory, markerName, mdcKey, this::processBatch);
     }
 
     protected LogEventObserver getMarkerBatcher(Marker myMarker) {

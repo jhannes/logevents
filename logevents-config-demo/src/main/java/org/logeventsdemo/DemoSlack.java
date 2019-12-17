@@ -5,6 +5,7 @@ import org.logevents.config.DefaultLogEventConfigurator;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.SlackLogEventObserver;
+import org.logevents.status.StatusEvent;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.MarkerFactory;
@@ -16,6 +17,8 @@ import java.util.Properties;
 public class DemoSlack {
 
     public static void main(String[] args) throws InterruptedException {
+        System.setProperty("logevents.status.ThrottlingBatcher", StatusEvent.StatusLevel.TRACE.name());
+        System.setProperty("logevents.status.LogEventShutdownHook", StatusEvent.StatusLevel.TRACE.name());
         LogEventFactory factory = LogEventFactory.getInstance();
 
         // Get your webhook at https://www.slack.com/apps/manage/custom-integrations

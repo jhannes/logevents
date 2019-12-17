@@ -1,20 +1,21 @@
 package org.logevents.observers;
 
+import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventsServlet;
+import org.logevents.observers.batch.BatcherFactory;
 import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.observers.batch.LogEventBatcher;
 import org.logevents.observers.batch.LogEventBatcherWithMdc;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.observers.batch.ThrottlingBatcher;
-import org.slf4j.MarkerFactory;
 
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Consumer;
 
 /**
  * Writes log events as asynchronous batches to Slack. Slack is a great destination for logging as it
@@ -105,17 +106,9 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
     }
 
     @Override
-    protected LogEventObserver createBatcher(Configuration configuration, String markerName) {
-        if (configuration.optionalString("markers." + markerName + ".mdc").isPresent()) {
-            return createMdcBatcher(configuration, markerName);
-        }
-        String throttle = configuration.getString("markers." + markerName + ".throttle");
+    protected Consumer<List<LogEvent>> createProcessor(Configuration configuration, String markerName) {
         SlackLogEventsFormatter formatter = createMarkerFormatter(configuration, markerName);
-        return new LogEventBatcher(new ThrottlingBatcher<>(
-                throttle,
-                batch -> sendBatch(new LogEventBatch(batch), formatter::createMessage),
-                executor
-        ));
+        return batch -> sendBatch(new LogEventBatch(batch), formatter::createMessage);
     }
 
     protected SlackLogEventsFormatter createMarkerFormatter(Configuration configuration, String markerName) {
@@ -130,15 +123,11 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
     }
 
     @Override
-    protected LogEventObserver createMdcBatcher(Configuration configuration, String markerName) {
+    protected LogEventObserver createMdcBatcher(BatcherFactory batcherFactory, Configuration configuration, String markerName, String mdcKey) {
         SlackLogEventsFormatter formatter = createMarkerFormatter(configuration, markerName);
-        return new LogEventBatcherWithMdc(
-                executor,
-                configuration.getString("markers." + markerName + ".throttle"),
-                MarkerFactory.getMarker(markerName),
-                configuration.getString("markers." + markerName + ".mdc"),
-                batch -> sendBatch(new LogEventBatch(batch), formatter::createMessage)
-        );
+        Consumer<List<LogEvent>> processor = batch -> sendBatch(new LogEventBatch(batch), formatter::createMessage);
+
+        return new LogEventBatcherWithMdc(batcherFactory, markerName, mdcKey, processor);
     }
 
     @Override

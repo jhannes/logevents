@@ -15,18 +15,22 @@ public class LogEventShutdownHook extends Thread {
     private Set<WeakReference<Runnable>> actions = new HashSet<>();
 
     public void addAction(Runnable action) {
+        LogEventStatus.getInstance().addTrace(this, "Adding shutdown action");
         actions.add(new WeakReference<>(action));
     }
 
     @Override
     public void run() {
         LogEventStatus.getInstance().addConfig(this, "Flushing up to " + actions.size() + " observers");
+        int count = 0;
         for (WeakReference<Runnable> action : actions) {
             Runnable runnable = action.get();
             if (runnable != null) {
                 runnable.run();
+                count++;
             }
         }
+        LogEventStatus.getInstance().addDebug(this, "Flushed " + count + " observers");
     }
 
     @Override

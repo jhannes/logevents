@@ -29,6 +29,7 @@ public class CooldownBatcherTest {
 
     @Test
     public void shouldAccumulateSimilarMessages() {
+
         CooldownBatcher<LogEvent> observer = new CooldownBatcher<>(null, executor);
 
         String messageFormat = "This is a message about {}";

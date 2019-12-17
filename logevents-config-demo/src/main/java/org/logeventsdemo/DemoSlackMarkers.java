@@ -27,6 +27,7 @@ public class DemoSlackMarkers {
 
     public static void main(String[] args) throws InterruptedException {
         System.setProperty("logevents.status.ThrottlingBatcher", StatusEvent.StatusLevel.TRACE.name());
+        System.setProperty("logevents.status.LogEventShutdownHook", StatusEvent.StatusLevel.TRACE.name());
         LogEventFactory factory = LogEventFactory.getInstance();
 
         // Get your webhook at https://www.slack.com/apps/manage/custom-integrations

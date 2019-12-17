@@ -121,7 +121,7 @@ public class CooldownBatcher<T> implements Batcher<T> {
         task = executor.schedule(this::flush, delay.toMillis(), TimeUnit.MILLISECONDS);
     }
 
-    private synchronized void flush() {
+    synchronized void flush() {
         LogEventStatus.getInstance().addDebug(this, "Flushing");
         List<T> currentBatch = takeCurrentBatch();
         task = null;

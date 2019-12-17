@@ -185,10 +185,6 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         HashMap<String, Object> attachment = new LinkedHashMap<>();
         attachment.put("title", "Stack Trace");
         attachment.put("color", getColor(event.getLevel()));
-        attachment.put("fields", Arrays.asList(
-                slackMessageField("Exception", event.getThrowable().getClass().getSimpleName(), true),
-                slackMessageField("Message", event.getThrowable().getMessage(), false)
-                ));
         attachment.put("mrkdwn_in", singletonList("text"));
         attachment.put("text",
                 "```\n" + exceptionFormatter.format(event.getThrowable()) + "```");

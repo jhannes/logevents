@@ -33,8 +33,9 @@ public class LogEventBatcherWithMdcTest {
 
     @Test
     public void shouldCollectMessagesPerMdc() {
+        BatcherFactory batcherFactory = new ThrottleBatcherFactory(executor, new LogEventShutdownHook(), "PT1M");
         Marker marker = MarkerFactory.getMarker("MARKER1");
-        LogEventBatcherWithMdc batcher = new LogEventBatcherWithMdc(executor, "PT1M", marker, "ipAddress", batch -> System.out.println(marker + " Flushing " + batch));
+        LogEventBatcherWithMdc batcher = new LogEventBatcherWithMdc(batcherFactory, marker.getName(), "ipAddress", batch -> System.out.println(marker + " Flushing " + batch));
 
         batcher.logEvent(new LogEventSampler().withMarker(marker).withMdc("ipAddress", "127.0.0.1").build());
         batcher.logEvent(new LogEventSampler().withMarker(marker).withMdc("ipAddress", "10.0.0.10").build());
@@ -48,8 +49,9 @@ public class LogEventBatcherWithMdcTest {
 
     @Test
     public void shouldScheduleFlushAfterThrottleDelayForMdc() {
+        BatcherFactory batcherFactory = new ThrottleBatcherFactory(executor, new LogEventShutdownHook(), "PT1M PT10M");
         Marker marker = MarkerFactory.getMarker("MARKER1");
-        LogEventBatcherWithMdc batcher = new LogEventBatcherWithMdc(executor, "PT1M PT10M", marker, "userId", batch -> System.out.println(marker + " Flushing " + batch));
+        LogEventBatcherWithMdc batcher = new LogEventBatcherWithMdc(batcherFactory, marker.getName(), "userId", batch -> System.out.println(marker + " Flushing " + batch));
         batcher.logEvent(new LogEventSampler().withMarker(marker).withMdc("userId", "alice").build());
 
         batcher.getBatcher("alice");
@@ -60,9 +62,10 @@ public class LogEventBatcherWithMdcTest {
 
     @Test
     public void shouldRemoveMdcBatcherOnEmptyFlush() {
+        BatcherFactory batcherFactory = new ThrottleBatcherFactory(executor, new LogEventShutdownHook(), "PT1M PT10M");
         Marker marker = MarkerFactory.getMarker("MARKER1");
         Consumer<List<LogEvent>> processor = Mockito.mock(Consumer.class);
-        LogEventBatcherWithMdc batcher = new LogEventBatcherWithMdc(executor, "PT1M PT10M", marker, "userId", processor);
+        LogEventBatcherWithMdc batcher = new LogEventBatcherWithMdc(batcherFactory, marker.getName(), "userId", processor);
         batcher.logEvent(new LogEventSampler().withMarker(marker).withMdc("userId", "bob").build());
 
         Runnable flusher = verifyFlushScheduled(Duration.ofSeconds(0));
