@@ -34,11 +34,13 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 /**
  * Default implementation of {@link LogEventConfigurator} which reads the
- * logging configuration from <code>logevents.properties</code>-files.
+ * logging configuration from <code>logevents.properties</code>-files in the
+ * directory specified by the system property <strong><code>logevents.directory</code></strong>
+ * (defaults to current working directory).
  * This class will by default load <code>logevents-<em>profile</em>.properties</code>
  * and <code>logevents.properties</code>, where based on {@link #getProfiles()}.
  * <code>logevents.properties</code> files in profile takes precedence over default
- * <code>logevents.properties</code> files. Files on current working directory takes
+ * <code>logevents.properties</code> files. Files in configuration directory takes
  * precedence over files in classpath and are automatically scanned for changes.
  * <p>
  * <code>logevents.properties</code> should look like this ({@link #applyConfigurationProperties}):
@@ -74,7 +76,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     }
 
     public DefaultLogEventConfigurator() {
-        this(Paths.get(".").toAbsolutePath().normalize());
+        this(Paths.get(System.getProperty("logevents.directory", ".")).toAbsolutePath().normalize());
     }
 
     /**
