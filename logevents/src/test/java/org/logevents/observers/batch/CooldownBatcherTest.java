@@ -118,6 +118,6 @@ public class CooldownBatcherTest {
         cooldownBatcher.add(new Object(), start.plusSeconds(24));
         cooldownBatcher.add(new Object(), start.plusSeconds(48));
 
-        assertEquals(Duration.ofSeconds(12), cooldownBatcher.nextDelay);
+        assertEquals(Duration.ofSeconds(12), cooldownBatcher.nextDelay.withNanos(0));
     }
 }
