@@ -26,7 +26,7 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
                     "com.intellij.junit4",
                     "com.intellij.rt.execution.junit"
             );
-            List<String> packageFilter = new ArrayList<>(getPackageFilter(configuration, "packageFilter"));
+            List<String> packageFilter = new ArrayList<>(configuration.getPackageFilters());
             packageFilter.addAll(defaultPackageFilter);
 
             exceptionFormatter.setPackageFilter(packageFilter);

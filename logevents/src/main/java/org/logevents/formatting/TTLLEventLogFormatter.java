@@ -37,10 +37,8 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
 
     public void configure(Configuration configuration) {
         getExceptionFormatter().ifPresent(
-                exceptionFormatter -> exceptionFormatter.setPackageFilter(configuration.getStringList("packageFilter")));
-        includedMdcKeys = configuration.optionalString("includedMdcKeys").isPresent()
-                ? configuration.getStringList("includedMdcKeys")
-                : null;
+                exceptionFormatter -> exceptionFormatter.setPackageFilter(configuration.getPackageFilters()));
+        includedMdcKeys = configuration.getIncludedMdcKeys();
     }
 
 }

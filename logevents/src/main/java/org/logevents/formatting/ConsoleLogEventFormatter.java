@@ -70,18 +70,10 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     }
 
     public void configure(Configuration configuration) {
-        List<String> packageFilter = getPackageFilter(configuration, "packageFilter");
-        getExceptionFormatter().ifPresent(exceptionFormatter -> exceptionFormatter.setPackageFilter(packageFilter));
-        includedMdcKeys = configuration.optionalString("includedMdcKeys").isPresent()
-                ? configuration.getStringList("includedMdcKeys")
-                : null;
+        getExceptionFormatter().ifPresent(exceptionFormatter ->
+                exceptionFormatter.setPackageFilter(configuration.getPackageFilters())
+        );
+        includedMdcKeys = configuration.getIncludedMdcKeys();
     }
 
-    protected List<String> getPackageFilter(Configuration configuration, String key) {
-        List<String> packageFilter = configuration.getStringList(key);
-        if (packageFilter.isEmpty()) {
-            packageFilter = configuration.getDefaultStringList(key);
-        }
-        return packageFilter;
-    }
 }

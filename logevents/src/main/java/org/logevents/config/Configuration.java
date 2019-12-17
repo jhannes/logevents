@@ -9,10 +9,8 @@ import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +18,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Configuration {
 
@@ -153,8 +152,13 @@ public class Configuration {
 
     public List<String> getStringList(String key) {
         return optionalString(key)
-                .map(s -> s.split(",\\s*"))
-                .map(Arrays::asList)
+                .map(s -> Stream.of(s.split(",\\s*")).map(String::trim).collect(Collectors.toList()))
+                .orElse(Collections.emptyList());
+    }
+
+    public List<String> getDefaultStringList(String key) {
+        return optionalDefaultString(key)
+                .map(s -> Stream.of(s.split(",\\s*")).map(String::trim).collect(Collectors.toList()))
                 .orElse(Collections.emptyList());
     }
 
@@ -164,15 +168,9 @@ public class Configuration {
         return property == null || property.isEmpty() ? Optional.empty() : Optional.of(property);
     }
 
-    public List<String> getDefaultStringList(String key) {
-        return optionalDefaultString(key)
-                .map(s -> s.split(",\\s*"))
-                .map(Arrays::asList)
-                .orElse(Collections.emptyList());
-    }
-
     public Optional<String> optionalDefaultString(String key) {
-        return Optional.ofNullable(properties.getProperty(defaultKey(key)));
+        String property = properties.getProperty(defaultKey(key));
+        return property == null || property.isEmpty() ? Optional.empty() : Optional.of(property);
     }
 
     private String defaultKey(String key) {
@@ -275,6 +273,25 @@ public class Configuration {
                                     .orElse(InetAddress.getLocalHost().getHostName())));
         } catch (UnknownHostException ignored) {
             return "unknown host";
+        }
+    }
+
+    public List<String> getIncludedMdcKeys() {
+        if (properties.getProperty(fullKey("includedMdcKeys")) != null) {
+            return getStringList("includedMdcKeys");
+        } else if (properties.getProperty(defaultKey("includedMdcKeys")) != null) {
+            return getDefaultStringList("includedMdcKeys");
+        } else {
+            return null;
+        }
+    }
+
+    public List<String> getPackageFilters() {
+        List<String> packageFilters = getStringList("packageFilter");
+        if (packageFilters.isEmpty()) {
+            return getDefaultStringList("packageFilter");
+        } else {
+            return packageFilters;
         }
     }
 }

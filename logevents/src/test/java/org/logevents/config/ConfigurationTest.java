@@ -4,11 +4,13 @@ import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -133,6 +135,37 @@ public class ConfigurationTest {
         assertEquals("random-app", Configuration.toApplicationName(prefix + "random-app-1.2.11.jar"));
         assertEquals("logevents-demo", Configuration.toApplicationName(prefix + "logevents-demo-1.2.11-SNAPSHOT.jar"));
         assertEquals("logevents-demo", Configuration.toApplicationName(prefix + "logevents-demo-1.2.11-alfa2.jar"));
+    }
+
+    @Test
+    public void shouldCalculatePackageFilter() {
+        properties.put("observer.test.packageFilter", "com.sun,javax.servlet  , com.foo");
+        properties.put("observer.*.packageFilter", "junit");
+
+        assertEquals(Arrays.asList("com.sun", "javax.servlet", "com.foo"),
+                new Configuration(properties, "observer.test").getPackageFilters());
+        assertEquals(Arrays.asList("junit"),
+                new Configuration(properties, "observer.random").getPackageFilters());
+        assertEquals(new ArrayList<>(),
+                new Configuration(new Properties(), "observer.test").getPackageFilters());
+    }
+
+    @Test
+    public void shouldCalculateIncludedMdcKeys() {
+        properties.put("observer.test.includedMdcKeys", "username, operation");
+        properties.put("observer.other.includedMdcKeys", "");
+        properties.put("observer.*.includedMdcKeys", "ipAddress");
+
+        assertEquals(Arrays.asList("username", "operation"),
+                new Configuration(properties, "observer.test").getIncludedMdcKeys());
+        assertEquals(Arrays.asList("ipAddress"),
+                new Configuration(properties, "observer.random").getIncludedMdcKeys());
+        assertEquals(new ArrayList<>(),
+                new Configuration(properties, "observer.other").getIncludedMdcKeys());
+        assertNull(new Configuration(new Properties(), "observer.test").getIncludedMdcKeys());
+        properties.put("observer.*.includedMdcKeys", "");
+        assertEquals(new ArrayList<>(),
+                new Configuration(properties, "observer.random").getIncludedMdcKeys());
     }
 
     private static String currentWorkingDirectory() {

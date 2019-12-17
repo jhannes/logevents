@@ -82,16 +82,8 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
                 Optional.ofNullable(configuration.optionalString("username")
                         .orElseGet(configuration::getApplicationNode))
         );
-        List<String> packageFilters = configuration.getStringList("packageFilter");
-        if (packageFilters.isEmpty()) {
-            packageFilters = configuration.getDefaultStringList("packageFilter");
-        }
-        formatter.setPackageFilter(packageFilters);
-        List<String> includedMdcKeys = configuration.getStringList("includedMdcKeys");
-        if (includedMdcKeys.isEmpty()) {
-            includedMdcKeys = configuration.getDefaultStringList("includedMdcKeys");
-        }
-        formatter.setIncludedMdcKeys(includedMdcKeys);
+        formatter.setPackageFilter(configuration.getPackageFilters());
+        formatter.setIncludedMdcKeys(configuration.getIncludedMdcKeys());
         formatter.setChannel(configuration.optionalString("channel"));
         formatter.setIconEmoji(configuration.optionalString("iconEmoji"));
         formatter.setShowRepeatsIndividually(configuration.getBoolean("showRepeatsIndividually"));

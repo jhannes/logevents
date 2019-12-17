@@ -33,10 +33,7 @@ public abstract class AbstractExceptionFormatter {
 
     public AbstractExceptionFormatter(Properties properties, String prefix) {
         Configuration configuration = new Configuration(properties, prefix);
-        packageFilter = configuration.getStringList("packageFilter");
-        if (packageFilter.isEmpty()) {
-            packageFilter = configuration.getDefaultStringList("packageFilter");
-        }
+        packageFilter = configuration.getPackageFilters();
         includePackagingData = configuration.getBoolean("includePackagingData");
         maxLength = configuration.optionalInt("maxLength").orElse(Integer.MAX_VALUE);
         configureSourceCode(configuration);
