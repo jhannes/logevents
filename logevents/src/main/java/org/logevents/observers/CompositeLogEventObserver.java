@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.status.LogEventStatus;
 
 /**
  * Delegates log events to a list of observers. Used to deal with configurations
@@ -23,9 +24,14 @@ public class CompositeLogEventObserver implements LogEventObserver {
     }
 
     @Override
-    public void logEvent(LogEvent e) {
-        // TODO: Error handling
-        observers.forEach(o -> o.logEvent(e));
+    public void logEvent(LogEvent event) {
+        for (LogEventObserver o : observers) {
+            try {
+                o.logEvent(event);
+            } catch (Exception e) {
+                LogEventStatus.getInstance().addError(o, "Failed to log to observer", e);
+            }
+        }
     }
 
     @Override

@@ -20,4 +20,8 @@ public class NullLogEventObserver implements LogEventObserver {
         return getClass().getSimpleName();
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof NullLogEventObserver;
+    }
 }
