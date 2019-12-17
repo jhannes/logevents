@@ -5,6 +5,9 @@ import org.logevents.LogEventObserver;
 import org.logevents.extend.junit.LogEventRule;
 import org.logevents.util.CircularBuffer;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * Collects log events in an internal circular buffer. When the buffer is filled
  * the first messages in the buffer are dropped. This is useful for reporting
@@ -44,5 +47,9 @@ public class CircularBufferLogEventObserver implements LogEventObserver {
             throw new AssertionError("Expected 1 message, but was " + circularBuffer.size());
         }
         return circularBuffer.get(0).getThrowable();
+    }
+
+    public List<String> getMessages() {
+        return circularBuffer.stream().map(LogEvent::getMessage).collect(Collectors.toList());
     }
 }

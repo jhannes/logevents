@@ -6,6 +6,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
+import org.logevents.LoggerConfiguration;
 import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
@@ -131,6 +132,31 @@ public class DefaultLogEventConfiguratorTest {
                 + "[CircularBufferLogEventObserver{size=0}, CircularBufferLogEventObserver{size=0}]}",
                 factory.getLogger("org.example").getObserver());
     }
+
+    @Test
+    public void shouldInstallMultipleRootLoggers() {
+        configuration.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
+        configuration.setProperty("observer.buffer2", "CircularBufferLogEventObserver");
+        configuration.setProperty("observer.buffer3", "CircularBufferLogEventObserver");
+        configuration.setProperty("root", "ERROR buffer1");
+        configuration.setProperty("root.observer.buffer2", "INFO");
+        configuration.setProperty("root.observer.buffer3", "DEBUG");
+
+        configurator.applyConfigurationProperties(factory, configuration);
+
+        LoggerConfiguration logger = factory.getLogger("org.example");
+        logger.debug("only to buffer3");
+        logger.info("to buffer2 and buffer3");
+        logger.error("to buffer1, buffer2 and buffer3");
+
+        assertEquals(Arrays.asList("to buffer1, buffer2 and buffer3"),
+                ((CircularBufferLogEventObserver) factory.getObserver("buffer1")).getMessages());
+        assertEquals(Arrays.asList("to buffer2 and buffer3", "to buffer1, buffer2 and buffer3"),
+                ((CircularBufferLogEventObserver) factory.getObserver("buffer2")).getMessages());
+        assertEquals(Arrays.asList("only to buffer3", "to buffer2 and buffer3", "to buffer1, buffer2 and buffer3"),
+                ((CircularBufferLogEventObserver) factory.getObserver("buffer3")).getMessages());
+    }
+
 
     @Test
     public void shouldSetNonInheritingLoggerObserverFromProperties() {

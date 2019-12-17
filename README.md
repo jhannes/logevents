@@ -28,7 +28,7 @@ out of [the box](https://jhannes.github.io/logevents/apidocs/org/logevents/obser
 3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to [the file](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) `logs/<your-app-name>-%date.log` and warning events to [console](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html).
 4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html">PatternEventLogFormatter</a> for more details.
 5. You can add a [Slack observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html) with little effort. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`. If you prefer Microsoft Teams, you can use [MicrosoftTeamsLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html) instead.
-6. If your application is running in a servlet container, you can add the `observer.servlet=WebLogEventObserver` (see [WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)) and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/LogEventsServlet.html) to your servlet container. Set `root=DEBUG file,console,slack,servlet` to enable. See [OpenIdConfiguration](https://jhannes.github.io/logevents/apidocs/org/logevents/util/openid/OpenIdConfiguration.html) to learn how to secure your LogEventServlet. Alternatively, you can run the dashboard on an [embedded web server](https://jhannes.github.io/logevents/apidocs/org/logevents/web/LogEventHttpServer.html) by adding `observer.servlet.httpPort=8080`.
+6. If your application is running in a servlet container, you can add the `observer.servlet=WebLogEventObserver` (see [WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)) and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/LogEventsServlet.html) to your servlet container. Add `root.observer.servlet=DEBUG` to log debug and higher to the web console. See [OpenIdConfiguration](https://jhannes.github.io/logevents/apidocs/org/logevents/util/openid/OpenIdConfiguration.html) to learn how to secure your LogEventServlet. Alternatively, you can run the dashboard on an [embedded web server](https://jhannes.github.io/logevents/apidocs/org/logevents/web/LogEventHttpServer.html) by adding `observer.servlet.httpPort=8080`.
 7. To make link to the Log Events dashboard in Slack messages, configure `observer.slack.formatter.detailUrl=<where you exposed your LogEventsServlet>`. In order to decrease the amount of potentially sensitive information logged to Slack, configure `observer.slack.formatter=SlackAlertOnlyFormatter` (similarly with MicrosoftTeamsAlertOnlyFormatter).
 8. To save log message in a database between restarts and so load balanced nodes can view each others log messages, configure `observer.servlet.source=[WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)` and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/LogEventsServlet.html) to your servlet container. Set `root=DEBUG file,console,slack,servlet` to enable.
 9. To ensure that all uncaught exceptions in your application are logged, add `installExceptionHandler=true` to logevents.properties`
@@ -42,7 +42,6 @@ installExceptionHandler=true
 
 observer.slack=SlackLogEventObserver
 observer.slack.slackUrl=....
-observer.slack.threshold=WARN
 observer.slack.sourceCode.1.package=org.logevents
 observer.slack.sourceCode.1.maven=org.logevents/logevents
 
@@ -64,7 +63,9 @@ observer.servlet.keyStorePassword=.....
 observer.*.packageFilter=sun.reflect
 observer.*.includeMdcKeys=clientIp, request
 
-root=INFO file,console,slack,servlet
+root=INFO file,console
+root.observer.servlet=DEBUG
+root.observer.slack=WARN
 logger.org.example=DEBUG
 ```
 

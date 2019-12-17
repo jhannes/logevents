@@ -175,16 +175,6 @@ public class LogEventFactory implements ILoggerFactory {
         return oldObserver;
     }
 
-    public void setObserverNames(LoggerConfiguration logger, String observerNames, boolean includeParent) {
-        Set<LogEventObserver> observers =
-                Stream.of(observerNames.split(","))
-                        .map(s -> getObserver(s.trim()))
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toCollection(LinkedHashSet::new));
-        LogEventObserver observer = CompositeLogEventObserver.combineList(observers);
-        setObserver(logger, observer, includeParent);
-    }
-
     /**
      * Adds a new nullable observer to the current observers for the root logger
      */

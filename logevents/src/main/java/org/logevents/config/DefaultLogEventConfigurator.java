@@ -4,8 +4,10 @@ import org.logevents.LogEventConfigurator;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
+import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
+import org.logevents.observers.LevelThresholdConditionalObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
 
@@ -22,11 +24,16 @@ import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -46,7 +53,8 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * <code>logevents.properties</code> should look like this ({@link #applyConfigurationProperties}):
  *
  * <pre>
- * root=LEVEL [observer1,observer2,observer2]
+ * root=LEVEL [observer1,observer2]
+ * root.observer.observer3=LEVEL
  *
  * logger.com.example=LEVEL [observer]
  * includeParent.com.example=true|false
@@ -291,15 +299,14 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         observers.putIfAbsent("file", () -> createFileObserver(configuration));
         factory.setObservers(observers);
         factory.reset("console", getDefaultRootLevel());
-        configureLogger(factory, factory.getRootLogger(), configuration.getProperty("root"), false);
+        configureRootLogger(factory, configuration);
 
         for (Object key : configuration.keySet()) {
             if (key.toString().startsWith("logger.")) {
                 String loggerName = key.toString().substring("logger.".length());
                 boolean includeParent = !"false".equalsIgnoreCase(configuration.getProperty("includeParent." + loggerName));
-                configureLogger(factory, factory.getLogger(loggerName),
-                        configuration.getProperty(key.toString()),
-                        includeParent);
+                String logger = configuration.getProperty(key.toString());
+                configureLogger(factory, factory.getLogger(loggerName), logger, includeParent);
             }
         }
         if (logeventsConfig.getBoolean("installExceptionHandler")) {
@@ -335,6 +342,53 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         return observer;
     }
 
+    private void configureRootLogger(LogEventFactory factory, Properties configuration) {
+        LinkedHashSet<LogEventObserver> observerSet = new LinkedHashSet<>();
+        Level level = null;
+
+        for (Object key : configuration.keySet()) {
+            if (key.toString().startsWith("root.observer.")) {
+                String observerName = key.toString().substring("root.observer.".length());
+                LogEventObserver observer = factory.getObserver(observerName);
+                Level observerThreshold = Level.valueOf(configuration.getProperty(key.toString()));
+                if (observer != null) {
+                    observerSet.add(new LevelThresholdConditionalObserver(observerThreshold, observer));
+                    if (level == null || observerThreshold.toInt() < level.toInt()) {
+                        level = observerThreshold;
+                    }
+                }
+                LogEventStatus.getInstance().addDebug(this, "Adding root observer " + observerName);
+            }
+        }
+
+        String rootConfiguration = configuration.getProperty("root");
+        if (rootConfiguration != null) {
+            int spacePos = rootConfiguration.indexOf(' ');
+            Level rootLevel = Level.valueOf(spacePos < 0 ? rootConfiguration : rootConfiguration.substring(0, spacePos).trim());
+            if (level == null || rootLevel.toInt() < level.toInt()) {
+                level = rootLevel;
+            }
+            Level actualLevel = level;
+
+            if (spacePos > 0) {
+                String observerNames = rootConfiguration.substring(spacePos + 1).trim();
+                Stream.of(observerNames.split(",\\s*"))
+                        .map(s -> factory.getObserver(s.trim()))
+                        .filter(Objects::nonNull)
+                        .map(o -> rootLevel != actualLevel ? new LevelThresholdConditionalObserver(rootLevel, o) : o)
+                        .forEach(observerSet::add);
+                LogEventStatus.getInstance().addDebug(this, "Setting root observers " + observerNames);
+            }
+        }
+
+        LoggerConfiguration logger = factory.getRootLogger();
+        LogEventStatus.getInstance().addDebug(this, "Setting level " + level + " for " + logger);
+        if (level != null) {
+            factory.setLevel(logger, level);
+        }
+        factory.setObserver(logger, CompositeLogEventObserver.combineList(observerSet), false);
+    }
+
     private void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, boolean includeParent) {
         if (configuration != null) {
             int spacePos = configuration.indexOf(' ');
@@ -344,7 +398,11 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
             if (spacePos > 0) {
                 String observerNames = configuration.substring(spacePos + 1).trim();
-                factory.setObserverNames(logger, observerNames, includeParent);
+                Set<LogEventObserver> observers1 = Stream.of(observerNames.split(",\\s*"))
+                                .map(s -> factory.getObserver(s.trim()))
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toCollection(LinkedHashSet::new));
+                factory.setObserver(logger, CompositeLogEventObserver.combineList(observers1), includeParent);
                 LogEventStatus.getInstance().addDebug(this, "Setting observers " + observerNames + " for " + logger);
             }
         }
