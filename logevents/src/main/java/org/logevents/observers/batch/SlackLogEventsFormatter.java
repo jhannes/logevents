@@ -102,7 +102,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         List<Map<String, Object>> fields = new ArrayList<>();
         for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()){
             if (includedMdcKeys == null || includedMdcKeys.contains(entry.getKey())) {
-                fields.add(slackMessageField(entry.getKey(), entry.getValue(), false));
+                fields.add(slackMessageField(entry.getKey(), entry.getValue(), true));
             }
         }
         if (fields.isEmpty()) {
@@ -133,7 +133,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
             }
         } else {
             for (LogEventGroup group : batch.groups()) {
-                text.append("* ").append(italic(group.headMessage().getZonedDateTime().toLocalTime())).append(": ");
+                text.append("• ").append(italic(group.headMessage().getZonedDateTime().toLocalTime())).append(": ");
                 if (group.size() > 1) {
                     String message = group.headMessage().getMessage();
                     text.append(batch.isMainGroup(group) ? bold(message) : message);

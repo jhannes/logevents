@@ -13,6 +13,7 @@ import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.UUID;
 
 public class DemoSlack {
 
@@ -32,7 +33,8 @@ public class DemoSlack {
         properties.put("observer.slack.maximumWaitTime", "PT3M");
         properties.put("observer.slack.idleThreshold", "PT3S");
         properties.put("observer.slack.detailUrl", "http://localhost");
-        properties.put("observer.slack.includedMdcKeys", "User,IpAddress");
+        properties.put("observer.slack.includedMdcKeys", "User, IP address, RequestId");
+        properties.put("observer.*.includedMdcKeys", "User, IP address");
 
         SlackLogEventObserver slackObserver = new SlackLogEventObserver(properties, "observer.slack");
 
@@ -50,6 +52,8 @@ public class DemoSlack {
         Thread.sleep(3500);
 
         MDC.put("User", System.getProperty("user.name"));
+        MDC.put("IP address", "127.0.0.1");
+        MDC.put("RequestId", UUID.randomUUID().toString());
         logger.warn("This message about {} should be collected together", "one thing");
         logger.warn("This message about {} should be collected together", "another thing");
         logger.warn("This message about {} should be collected together", "something else");
