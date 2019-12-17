@@ -2,7 +2,6 @@ package org.logevents.observers.batch;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
-import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.event.Level;
@@ -14,28 +13,33 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 public class CooldownBatcherTest {
+    private ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+
     @Test
     public void shouldAccumulateSimilarMessages() {
-        Scheduler mock = mock(Scheduler.class);
-        CooldownBatcher observer = new CooldownBatcher(mock, null);
+        CooldownBatcher<LogEvent> observer = new CooldownBatcher<>(null, executor);
 
         String messageFormat = "This is a message about {}";
         LogEventSampler sampler = new LogEventSampler()
                 .withLoggerName(getClass().getName())
                 .withLevel(Level.INFO)
                 .withFormat(messageFormat);
-        observer.addToBatch(sampler.withArgs("cheese").build(), Instant.now());
-        observer.addToBatch(sampler.withArgs("ham").build(), Instant.now());
+        observer.add(sampler.withArgs("cheese").build(), Instant.now());
+        observer.add(sampler.withArgs("ham").build(), Instant.now());
 
-        LogEventBatch batch = observer.takeCurrentBatch();
+        LogEventBatch batch =  new LogEventBatch(observer.takeCurrentBatch());
         assertEquals(1, batch.groups().size());
         assertEquals(messageFormat, batch.firstHighestLevelLogEventGroup().getMessage());
         assertArrayEquals(new Object[] { "cheese" }, batch.firstHighestLevelLogEventGroup().headMessage().getArgumentArray());
@@ -45,28 +49,10 @@ public class CooldownBatcherTest {
     }
 
     @Test
-    public void shouldCalculateNextSendDelay() throws InterruptedException {
-        Properties properties = new Properties();
-        Duration idleThreshold = Duration.ofSeconds(10);
-        properties.setProperty("observers.batch.idleThreshold", idleThreshold.toString());
-        properties.setProperty("observers.batch.cooldownTime", Duration.ofSeconds(15).toString());
-        properties.setProperty("observers.batch.maximumWaitTime", Duration.ofMinutes(2).toString());
-
-        Scheduler mock = mock(Scheduler.class);
-        CooldownBatcher observer = new CooldownBatcher(mock, null);
-        observer.configure(new Configuration(properties, "observers.batch"));
-
-        LogEvent message = new LogEventSampler().build();
-        Thread.sleep(20);
-        Instant sendTime = observer.addToBatch(message, Instant.now());
-        assertEquals(message.getInstant().plus(idleThreshold), sendTime);
-    }
-
-    @Test
     public void shouldProcessMessages() {
-        List<LogEventBatch> batches = new ArrayList<>();
-        Scheduler mock = mock(Scheduler.class);
-        CooldownBatcher observer = new CooldownBatcher(mock, batches::add);
+        List<List<LogEvent>> batches = new ArrayList<>();
+        ScheduledExecutorService mock = mock(ScheduledExecutorService.class);
+        CooldownBatcher<LogEvent> observer = new CooldownBatcher<>(batches::add, mock);
 
         Duration maximumWaitTime = Duration.ofMinutes(10);
         observer.setMaximumWaitTime(maximumWaitTime);
@@ -76,18 +62,61 @@ public class CooldownBatcherTest {
         LogEvent firstMessage = new LogEventSampler()
                 .withTime(now.minus(maximumWaitTime).minus(Duration.ofMillis(100)))
                 .build();
-        observer.logEvent(firstMessage);
+        observer.add(firstMessage, Instant.now());
 
         LogEvent secondMessage = new LogEventSampler().withTime(now).build();
-        observer.logEvent(secondMessage);
+        observer.add(secondMessage, Instant.now());
 
         ArgumentCaptor<Runnable> executeArg = ArgumentCaptor.forClass(Runnable.class);
-        verify(mock).setAction(executeArg.capture());
+        verify(mock, times(2)).schedule(executeArg.capture(), anyLong(), any());
 
         executeArg.getValue().run();
-        assertEquals(Arrays.asList(new LogEventBatch().add(firstMessage).add((secondMessage))),
+        assertEquals(Arrays.asList(Arrays.asList(firstMessage, secondMessage)),
                 batches);
     }
 
 
+    private static class TestCooldownBatcher extends CooldownBatcher<Object> {
+
+        Duration nextDelay;
+
+        public TestCooldownBatcher(Consumer callback, ScheduledExecutorService executor) {
+            super(callback, executor);
+        }
+
+        @Override
+        protected synchronized void scheduleFlush(Duration delay) {
+            this.nextDelay = delay;
+        }
+    }
+
+    private TestCooldownBatcher cooldownBatcher = new TestCooldownBatcher(null, null);
+
+    @Test
+    public void shouldWaitIdleThresholdBeforeFlushing() {
+        cooldownBatcher.setIdleThreshold(Duration.ofSeconds(2));
+        cooldownBatcher.add(new Object(), Instant.now());
+        assertEquals(Duration.ofSeconds(2), cooldownBatcher.nextDelay);
+    }
+
+    @Test
+    public void shouldWaitMinimumCooldownThreshold() {
+        cooldownBatcher.setCooldownTime(Duration.ofSeconds(30));
+        Instant start = Instant.now();
+        cooldownBatcher.setLastFlushTime(start);
+        cooldownBatcher.add(new Object(), start.plusSeconds(10));
+        assertEquals(Duration.ofSeconds(20), cooldownBatcher.nextDelay);
+    }
+
+    @Test
+    public void shouldNeverWaitLongerThanMaxWait() {
+        cooldownBatcher.setIdleThreshold(Duration.ofSeconds(25));
+        cooldownBatcher.setMaximumWaitTime(Duration.ofMinutes(1));
+        Instant start = Instant.now();
+        cooldownBatcher.add(new Object(), start);
+        cooldownBatcher.add(new Object(), start.plusSeconds(24));
+        cooldownBatcher.add(new Object(), start.plusSeconds(48));
+
+        assertEquals(Duration.ofSeconds(12), cooldownBatcher.nextDelay);
+    }
 }

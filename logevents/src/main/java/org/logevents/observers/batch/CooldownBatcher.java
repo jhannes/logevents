@@ -1,13 +1,17 @@
 package org.logevents.observers.batch;
 
 import org.logevents.LogEvent;
-import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.observers.BatchingLogEventObserver;
 import org.logevents.status.LogEventStatus;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -25,31 +29,33 @@ import java.util.function.Consumer;
  *
  * @author Johannes Brodwall
  */
-public class CooldownBatcher implements LogEventObserver {
-    private Instant lastFlushTime = Instant.ofEpochMilli(0);
-    private LogEventBatch currentBatch = new LogEventBatch();
+public class CooldownBatcher<T> implements Batcher<T> {
+    private Instant lastFlushTime = Instant.EPOCH;
+    private List<T> batch = new ArrayList<>();
 
     protected Duration cooldownTime = Duration.ofSeconds(15);
     protected Duration maximumWaitTime = Duration.ofMinutes(1);
     protected Duration idleThreshold = Duration.ofSeconds(5);
 
-    private Scheduler flusher;
-    private Consumer<LogEventBatch> processor;
+    private final ScheduledExecutorService executor;
+    private Instant batchStartedTime;
+    private final Consumer<List<T>> processor;
 
-    public CooldownBatcher(Scheduler flusher, Consumer<LogEventBatch> processor) {
-        this.flusher = flusher;
+    private ScheduledFuture<?> task;
+
+    public CooldownBatcher(Consumer<List<T>> processor, ScheduledExecutorService executor) {
         this.processor = processor;
-        flusher.setAction(this::execute);
+        this.executor = executor;
     }
 
     /**
      * Read <code>idleThreshold</code>, <code>cooldownTime</code> and <code>maximumWaitTime</code>
      * from configuration
      */
-    public void configure(Configuration configuration) {
-        idleThreshold = configuration.optionalDuration("idleThreshold").orElse(idleThreshold);
-        cooldownTime = configuration.optionalDuration("cooldownTime").orElse(cooldownTime);
-        maximumWaitTime = configuration.optionalDuration("maximumWaitTime").orElse(maximumWaitTime);
+    public void configure(Configuration configuration, String prefix) {
+        idleThreshold = configuration.optionalDuration(prefix + "idleThreshold").orElse(idleThreshold);
+        cooldownTime = configuration.optionalDuration(prefix + "cooldownTime").orElse(cooldownTime);
+        maximumWaitTime = configuration.optionalDuration(prefix + "maximumWaitTime").orElse(maximumWaitTime);
     }
 
     /**
@@ -73,53 +79,75 @@ public class CooldownBatcher implements LogEventObserver {
         this.maximumWaitTime = maximumWaitTime;
     }
 
-    @Override
-    public void logEvent(LogEvent e) {
-        Instant now = Instant.now();
-        Instant sendTime = addToBatch(e, now);
-        Duration duration = Duration.between(now, sendTime);
-        flusher.scheduleFlush(duration);
+    public synchronized void accept(T o) {
+        add(o, Instant.now());
     }
 
-    protected Instant addToBatch(LogEvent logEvent, Instant now) {
-        currentBatch.add(logEvent);
-        return nextSendDelay(now);
+    protected void add(T o, Instant now) {
+        batch.add(o);
+        updateSchedule(now);
     }
 
-    protected Instant nextSendDelay(Instant now) {
-        if (currentBatch.firstEventTime().plus(maximumWaitTime).isBefore(now)) {
-            // We have waited long enough - send it now!
-            return now;
-        } else {
-            // Wait the necessary time before sending - may be in the past
-            return earliestSendTime();
+    private synchronized void updateSchedule(Instant now) {
+        if (batchStartedTime == null) {
+            this.batchStartedTime = Instant.now();
         }
+        Instant latestFlushTime = batchStartedTime.plus(maximumWaitTime);
+        Instant sendTime = earliest(now);
+
+        if (sendTime.isAfter(latestFlushTime)) {
+            sendTime = latestFlushTime;
+        }
+        Duration delay = Duration.between(now, sendTime);
+        scheduleFlush(delay);
     }
 
     /**
      * Returns lastFlushTime + cooldownTime or lastEventTime + idleThreshold, whichever is latest
      */
-    protected Instant earliestSendTime() {
-        Instant idleTimeout = currentBatch.latestEventTime().plus(idleThreshold);
+    private Instant earliest(Instant now) {
+        Instant idleTimeout = now.plus(idleThreshold);
         Instant cooldownTimeout = lastFlushTime.plus(cooldownTime);
-        return idleTimeout.isAfter(cooldownTimeout) ? idleTimeout : cooldownTimeout;
+        return cooldownTimeout.isAfter(idleTimeout) ? cooldownTimeout : idleTimeout;
     }
 
-    protected void execute() {
-        LogEventBatch batch = takeCurrentBatch();
-        if (!batch.isEmpty()) {
-            try {
-                processor.accept(batch);
-            } catch (Exception e) {
-                LogEventStatus.getInstance().addFatal(this, "Failed to process batch", e);
-            }
+
+    protected synchronized void scheduleFlush(Duration delay) {
+        if (task != null) {
+            LogEventStatus.getInstance().addTrace(this, "Cancelling existing timer");
+            task.cancel(false);
+        }
+        LogEventStatus.getInstance().addTrace(this, "Scheduling flush in " + delay);
+        task = executor.schedule(this::flush, delay.toMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    private synchronized void flush() {
+        LogEventStatus.getInstance().addDebug(this, "Flushing");
+        List<T> currentBatch = takeCurrentBatch();
+        task = null;
+
+        try {
+            processor.accept(currentBatch);
+        } catch (Exception e) {
+            LogEventStatus.getInstance().addFatal(this, "Failed to process batch", e);
         }
     }
 
-    protected synchronized LogEventBatch takeCurrentBatch() {
+    protected List<T> takeCurrentBatch() {
+        List<T> currentBatch = this.batch;
+        batch = new ArrayList<>();
+        batchStartedTime = null;
         lastFlushTime = Instant.now();
-        LogEventBatch returnedBatch = this.currentBatch;
-        currentBatch = new LogEventBatch();
-        return returnedBatch;
+        return currentBatch;
     }
+
+    @Override
+    public List<T> getCurrentBatch() {
+        return batch;
+    }
+
+    void setLastFlushTime(Instant lastFlushTime) {
+        this.lastFlushTime = lastFlushTime;
+    }
+
 }

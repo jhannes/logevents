@@ -8,6 +8,7 @@ import org.logevents.util.NetUtils;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
+import java.util.function.Function;
 
 public abstract class HttpPostJsonLogEventObserver extends BatchingLogEventObserver {
     private URL url;
@@ -22,6 +23,10 @@ public abstract class HttpPostJsonLogEventObserver extends BatchingLogEventObser
 
     @Override
     public void processBatch(LogEventBatch batch) {
+        sendBatch(batch, this::formatBatch);
+    }
+
+    protected void sendBatch(LogEventBatch batch, Function<LogEventBatch, Map<String, Object>> formatter) {
         if (batch.isEmpty()) {
             return;
         }
@@ -31,7 +36,7 @@ public abstract class HttpPostJsonLogEventObserver extends BatchingLogEventObser
         }
         Map<String, Object> jsonMessage;
         try {
-            jsonMessage = formatBatch(batch);
+            jsonMessage = formatter.apply(batch);
         } catch (Exception e) {
             LogEventStatus.getInstance().addFatal(this, "Runtime error generating message", e);
             return;

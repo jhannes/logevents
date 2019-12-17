@@ -1,11 +1,14 @@
 package org.logevents.observers;
 
+import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventsServlet;
-import org.logevents.observers.batch.BatchThrottler;
-import org.logevents.observers.batch.ExecutorScheduler;
 import org.logevents.observers.batch.LogEventBatch;
+import org.logevents.observers.batch.LogEventBatcher;
+import org.logevents.observers.batch.LogEventBatcherWithMdc;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
+import org.logevents.observers.batch.ThrottlingBatcher;
+import org.slf4j.MarkerFactory;
 
 import java.net.URL;
 import java.util.List;
@@ -42,7 +45,7 @@ import java.util.Properties;
  *
  * @see BatchingLogEventObserver
  * @see MicrosoftTeamsLogEventObserver
- * @see BatchThrottler
+ * @see ThrottlingBatcher
  */
 public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
 
@@ -102,17 +105,40 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
     }
 
     @Override
-    protected BatchThrottler createBatcher(Configuration configuration, String markerName) {
+    protected LogEventObserver createBatcher(Configuration configuration, String markerName) {
+        if (configuration.optionalString("markers." + markerName + ".mdc").isPresent()) {
+            return createMdcBatcher(configuration, markerName);
+        }
+        String throttle = configuration.getString("markers." + markerName + ".throttle");
+        SlackLogEventsFormatter formatter = createMarkerFormatter(configuration, markerName);
+        return new LogEventBatcher(new ThrottlingBatcher<>(
+                throttle,
+                batch -> sendBatch(new LogEventBatch(batch), formatter::createMessage),
+                executor
+        ));
+    }
+
+    protected SlackLogEventsFormatter createMarkerFormatter(Configuration configuration, String markerName) {
         SlackLogEventsFormatter formatter = setupFormatter(configuration);
+        configuration.optionalString("markers." + markerName + ".username")
+                .ifPresent(username -> formatter.setUsername(Optional.of(username)));
         configuration.optionalString("markers." + markerName + ".channel")
                 .ifPresent(channel -> formatter.setChannel(Optional.of(channel)));
         configuration.optionalString("markers." + markerName + ".emoji")
                 .ifPresent(emoji -> formatter.setIconEmoji(Optional.of(emoji)));
-        String throttle = configuration.getString("markers." + markerName + ".throttle");
-        return new BatchThrottler(
-                new ExecutorScheduler(scheduledExecutorService, shutdownHook),
-                this::processBatch
-        ).setThrottle(throttle);
+        return formatter;
+    }
+
+    @Override
+    protected LogEventObserver createMdcBatcher(Configuration configuration, String markerName) {
+        SlackLogEventsFormatter formatter = createMarkerFormatter(configuration, markerName);
+        return new LogEventBatcherWithMdc(
+                executor,
+                configuration.getString("markers." + markerName + ".throttle"),
+                MarkerFactory.getMarker(markerName),
+                configuration.getString("markers." + markerName + ".mdc"),
+                batch -> sendBatch(new LogEventBatch(batch), formatter::createMessage)
+        );
     }
 
     @Override

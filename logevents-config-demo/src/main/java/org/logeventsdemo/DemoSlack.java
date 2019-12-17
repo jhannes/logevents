@@ -19,7 +19,7 @@ public class DemoSlack {
         LogEventFactory factory = LogEventFactory.getInstance();
 
         // Get your webhook at https://www.slack.com/apps/manage/custom-integrations
-        //  and put in logevents.properties as observers.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
+        //  and put in logevents.properties as observer.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
 
         Properties properties = configurator.loadConfigurationProperties();

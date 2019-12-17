@@ -12,6 +12,12 @@ import java.util.Objects;
 public class LogEventBatch implements Iterable<LogEvent> {
     private List<LogEvent> batch = new ArrayList<>();
 
+    public LogEventBatch(List<LogEvent> batch) {
+        this.batch = new ArrayList<>(batch);
+    }
+
+    public LogEventBatch() {}
+
     public LogEventBatch add(LogEvent logEvent) {
         this.batch.add(logEvent);
         return this;
@@ -71,5 +77,17 @@ public class LogEventBatch implements Iterable<LogEvent> {
     @Override
     public int hashCode() {
         return Objects.hash(batch);
+    }
+
+    @Override
+    public String toString() {
+        return "LogEventBatch{" +
+                "size=" + size() +
+                ",topLevel=" + (isEmpty() ? "none" : firstHighestLevelLogEventGroup().toString()) +
+                '}';
+    }
+
+    public void clear() {
+        this.batch.clear();
     }
 }

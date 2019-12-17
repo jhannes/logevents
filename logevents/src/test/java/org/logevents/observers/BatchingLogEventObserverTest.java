@@ -1,57 +1,34 @@
 package org.logevents.observers;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.observers.batch.Scheduler;
+import org.logevents.observers.batch.LogEventBatcher;
+import org.logevents.observers.batch.LogEventBatcherWithMdc;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
 public class BatchingLogEventObserverTest {
 
-    private List<Runnable> flushActions = new ArrayList<>();
-
-    private class FlusherScheduler implements Scheduler {
-        @Override
-        public void scheduleFlush(Duration delay) {
-
-        }
-
-        @Override
-        public void setAction(Runnable action) {
-            flushActions.add(action);
-        }
-    }
-
     private class Observer extends BatchingLogEventObserver {
-        List<LogEventBatch> batches = new ArrayList<>();
-
-        public Observer(FlusherScheduler flusherScheduler) {
-            super(() -> flusherScheduler);
-        }
 
         public Observer(Properties properties, String prefix) {
-            this(new FlusherScheduler());
-            Configuration configuration = new Configuration(properties, prefix);
-
-            configureFilter(configuration);
-            configureBatching(configuration);
-            configuration.checkForUnknownFields();
+            Configuration config = new Configuration(properties, prefix);
+            configureBatching(config);
+            configureMarkers(config);
+            configureFilter(config);
         }
 
         @Override
         protected void processBatch(LogEventBatch batch) {
-            batches.add(batch);
         }
 
     }
@@ -59,18 +36,60 @@ public class BatchingLogEventObserverTest {
     @Test
     public void shouldSendSeparateBatchesForThrottledMarkers() {
         Marker myMarker = MarkerFactory.getMarker("MY_MARKER");
-
-        ArrayList<LogEventBatch> batches = new ArrayList<>();
-        Observer observer = new Observer(new Properties(), "observer.test");
+        Marker otherMarker = MarkerFactory.getMarker("OTHER_MARKER");
 
         Properties properties = new Properties();
-        properties.put("observer.test.markers.MY_MARKER.throttle", "PT0.1S PT0.3S");
-        observer.configureMarkers(new Configuration(properties, "observer.test"));
-        observer.getMarker(myMarker).setBatchProcessor(batches::add);
+        properties.put("observer.test.markers.MY_MARKER.idleThreshold", "PT2S");
+        properties.put("observer.test.markers.OTHER_MARKER.idleThreshold", "PT2S");
+        Observer observer = new Observer(properties, "observer.test");
 
-        LogEvent event = new LogEventSampler().withMarker(myMarker).build();
-        observer.logEvent(event);
-        flushActions.forEach(Runnable::run);
-        assertEquals(Arrays.asList(new LogEventBatch().add(event)), batches);
+        LogEvent myFirstEvent = new LogEventSampler().withMarker(myMarker).build();
+        LogEvent mySecondEvent = new LogEventSampler().withMarker(myMarker).build();
+        LogEvent otherEvent = new LogEventSampler().withMarker(otherMarker).build();
+        LogEvent unknownEvent = new LogEventSampler().withMarker().build();
+
+        observer.logEvent(myFirstEvent);
+        observer.logEvent(mySecondEvent);
+        observer.logEvent(otherEvent);
+        observer.logEvent(unknownEvent);
+
+        assertEquals(Arrays.asList(myFirstEvent, mySecondEvent),
+                ((LogEventBatcher)observer.getMarkerBatcher(myMarker)).getCurrentBatch());
+        assertEquals(Arrays.asList(otherEvent),
+                ((LogEventBatcher)observer.getMarkerBatcher(otherMarker)).getCurrentBatch());
+        assertEquals(Arrays.asList(unknownEvent),
+                ((LogEventBatcher)observer.getDefaultBatcher()).getCurrentBatch());
+    }
+
+    @Test
+    public void shouldSendSeparateBatchesForMdcThrottledMarkers() {
+        Marker myMarker = MarkerFactory.getMarker("MDC_MARKER");
+        Marker otherMarker = MarkerFactory.getMarker("OTHER_MARKER");
+
+        Properties properties = new Properties();
+        properties.put("observer.test.markers.MDC_MARKER.idleThreshold", "PT2S");
+        properties.put("observer.test.markers.MDC_MARKER.mdc", "userId");
+        Observer observer = new Observer(properties, "observer.test");
+
+        LogEventSampler sampler = new LogEventSampler().withMarker(myMarker);
+
+        LogEvent firstForAlice = sampler.withMdc("userId", "alice").build();
+        LogEvent secondForAlice = sampler.withMdc("userId", "alice").build();
+        LogEvent firstForBob = sampler.withMdc("userId", "bob").build();
+        LogEvent withoutMdc = new LogEventSampler().withMarker(myMarker).build();
+        LogEvent otherEvent = sampler.withMarker(otherMarker).withMdc("userId", "bob").build();
+
+        observer.logEvent(firstForAlice);
+        observer.logEvent(firstForBob);
+        observer.logEvent(otherEvent);
+        observer.logEvent(withoutMdc);
+        observer.logEvent(secondForAlice);
+
+        LogEventBatcherWithMdc markerBatcher = (LogEventBatcherWithMdc) observer.getMarkerBatcher(myMarker);
+        assertEquals(Arrays.asList(withoutMdc), markerBatcher.getCurrentBatch());
+        assertEquals(Arrays.asList(firstForAlice, secondForAlice),
+                markerBatcher.getBatcher("alice").getCurrentBatch());
+        assertEquals(Arrays.asList(firstForBob),
+                markerBatcher.getBatcher("bob").getCurrentBatch());
     }
 }
