@@ -11,6 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Abstract superclass of LogEventObservers to filter which messages are logged. Supports
+ * <code>threshold</code> on {@link Level}, <code>suppressMarkers</code> (don't log messages with any
+ * of the given markers) and <code>requiredMarker</code> (only log messages with one of the given markers)
+ */
 public abstract class FilteredLogEventObserver implements LogEventObserver {
     private Level threshold = Level.TRACE;
     private List<Marker> suppressedMarkers = new ArrayList<>();

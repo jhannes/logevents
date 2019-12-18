@@ -18,6 +18,10 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Utility class to keep open files for {@link FileLogEventObserver} for efficiency. Will close
+ * files when necessary to avoid resource leak.
+ */
 public class FileChannelTracker {
 
     private int maxOpenChannels = 100;

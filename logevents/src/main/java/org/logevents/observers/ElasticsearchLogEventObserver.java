@@ -20,6 +20,21 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+/**
+ * Publishes asynchronously to Elasticsearch with the Elasticsearch
+ * <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices.html">Index API</a>
+ *
+ * <h3>Sample configuration</h3>
+ * <pre>
+ * observer.elastic=ElasticSearchLogEventObserver
+ * observer.elastic.elasticsearchUrl=http://localhost:9200
+ * observer.elastic.index=my-test-index
+ * observer.elastic.idleThreshold=PT2S
+ * observer.elastic.cooldownTime=PT1S
+ * observer.elastic.maximumWaitTime=PT30S
+ * observer.elastic.suppressMarkers=PERSONAL_DATA
+ * </pre>
+ */
 public class ElasticsearchLogEventObserver extends BatchingLogEventObserver {
 
     private final URL elasticsearchUrl;

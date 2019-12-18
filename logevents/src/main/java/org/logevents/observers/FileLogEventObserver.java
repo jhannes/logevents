@@ -21,7 +21,9 @@ import java.util.Properties;
  * Logs events to file. By default, FileLogEventObserver will log to the file
  * <code>logs/<em>your-app-name</em>-%date.log</code> as determined by
  * {@link #defaultFilename}. By default, each log event is logged with time,
- * thread, level and logger. Example configuration:
+ * thread, level and logger.
+ *
+ * <h3>Example configuration:</h3>
  *
  * <pre>
  * observer.file.filename=logs/my-file-name-%date.log
@@ -31,7 +33,7 @@ import java.util.Properties;
  * observer.file.formatter.exceptionFormatter.packageFilter=sun.www,uninterestingPackage
  * </pre>
  *
- * <h2>File name pattern</h2>
+ * <h3>File name pattern</h3>
  *
  * The following conversion words are supported in the filename:
  * <ul>

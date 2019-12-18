@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+/**
+ * In-memory implementation of {@link LogEventSource} to be used with {@link WebLogEventObserver}
+ */
 public class LogEventBuffer implements LogEventObserver, LogEventSource {
     /**
      * In order to survive reload of configuration, it's useful to have a static message buffer

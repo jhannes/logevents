@@ -38,6 +38,33 @@ import java.util.function.Consumer;
  * subclasses. Consecutive Log events with the same message pattern and log level
  * are grouped together so the processor can easily ignore duplicate messages.
  *
+ * <h3>Configuration example with cooldown (don't send messages too frequently)</h3>
+ *
+ *  The following will send the send messages at level WARN that don't have the {@link Marker}
+ *  "PERSONAL". After each batch, wait at least 10 seconds before sending the next batch. But after
+ *  each message is received, wait 2 seconds to see if more messages are coming. In any case, never
+ *  wait more than 30 seconds before sending a batch.
+ *
+ * <pre>
+ * observer.sample.threshold=WARN
+ * observer.sample.suppressMarkers=PERSONAL_DATA
+ * observer.sample.idleThreshold=PT2S
+ * observer.sample.cooldownTime=PT10S
+ * observer.sample.maximumWaitTime=PT30S
+ * </pre>
+ *
+ * <h3>Configuration example with throttle (increasingly larger offsets)</h3>
+ *
+ *  The following will send the first message at level WARN with the {@link Marker} "DAEMON" immediately,
+ *  then wait at least 30 seconds before sending the next, then 5 minutes, then 15 minutes between each
+ *  batch.
+ *
+ * <pre>
+ * observer.sample.threshold=WARN
+ * observer.sample.requireMarker=DAEMON
+ * observer.sample.throttle=PT30S PT5M PT15M
+ * </pre>
+ *
  * @see SlackLogEventObserver
  * @see MicrosoftTeamsLogEventObserver
  * @see SmtpLogEventObserver

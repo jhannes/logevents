@@ -10,6 +10,9 @@ import java.net.URL;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Convenience superclass for observers that send JSON over HTTP
+ */
 public abstract class HttpPostJsonLogEventObserver extends BatchingLogEventObserver {
     private URL url;
 
