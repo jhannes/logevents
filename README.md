@@ -8,18 +8,21 @@
 [![Vulnerability scan](https://snyk.io/test/github/jhannes/logevents/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/jhannes/logevents?targetFile=pom.xml)
 
 Setting up and configuring logging should be *easy*, whether you want to do it with
-configuration files or in code. Log Events is a small (250kb, no dependencies) logging framework
+configuration files or in code. Log Events is a small (265kb, *no dependencies*) logging framework
 built on top of SLF4J - the logging lingua franka for Java.
 
-It include nice formatting,
-[file observers](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) and
-[JUnit support](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/junit/ExpectedLogEventsRule.html)
-as well as logging to [Slack](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html),
-[Microsoft Teams](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html),
-[database](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/DatabaseLogEventObserver.html),
-a [web dashboard](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/LogEventsServlet.html)
-and [SMTP](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SmtpLogEventObserver.html)
-out of [the box](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/package-summary.html).
+Features:
+
+* [Console logging](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html) with good default colors (also on Windows)
+* [File logging](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) with reasonable defaults
+* [JUnit support](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/junit/ExpectedLogEventsRule.html) to easy assert on what is logged
+* [Email logging](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SmtpLogEventObserver.html), including throttling to reduce spamming when get lots of log messages
+* [Slack](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html) to send log messages to you favorite chat channel
+* [Microsoft Teams](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html)
+* [Logging to database](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/DatabaseLogEventObserver.html)
+* [Display logs on a web dashboard](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)
+* [Elasticsearch](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ElasticsearchLogEventObserver.html). Logging directly to Elastic search Index API avoids edge cases when writing and parsing log files
+* [Azure Application Insights](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/azure/ApplicationInsightsLogEventObserver.html) (requires optional com.microsoft.azure:applicationinsights-core dependency)
 
 ## Quick start:
 

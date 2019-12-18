@@ -121,8 +121,9 @@ public class LogEventsServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
         String path = req.getPathInfo();
+        String contextPath = req.getContextPath() != null ? req.getContextPath() : "";
         if (path == null) {
-            resp.sendRedirect(req.getContextPath() + req.getServletPath() + "/" +
+            resp.sendRedirect(contextPath + req.getServletPath() + "/" +
                     (req.getQueryString() != null ? "?" + req.getQueryString() : ""));
         } else if (path.equals("/")) {
             resp.setContentType("text/html");
@@ -137,7 +138,7 @@ public class LogEventsServlet extends HttpServlet {
             resp.setContentType("application/json");
             Map<String, Object> api = JsonParser.parseObject(getClass().getResourceAsStream(LOGEVENTS_API));
             HashMap<Object, Object> localServer = new HashMap<>();
-            localServer.put("url", req.getContextPath() + req.getServletPath());
+            localServer.put("url", contextPath + req.getServletPath());
             api.put("servers", Collections.singletonList(localServer));
             resp.getWriter().write(JsonUtil.toIndentedJson(api));
         } else if (path.equals("/login")) {
@@ -167,7 +168,7 @@ public class LogEventsServlet extends HttpServlet {
         }
     }
 
-    protected void establishSession(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+    protected void establishSession(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (req.getParameter("error_description") != null) {
             resp.getWriter().write("Login failed\n\n");
             resp.getWriter().write(req.getParameter("error_description"));
