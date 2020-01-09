@@ -4,6 +4,7 @@ import org.logevents.config.Configuration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class PatternReader<T extends Function<?, String>> {
@@ -29,12 +30,24 @@ public class PatternReader<T extends Function<?, String>> {
                 converters.add(factory.getConstant(text));
             }
             if (scanner.hasMoreCharacters() && scanner.current() != terminator) {
-                PatternConverterSpec<T> patternSpec = new PatternConverterSpec<>(configuration, scanner);
-                patternSpec.readConversion(this);
+                PatternConverterSpecWithSubpattern<T> patternSpec = new PatternConverterSpecWithSubpattern<>(configuration, scanner);
+                patternSpec.readConversion();
+                readSubpattern(patternSpec);
+                patternSpec.readParameters();
                 converters.add(factory.create(patternSpec));
             }
         }
         return factory.compositeFormatter(converters);
+    }
+
+    private void readSubpattern(PatternConverterSpecWithSubpattern<T> patternSpec) {
+        // TODO: Should only read subpattern for %replace and %<colors>, so that
+        //   it's possible to do %file(%line)
+        if (patternSpec.scanner.current() == '(')  {
+            patternSpec.advance();
+            patternSpec.setSubpattern(Optional.of(readConverter(patternSpec.scanner, ')')));
+            patternSpec.advance();
+        }
     }
 
 }

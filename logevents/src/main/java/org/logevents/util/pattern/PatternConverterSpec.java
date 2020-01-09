@@ -7,25 +7,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
- * Used to parse a single conversion for {@link PatternLogEventFormatter}. A
+ * Used to parse a single conversion for {@link PatternReader}. A
  * conversion is on the format
- * "%[&lt;minlength&gt;][.&lt;maxlength&gt;]&lt;conversion word&gt;[(&lt;conversion subpattern&gt;)][{&lt;parameter&gt;,&lt;parameter&gt;}]".
+ * "%[&lt;minlength&gt;][.&lt;maxlength&gt;]&lt;conversion word&gt;[{&lt;parameter&gt;,&lt;parameter&gt;}]".
  *
  * @author Johannes Brodwall
  *
  */
-public class PatternConverterSpec<T extends Function<?, String>> {
-
-    private final Configuration configuration;
+public class PatternConverterSpec {
+    protected final Configuration configuration;
+    protected StringScanner scanner;
     private Optional<Integer> minLength;
     private Optional<Integer> maxLength;
     private String conversionWord;
     private List<String> parameters = new ArrayList<>();
-    private Optional<T> subpattern = Optional.empty();
-    private StringScanner scanner;
     private BiFunction<Throwable, Optional<Integer>, String> throwableFormatter;
 
     public PatternConverterSpec(Configuration configuration, StringScanner scanner) {
@@ -33,23 +30,8 @@ public class PatternConverterSpec<T extends Function<?, String>> {
         this.scanner = scanner;
     }
 
-    /**
-     * Reads all the internal state from the scanner. Can only be called
-     * once as it doesn't rewind the scanner.
-     * @param formatter Used for sub-patterns
-     */
-    public void readConversion(PatternReader<T> formatter) {
-        readConversion();
-        try {
-            readSubpattern(formatter);
-            readParameters();
-        } catch (StringIndexOutOfBoundsException e) {
-            throw new IllegalArgumentException("End of string while reading <%" + getConversionWord() + "> from " + scanner);
-        }
-    }
-
     public void readConversion() {
-        scanner.advance();
+        advance();
         readMinLength();
         readMaxLength();
         readConversionWord();
@@ -82,14 +64,6 @@ public class PatternConverterSpec<T extends Function<?, String>> {
     }
 
     /**
-     * A fully parsed sub pattern specified in parenthesis () after the conversion word.
-     * The string used in the subpattern can contain further conversions of its own.
-     */
-    public Optional<T> getSubpattern() {
-        return subpattern;
-    }
-
-    /**
      * A list of parameters specified in curly brackets after the conversion word.
      * The parameters are separated by , and can optionally by quoted with single quotes (').
      * For example %date{ 'HH:mm:ss,SSS', Europe/Oslo} has the parameters "HH:mm:ss,SSS" and
@@ -107,20 +81,10 @@ public class PatternConverterSpec<T extends Function<?, String>> {
         return getParameter(i).map(Integer::parseInt);
     }
 
-    private void readSubpattern(PatternReader<T> parser) {
-        // TODO: Should only read subpattern for %replace and %<colors>, so that
-        //   it's possible to do %file(%line)
-        if (scanner.current() == '(')  {
-            scanner.advance();
-            this.subpattern = Optional.of(parser.readConverter(scanner, ')'));
-            scanner.advance();
-        }
-    }
-
     private void readMaxLength() {
         this.maxLength = Optional.empty();
         if (scanner.current() == '.') {
-            scanner.advance();
+            advance();
             maxLength = scanner.readInteger();
         }
     }
@@ -132,14 +96,14 @@ public class PatternConverterSpec<T extends Function<?, String>> {
     private void readConversionWord() {
         StringBuilder result = new StringBuilder();
         while (Character.isAlphabetic(scanner.current())) {
-            result.append(scanner.advance());
+            result.append(advance());
         }
         this.conversionWord = result.toString();
     }
 
-    private void readParameters() {
+    public void readParameters() {
         if (scanner.current() == '{')  {
-            scanner.advance();
+            advance();
             //noinspection StatementWithEmptyBody
             while (readSingleParameter()) {}
         }
@@ -153,16 +117,23 @@ public class PatternConverterSpec<T extends Function<?, String>> {
 
         String param = scanner.readUntil(',', '}');
         parameters.add(param);
-        return scanner.advance() == ',';
+        return advance() == ',';
+    }
+
+    char advance() {
+        if (!scanner.hasMoreCharacters()) {
+            throw new IllegalArgumentException("End of string while reading <%" + getConversionWord() + "> from " + scanner);
+        }
+        return scanner.advance();
     }
 
     private boolean readQuotedParameter() {
         // TODO: Escaped quotes
-        char quote = scanner.advance();
+        char quote = advance();
         parameters.add(scanner.readUntil(quote));
-        scanner.advance();
+        advance();
         scanner.skipWhitespace();
-        return scanner.advance() == ',';
+        return advance() == ',';
     }
 
     public BiFunction<Throwable, Optional<Integer>, String> getThrowableFormatter() {
@@ -172,5 +143,4 @@ public class PatternConverterSpec<T extends Function<?, String>> {
     public Configuration getConfiguration() {
         return configuration;
     }
-
 }

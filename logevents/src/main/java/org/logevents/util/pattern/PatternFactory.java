@@ -7,7 +7,7 @@ public interface PatternFactory<T extends Function<?, String>> {
 
     T getConstant(String string);
 
-    T create(PatternConverterSpec<T> patternSpec);
+    T create(PatternConverterSpecWithSubpattern<T> patternSpec);
 
     T compositeFormatter(List<T> converters);
 

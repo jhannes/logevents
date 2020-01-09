@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.logevents.util.pattern.PatternConverterSpec;
+import org.logevents.util.pattern.PatternConverterSpecWithSubpattern;
 import org.logevents.util.pattern.PatternFactory;
 
 public class LogEventFormatterBuilderFactory implements PatternFactory<LogEventFormatter> {
@@ -46,7 +46,7 @@ public class LogEventFormatterBuilderFactory implements PatternFactory<LogEventF
                 });
     }
 
-    public void putTransformer(String conversionWord, Function<PatternConverterSpec<LogEventFormatter>, Function<String, String>> transformerBuilder) {
+    public void putTransformer(String conversionWord, Function<PatternConverterSpecWithSubpattern<LogEventFormatter>, Function<String, String>> transformerBuilder) {
         put(conversionWord, spec -> {
            LogEventFormatter nestedFormatter = spec.getSubpattern().orElse(e -> "");
            Function<String, String> transformer = transformerBuilder.apply(spec);
@@ -59,7 +59,7 @@ public class LogEventFormatterBuilderFactory implements PatternFactory<LogEventF
     }
 
     @Override
-    public LogEventFormatter create(PatternConverterSpec<LogEventFormatter> spec) {
+    public LogEventFormatter create(PatternConverterSpecWithSubpattern<LogEventFormatter> spec) {
         String conversionWord = spec.getConversionWord();
         LogEventFormatterBuilder function = converterBuilders.get(conversionWord);
         if (function == null) {

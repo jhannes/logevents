@@ -2,7 +2,7 @@ package org.logevents.formatting;
 
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.util.pattern.PatternConverterSpec;
+import org.logevents.util.pattern.PatternConverterSpecWithSubpattern;
 import org.logevents.util.pattern.PatternReader;
 import org.slf4j.Marker;
 
@@ -17,7 +17,7 @@ import java.util.Properties;
  * {@link LogEvent} based on a configured pattern. The pattern consists of
  * constant parts and conversion parts, which starts with %-signs. The general format for conversion parts
  * is %[&lt;minlength&gt;][.&lt;maxlength&gt;]&lt;conversion word&gt;[(&lt;conversion subpattern&gt;)][{&lt;parameter&gt;,&lt;parameter&gt;}].
- * Conversion parts are handled with {@link PatternConverterSpec}. A conversion
+ * Conversion parts are handled with {@link PatternConverterSpecWithSubpattern}. A conversion
  * is specified with a conversion word, and you can extend {@link PatternLogEventFormatter}
  * with your own conversion words by adding them to the ConverterBuilderFactory.
  * <p>
