@@ -13,14 +13,10 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
     private final Level level;
     private String loggerName;
 
-    public LevelLoggingEventGenerator(String loggerName, Level level, LogEventObserver observer) {
+    LevelLoggingEventGenerator(String loggerName, Level level, LogEventObserver observer) {
         this.loggerName = loggerName;
         this.level = level;
-        if (observer instanceof CompositeLogEventObserver) {
-            this.observer = ((CompositeLogEventObserver)observer).filteredOn(level);
-        } else {
-            this.observer = observer;
-        }
+        this.observer = observer;
     }
 
     @Override

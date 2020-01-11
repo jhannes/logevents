@@ -63,6 +63,14 @@ public abstract class FilteredLogEventObserver implements LogEventObserver {
         return threshold;
     }
 
+    @Override
+    public LogEventObserver filteredOn(Level level, Level configuredThreshold) {
+        if (configuredThreshold == null || configuredThreshold.compareTo(level) < 0 || getThreshold().toInt() > level.toInt()) {
+            return new NullLogEventObserver();
+        }
+        return this;
+    }
+
     public void setSuppressMarkerStrings(List<String> markerNames) {
         setSuppressMarkers(markerNames.stream().map(MarkerFactory::getMarker).collect(Collectors.toList()));
     }

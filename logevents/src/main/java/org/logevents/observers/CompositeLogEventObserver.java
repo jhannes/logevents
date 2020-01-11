@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.logevents.LogEvent;
@@ -68,24 +67,11 @@ public class CompositeLogEventObserver implements LogEventObserver {
     /**
      * Returns the observers which should log messages at the specified level
      */
-    public LogEventObserver filteredOn(Level level) {
+    public LogEventObserver filteredOn(Level level, Level configuredThreshold) {
         List<LogEventObserver> observers = this.observers.stream()
-                .map(o -> getObserverAtLevel(o, level))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .map(o -> o.filteredOn(level, configuredThreshold))
+                .filter(o -> !(o instanceof NullLogEventObserver))
                 .collect(Collectors.toList());
         return observers.size() == this.observers.size() ? this : combineList(observers);
-    }
-
-    private Optional<LogEventObserver> getObserverAtLevel(LogEventObserver o, Level level) {
-        if (o instanceof FilteredLogEventObserver) {
-            return (((FilteredLogEventObserver) o).getThreshold().toInt() <= level.toInt()) ? Optional.of(o) : Optional.empty();
-        }
-        if (o instanceof LevelThresholdConditionalObserver) {
-            return (((LevelThresholdConditionalObserver) o).getThreshold().toInt() <= level.toInt())
-                    ? Optional.of(((LevelThresholdConditionalObserver) o).getDelegate())
-                    : Optional.empty();
-        }
-        return Optional.of(o);
     }
 }

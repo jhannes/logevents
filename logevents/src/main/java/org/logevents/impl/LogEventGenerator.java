@@ -1,6 +1,7 @@
 package org.logevents.impl;
 
 import org.logevents.LogEventObserver;
+import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
@@ -28,11 +29,12 @@ public interface LogEventGenerator {
 
     void log(Marker marker, String format, Object... args);
 
-    static LogEventGenerator create(String name, Level levelThreshold, Level level, LogEventObserver observer) {
-        if (levelThreshold != null && levelThreshold.compareTo(level) >= 0) {
-            return new LevelLoggingEventGenerator(name, level, observer);
-        } else {
+    static LogEventGenerator create(String name, Level configuredThreshold, Level level, LogEventObserver observer) {
+        LogEventObserver combined = observer.filteredOn(level, configuredThreshold);
+        if (combined instanceof NullLogEventObserver) {
             return new NullLoggingEventGenerator();
+        } else {
+            return new LevelLoggingEventGenerator(name, level, combined);
         }
     }
 }

@@ -157,6 +157,22 @@ public class DefaultLogEventConfiguratorTest {
                 ((CircularBufferLogEventObserver) factory.getObserver("buffer3")).getMessages());
     }
 
+    @Test
+    public void shouldIncreaseLoggingWithMultipleRootObservers() {
+        configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.setProperty("observer.ignored", "CircularBufferLogEventObserver");
+        configuration.setProperty("root", "ERROR buffer");
+        configuration.setProperty("root.observer.ignored", "INFO");
+        configuration.setProperty("logger.org.example", "DEBUG");
+
+        configurator.applyConfigurationProperties(factory, configuration);
+
+        factory.getLogger("org.example").debug("DEBUG to enabled logger");
+        factory.getLogger("com.example").debug("DEBUG to non-enabled logger");
+
+        assertEquals(Arrays.asList("DEBUG to enabled logger"),
+                ((CircularBufferLogEventObserver) factory.getObserver("buffer")).getMessages());
+    }
 
     @Test
     public void shouldSetNonInheritingLoggerObserverFromProperties() {

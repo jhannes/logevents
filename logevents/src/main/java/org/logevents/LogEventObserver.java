@@ -5,6 +5,8 @@ import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
+import org.logevents.observers.NullLogEventObserver;
+import org.slf4j.event.Level;
 
 /**
  * The main interface of the Log Event framework. Implement this
@@ -23,4 +25,10 @@ public interface LogEventObserver {
 
     void logEvent(LogEvent logEvent);
 
+    default LogEventObserver filteredOn(Level level, Level configuredThreshold) {
+        if (configuredThreshold == null || configuredThreshold.compareTo(level) < 0) {
+            return new NullLogEventObserver();
+        }
+        return this;
+    }
 }

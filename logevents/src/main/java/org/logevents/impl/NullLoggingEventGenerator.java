@@ -50,4 +50,5 @@ class NullLoggingEventGenerator implements LogEventGenerator {
     public void log(Marker marker, String format, Object... args) {
     }
 
+    NullLoggingEventGenerator() {}
 }

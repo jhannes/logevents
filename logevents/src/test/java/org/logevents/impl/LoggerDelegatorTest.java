@@ -1,8 +1,8 @@
-package org.logevents;
+package org.logevents.impl;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.logevents.impl.LoggerDelegator;
+import org.logevents.LogEvent;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
