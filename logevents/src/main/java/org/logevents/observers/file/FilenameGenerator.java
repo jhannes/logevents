@@ -42,18 +42,18 @@ public class FilenameGenerator {
         return Files.readAttributes(path, BasicFileAttributes.class).creationTime().toInstant();
     }
 
-    private final ArchiveFileParser archiveFileNameFormat;
-    private final LogFileParser logFileNameFormat;
+    private final FileNameFormat archiveFileNameFormat;
+    private final FileNameFormat logFileNameFormat;
 
     public FilenameGenerator(String filenamePattern, String archiveFilenamePattern) {
         if (filenamePattern != null) {
-            this.logFileNameFormat = new LogFileParser(this, filenamePattern);
+            this.logFileNameFormat = new FileNameFormat(filenamePattern);
         } else {
             this.logFileNameFormat = null;
         }
 
         if (archiveFilenamePattern != null) {
-            this.archiveFileNameFormat = new ArchiveFileParser(archiveFilenamePattern);
+            this.archiveFileNameFormat = new FileNameFormat(archiveFilenamePattern);
         } else {
             this.archiveFileNameFormat = null;
         }
@@ -113,7 +113,7 @@ public class FilenameGenerator {
     }
 
     public String getArchiveName(String filename, ZonedDateTime fileCreationTime) {
-        Map<String, String> mdcMap = logFileNameFormat.parseMdcValues(filename).getMdc();
+        Map<String, String> mdcMap = logFileNameFormat.parse(filename).getMdc();
         if (mdcMap == null) {
             return null;
         }
@@ -125,7 +125,7 @@ public class FilenameGenerator {
     }
 
     public Map<String, String> parseMdcValues(String filename) {
-        return logFileNameFormat.parseMdcValues(filename).getMdc();
+        return logFileNameFormat.parse(filename).getMdc();
     }
 }
 

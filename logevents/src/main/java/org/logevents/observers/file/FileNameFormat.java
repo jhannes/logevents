@@ -8,43 +8,70 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-class LogFileParser {
+class FileNameFormat {
+    private final Function<FileInfo, String> filenameGenerator;
 
     private final Pattern filenameRegex;
     private List<BiConsumer<String, FileInfo>> regexGroupExtractor = new ArrayList<>();
 
-    public LogFileParser(FilenameGenerator filenameGenerator, String filenamePattern) {
-        StringScanner scanner = new StringScanner(filenamePattern);
+    public FileNameFormat(String archiveFilenamePattern) {
+        Configuration configuration = new Configuration();
+
+        StringScanner scanner = new StringScanner(archiveFilenamePattern);
+
+        List<Function<FileInfo, String>> filenameGenerators = new ArrayList<>();
         StringBuilder filenameRegexBuilder = new StringBuilder();
 
         while (scanner.hasMoreCharacters()) {
             String text = scanner.readUntil('%');
+            filenameGenerators.add(file -> text);
             filenameRegexBuilder.append(text);
             if (scanner.hasMoreCharacters()) {
-                PatternConverterSpec spec = new PatternConverterSpec(new Configuration(), scanner);
+                PatternConverterSpec spec = new PatternConverterSpec(configuration, scanner);
                 spec.readConversion();
                 spec.readParameters();
                 switch (spec.getConversionWord()) {
                     case "d":
                     case "date":
+                        DateTimeFormatter formatter = spec.getParameter(0)
+                                .map(pattern -> new DateTimeFormatterBuilder().appendPattern(pattern).parseDefaulting(WeekFields.ISO.dayOfWeek(), 1).toFormatter())
+                                .orElse(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                        filenameGenerators.add(info -> formatter.format(info.getFileTime()));
+
                         String dateFormat = spec.getParameter(0).orElse("yyyy-MM-dd");
+                        DateTimeFormatterBuilder parserBuilder = new DateTimeFormatterBuilder().appendPattern(dateFormat);
+                        if (dateFormat.contains("w") && !dateFormat.contains("d")) {
+                            parserBuilder.parseDefaulting(WeekFields.ISO.dayOfWeek(), 1);
+                        }
+                        DateTimeFormatter dateTimeFormatter = parserBuilder.toFormatter();
                         filenameRegexBuilder.append("(").append(FilenameGenerator.asDateRegex(dateFormat)).append(")");
-                        regexGroupExtractor.add((group, fileInfo) -> {});
+                        regexGroupExtractor.add((group, fileInfo) -> fileInfo.addTimeInfo(dateTimeFormatter.parse(group)));
+
                         break;
                     case "application":
-                        filenameRegexBuilder.append(filenameGenerator.getApplicationName());
+                        filenameGenerators.add(info -> configuration.getApplicationName());
+
+                        filenameRegexBuilder.append(configuration.getApplicationName());
                         break;
                     case "X":
                     case "mdc":
                         String[] parts = spec.getParameters().get(0).split(":-");
                         String key = parts[0];
+                        String defaultValue = parts.length > 1 ? parts[1] : "";
+                        filenameGenerators.add(info -> info.getMdc().getOrDefault(key, defaultValue));
+
                         filenameRegexBuilder.append("([a-zA-Z0-9.-_]*)");
                         regexGroupExtractor.add((group, fileInfo) -> fileInfo.getMdc().put(key, group));
                         break;
@@ -56,18 +83,8 @@ class LogFileParser {
             }
         }
         filenameRegex = Pattern.compile(filenameRegexBuilder.toString());
-    }
 
-    public FileInfo parseMdcValues(String filename) {
-        Matcher matcher = filenameRegex.matcher(filename);
-        if (matcher.matches()) {
-            FileInfo fileInfo = new FileInfo();
-            for (int group = 1; group <= matcher.groupCount(); group++) {
-                regexGroupExtractor.get(group-1).accept(matcher.group(group), fileInfo);
-            }
-            return fileInfo;
-        }
-        return null;
+        filenameGenerator = info -> filenameGenerators.stream().map(f -> f.apply(info)).collect(Collectors.joining());
     }
 
     public List<String> findFileNames() throws IOException {
@@ -93,6 +110,36 @@ class LogFileParser {
                 findFileNames(prefix + path.getFileName().toString() + "/", path, fileParts, index+1, collectedFiles);
             }
 
+        }
+    }
+
+    ZonedDateTime parseDate(String filename) {
+        Matcher matcher = filenameRegex.matcher(filename);
+        if (matcher.matches()) {
+            FileInfo fileInfo = new FileInfo();
+            for (int group = 1; group <= matcher.groupCount(); group++) {
+                regexGroupExtractor.get(group - 1).accept(matcher.group(group), fileInfo);
+            }
+            return fileInfo.getParsedDateTime();
+        } else {
+            throw new RuntimeException("Uh oh");
+        }
+    }
+
+    public String generateName(FileInfo fileInfo) {
+        return filenameGenerator.apply(fileInfo);
+    }
+
+    public FileInfo parse(String filename) {
+        Matcher matcher = filenameRegex.matcher(filename);
+        if (matcher.matches()) {
+            FileInfo fileInfo = new FileInfo();
+            for (int group = 1; group <= matcher.groupCount(); group++) {
+                regexGroupExtractor.get(group - 1).accept(matcher.group(group), fileInfo);
+            }
+            return fileInfo;
+        } else {
+            throw new RuntimeException("Uh oh");
         }
     }
 }
