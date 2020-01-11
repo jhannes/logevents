@@ -56,7 +56,7 @@ class FileNameFormat {
                             parserBuilder.parseDefaulting(WeekFields.ISO.dayOfWeek(), 1);
                         }
                         DateTimeFormatter dateTimeFormatter = parserBuilder.toFormatter();
-                        filenameRegexBuilder.append("(").append(FilenameGenerator.asDateRegex(dateFormat)).append(")");
+                        filenameRegexBuilder.append("(").append(asDateRegex(dateFormat)).append(")");
                         regexGroupExtractor.add((group, fileInfo) -> fileInfo.addTimeInfo(dateTimeFormatter.parse(group)));
 
                         break;
@@ -141,5 +141,50 @@ class FileNameFormat {
         } else {
             throw new RuntimeException("Uh oh");
         }
+    }
+
+    /**
+     * Copied from {@link DateTimeFormatterBuilder#appendPattern(String)}
+     */
+    static String asDateRegex(String pattern) {
+        StringBuilder regex = new StringBuilder();
+        for (int pos = 0; pos < pattern.length(); pos++) {
+            char cur = pattern.charAt(pos);
+            if ((cur >= 'A' && cur <= 'Z') || (cur >= 'a' && cur <= 'z')) {
+                int start = pos++;
+                for ( ; pos < pattern.length() && pattern.charAt(pos) == cur; pos++);  // short loop
+                int count = pos - start;
+                if (cur == 'M' || cur == 'd' || cur == 'E') {
+                    if (count == 3) {
+                        regex.append("\\w{3}");
+                    } else if (count >= 3) {
+                        regex.append("\\w{3,}");
+                    } else {
+                        regex.append("\\d{1,").append(count).append("}");
+                    }
+                } else {
+                    regex.append("\\d{1,").append(count).append("}");
+                }
+                pos--;
+            } else if (cur == '\'') {
+                int start = pos++;
+                for ( ; pos < pattern.length(); pos++) {
+                    if (pattern.charAt(pos) == '\'') {
+                        if (pos + 1 < pattern.length() && pattern.charAt(pos + 1) == '\'') {
+                            pos++;
+                        } else {
+                            break;  // end of literal
+                        }
+                    }
+                }
+                if (pos >= pattern.length()) {
+                    throw new IllegalArgumentException("Pattern ends with an incomplete string literal: " + pattern);
+                }
+                regex.append(pattern, start + 1, pos);
+            } else {
+                regex.append(cur);
+            }
+        }
+        return regex.toString();
     }
 }

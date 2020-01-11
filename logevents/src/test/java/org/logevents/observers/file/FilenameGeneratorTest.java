@@ -115,9 +115,8 @@ public class FilenameGeneratorTest {
 
     @Test
     public void shouldTranformDateFormatsToRegex() {
-        FilenameGenerator generator = new FilenameGenerator(null, null);
-        assertEquals("\\d{1,4}-\\w{3}-\\d{1,2}", FilenameGenerator.asDateRegex("yyyy-MMM-dd"));
-        assertEquals("\\d{1,4}-W\\d{1,2}", FilenameGenerator.asDateRegex("YYYY-'W'ww"));
+        assertEquals("\\d{1,4}-\\w{3}-\\d{1,2}", FileNameFormat.asDateRegex("yyyy-MMM-dd"));
+        assertEquals("\\d{1,4}-W\\d{1,2}", FileNameFormat.asDateRegex("YYYY-'W'ww"));
     }
 
     @Test
@@ -144,12 +143,12 @@ public class FilenameGeneratorTest {
     }
 
     @Test
-    @Ignore
     public void shouldDeleteOldArchives() throws IOException {
-        FilenameGenerator generator = new FilenameGenerator(null, "target/logs/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        deleteRecursively(Paths.get("target/logs2"));
+        FilenameGenerator generator = new FilenameGenerator("target/logs2/application.log", "target/logs2/%date{YYYY-'W'ww}/application-%date{EEE}.log");
         generator.setRetention(Period.ofDays(7));
         String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(1), new HashMap<>());
-        Path archive = Paths.get("target", archiveName);
+        Path archive = Paths.get(archiveName);
         Files.createDirectories(archive.getParent());
         Files.write(archive, Collections.singleton("ABC"));
         generator.rollover();
@@ -157,9 +156,23 @@ public class FilenameGeneratorTest {
     }
 
     @Test
+    public void shouldRetainNewArchives() throws IOException {
+        deleteRecursively(Paths.get("target/logs3"));
+        FilenameGenerator generator = new FilenameGenerator("logs/application.log", "target/logs3/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        generator.setRetention(Period.ofDays(7));
+        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).plusDays(1), new HashMap<>());
+        Path archive = Paths.get(archiveName);
+        Files.createDirectories(archive.getParent());
+        Files.write(archive, Collections.singleton("ABC"));
+        generator.rollover();
+        assertTrue(Files.exists(archive));
+    }
+
+    @Test
     @Ignore
     public void shouldCompressOldArchives() throws IOException {
-        FilenameGenerator generator = new FilenameGenerator(null, "target/logs/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        deleteRecursively(Paths.get("target/logs4"));
+        FilenameGenerator generator = new FilenameGenerator("logs/application.log", "target/logs4/%date{YYYY-'W'ww}/application-%date{EEE}.log");
         generator.setRetention(Period.ofDays(7));
         String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(1), new HashMap<>());
         Path archive = Paths.get(archiveName);
@@ -179,19 +192,6 @@ public class FilenameGeneratorTest {
             assertEquals(lines, writtenLines);
         }
 
-    }
-
-    @Test
-    @Ignore
-    public void shouldRetainNewArchives() throws IOException {
-        FilenameGenerator generator = new FilenameGenerator(null, "target/logs/%date{YYYY-'W'ww}/application-%date{EEE}.log");
-        generator.setRetention(Period.ofDays(7));
-        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).plusDays(1), new HashMap<>());
-        Path archive = Paths.get(archiveName);
-        Files.createDirectories(archive.getParent());
-        Files.write(archive, Collections.singleton("ABC"));
-        generator.rollover();
-        assertTrue(Files.exists(archive));
     }
 
     @Test
@@ -312,19 +312,21 @@ public class FilenameGeneratorTest {
     }
 
     private void deleteRecursively(Path directory) throws IOException {
-        Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
+        if (Files.exists(directory)) {
+            Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
 
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                Files.delete(dir);
-                return FileVisitResult.CONTINUE;
-            }
-        });
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
     }
 
 
