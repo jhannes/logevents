@@ -1,12 +1,12 @@
-package org.logevents.observers;
+package org.logevents.observers.file;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.config.Configuration;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.FileVisitResult;
@@ -143,6 +143,78 @@ public class FilenameGeneratorTest {
         assertEquals(fileLines, Files.readAllLines(Paths.get(generator.getArchiveName(fileTime, mdcMap))));
     }
 
+    @Test
+    @Ignore
+    public void shouldDeleteOldArchives() throws IOException {
+        FilenameGenerator generator = new FilenameGenerator(null, "target/logs/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        generator.setRetention(Period.ofDays(7));
+        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(1), new HashMap<>());
+        Path archive = Paths.get("target", archiveName);
+        Files.createDirectories(archive.getParent());
+        Files.write(archive, Collections.singleton("ABC"));
+        generator.rollover();
+        assertFalse(Files.exists(archive));
+    }
+
+    @Test
+    @Ignore
+    public void shouldCompressOldArchives() throws IOException {
+        FilenameGenerator generator = new FilenameGenerator(null, "target/logs/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        generator.setRetention(Period.ofDays(7));
+        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(1), new HashMap<>());
+        Path archive = Paths.get(archiveName);
+        Files.createDirectories(archive.getParent());
+        List<String> writtenLines = Collections.singletonList("ABC");
+        Files.write(archive, writtenLines);
+
+        generator.rollover();
+
+        assertFalse(Files.exists(archive));
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(Paths.get(archiveName + ".gz").toFile()))))) {
+            List<String> lines = new ArrayList<>();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+            assertEquals(lines, writtenLines);
+        }
+
+    }
+
+    @Test
+    @Ignore
+    public void shouldRetainNewArchives() throws IOException {
+        FilenameGenerator generator = new FilenameGenerator(null, "target/logs/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        generator.setRetention(Period.ofDays(7));
+        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).plusDays(1), new HashMap<>());
+        Path archive = Paths.get(archiveName);
+        Files.createDirectories(archive.getParent());
+        Files.write(archive, Collections.singleton("ABC"));
+        generator.rollover();
+        assertTrue(Files.exists(archive));
+    }
+
+    @Test
+    @Ignore
+    public void shouldFallbackIfTargetArchiveAlreadyExists() throws IOException {
+        FilenameGenerator generator = new FilenameGenerator("target/logs/application-%mdc{A}.log", "target/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+
+        Path activeFile = Paths.get("target/logs/application-utils.log");
+        Files.createDirectories(activeFile.getParent());
+        List<String> fileLines = Collections.singletonList(UUID.randomUUID().toString());
+        Files.write(activeFile, fileLines);
+
+        ZonedDateTime fileTime = ZonedDateTime.now().minusDays(2);
+        BasicFileAttributeView attributes = Files.getFileAttributeView(activeFile, BasicFileAttributeView.class);
+        FileTime from = FileTime.from(fileTime.toInstant());
+        attributes.setTimes(from, from, from);
+
+        String archiveName = generator.getArchiveName(fileTime, new HashMap<>());
+        Files.write(Paths.get(archiveName), Collections.singleton("Already existing archive"));
+
+        generator.rollover();
+        assertFalse(Files.exists(activeFile));
+    }
 
     private ZonedDateTime getFileTime(String archiveFilenamePattern, String filename) {
         return new FilenameGenerator(null, archiveFilenamePattern).parseArchiveFileTime(filename);
@@ -189,15 +261,7 @@ public class FilenameGeneratorTest {
         Period retention = Period.ofWeeks(1);
 
 
-
-
-
-        File[] list = new File(".").listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.matches("application-\\d{4}-\\d{2}-\\d{2}.log");
-            }
-        });
+        File[] list = new File(".").listFiles((dir, name) -> name.matches("application-\\d{4}-\\d{2}-\\d{2}.log"));
         for (File file : list) {
             Pattern pattern = Pattern.compile("application-(\\d{4}-\\d{2}-\\d{2}).log");
             Matcher matcher = pattern.matcher(file.getName());
