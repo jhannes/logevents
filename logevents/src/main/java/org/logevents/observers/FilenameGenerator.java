@@ -4,6 +4,13 @@ import org.logevents.config.Configuration;
 import org.logevents.util.pattern.PatternConverterSpec;
 import org.logevents.util.pattern.StringScanner;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Period;
@@ -26,6 +33,30 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class FilenameGenerator {
+
+    private Period retention;
+
+    public void setRetention(Period retention) {
+        this.retention = retention;
+    }
+
+    public void rollover() throws IOException {
+        List<String> files = logFileNameFormat.findFileNames();
+
+        for (String file : files) {
+            Path path = Paths.get(file);
+            ZonedDateTime fileTime = getFileTime(path).atZone(ZoneId.systemDefault());
+            if (fileTime.toLocalDate().isBefore(LocalDate.now())) {
+                Path target = Paths.get(getArchiveName(file, fileTime));
+                Files.createDirectories(target.getParent());
+                Files.move(path, target);
+            }
+        }
+    }
+
+    private Instant getFileTime(Path path) throws IOException {
+        return Files.readAttributes(path, BasicFileAttributes.class).creationTime().toInstant();
+    }
 
     private static class ArchiveFileParser {
         private final Function<FileInfo, String> filenameGenerator;
@@ -195,6 +226,32 @@ public class FilenameGenerator {
                 return result;
             }
             return null;
+        }
+
+        public List<String> findFileNames() throws IOException {
+            String[] split = filenameRegex.pattern().split("/");
+            List<String> result = new ArrayList<>();
+            findFileNames("", Paths.get("."), split, 0, result);
+            return result;
+        }
+
+        private void findFileNames(String prefix, Path directory, String[] fileParts, int index, List<String> collectedFiles) throws IOException {
+            if (!Files.exists(directory)) {
+                return;
+            } else if (index == fileParts.length) {
+                collectedFiles.add(prefix.substring(0, prefix.length()-1)); // remove trailing "/"
+                return;
+            }
+            if (fileParts[index].matches("^[.$a-zA-Z0-9_-]+")) {
+                findFileNames(prefix + fileParts[index] + "/", directory.resolve(fileParts[index]), fileParts, index+1, collectedFiles);
+            } else {
+                for (Path path : Files.list(directory)
+                        .filter(p -> p.getFileName().toString().matches(fileParts[index]))
+                        .collect(Collectors.toList())) {
+                    findFileNames(prefix + path.getFileName().toString() + "/", path, fileParts, index+1, collectedFiles);
+                }
+
+            }
         }
     }
 

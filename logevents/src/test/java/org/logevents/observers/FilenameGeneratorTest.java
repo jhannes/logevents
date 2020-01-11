@@ -9,9 +9,11 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
@@ -31,7 +33,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -118,6 +119,30 @@ public class FilenameGeneratorTest {
         assertEquals("\\d{1,4}-\\w{3}-\\d{1,2}", FilenameGenerator.asDateRegex("yyyy-MMM-dd"));
         assertEquals("\\d{1,4}-W\\d{1,2}", FilenameGenerator.asDateRegex("YYYY-'W'ww"));
     }
+
+    @Test
+    public void shouldArchiveOldActive() throws IOException {
+        deleteRecursively(Paths.get("target/logs"));
+        FilenameGenerator generator = new FilenameGenerator("target/logs/application-%mdc{A}.log", "target/logs/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+
+        Path path = Paths.get("target/logs/application-core.log");
+        Files.createDirectories(path.getParent());
+        List<String> fileLines = Collections.singletonList(UUID.randomUUID().toString());
+        Files.write(path, fileLines);
+
+        ZonedDateTime fileTime = ZonedDateTime.now().minusDays(2);
+        BasicFileAttributeView attributes = Files.getFileAttributeView(path, BasicFileAttributeView.class);
+        FileTime from = FileTime.from(fileTime.toInstant());
+        attributes.setTimes(from, from, from);
+
+        generator.rollover();
+        assertFalse(Files.exists(path));
+
+        HashMap<String, String> mdcMap = new HashMap<>();
+        mdcMap.put("A", "core");
+        assertEquals(fileLines, Files.readAllLines(Paths.get(generator.getArchiveName(fileTime, mdcMap))));
+    }
+
 
     private ZonedDateTime getFileTime(String archiveFilenamePattern, String filename) {
         return new FilenameGenerator(null, archiveFilenamePattern).parseArchiveFileTime(filename);
@@ -220,6 +245,22 @@ public class FilenameGeneratorTest {
         Files.createFile(Paths.get(filename + "s"));
         Files.deleteIfExists(Paths.get("a" + filename));
         Files.createFile(Paths.get("a" + filename));
+    }
+
+    private void deleteRecursively(Path directory) throws IOException {
+        Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
 
