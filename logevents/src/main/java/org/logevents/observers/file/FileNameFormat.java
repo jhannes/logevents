@@ -139,7 +139,7 @@ class FileNameFormat {
             }
             return fileInfo;
         } else {
-            throw new RuntimeException("Uh oh");
+            throw new IllegalArgumentException("File does not match pattern: " + filename + " !~ " + filenameRegex);
         }
     }
 

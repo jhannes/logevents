@@ -121,10 +121,10 @@ public class FilenameGeneratorTest {
 
     @Test
     public void shouldArchiveOldActive() throws IOException {
-        deleteRecursively(Paths.get("target/logs"));
-        FilenameGenerator generator = new FilenameGenerator("target/logs/application-%mdc{A}.log", "target/logs/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        deleteRecursively(Paths.get("target/logs0"));
+        FilenameGenerator generator = new FilenameGenerator("target/logs0/application-%mdc{A}.log", "target/logs0/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
 
-        Path path = Paths.get("target/logs/application-core.log");
+        Path path = Paths.get("target/logs0/application-core.log");
         Files.createDirectories(path.getParent());
         List<String> fileLines = Collections.singletonList(UUID.randomUUID().toString());
         Files.write(path, fileLines);
@@ -147,7 +147,7 @@ public class FilenameGeneratorTest {
         deleteRecursively(Paths.get("target/logs2"));
         FilenameGenerator generator = new FilenameGenerator("target/logs2/application.log", "target/logs2/%date{YYYY-'W'ww}/application-%date{EEE}.log");
         generator.setRetention(Period.ofDays(7));
-        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(1), new HashMap<>());
+        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(2), new HashMap<>());
         Path archive = Paths.get(archiveName);
         Files.createDirectories(archive.getParent());
         Files.write(archive, Collections.singleton("ABC"));
@@ -169,12 +169,11 @@ public class FilenameGeneratorTest {
     }
 
     @Test
-    @Ignore
     public void shouldCompressOldArchives() throws IOException {
         deleteRecursively(Paths.get("target/logs4"));
         FilenameGenerator generator = new FilenameGenerator("logs/application.log", "target/logs4/%date{YYYY-'W'ww}/application-%date{EEE}.log");
-        generator.setRetention(Period.ofDays(7));
-        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(1), new HashMap<>());
+        generator.setUncompressedRetention(Period.ofDays(3));
+        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(3)).minusDays(1), new HashMap<>());
         Path archive = Paths.get(archiveName);
         Files.createDirectories(archive.getParent());
         List<String> writtenLines = Collections.singletonList("ABC");
@@ -191,15 +190,16 @@ public class FilenameGeneratorTest {
             }
             assertEquals(lines, writtenLines);
         }
-
     }
 
     @Test
     @Ignore
     public void shouldFallbackIfTargetArchiveAlreadyExists() throws IOException {
-        FilenameGenerator generator = new FilenameGenerator("target/logs/application-%mdc{A}.log", "target/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        deleteRecursively(Paths.get("target/logs5"));
+        FilenameGenerator generator = new FilenameGenerator("target/logs5/application-%mdc{A}.log", "target/logs5/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
 
-        Path activeFile = Paths.get("target/logs/application-utils.log");
+        String activeFilename = "target/logs5/application-utils.log";
+        Path activeFile = Paths.get(activeFilename);
         Files.createDirectories(activeFile.getParent());
         List<String> fileLines = Collections.singletonList(UUID.randomUUID().toString());
         Files.write(activeFile, fileLines);
@@ -209,7 +209,8 @@ public class FilenameGeneratorTest {
         FileTime from = FileTime.from(fileTime.toInstant());
         attributes.setTimes(from, from, from);
 
-        String archiveName = generator.getArchiveName(fileTime, new HashMap<>());
+        String archiveName = generator.getArchiveName(activeFilename, fileTime);
+        Files.createDirectories(Paths.get(archiveName).getParent());
         Files.write(Paths.get(archiveName), Collections.singleton("Already existing archive"));
 
         generator.rollover();

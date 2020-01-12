@@ -2,12 +2,10 @@ package org.logevents.observers.batch;
 
 import org.logevents.LogEvent;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 
 public class LogEventBatch implements Iterable<LogEvent> {
     private List<LogEvent> batch = new ArrayList<>();
@@ -21,10 +19,6 @@ public class LogEventBatch implements Iterable<LogEvent> {
     public LogEventBatch add(LogEvent logEvent) {
         this.batch.add(logEvent);
         return this;
-    }
-
-    public Instant firstEventTime() {
-        return batch.isEmpty() ? null : batch.get(0).getInstant();
     }
 
     public boolean isEmpty() {
@@ -60,23 +54,6 @@ public class LogEventBatch implements Iterable<LogEvent> {
             }
         }
         return groups;
-    }
-
-    public Instant latestEventTime() {
-        return batch.get(batch.size()-1).getInstant();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        LogEventBatch logEvents = (LogEventBatch) o;
-        return Objects.equals(batch, logEvents.batch);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(batch);
     }
 
     @Override
