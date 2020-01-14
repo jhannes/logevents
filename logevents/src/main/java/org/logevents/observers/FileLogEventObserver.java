@@ -29,12 +29,16 @@ import java.util.concurrent.TimeUnit;
  * Logs events to file. By default, FileLogEventObserver will log to the file
  * <code>logs/<em>your-app-name</em>-%date.log</code> as determined by
  * {@link #defaultFilename}. By default, each log event is logged with time,
- * thread, level and logger.
+ * thread, level and logger. Uses {@link FileRotationWorker} to archive and delete
+ * old logs.
  *
  * <h3>Example configuration:</h3>
  *
  * <pre>
- * observer.file.filename=logs/my-file-name-%date.log
+ * observer.file.filename=logs/%application.log
+ * observer.file.archivedFilename=logs/%date{%yyyy-MM}/%application-%date.log
+ * observer.file.retention=P4W
+ * observer.file.compressAfter=P1W
  * observer.file.formatter=PatternLogEventFormatter
  * observer.file.formatter.pattern=%date %coloredLevel: %msg
  * observer.file.formatter.exceptionFormatter=CauseFirstExceptionFormatter
@@ -60,6 +64,7 @@ import java.util.concurrent.TimeUnit;
  * </ul>
  *
  * @see org.logevents.formatting.PatternLogEventFormatter
+ * @see org.logevents.observers.file.FilenameFormatter
  */
 public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
 
@@ -101,7 +106,7 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
             fileRotationWorker = new FileRotationWorker(filenameGenerator, new FilenameFormatter(archivedFilename, configuration));
 
             configuration.optionalString("retention").map(Period::parse).ifPresent(fileRotationWorker::setRetention);
-            configuration.optionalString("compressAfter").map(Period::parse).ifPresent(fileRotationWorker::setUncompressedRetention);
+            configuration.optionalString("compressAfter").map(Period::parse).ifPresent(fileRotationWorker::setCompressAfter);
 
             executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("FileLogEventObserver"));
             startFileRotation(fileRotationWorker);

@@ -139,7 +139,7 @@ public class FileRotationWorkerTest {
     public void shouldCompressOldArchives() throws IOException {
         deleteRecursively(Paths.get("target/logs/4"));
         FileRotationWorker worker = new FileRotationWorker("logs/application.log", "target/logs/4/%date{YYYY-'W'ww}/application-%date{EEE}.log");
-        worker.setUncompressedRetention(Period.ofDays(3));
+        worker.setCompressAfter(Period.ofDays(3));
         String archiveName = worker.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(3)).minusDays(1));
         Path archive = Paths.get(archiveName);
         Files.createDirectories(archive.getParent());

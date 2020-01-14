@@ -27,6 +27,28 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * Creates, parses and scans for file names matching a specified pattern, such as
+ * <code>logs/%mdc{tenant:-common}/%date{YYYY-'w'WW}/%application-%EE.log</code>, which would expand to
+ * <code>logs/example.org/2020-W01/myapplication-Mon.log</code> if the {@link org.slf4j.MDC} variable
+ * "tenant" was "example.org" and the date 2019/12/30 (which was the first week of the year 2020).
+ *
+ * <p>The following conversion words are supported in the filename:</p>
+ * <ul>
+ *     <li>
+ *         <code>%date</code>: The date and time of the log event.
+ *         Optionally supports a date formatting pattern from {@link DateTimeFormatter#ofPattern}
+ *         e.g. %date{DD-MMM HH:mm:ss}. Default format is <code>yyyy-MM-dd HH:mm:ss.SSS</code>.
+ *     </li>
+ *     <li><code>%marker[{defaultValue}]</code>: {@link Marker} (if any)</li>
+ *     <li>
+ *         <code>%mdc{key:-default}</code>:
+ *         the specified {@link org.slf4j.MDC} variable or default value if not set
+ *     </li>
+ *     <li><code>%application</code>: The value of {@link Configuration#getApplicationName()}</li>
+ *     <li><code>%node</code>: The value of {@link Configuration#getNodeName()} ()}</li>
+ * </ul>
+ */
 public class FilenameFormatter {
     private final Function<FileInfo, String> filenameGenerator;
     private final Function<LogEvent, String> logFileGenerator;

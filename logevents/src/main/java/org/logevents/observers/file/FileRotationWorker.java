@@ -20,20 +20,49 @@ import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.zip.GZIPOutputStream;
 
+/**
+ * Archives and expires old files based on file name patterns. Contains
+ * {@link #activeLogFilenameFormatter} and {@link #archiveFilenameFormatter} with describes the format for the filenames
+ * for the current active logfile and archived logfiles respectively.
+ *
+ * <p>Assumes that each day of logging for the active logfile will yield a unique archived logfile. If either
+ * FilenameFormatter contains variables from MDC or Marker, both should contain the same parameter set, or unique
+ * archived files cannot be created.</p>
+ *
+ * <p>Assumes that {@link #nextExecution()} should happen each at midnight according to {@link Configuration#getLocale()}</p>
+ */
 public class FileRotationWorker {
 
+    /**
+     * The filename formatter for the archived log files
+     */
     private final FilenameFormatter archiveFilenameFormatter;
-    private final FilenameFormatter activeLogFileFormat;
-    private Period retention;
-    private Period uncompressedRetention;
 
-    public FileRotationWorker(FilenameFormatter activeLogFileFormat, FilenameFormatter archiveFilenameFormatter) {
-        this.activeLogFileFormat = activeLogFileFormat;
+    /**
+     * The filename formatter for the active log files
+     */
+    private final FilenameFormatter activeLogFilenameFormatter;
+
+    /**
+     * How long should archived logfiles be kept before being deleted? The %date specified in the
+     * {@link #archiveFilenameFormatter} is used to calculate when a file should be deleted. If retention
+     * is null, files are never deleted
+     */
+    private Period retention;
+
+    /**
+     * Compress archived files after this period. The %date specified in the {@link #archiveFilenameFormatter} is used
+     * to calculate when a file should be compressed. If null, files are never compressed
+     */
+    private Period compressAfter;
+
+    public FileRotationWorker(FilenameFormatter activeLogFilenameFormatter, FilenameFormatter archiveFilenameFormatter) {
+        this.activeLogFilenameFormatter = activeLogFilenameFormatter;
         this.archiveFilenameFormatter = archiveFilenameFormatter;
     }
 
     public FileRotationWorker(String filenamePattern, String archiveFilenamePattern) {
-        this.activeLogFileFormat = new FilenameFormatter(filenamePattern, new Configuration());
+        this.activeLogFilenameFormatter = new FilenameFormatter(filenamePattern, new Configuration());
         this.archiveFilenameFormatter = new FilenameFormatter(archiveFilenamePattern, new Configuration());
     }
 
@@ -41,8 +70,8 @@ public class FileRotationWorker {
         this.retention = retention;
     }
 
-    public void setUncompressedRetention(Period uncompressedRetention) {
-        this.uncompressedRetention = uncompressedRetention;
+    public void setCompressAfter(Period compressAfter) {
+        this.compressAfter = compressAfter;
     }
 
     public void rollover() {
@@ -53,7 +82,7 @@ public class FileRotationWorker {
     }
 
     private void archiveActiveLogfiles() {
-        for (String file : activeLogFileFormat.findFileNames()) {
+        for (String file : activeLogFilenameFormatter.findFileNames()) {
             LogEventStatus.getInstance().addTrace(this, "Checking if file should be archived: " + file);
             try {
                 Path path = Paths.get(file);
@@ -77,12 +106,12 @@ public class FileRotationWorker {
     }
 
     private void compressArchivedLogfiles() {
-        if (uncompressedRetention != null) {
+        if (compressAfter != null) {
             for (String archivedFile : archiveFilenameFormatter.findFileNames()) {
                 LogEventStatus.getInstance().addTrace(this, "Checking if file should be compressed: " + archivedFile);
                 try {
                     ZonedDateTime archiveDate = archiveFilenameFormatter.parseDate(archivedFile);
-                    if (archiveDate.isBefore(ZonedDateTime.now().minus(uncompressedRetention))) {
+                    if (archiveDate.isBefore(ZonedDateTime.now().minus(compressAfter))) {
                         LogEventStatus.getInstance().addDebug(this, "Compressing " + archivedFile);
                         compress(archivedFile);
                     }
@@ -124,7 +153,7 @@ public class FileRotationWorker {
     }
 
     public String getArchiveName(String filename, ZonedDateTime fileCreationTime) {
-        FileInfo fileInfo = activeLogFileFormat.parse(filename);
+        FileInfo fileInfo = activeLogFilenameFormatter.parse(filename);
         if (fileInfo == null) {
             return null;
         }
