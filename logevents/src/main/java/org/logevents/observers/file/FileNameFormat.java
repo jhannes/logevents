@@ -29,6 +29,10 @@ class FileNameFormat {
     private List<BiConsumer<String, FileInfo>> regexGroupExtractor = new ArrayList<>();
     private Locale locale;
 
+    public FileNameFormat(String filenamePattern) {
+        this(filenamePattern, new Configuration());
+    }
+
     public FileNameFormat(String filenamePattern, Configuration configuration) {
         this(filenamePattern, configuration, Locale.getDefault(Locale.Category.FORMAT));
     }

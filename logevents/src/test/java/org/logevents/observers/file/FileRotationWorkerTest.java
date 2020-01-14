@@ -15,21 +15,16 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 
@@ -50,40 +45,6 @@ public class FileRotationWorkerTest {
     }
 
     @Test
-    public void shouldRetrieveMdcValuesFromCurrentFilename() {
-        String filenamePattern = "logs-%mdc{function:-core}/%application-%mdc{ip:-unknown}.log";
-        Map<String, String> mdcValues = new FileRotationWorker(filenamePattern, "logs-%mdc{function}/application-%mdc{ip}-%date.log")
-                .parseMdcValues("logs-usermanager/" + Configuration.calculateApplicationName() + "-127.0.0.1.log");
-        assertEquals("usermanager", mdcValues.get("function"));
-        assertEquals("127.0.0.1", mdcValues.get("ip"));
-        assertEquals(2, mdcValues.size());
-    }
-
-    @Test
-    public void shouldRetrieveFromFilename() {
-        String archiveFilenamePattern = "logs-%mdc{function:-core}/%date{yyyy-MM}/%application-%date.log";
-        ZonedDateTime date = getFileTime(archiveFilenamePattern, "logs-core/2018-11/" + Configuration.calculateApplicationName() + "-2018-11-21.log");
-        assertEquals(date.toLocalDate(), LocalDate.of(2018, 11, 21));
-        assertEquals(date.toLocalTime(), LocalTime.of(0, 0));
-    }
-
-    @Test
-    public void shouldRetrieveTimeFromFilename() {
-        String archiveFilenamePattern = "logs/%date/application-%date{yyyy-MM-dd-HH-mm}.log";
-        ZonedDateTime date = getFileTime(archiveFilenamePattern, "logs/2018-01-01/application-2018-11-21-13-37.log");
-        assertEquals(date.toLocalDate(), LocalDate.of(2018, 11, 21));
-        assertEquals(date.toLocalTime(), LocalTime.of(13, 37));
-    }
-
-    @Test
-    public void shouldRetrieveDateFromInexact() {
-        String archiveFilenamePattern = "logs/%date{yyyy-MMM}/application.log";
-        ZonedDateTime date = getFileTime(archiveFilenamePattern, "logs/2018-Nov/application.log");
-        assertEquals(date.toLocalDate(), LocalDate.of(2018, 11, 30));
-        assertEquals(date.toLocalTime(), LocalTime.of(0, 0));
-    }
-
-    @Test
     public void shouldDetermineArchiveName() {
         String filenamePattern = "%application-%mdc{function:-core}-%marker-%date{EEE}.log";
         String archiveFilenamePattern = "logs-%mdc{function:-core}/%marker/%date{yyyy-MM}/%application-%date.log";
@@ -98,47 +59,6 @@ public class FileRotationWorkerTest {
 
     private String getArchiveName(String filenamePattern, String archiveFilenamePattern, String filename, ZonedDateTime dateTime) {
         return new FileRotationWorker(filenamePattern, archiveFilenamePattern).getArchiveName(filename, dateTime);
-    }
-
-    @Test
-    public void shouldCombineFromWeek() {
-        String archiveFilenamePattern = "logs/%date{YYYY-'W'ww}/application-%date{EEE}.log";
-        FileNameFormat fileNameFormat = new FileNameFormat(archiveFilenamePattern, new Configuration());
-        ZonedDateTime date = fileNameFormat.parseDate("logs/2020-W01/application-Tue.log");
-        assertEquals(LocalDate.of(2019, 12, 31), date.toLocalDate());
-        assertEquals(LocalTime.of(0, 0), date.toLocalTime());
-    }
-
-    @Test
-    public void shouldRecalculateDayFromWeekdayAndWeekInUs() {
-        calculateDayFromWeekdayAndWeek(Locale.forLanguageTag("us"));
-    }
-
-    @Test
-    public void shouldRecalculateDayFromWeekdayAndWeekInEurope() {
-        Locale de = Locale.forLanguageTag("de");
-        assertEquals(DayOfWeek.MONDAY, WeekFields.of(de).getFirstDayOfWeek());
-        calculateDayFromWeekdayAndWeek(de);
-    }
-
-    private void calculateDayFromWeekdayAndWeek(Locale locale) {
-        String filenamePattern = "logs/%date{YYYY-'W'ww}-%date{EEE}.log";
-        FileNameFormat fileNameFormat = new FileNameFormat(filenamePattern, new Configuration(), locale);
-
-        LocalDate startDate = LocalDate.of(2020, 1, 6);
-        for (LocalDate date = startDate; date.isBefore(startDate.plusWeeks(1)); date = date.plusDays(1)) {
-            ZonedDateTime fileCreationTime = date.atTime(10, 10).atZone(ZoneId.systemDefault());
-            String filename = fileNameFormat.generateName(fileCreationTime);
-
-            assertEquals(filename,
-                    date, fileNameFormat.parseDate(filename).toLocalDate());
-        }
-    }
-
-    @Test
-    public void shouldTranformDateFormatsToRegex() {
-        assertEquals("\\d{1,4}-\\w{2,3}-\\d{1,2}", FileNameFormat.asDateRegex("yyyy-MMM-dd"));
-        assertEquals("\\d{1,4}-W\\d{1,2}", FileNameFormat.asDateRegex("YYYY-'W'ww"));
     }
 
     @Test
@@ -248,10 +168,6 @@ public class FileRotationWorkerTest {
         assertFalse(Files.exists(activeFile));
 
         assertEquals(fileLines, Files.readAllLines(Paths.get(generator.getArchiveName(activeFilename, fileTime) + ".2")));
-    }
-
-    private ZonedDateTime getFileTime(String archiveFilenamePattern, String filename) {
-        return new FileRotationWorker("application.log", archiveFilenamePattern).parseArchiveFileTime(filename);
     }
 
     private void deleteRecursively(Path directory) throws IOException {
