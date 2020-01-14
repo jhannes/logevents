@@ -12,6 +12,7 @@ import org.logevents.observers.batch.LogEventBatcherWithMdc;
 import org.logevents.observers.batch.LogEventShutdownHook;
 import org.logevents.observers.batch.ThrottleBatcherFactory;
 import org.logevents.observers.batch.ThrottlingBatcher;
+import org.logevents.util.DaemonThreadFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -21,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
@@ -76,17 +75,7 @@ import java.util.function.Consumer;
 public abstract class BatchingLogEventObserver extends FilteredLogEventObserver {
 
     protected static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
-            new ThreadFactory() {
-                private final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
-                private final AtomicInteger threadNumber = new AtomicInteger(1);
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = defaultFactory.newThread(r);
-                    thread.setName("LogEvent$ScheduleExecutor-" + threadNumber.getAndIncrement());
-                    thread.setDaemon(true);
-                    return thread;
-                }
-            });
+            new DaemonThreadFactory("BatchingLogEventObserver"));
 
     protected static LogEventShutdownHook shutdownHook = new LogEventShutdownHook();
     static {

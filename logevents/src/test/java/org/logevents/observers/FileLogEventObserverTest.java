@@ -56,7 +56,7 @@ public class FileLogEventObserverTest {
         properties.setProperty("observer.file.formatter.pattern", "%message");
         LogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
 
-        assertEquals("FileLogEventObserver{filename=test-log-file.log,formatter=PatternLogEventFormatter{%message}}", observer.toString());
+        assertEquals("FileLogEventObserver{filename=FilenameFormatter{test-log-file.log},formatter=PatternLogEventFormatter{%message},fileRotationWorker=null}", observer.toString());
     }
 
     @Test
@@ -83,6 +83,25 @@ public class FileLogEventObserverTest {
         logger.warn("A warning message");
 
         assertEquals(Arrays.asList("A warning message"), Files.readAllLines(path));
+    }
+
+    @Test
+    public void shouldRotateLogs() {
+        Properties properties = new Properties();
+        properties.put("observer.file.filename", "logs/%application.log");
+        properties.put("observer.file.archivedFilename", "logs/old/%application-%date.log");
+        properties.put("observer.file.retention", "P2M");
+        properties.put("observer.file.compressAfter", "P2W");
+        FileLogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
+        assertEquals("FileLogEventObserver{" +
+                        "filename=FilenameFormatter{logs/%application.log}," +
+                        "formatter=TTLLEventLogFormatter," +
+                        "fileRotationWorker=FileRotationWorker{" +
+                            "archiveFilenameFormatter=FilenameFormatter{logs/old/%application-%date.log}," +
+                            "retention=P2M}}",
+                observer.toString());
+
+        assertEquals(1, observer.shutdown().size());
     }
 
     @Test

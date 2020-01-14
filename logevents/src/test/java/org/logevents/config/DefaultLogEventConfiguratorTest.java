@@ -83,7 +83,7 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(Level.DEBUG, factory.getRootLogger().getLevelThreshold());
         assertEquals(
                 "DateRollingLogEventObserver{"
-                + "filename=FileNameFormat{filenamePattern=logs/application.log},"
+                + "filename=FilenameFormatter{logs/application.log},"
                 + "formatter=TTLLEventLogFormatter,fileRotationWorker=null}",
                 factory.getRootLogger().getObserver());
     }
@@ -97,7 +97,7 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(
                 "CompositeLogEventObserver{["
                 +"ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, "
-                +"FileLogEventObserver{filename=FileNameFormat{filenamePattern=logs/" + CWD + "-test.log}," +
+                +"FileLogEventObserver{filename=FilenameFormatter{logs/" + CWD + "-test.log}," +
                         "formatter=TTLLEventLogFormatter," +
                         "fileRotationWorker=null}]}",
                 factory.getRootLogger().getObserver());
@@ -114,7 +114,7 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(
                 "CompositeLogEventObserver{["
                 +"ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, "
-                +"FileLogEventObserver{filename=FileNameFormat{filenamePattern=logs/" + CWD + "-test.log}," +
+                +"FileLogEventObserver{filename=FilenameFormatter{logs/" + CWD + "-test.log}," +
                         "formatter=ConsoleLogEventFormatter,fileRotationWorker=null}]}",
                 factory.getRootLogger().getObserver());
     }

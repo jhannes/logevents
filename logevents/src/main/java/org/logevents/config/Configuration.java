@@ -12,6 +12,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -293,5 +294,14 @@ public class Configuration {
         } else {
             return packageFilters;
         }
+    }
+
+    public Locale getLocale() {
+        return Locale.getDefault(Locale.Category.FORMAT);
+    }
+
+    @Override
+    public String toString() {
+        return "Configuration{prefix='" + prefix + '\'' + '}';
     }
 }

@@ -4,7 +4,6 @@ import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.formatting.LogEventFormatter;
-import org.logevents.formatting.LogEventFormatterBuilderFactory;
 import org.logevents.formatting.TTLLEventLogFormatter;
 import org.logevents.observers.file.FileDestination;
 import org.logevents.observers.file.FileRotationWorker;
@@ -16,10 +15,15 @@ import org.slf4j.Marker;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Logs events to file. By default, FileLogEventObserver will log to the file
@@ -57,12 +61,12 @@ import java.util.Properties;
  *
  * @see org.logevents.formatting.PatternLogEventFormatter
  */
-public class FileLogEventObserver implements LogEventObserver {
+public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
 
-    private final LogEventFormatter filenameGenerator;
+    private final FilenameFormatter filenameGenerator;
     private final LogEventFormatter formatter;
-    private String filenamePattern;
     private final FileDestination destination;
+    private FileRotationWorker fileRotationWorker;
 
     public static LogEventFormatter createFormatter(Configuration configuration) {
         return configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class);
@@ -87,19 +91,38 @@ public class FileLogEventObserver implements LogEventObserver {
     }
 
     public FileLogEventObserver(Configuration configuration) {
-        this(
-                configuration,
-                configuration.optionalString("filename").orElse(defaultFilename(configuration)), Optional.of(createFormatter(configuration))
-        );
+        String filenamePattern = configuration.optionalString("filename").orElse(defaultFilename(configuration));
+        this.formatter = Optional.of(createFormatter(configuration)).orElse(new TTLLEventLogFormatter());
+
+        this.filenameGenerator = new FilenameFormatter(filenamePattern.replaceAll("\\\\", "/"), configuration);
+        this.destination = new FileDestination(configuration.getBoolean("lockOnWrite"));
+
+        configuration.optionalString("archivedFilename").ifPresent(archivedFilename -> {
+            fileRotationWorker = new FileRotationWorker(filenameGenerator, new FilenameFormatter(archivedFilename, configuration));
+
+            configuration.optionalString("retention").map(Period::parse).ifPresent(fileRotationWorker::setRetention);
+            configuration.optionalString("compressAfter").map(Period::parse).ifPresent(fileRotationWorker::setUncompressedRetention);
+
+            executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("FileLogEventObserver"));
+            startFileRotation(fileRotationWorker);
+        });
+
         formatter.configure(configuration);
         configuration.checkForUnknownFields();
     }
 
-    public FileLogEventObserver(Configuration configuration, String filenamePattern, Optional<LogEventFormatter> formatter) {
-        this.filenamePattern = filenamePattern;
-        this.formatter = formatter.orElse(new TTLLEventLogFormatter());
+    private ScheduledExecutorService executorService;
 
-        this.filenameGenerator = new PatternReader<>(configuration, factory).readPattern(filenamePattern);
+    private void startFileRotation(FileRotationWorker fileRotationWorker) {
+        fileRotationWorker.rollover();
+        destination.reset();
+        long delay = fileRotationWorker.nextExecution().toInstant().toEpochMilli() - Instant.now().toEpochMilli();
+        executorService.schedule(() -> startFileRotation(fileRotationWorker), delay, TimeUnit.MILLISECONDS);
+    }
+
+    public FileLogEventObserver(Configuration configuration, String filenamePattern, Optional<LogEventFormatter> formatter) {
+        this.formatter = formatter.orElse(new TTLLEventLogFormatter());
+        this.filenameGenerator = new FilenameFormatter(filenamePattern.replaceAll("\\\\", "/"), configuration);
         this.destination = new FileDestination(configuration.getBoolean("lockOnWrite"));
     }
 
@@ -113,53 +136,27 @@ public class FileLogEventObserver implements LogEventObserver {
     }
 
     protected Path getFilename(LogEvent logEvent) {
-        return Paths.get(filenameGenerator.apply(logEvent));
+        return Paths.get(filenameGenerator.format(logEvent));
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName()
-                + "{filename=" + filenamePattern
-                + ",formatter=" + formatter + "}";
+                + "{filename=" + filenameGenerator
+                + ",formatter=" + formatter
+                + ",fileRotationWorker=" + fileRotationWorker + "}";
     }
 
-
-    private static LogEventFormatterBuilderFactory factory = new LogEventFormatterBuilderFactory();
-
-    static {
-        factory.put("date", spec -> {
-            DateTimeFormatter formatter = spec.getParameter(0)
-                    .map(DateTimeFormatter::ofPattern)
-                    .orElse(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            ZoneId zone = spec.getParameter(1)
-                    .map(ZoneId::of)
-                    .orElse(ZoneId.systemDefault());
-            return e -> formatter.format(Instant.now().atZone(zone));
-        });
-        factory.put("d", factory.get("date"));
-
-        factory.put("mdc", spec -> {
-            if (spec.getParameters().isEmpty()) {
-                return LogEvent::getMdc;
-            } else {
-                String[] parts = spec.getParameters().get(0).split(":-");
-                String key = parts[0];
-                String defaultValue = parts.length > 1 ? parts[1] : "";
-                return e -> e.getMdc(key, defaultValue);
-            }
-        });
-        factory.putAliases("mdc", new String[] { "X" });
-
-        factory.put("marker", spec ->
-                e -> Optional.ofNullable(e.getMarker()).map(Marker::toString).orElse(spec.getParameter(0).orElse("")));
-
-
-        factory.put("application", spec ->
-                s -> spec.getConfiguration().getApplicationName()
-        );
-        factory.put("node", spec ->
-                s -> spec.getConfiguration().getNodeName()
-        );
+    @Override
+    public void close() {
+        shutdown();
     }
 
+    List<Runnable> shutdown() {
+        if (executorService != null) {
+            LogEventStatus.getInstance().addDebug(this, "Shutdown " + executorService);
+            return executorService.shutdownNow();
+        }
+        return new ArrayList<>();
+    }
 }

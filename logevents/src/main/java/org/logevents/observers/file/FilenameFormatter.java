@@ -1,13 +1,17 @@
 package org.logevents.observers.file;
 
+import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
+import org.logevents.status.LogEventStatus;
 import org.logevents.util.pattern.PatternConverterSpec;
 import org.logevents.util.pattern.StringScanner;
+import org.slf4j.Marker;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -16,37 +20,43 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-class FileNameFormat {
+public class FilenameFormatter {
     private final Function<FileInfo, String> filenameGenerator;
+    private final Function<LogEvent, String> logFileGenerator;
 
     private final Pattern filenameRegex;
     private List<BiConsumer<String, FileInfo>> regexGroupExtractor = new ArrayList<>();
+    private final String filenamePattern;
     private Locale locale;
 
-    public FileNameFormat(String filenamePattern) {
+    public FilenameFormatter(String filenamePattern) {
         this(filenamePattern, new Configuration());
     }
 
-    public FileNameFormat(String filenamePattern, Configuration configuration) {
-        this(filenamePattern, configuration, Locale.getDefault(Locale.Category.FORMAT));
+    public FilenameFormatter(String filenamePattern, Configuration configuration) {
+        this(filenamePattern, configuration, configuration.getLocale());
     }
 
-    public FileNameFormat(String filenamePattern, Configuration configuration, Locale locale) {
+    public FilenameFormatter(String filenamePattern, Configuration configuration, Locale locale) {
+        this.filenamePattern = filenamePattern;
         this.locale = locale;
         StringScanner scanner = new StringScanner(filenamePattern);
 
         List<Function<FileInfo, String>> filenameGenerators = new ArrayList<>();
+        List<Function<LogEvent, String>> logfileGenerators = new ArrayList<>();
         StringBuilder filenameRegexBuilder = new StringBuilder();
 
         while (scanner.hasMoreCharacters()) {
             String text = scanner.readUntil('%');
             filenameGenerators.add(file -> text);
+            logfileGenerators.add(event -> text);
             filenameRegexBuilder.append(text);
             if (scanner.hasMoreCharacters()) {
                 PatternConverterSpec spec = new PatternConverterSpec(configuration, scanner);
@@ -69,10 +79,15 @@ class FileNameFormat {
                         filenameRegexBuilder.append("(").append(asDateRegex(dateFormat)).append(")");
                         regexGroupExtractor.add((group, fileInfo) -> fileInfo.addTimeInfo(dateTimeFormatter.parse(group)));
 
+                        ZoneId zone = spec.getParameter(1)
+                                .map(ZoneId::of)
+                                .orElse(ZoneId.systemDefault());
+                        logfileGenerators.add(e -> formatter.format(e.getInstant().atZone(zone)));
                         break;
                     case "application":
                         filenameGenerators.add(info -> configuration.getApplicationName());
                         filenameRegexBuilder.append(configuration.getApplicationName());
+                        logfileGenerators.add(e -> configuration.getApplicationName());
                         break;
                     case "X":
                     case "mdc":
@@ -83,34 +98,41 @@ class FileNameFormat {
 
                         filenameRegexBuilder.append("([a-zA-Z0-9.-_]*)");
                         regexGroupExtractor.add((group, fileInfo) -> fileInfo.getMdc().put(key, group));
+                        logfileGenerators.add(e -> e.getMdc(key, defaultValue));
                         break;
                     case "node":
                         filenameGenerators.add(info -> configuration.getNodeName());
                         filenameRegexBuilder.append(configuration.getNodeName());
+                        logfileGenerators.add(e -> configuration.getNodeName());
                         break;
                     case "marker":
                         filenameGenerators.add(FileInfo::getMarker);
                         filenameRegexBuilder.append("([a-zA-Z0-9.-_]*)");
                         regexGroupExtractor.add((group, fileInfo) -> fileInfo.setMarker(group));
+                        logfileGenerators.add(e -> Optional.ofNullable(e.getMarker()).map(Marker::toString).orElse(spec.getParameter(0).orElse("")));
                         break;
                     default:
                         throw new IllegalArgumentException(spec.toString());
                 }
             }
         }
+        filenameRegexBuilder.append("(.gz)?");
+        regexGroupExtractor.add((group, fileInfo) -> {});
+
         filenameRegex = Pattern.compile(filenameRegexBuilder.toString());
 
         filenameGenerator = info -> filenameGenerators.stream().map(f -> f.apply(info)).collect(Collectors.joining());
+        logFileGenerator = event -> logfileGenerators.stream().map(f -> f.apply(event)).collect(Collectors.joining());
     }
 
-    public List<String> findFileNames() throws IOException {
+    public List<String> findFileNames() {
         String[] split = filenameRegex.pattern().split("/");
         List<String> result = new ArrayList<>();
         findFileNames("", Paths.get("."), split, 0, result);
         return result;
     }
 
-    private void findFileNames(String prefix, Path directory, String[] fileParts, int index, List<String> collectedFiles) throws IOException {
+    private void findFileNames(String prefix, Path directory, String[] fileParts, int index, List<String> collectedFiles) {
         if (!Files.exists(directory)) {
             return;
         } else if (index == fileParts.length) {
@@ -120,17 +142,25 @@ class FileNameFormat {
         if (fileParts[index].matches("^[.$a-zA-Z0-9_-]+")) {
             findFileNames(prefix + fileParts[index] + "/", directory.resolve(fileParts[index]), fileParts, index+1, collectedFiles);
         } else {
-            for (Path path : Files.list(directory)
-                    .filter(p -> p.getFileName().toString().matches(fileParts[index]))
-                    .collect(Collectors.toList())) {
-                findFileNames(prefix + path.getFileName().toString() + "/", path, fileParts, index+1, collectedFiles);
+            try {
+                for (Path path : Files.list(directory)
+                        .filter(p -> p.getFileName().toString().matches(fileParts[index]))
+                        .collect(Collectors.toList())) {
+                    findFileNames(prefix + path.getFileName().toString() + "/", path, fileParts, index+1, collectedFiles);
+                }
+            } catch (IOException e) {
+                LogEventStatus.getInstance().addError(this, "Failed to list logfiles in " + directory, e);
+                // Continue listing other files
             }
-
         }
     }
 
     ZonedDateTime parseDate(String filename) {
         return parse(filename).getParsedDateTime();
+    }
+
+    public String format(LogEvent logEvent) {
+        return logFileGenerator.apply(logEvent);
     }
 
     public String generateName(FileInfo fileInfo) {
@@ -199,4 +229,8 @@ class FileNameFormat {
         return regex.toString();
     }
 
+    @Override
+    public String toString() {
+        return "FilenameFormatter{" + filenamePattern + '}';
+    }
 }

@@ -65,4 +65,8 @@ public class FileDestination {
     public String toString() {
         return getClass().getSimpleName();
     }
+
+    public void reset() {
+        fileTracker.reset();
+    }
 }

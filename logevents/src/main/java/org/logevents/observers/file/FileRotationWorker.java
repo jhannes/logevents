@@ -1,6 +1,7 @@
 package org.logevents.observers.file;
 
 import org.logevents.config.Configuration;
+import org.logevents.status.LogEventStatus;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -16,17 +17,25 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.zip.GZIPOutputStream;
 
 public class FileRotationWorker {
 
-    private final FileNameFormat archiveFileNameFormat;
-    private final FileNameFormat activeLogFileFormat;
+    private final FilenameFormatter archiveFilenameFormatter;
+    private final FilenameFormatter activeLogFileFormat;
     private Period retention;
     private Period uncompressedRetention;
+
+    public FileRotationWorker(FilenameFormatter activeLogFileFormat, FilenameFormatter archiveFilenameFormatter) {
+        this.activeLogFileFormat = activeLogFileFormat;
+        this.archiveFilenameFormatter = archiveFilenameFormatter;
+    }
+
+    public FileRotationWorker(String filenamePattern, String archiveFilenamePattern) {
+        this.activeLogFileFormat = new FilenameFormatter(filenamePattern, new Configuration());
+        this.archiveFilenameFormatter = new FilenameFormatter(archiveFilenamePattern, new Configuration());
+    }
 
     public void setRetention(Period retention) {
         this.retention = retention;
@@ -36,39 +45,66 @@ public class FileRotationWorker {
         this.uncompressedRetention = uncompressedRetention;
     }
 
-    public void rollover() throws IOException {
-        List<String> files = activeLogFileFormat.findFileNames();
+    public void rollover() {
+        LogEventStatus.getInstance().addDebug(this, "Performing rollover");
+        archiveActiveLogfiles();
+        expireArchivedLogfiles();
+        compressArchivedLogfiles();
+    }
 
-        for (String file : files) {
-            Path path = Paths.get(file);
-            ZonedDateTime fileTime = getFileTime(path).atZone(ZoneId.systemDefault());
-            if (fileTime.toLocalDate().isBefore(LocalDate.now())) {
-                Path target = Paths.get(getArchiveName(file, fileTime));
-                Files.createDirectories(target.getParent());
-                if (Files.exists(target)) {
-                    int index = 1;
-                    do {
-                        target = Paths.get(getArchiveName(file, fileTime) + "." + index++);
-                    } while (Files.exists(target));
+    private void archiveActiveLogfiles() {
+        for (String file : activeLogFileFormat.findFileNames()) {
+            LogEventStatus.getInstance().addTrace(this, "Checking if file should be archived: " + file);
+            try {
+                Path path = Paths.get(file);
+                ZonedDateTime fileTime = getFileTime(path).atZone(ZoneId.systemDefault());
+                if (fileTime.toLocalDate().isBefore(LocalDate.now())) {
+                    Path target = Paths.get(getArchiveName(file, fileTime));
+                    Files.createDirectories(target.getParent());
+                    if (Files.exists(target)) {
+                        int index = 1;
+                        do {
+                            target = Paths.get(getArchiveName(file, fileTime) + "." + index++);
+                        } while (Files.exists(target));
+                    }
+                    LogEventStatus.getInstance().addDebug(this, "Archived: " + file + " to " + target);
+                    Files.move(path, target); // TODO: Do an atomic move to different stores
                 }
-                Files.move(path, target); // TODO: Do an atomic move to different stores
+            } catch (IOException e) {
+                LogEventStatus.getInstance().addError(this, "Failed to archive active logfile " + file, e);
             }
         }
+    }
 
-        List<String> archivedFiles = archiveFileNameFormat.findFileNames();
-        if (retention != null) {
-            for (String archivedFile : archivedFiles) {
-                ZonedDateTime archiveDate = archiveFileNameFormat.parseDate(archivedFile);
-                if (archiveDate.isBefore(ZonedDateTime.now().minus(retention))) {
-                    Files.delete(Paths.get(archivedFile));
-                }
-            }
-        }
+    private void compressArchivedLogfiles() {
         if (uncompressedRetention != null) {
-            for (String archivedFile : archivedFiles) {
-                ZonedDateTime archiveDate = archiveFileNameFormat.parseDate(archivedFile);
-                if (archiveDate.isBefore(ZonedDateTime.now().minus(uncompressedRetention))) {
-                    compress(archivedFile);
+            for (String archivedFile : archiveFilenameFormatter.findFileNames()) {
+                LogEventStatus.getInstance().addTrace(this, "Checking if file should be compressed: " + archivedFile);
+                try {
+                    ZonedDateTime archiveDate = archiveFilenameFormatter.parseDate(archivedFile);
+                    if (archiveDate.isBefore(ZonedDateTime.now().minus(uncompressedRetention))) {
+                        LogEventStatus.getInstance().addDebug(this, "Compressing " + archivedFile);
+                        compress(archivedFile);
+                    }
+                } catch (IOException e) {
+                    LogEventStatus.getInstance().addError(this, "Failed to compress archived logfile " + archivedFile, e);
+                }
+            }
+        }
+    }
+
+    private void expireArchivedLogfiles() {
+        if (retention != null) {
+            for (String archivedFile : archiveFilenameFormatter.findFileNames()) {
+                LogEventStatus.getInstance().addTrace(this, "Checking if file should be expired: " + archivedFile);
+                try {
+                    ZonedDateTime archiveDate = archiveFilenameFormatter.parseDate(archivedFile);
+                    if (archiveDate.isBefore(ZonedDateTime.now().minus(retention))) {
+                        LogEventStatus.getInstance().addDebug(this, "Expiring " + archivedFile);
+                        Files.delete(Paths.get(archivedFile));
+                    }
+                } catch (IOException e) {
+                    LogEventStatus.getInstance().addError(this, "Failed to expire archived logfile " + archivedFile, e);
                 }
             }
         }
@@ -87,15 +123,6 @@ public class FileRotationWorker {
         return Files.readAttributes(path, BasicFileAttributes.class).creationTime().toInstant();
     }
 
-    public FileRotationWorker(String filenamePattern, String archiveFilenamePattern) {
-        this.activeLogFileFormat = new FileNameFormat(filenamePattern, new Configuration());
-        this.archiveFileNameFormat = new FileNameFormat(archiveFilenamePattern, new Configuration());
-    }
-
-    public ZonedDateTime parseArchiveFileTime(String filename) {
-        return archiveFileNameFormat.parseDate(filename);
-    }
-
     public String getArchiveName(String filename, ZonedDateTime fileCreationTime) {
         FileInfo fileInfo = activeLogFileFormat.parse(filename);
         if (fileInfo == null) {
@@ -106,11 +133,7 @@ public class FileRotationWorker {
     }
 
     String getArchiveName(FileInfo fileInfo) {
-        return archiveFileNameFormat.generateName(fileInfo);
-    }
-
-    public Map<String, String> parseMdcValues(String filename) {
-        return activeLogFileFormat.parse(filename).getMdc();
+        return archiveFilenameFormatter.generateName(fileInfo);
     }
 
     private static final int DEFAULT_BUFFER_SIZE = 8192;
@@ -126,7 +149,16 @@ public class FileRotationWorker {
     }
 
     public String getArchiveName(ZonedDateTime fileTime) {
-        return archiveFileNameFormat.generateName(fileTime);
+        return archiveFilenameFormatter.generateName(fileTime);
+    }
+
+    public ZonedDateTime nextExecution() {
+        return LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault());
+    }
+
+    @Override
+    public String toString() {
+        return "FileRotationWorker{archiveFilenameFormatter=" + archiveFilenameFormatter + ",retention=" + retention + '}';
     }
 }
 

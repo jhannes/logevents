@@ -36,6 +36,17 @@ public class FileChannelTracker {
         this.maxOpenChannels = maxOpenChannels;
     }
 
+    public void reset() {
+        for (Map.Entry<Path, Entry<FileChannel>> entry : channels.entrySet()) {
+            try {
+                entry.getValue().getTarget().close();
+            } catch (IOException e) {
+                LogEventStatus.getInstance().addError(this, "While closing " + entry.getKey(), e);
+            }
+        }
+        channels.clear();
+    }
+
     static class Entry<T> {
         private final T target;
         private Instant accessTime;
