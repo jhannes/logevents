@@ -1,4 +1,4 @@
-package org.logevents.observers;
+package org.logevents.observers.file;
 
 import org.junit.After;
 import org.junit.Assume;

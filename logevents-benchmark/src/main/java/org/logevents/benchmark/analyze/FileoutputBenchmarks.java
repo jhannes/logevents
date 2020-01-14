@@ -1,8 +1,7 @@
 package org.logevents.benchmark.analyze;
 
 import ch.qos.logback.core.recovery.ResilientFileOutputStream;
-import org.logevents.observers.FileChannelTracker;
-import org.logevents.observers.FileDestination;
+import org.logevents.observers.file.FileDestination;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;

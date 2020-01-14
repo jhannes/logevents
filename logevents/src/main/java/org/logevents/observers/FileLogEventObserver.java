@@ -6,7 +6,11 @@ import org.logevents.config.Configuration;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.LogEventFormatterBuilderFactory;
 import org.logevents.formatting.TTLLEventLogFormatter;
-import org.logevents.util.pattern.PatternReader;
+import org.logevents.observers.file.FileDestination;
+import org.logevents.observers.file.FileRotationWorker;
+import org.logevents.observers.file.FilenameFormatter;
+import org.logevents.status.LogEventStatus;
+import org.logevents.util.DaemonThreadFactory;
 import org.slf4j.Marker;
 
 import java.nio.file.Path;

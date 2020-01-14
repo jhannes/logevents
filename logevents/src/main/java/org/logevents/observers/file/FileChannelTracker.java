@@ -1,5 +1,6 @@
-package org.logevents.observers;
+package org.logevents.observers.file;
 
+import org.logevents.observers.FileLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.ExceptionUtil;
 

@@ -1,10 +1,10 @@
-package org.logevents.observers;
+package org.logevents.observers.file;
+
+import org.logevents.status.LogEventStatus;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
-
-import org.logevents.status.LogEventStatus;
 
 /**
  * Output to a given file.
