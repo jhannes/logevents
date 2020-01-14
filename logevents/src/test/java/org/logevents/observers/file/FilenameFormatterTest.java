@@ -8,6 +8,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
 import java.util.Map;
@@ -67,13 +69,15 @@ public class FilenameFormatterTest {
 
     @Test
     public void shouldRecalculateDayFromWeekdayAndWeekInEurope() {
-        Locale de = Locale.forLanguageTag("de");
-        assertEquals(DayOfWeek.MONDAY, WeekFields.of(de).getFirstDayOfWeek());
-        calculateDayFromWeekdayAndWeek(de);
+        Locale uk = Locale.UK;
+        assertEquals(DayOfWeek.MONDAY, WeekFields.of(uk).getFirstDayOfWeek());
+        DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern("EE").toFormatter(uk);
+        assertEquals("Mon", formatter.format(LocalDate.of(2020, 1, 6)));
+        calculateDayFromWeekdayAndWeek(uk);
     }
 
     private void calculateDayFromWeekdayAndWeek(Locale locale) {
-        String filenamePattern = "logs/%date{YYYY-'W'ww}-%date{EEE}.log";
+        String filenamePattern = "logs/%date{YYYY-'W'ww}-%date{EE}.log";
         FilenameFormatter filenameFormatter = new FilenameFormatter(filenamePattern, new Configuration(), locale);
 
         LocalDate startDate = LocalDate.of(2020, 1, 6);
