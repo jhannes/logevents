@@ -195,7 +195,9 @@ public class FilenameFormatter {
                 int start = pos++;
                 for ( ; pos < pattern.length() && pattern.charAt(pos) == cur; pos++);  // short loop
                 int count = pos - start;
-                if (cur == 'M' || cur == 'd' || cur == 'E') {
+                if (cur == 'E') {
+                    regex.append("\\w{2,3}");
+                } else if (cur == 'M' || cur == 'd') {
                     if (count == 3) {
                         regex.append("\\w{2,3}");
                     } else if (count >= 3) {
