@@ -1,5 +1,6 @@
 package org.logevents.observers.file;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -8,28 +9,31 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.TemporalQueries;
+import java.time.temporal.WeekFields;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 class FileInfo {
     private final Map<String, String> mdc;
-    private ZonedDateTime fileTime;
+    private final int minimalDaysInWeek;
+    private String marker;
+    private ZonedDateTime fileCreationTime;
+    private DayOfWeek firstDayOfWeek;
 
-    FileInfo(Map<String, String> mdc, ZonedDateTime fileTime) {
+    FileInfo(Map<String, String> mdc, ZonedDateTime fileCreationTime, Locale locale) {
         this.mdc = mdc;
-        this.fileTime = fileTime;
+        this.fileCreationTime = fileCreationTime;
+        firstDayOfWeek = WeekFields.of(locale).getFirstDayOfWeek();
+        minimalDaysInWeek = WeekFields.of(locale).getMinimalDaysInFirstWeek();
     }
 
-    public FileInfo() {
-        mdc = new HashMap<>();
+    FileInfo(Locale locale) {
+        this(new HashMap<>(), null, locale);
     }
 
     public Map<String, String> getMdc() {
         return mdc;
-    }
-
-    public ZonedDateTime getFileTime() {
-        return fileTime;
     }
 
     private LocalDate date = LocalDate.now();
@@ -67,8 +71,29 @@ class FileInfo {
     public ZonedDateTime getParsedDateTime() {
         LocalDate date = this.date;
         if (dayOfWeek != null) {
-            date = date.minusDays(date.getDayOfWeek().getValue()).plusDays(dayOfWeek);
+            date = date.minusDays(1).plusDays(dayOfWeek);
+
+            // Because Americans are stupid:
+            if (firstDayOfWeek.getValue() > minimalDaysInWeek && dayOfWeek >= firstDayOfWeek.getValue()) {
+                date = date.minusWeeks(1);
+            }
         }
         return ZonedDateTime.of(date, time, zone);
+    }
+
+    public void setMarker(String marker) {
+        this.marker = marker;
+    }
+
+    public String getMarker() {
+        return marker;
+    }
+
+    public void setFileCreationTime(ZonedDateTime fileCreationTime) {
+        this.fileCreationTime = fileCreationTime;
+    }
+
+    public ZonedDateTime getFileCreationTime() {
+        return fileCreationTime;
     }
 }

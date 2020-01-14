@@ -21,13 +21,19 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.zip.GZIPOutputStream;
 
-public class FilenameGenerator {
+public class FileRotationWorker {
 
+    private final FileNameFormat archiveFileNameFormat;
+    private final FileNameFormat activeLogFileFormat;
     private Period retention;
     private Period uncompressedRetention;
 
     public void setRetention(Period retention) {
         this.retention = retention;
+    }
+
+    public void setUncompressedRetention(Period uncompressedRetention) {
+        this.uncompressedRetention = uncompressedRetention;
     }
 
     public void rollover() throws IOException {
@@ -36,14 +42,16 @@ public class FilenameGenerator {
         for (String file : files) {
             Path path = Paths.get(file);
             ZonedDateTime fileTime = getFileTime(path).atZone(ZoneId.systemDefault());
-            System.err.println("Delete? " + path);
             if (fileTime.toLocalDate().isBefore(LocalDate.now())) {
-                System.err.println("Delete " + path);
                 Path target = Paths.get(getArchiveName(file, fileTime));
                 Files.createDirectories(target.getParent());
-                Files.move(path, target);
-            } else {
-                System.err.println("Retain " + path);
+                if (Files.exists(target)) {
+                    int index = 1;
+                    do {
+                        target = Paths.get(getArchiveName(file, fileTime) + "." + index++);
+                    } while (Files.exists(target));
+                }
+                Files.move(path, target); // TODO: Do an atomic move to different stores
             }
         }
 
@@ -79,66 +87,46 @@ public class FilenameGenerator {
         return Files.readAttributes(path, BasicFileAttributes.class).creationTime().toInstant();
     }
 
-    private final FileNameFormat archiveFileNameFormat;
-    private final FileNameFormat activeLogFileFormat;
-
-    public FilenameGenerator(String filenamePattern, String archiveFilenamePattern) {
-        if (filenamePattern != null) {
-            this.activeLogFileFormat = new FileNameFormat(filenamePattern);
-        } else {
-            this.activeLogFileFormat = null;
-        }
-
-        if (archiveFilenamePattern != null) {
-            this.archiveFileNameFormat = new FileNameFormat(archiveFilenamePattern);
-        } else {
-            this.archiveFileNameFormat = null;
-        }
+    public FileRotationWorker(String filenamePattern, String archiveFilenamePattern) {
+        this.activeLogFileFormat = new FileNameFormat(filenamePattern, new Configuration());
+        this.archiveFileNameFormat = new FileNameFormat(archiveFilenamePattern, new Configuration());
     }
-
-    String getApplicationName() {
-        return new Configuration().getApplicationName();
-    }
-
 
     public ZonedDateTime parseArchiveFileTime(String filename) {
         return archiveFileNameFormat.parseDate(filename);
     }
 
     public String getArchiveName(String filename, ZonedDateTime fileCreationTime) {
-        Map<String, String> mdcMap = activeLogFileFormat.parse(filename).getMdc();
-        if (mdcMap == null) {
+        FileInfo fileInfo = activeLogFileFormat.parse(filename);
+        if (fileInfo == null) {
             return null;
         }
-        return getArchiveName(fileCreationTime, mdcMap);
+        fileInfo.setFileCreationTime(fileCreationTime);
+        return getArchiveName(fileInfo);
     }
 
-    String getArchiveName(ZonedDateTime fileCreationTime, Map<String, String> mdcMap) {
-        return archiveFileNameFormat.generateName(new FileInfo(mdcMap, fileCreationTime));
+    String getArchiveName(FileInfo fileInfo) {
+        return archiveFileNameFormat.generateName(fileInfo);
     }
 
     public Map<String, String> parseMdcValues(String filename) {
         return activeLogFileFormat.parse(filename).getMdc();
     }
 
-    public void setUncompressedRetention(Period uncompressedRetention) {
-        this.uncompressedRetention = uncompressedRetention;
-    }
-
-
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     // TODO: If we upgrade to Java 9, replace with <code>in.transferTo(out);</code>
-    private long transfer(InputStream in, OutputStream out) throws IOException {
+    private void transfer(InputStream in, OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
-        long transferred = 0;
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
         int read;
         while ((read = in.read(buffer, 0, DEFAULT_BUFFER_SIZE)) >= 0) {
             out.write(buffer, 0, read);
-            transferred += read;
         }
-        return transferred;
+    }
+
+    public String getArchiveName(ZonedDateTime fileTime) {
+        return archiveFileNameFormat.generateName(fileTime);
     }
 }
 

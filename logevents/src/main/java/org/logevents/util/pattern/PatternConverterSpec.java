@@ -143,4 +143,12 @@ public class PatternConverterSpec {
     public Configuration getConfiguration() {
         return configuration;
     }
+
+    @Override
+    public String toString() {
+        return "PatternConverterSpec{" +
+                "conversionWord='" + conversionWord + '\'' +
+                ", parameters=" + parameters +
+                '}';
+    }
 }

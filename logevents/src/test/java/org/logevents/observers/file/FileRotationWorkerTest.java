@@ -1,11 +1,9 @@
 package org.logevents.observers.file;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.config.Configuration;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,7 +15,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.time.Instant;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Period;
@@ -25,24 +23,21 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalQueries;
+import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class FilenameGeneratorTest {
+public class FileRotationWorkerTest {
 
     @Test
     public void shouldCalculateArchivedFileByDate() {
@@ -57,7 +52,7 @@ public class FilenameGeneratorTest {
     @Test
     public void shouldRetrieveMdcValuesFromCurrentFilename() {
         String filenamePattern = "logs-%mdc{function:-core}/%application-%mdc{ip:-unknown}.log";
-        Map<String, String> mdcValues = new FilenameGenerator(filenamePattern, null)
+        Map<String, String> mdcValues = new FileRotationWorker(filenamePattern, "logs-%mdc{function}/application-%mdc{ip}-%date.log")
                 .parseMdcValues("logs-usermanager/" + Configuration.calculateApplicationName() + "-127.0.0.1.log");
         assertEquals("usermanager", mdcValues.get("function"));
         assertEquals("127.0.0.1", mdcValues.get("ip"));
@@ -90,39 +85,66 @@ public class FilenameGeneratorTest {
 
     @Test
     public void shouldDetermineArchiveName() {
-        String filenamePattern = "%application-%mdc{function:-core}-%date{EEE}.log";
-        String archiveFilenamePattern = "logs-%mdc{function:-core}/%date{yyyy-MM}/%application-%date.log";
+        String filenamePattern = "%application-%mdc{function:-core}-%marker-%date{EEE}.log";
+        String archiveFilenamePattern = "logs-%mdc{function:-core}/%marker/%date{yyyy-MM}/%application-%date.log";
 
         Configuration configuration = new Configuration();
-        String filename = configuration.getApplicationName() + "-myFunc.A2-Tue.log";
+        String filename = configuration.getApplicationName() + "-myFunc.A2-SECURITY-Tue.log";
         ZonedDateTime date = ZonedDateTime.of(2019, 10, 11, 13, 37, 0, 0, ZoneId.systemDefault());
 
         String archiveName = getArchiveName(filenamePattern, archiveFilenamePattern, filename, date);
-        assertEquals("logs-myFunc.A2/2019-10/" + configuration.getApplicationName() + "-2019-10-11.log", archiveName);
+        assertEquals("logs-myFunc.A2/SECURITY/2019-10/" + configuration.getApplicationName() + "-2019-10-11.log", archiveName);
     }
 
     private String getArchiveName(String filenamePattern, String archiveFilenamePattern, String filename, ZonedDateTime dateTime) {
-        return new FilenameGenerator(filenamePattern, archiveFilenamePattern).getArchiveName(filename, dateTime);
+        return new FileRotationWorker(filenamePattern, archiveFilenamePattern).getArchiveName(filename, dateTime);
     }
 
     @Test
     public void shouldCombineFromWeek() {
         String archiveFilenamePattern = "logs/%date{YYYY-'W'ww}/application-%date{EEE}.log";
-        ZonedDateTime date = getFileTime(archiveFilenamePattern, "logs/2020-W01/application-Tue.log");
+        FileNameFormat fileNameFormat = new FileNameFormat(archiveFilenamePattern, new Configuration());
+        ZonedDateTime date = fileNameFormat.parseDate("logs/2020-W01/application-Tue.log");
         assertEquals(LocalDate.of(2019, 12, 31), date.toLocalDate());
         assertEquals(LocalTime.of(0, 0), date.toLocalTime());
     }
 
     @Test
+    public void shouldRecalculateDayFromWeekdayAndWeekInUs() {
+        calculateDayFromWeekdayAndWeek(Locale.forLanguageTag("us"));
+    }
+
+    @Test
+    public void shouldRecalculateDayFromWeekdayAndWeekInEurope() {
+        Locale de = Locale.forLanguageTag("de");
+        assertEquals(DayOfWeek.MONDAY, WeekFields.of(de).getFirstDayOfWeek());
+        calculateDayFromWeekdayAndWeek(de);
+    }
+
+    private void calculateDayFromWeekdayAndWeek(Locale locale) {
+        String filenamePattern = "logs/%date{YYYY-'W'ww}-%date{EEE}.log";
+        FileNameFormat fileNameFormat = new FileNameFormat(filenamePattern, new Configuration(), locale);
+
+        LocalDate startDate = LocalDate.of(2020, 1, 6);
+        for (LocalDate date = startDate; date.isBefore(startDate.plusWeeks(1)); date = date.plusDays(1)) {
+            ZonedDateTime fileCreationTime = date.atTime(10, 10).atZone(ZoneId.systemDefault());
+            String filename = fileNameFormat.generateName(fileCreationTime);
+
+            assertEquals(filename,
+                    date, fileNameFormat.parseDate(filename).toLocalDate());
+        }
+    }
+
+    @Test
     public void shouldTranformDateFormatsToRegex() {
-        assertEquals("\\d{1,4}-\\w{3}-\\d{1,2}", FileNameFormat.asDateRegex("yyyy-MMM-dd"));
+        assertEquals("\\d{1,4}-\\w{2,3}-\\d{1,2}", FileNameFormat.asDateRegex("yyyy-MMM-dd"));
         assertEquals("\\d{1,4}-W\\d{1,2}", FileNameFormat.asDateRegex("YYYY-'W'ww"));
     }
 
     @Test
     public void shouldArchiveOldActive() throws IOException {
         deleteRecursively(Paths.get("target/logs0"));
-        FilenameGenerator generator = new FilenameGenerator("target/logs0/application-%mdc{A}.log", "target/logs0/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker generator = new FileRotationWorker("target/logs0/application-%mdc{A}.log", "target/logs0/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
 
         Path path = Paths.get("target/logs0/application-core.log");
         Files.createDirectories(path.getParent());
@@ -139,15 +161,22 @@ public class FilenameGeneratorTest {
 
         HashMap<String, String> mdcMap = new HashMap<>();
         mdcMap.put("A", "core");
-        assertEquals(fileLines, Files.readAllLines(Paths.get(generator.getArchiveName(fileTime, mdcMap))));
+        assertEquals(fileLines, Files.readAllLines(Paths.get(generator.getArchiveName(new FileInfo(mdcMap, fileTime, Locale.getDefault(Locale.Category.FORMAT))))));
     }
+
 
     @Test
     public void shouldDeleteOldArchives() throws IOException {
+        System.out.println(DateTimeFormatter.ofPattern("YYYY-'W'ww").format(ZonedDateTime.of(
+                2020, 1, 5, 2, 1, 0, 0, ZoneId.of("Asia/Colombo")
+        )));
+
+
         deleteRecursively(Paths.get("target/logs2"));
-        FilenameGenerator generator = new FilenameGenerator("target/logs2/application.log", "target/logs2/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker generator = new FileRotationWorker("target/logs2/application.log", "target/logs2/%date{YYYY-'W'ww}/application-%date{EEE}.log");
         generator.setRetention(Period.ofDays(7));
-        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(2), new HashMap<>());
+        ZonedDateTime fileTime = ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(2);
+        String archiveName = generator.getArchiveName(fileTime);
         Path archive = Paths.get(archiveName);
         Files.createDirectories(archive.getParent());
         Files.write(archive, Collections.singleton("ABC"));
@@ -158,9 +187,9 @@ public class FilenameGeneratorTest {
     @Test
     public void shouldRetainNewArchives() throws IOException {
         deleteRecursively(Paths.get("target/logs3"));
-        FilenameGenerator generator = new FilenameGenerator("logs/application.log", "target/logs3/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker generator = new FileRotationWorker("logs/application.log", "target/logs3/%date{YYYY-'W'ww}/application-%date{EEE}.log");
         generator.setRetention(Period.ofDays(7));
-        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).plusDays(1), new HashMap<>());
+        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).plusDays(1));
         Path archive = Paths.get(archiveName);
         Files.createDirectories(archive.getParent());
         Files.write(archive, Collections.singleton("ABC"));
@@ -171,9 +200,9 @@ public class FilenameGeneratorTest {
     @Test
     public void shouldCompressOldArchives() throws IOException {
         deleteRecursively(Paths.get("target/logs4"));
-        FilenameGenerator generator = new FilenameGenerator("logs/application.log", "target/logs4/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker generator = new FileRotationWorker("logs/application.log", "target/logs4/%date{YYYY-'W'ww}/application-%date{EEE}.log");
         generator.setUncompressedRetention(Period.ofDays(3));
-        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(3)).minusDays(1), new HashMap<>());
+        String archiveName = generator.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(3)).minusDays(1));
         Path archive = Paths.get(archiveName);
         Files.createDirectories(archive.getParent());
         List<String> writtenLines = Collections.singletonList("ABC");
@@ -193,10 +222,9 @@ public class FilenameGeneratorTest {
     }
 
     @Test
-    @Ignore
-    public void shouldFallbackIfTargetArchiveAlreadyExists() throws IOException {
+    public void shouldUseFallbackNameIfTargetArchiveAlreadyExists() throws IOException {
         deleteRecursively(Paths.get("target/logs5"));
-        FilenameGenerator generator = new FilenameGenerator("target/logs5/application-%mdc{A}.log", "target/logs5/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker generator = new FileRotationWorker("target/logs5/application-%mdc{A}.log", "target/logs5/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
 
         String activeFilename = "target/logs5/application-utils.log";
         Path activeFile = Paths.get(activeFilename);
@@ -212,104 +240,18 @@ public class FilenameGeneratorTest {
         String archiveName = generator.getArchiveName(activeFilename, fileTime);
         Files.createDirectories(Paths.get(archiveName).getParent());
         Files.write(Paths.get(archiveName), Collections.singleton("Already existing archive"));
+        String archiveName2 = generator.getArchiveName(activeFilename, fileTime) + ".1";
+        Files.createDirectories(Paths.get(archiveName2).getParent());
+        Files.write(Paths.get(archiveName2), Collections.singleton("Already existing archive"));
 
         generator.rollover();
         assertFalse(Files.exists(activeFile));
+
+        assertEquals(fileLines, Files.readAllLines(Paths.get(generator.getArchiveName(activeFilename, fileTime) + ".2")));
     }
 
     private ZonedDateTime getFileTime(String archiveFilenamePattern, String filename) {
-        return new FilenameGenerator(null, archiveFilenamePattern).parseArchiveFileTime(filename);
-    }
-
-
-    public static void mains(String[] args) throws IOException {
-
-        // Pre-existing files:
-        // - MDC current, but old timestamp
-        // - MDC older than retention
-        // - MDC new
-        // - Default MDC current but old timestamp
-        // - Default MDC older than retention
-        // - Default MDC new
-
-
-        // For retention and compression to make sense, archive pattern must contain date conversion word and all other conversion words
-        // Rollover and expiry should happen when any date pattern would give a different value for today than the file creation time and at startup
-
-
-        String filenamePattern = "logs/%application-$mdc{function:-core}.log";
-
-        String archiveFilenamePattern = "logs/$mdc{function:-core}/%date{yyyy-MM}/%application-%date.log";
-
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-
-        String filename = "application.log";
-
-        createFile(formatter, Instant.now().minusSeconds(2 * 24 * 60 * 60 + 3950));
-        createFile(formatter, Instant.now().minusSeconds(2 * 7 * 24 * 60 * 60 + 3950));
-
-        Files.deleteIfExists(Paths.get(filename));
-        Files.createFile(Paths.get(filename));
-
-        BasicFileAttributeView attributes = Files.getFileAttributeView(Paths.get(filename), BasicFileAttributeView.class);
-        FileTime from = FileTime.from(Instant.now().minusSeconds(24 * 60 * 60 + 3400));
-        attributes.setTimes(from, from, from);
-
-
-        Period compression = Period.ofWeeks(1);
-        Period retention = Period.ofWeeks(1);
-
-
-        File[] list = new File(".").listFiles((dir, name) -> name.matches("application-\\d{4}-\\d{2}-\\d{2}.log"));
-        for (File file : list) {
-            Pattern pattern = Pattern.compile("application-(\\d{4}-\\d{2}-\\d{2}).log");
-            Matcher matcher = pattern.matcher(file.getName());
-            if (matcher.matches()) {
-                TemporalAccessor date = formatter.parse(matcher.group(1));
-
-                date.isSupported(ChronoField.INSTANT_SECONDS);
-                date.query(TemporalQueries.localTime());
-
-
-                if (LocalDate.from(date).plus(retention).isBefore(LocalDate.now())) {
-                    System.out.println("DELETE: " + file + " => " + date);
-                } else {
-                    System.out.println("RETAIN: " + file + " => " + date);
-                }
-            } else {
-                System.err.println("HUH!?");
-            }
-
-        }
-
-
-        Instant fileTime = Files.readAttributes(Paths.get(filename), BasicFileAttributes.class).creationTime().toInstant();
-
-        Instant time = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
-
-        if (fileTime.isBefore(time)) {
-            System.out.println("Should rotate " + filename + " to " + fileTime);
-        } else {
-            System.out.println("File time " + fileTime);
-        }
-
-
-    }
-
-    private static void createFile(DateTimeFormatter formatter, Instant fileTime) throws IOException {
-        String filename = "application-" + formatter.format(fileTime.atZone(ZoneId.systemDefault())) + ".log";
-        Files.deleteIfExists(Paths.get(filename));
-        Files.createFile(Paths.get(filename));
-        BasicFileAttributeView attributes = Files.getFileAttributeView(Paths.get(filename), BasicFileAttributeView.class);
-        FileTime from = FileTime.from(fileTime);
-        attributes.setTimes(from, from, from);
-
-        Files.deleteIfExists(Paths.get(filename + "s"));
-        Files.createFile(Paths.get(filename + "s"));
-        Files.deleteIfExists(Paths.get("a" + filename));
-        Files.createFile(Paths.get("a" + filename));
+        return new FileRotationWorker("application.log", archiveFilenamePattern).parseArchiveFileTime(filename);
     }
 
     private void deleteRecursively(Path directory) throws IOException {
@@ -329,6 +271,5 @@ public class FilenameGeneratorTest {
             });
         }
     }
-
 
 }

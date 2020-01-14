@@ -13,7 +13,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -25,11 +27,15 @@ class FileNameFormat {
 
     private final Pattern filenameRegex;
     private List<BiConsumer<String, FileInfo>> regexGroupExtractor = new ArrayList<>();
+    private Locale locale;
 
-    public FileNameFormat(String archiveFilenamePattern) {
-        Configuration configuration = new Configuration();
+    public FileNameFormat(String filenamePattern, Configuration configuration) {
+        this(filenamePattern, configuration, Locale.getDefault(Locale.Category.FORMAT));
+    }
 
-        StringScanner scanner = new StringScanner(archiveFilenamePattern);
+    public FileNameFormat(String filenamePattern, Configuration configuration, Locale locale) {
+        this.locale = locale;
+        StringScanner scanner = new StringScanner(filenamePattern);
 
         List<Function<FileInfo, String>> filenameGenerators = new ArrayList<>();
         StringBuilder filenameRegexBuilder = new StringBuilder();
@@ -46,23 +52,22 @@ class FileNameFormat {
                     case "d":
                     case "date":
                         DateTimeFormatter formatter = spec.getParameter(0)
-                                .map(pattern -> new DateTimeFormatterBuilder().appendPattern(pattern).parseDefaulting(WeekFields.ISO.dayOfWeek(), 1).toFormatter())
+                                .map(pattern -> new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter(locale))
                                 .orElse(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-                        filenameGenerators.add(info -> formatter.format(info.getFileTime()));
+                        filenameGenerators.add(info -> formatter.format(info.getFileCreationTime()));
 
                         String dateFormat = spec.getParameter(0).orElse("yyyy-MM-dd");
                         DateTimeFormatterBuilder parserBuilder = new DateTimeFormatterBuilder().appendPattern(dateFormat);
                         if (dateFormat.contains("w") && !dateFormat.contains("d")) {
                             parserBuilder.parseDefaulting(WeekFields.ISO.dayOfWeek(), 1);
                         }
-                        DateTimeFormatter dateTimeFormatter = parserBuilder.toFormatter();
+                        DateTimeFormatter dateTimeFormatter = parserBuilder.toFormatter(locale);
                         filenameRegexBuilder.append("(").append(asDateRegex(dateFormat)).append(")");
                         regexGroupExtractor.add((group, fileInfo) -> fileInfo.addTimeInfo(dateTimeFormatter.parse(group)));
 
                         break;
                     case "application":
                         filenameGenerators.add(info -> configuration.getApplicationName());
-
                         filenameRegexBuilder.append(configuration.getApplicationName());
                         break;
                     case "X":
@@ -76,7 +81,14 @@ class FileNameFormat {
                         regexGroupExtractor.add((group, fileInfo) -> fileInfo.getMdc().put(key, group));
                         break;
                     case "node":
+                        filenameGenerators.add(info -> configuration.getNodeName());
+                        filenameRegexBuilder.append(configuration.getNodeName());
+                        break;
                     case "marker":
+                        filenameGenerators.add(FileInfo::getMarker);
+                        filenameRegexBuilder.append("([a-zA-Z0-9.-_]*)");
+                        regexGroupExtractor.add((group, fileInfo) -> fileInfo.setMarker(group));
+                        break;
                     default:
                         throw new IllegalArgumentException(spec.toString());
                 }
@@ -114,26 +126,21 @@ class FileNameFormat {
     }
 
     ZonedDateTime parseDate(String filename) {
-        Matcher matcher = filenameRegex.matcher(filename);
-        if (matcher.matches()) {
-            FileInfo fileInfo = new FileInfo();
-            for (int group = 1; group <= matcher.groupCount(); group++) {
-                regexGroupExtractor.get(group - 1).accept(matcher.group(group), fileInfo);
-            }
-            return fileInfo.getParsedDateTime();
-        } else {
-            throw new RuntimeException("Uh oh");
-        }
+        return parse(filename).getParsedDateTime();
     }
 
     public String generateName(FileInfo fileInfo) {
         return filenameGenerator.apply(fileInfo);
     }
 
+    public String generateName(ZonedDateTime fileTime) {
+        return generateName(new FileInfo(new HashMap<>(), fileTime, locale));
+    }
+
     public FileInfo parse(String filename) {
         Matcher matcher = filenameRegex.matcher(filename);
         if (matcher.matches()) {
-            FileInfo fileInfo = new FileInfo();
+            FileInfo fileInfo = new FileInfo(locale);
             for (int group = 1; group <= matcher.groupCount(); group++) {
                 regexGroupExtractor.get(group - 1).accept(matcher.group(group), fileInfo);
             }
@@ -156,7 +163,7 @@ class FileNameFormat {
                 int count = pos - start;
                 if (cur == 'M' || cur == 'd' || cur == 'E') {
                     if (count == 3) {
-                        regex.append("\\w{3}");
+                        regex.append("\\w{2,3}");
                     } else if (count >= 3) {
                         regex.append("\\w{3,}");
                     } else {
@@ -187,4 +194,5 @@ class FileNameFormat {
         }
         return regex.toString();
     }
+
 }
