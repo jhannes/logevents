@@ -17,7 +17,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -35,7 +36,8 @@ public class LogEventBatcherWithMdcTest {
     public void shouldCollectMessagesPerMdc() {
         BatcherFactory batcherFactory = new ThrottleBatcherFactory(executor, new LogEventShutdownHook(), "PT1M");
         Marker marker = MarkerFactory.getMarker("MARKER1");
-        LogEventBatcherWithMdc batcher = new LogEventBatcherWithMdc(batcherFactory, marker.getName(), "ipAddress", batch -> System.out.println(marker + " Flushing " + batch));
+        LogEventBatcherWithMdc batcher = new LogEventBatcherWithMdc(batcherFactory, marker.getName(), "ipAddress",
+                batch ->  {});
 
         batcher.logEvent(new LogEventSampler().withMarker(marker).withMdc("ipAddress", "127.0.0.1").build());
         batcher.logEvent(new LogEventSampler().withMarker(marker).withMdc("ipAddress", "10.0.0.10").build());
@@ -51,7 +53,7 @@ public class LogEventBatcherWithMdcTest {
     public void shouldScheduleFlushAfterThrottleDelayForMdc() {
         BatcherFactory batcherFactory = new ThrottleBatcherFactory(executor, new LogEventShutdownHook(), "PT1M PT10M");
         Marker marker = MarkerFactory.getMarker("MARKER1");
-        LogEventBatcherWithMdc batcher = new LogEventBatcherWithMdc(batcherFactory, marker.getName(), "userId", batch -> System.out.println(marker + " Flushing " + batch));
+        LogEventBatcherWithMdc batcher = new LogEventBatcherWithMdc(batcherFactory, marker.getName(), "userId", batch -> {});
         batcher.logEvent(new LogEventSampler().withMarker(marker).withMdc("userId", "alice").build());
 
         batcher.getBatcher("alice");

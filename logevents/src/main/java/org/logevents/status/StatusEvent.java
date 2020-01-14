@@ -42,7 +42,7 @@ public class StatusEvent {
     }
 
     public String formatMessage() {
-        return location + ": " + message + (throwable != null ? " " + throwable.toString() : "");
+        return location.getClass().getSimpleName() + ": " + message + (throwable != null ? " " + throwable.toString() : "") + " [" + location + "]";
     }
 
     @Override

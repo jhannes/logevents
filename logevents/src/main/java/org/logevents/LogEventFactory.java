@@ -15,15 +15,10 @@ import org.slf4j.event.Level;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * LogEventFactory holds all active loggers and lets you set the
@@ -64,11 +59,6 @@ public class LogEventFactory implements ILoggerFactory {
         return instance;
     }
 
-    public void setObservers(Map<String, Supplier<? extends LogEventObserver>> observers) {
-        this.observerSuppliers = observers;
-        this.observers.clear();
-    }
-
     private LoggerDelegator rootLogger = LoggerDelegator.rootLogger();
 
     private Map<String, LoggerDelegator> loggerCache = new HashMap<>();
@@ -97,16 +87,6 @@ public class LogEventFactory implements ILoggerFactory {
 
     public void setRootLevel(Level level) {
         setLevel(getRootLogger(), level);
-    }
-
-    /**
-     * Sets the threshold to log at. All messages lower than the threshold will be ignored.
-     *
-     * @param loggerName The non-nullable name of the logger as per {@link #getLogger}
-     * @param level The nullable name of the threshold. If null, inherit from parent
-     */
-    public void setLevel(String loggerName, Level level) {
-        setLevel(getLogger(loggerName), level);
     }
 
     /**
@@ -203,7 +183,9 @@ public class LogEventFactory implements ILoggerFactory {
      * This method is called the first time {@link #getInstance()} is called.
      */
     public synchronized void configure() {
-        reset(new ConsoleLogEventObserver(), Level.INFO);
+        setObservers(new HashMap<>());
+        setRootLevel(Level.INFO);
+        setRootObserver(new ConsoleLogEventObserver());
         for (LogEventConfigurator configurator : getConfigurators()) {
             LogEventStatus.getInstance().addConfig(this, "Loading service loader " + configurator);
             configurator.configure(this);
@@ -224,21 +206,13 @@ public class LogEventFactory implements ILoggerFactory {
         return configurators;
     }
 
-    /**
-     * Logs to the console at level INFO, or level WARN if running in JUnit.
-     * @param rootObserver The observer used for getRootLogger
-     * @param rootLevel The logging threshold for getRootLogger
-     */
-    public void reset(LogEventObserver rootObserver, Level rootLevel) {
+    public void setObservers(Map<String, Supplier<? extends LogEventObserver>> observerSuppliers) {
+        shutdownObservers();
+        this.observers.clear();
+        this.observerSuppliers = observerSuppliers;
         rootLogger.reset();
         loggerCache.values().forEach(LoggerDelegator::reset);
-        rootLogger.setOwnObserver(rootObserver, false);
-        rootLogger.setLevelThreshold(rootLevel);
         refreshLoggers(rootLogger);
-    }
-
-    public void reset(String rootObserverName, Level rootLevel) {
-        reset(getObserver(rootObserverName), rootLevel);
     }
 
     /**
@@ -256,5 +230,17 @@ public class LogEventFactory implements ILoggerFactory {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{}";
+    }
+
+    public void shutdownObservers() {
+        for (LogEventObserver value : observers.values()) {
+            if (value instanceof AutoCloseable) {
+                try {
+                    ((AutoCloseable)value).close();
+                } catch (Exception e) {
+                    LogEventStatus.getInstance().addError(this, "Failed to shut down " + value, e);
+                }
+            }
+        }
     }
 }

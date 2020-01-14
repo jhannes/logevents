@@ -29,8 +29,6 @@ public class LogEventStatus {
     private CircularBuffer<StatusEvent> tailMessages = new CircularBuffer<>();
 
     public void configure(Configuration configuration) {
-        addDebug(this, "Configuring");
-
         configuration.optionalString("status").ifPresent(s -> {
             System.setProperty("logevents.status", s);
             addDebug(this, "Set threshold " + StatusLevel.valueOf(s));

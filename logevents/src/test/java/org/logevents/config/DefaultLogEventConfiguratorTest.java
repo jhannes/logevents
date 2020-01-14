@@ -83,8 +83,8 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(Level.DEBUG, factory.getRootLogger().getLevelThreshold());
         assertEquals(
                 "DateRollingLogEventObserver{"
-                + "filename=" + logFile + ","
-                + "formatter=TTLLEventLogFormatter}",
+                + "filename=FileNameFormat{filenamePattern=logs/application.log},"
+                + "formatter=TTLLEventLogFormatter,fileRotationWorker=null}",
                 factory.getRootLogger().getObserver());
     }
 
@@ -97,7 +97,9 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(
                 "CompositeLogEventObserver{["
                 +"ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, "
-                +"FileLogEventObserver{filename=logs/" + CWD + "-test.log,formatter=TTLLEventLogFormatter}]}",
+                +"FileLogEventObserver{filename=FileNameFormat{filenamePattern=logs/" + CWD + "-test.log}," +
+                        "formatter=TTLLEventLogFormatter," +
+                        "fileRotationWorker=null}]}",
                 factory.getRootLogger().getObserver());
     }
 
@@ -112,7 +114,8 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(
                 "CompositeLogEventObserver{["
                 +"ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, "
-                +"FileLogEventObserver{filename=logs/" + CWD + "-test.log,formatter=ConsoleLogEventFormatter}]}",
+                +"FileLogEventObserver{filename=FileNameFormat{filenamePattern=logs/" + CWD + "-test.log}," +
+                        "formatter=ConsoleLogEventFormatter,fileRotationWorker=null}]}",
                 factory.getRootLogger().getObserver());
     }
 
@@ -274,7 +277,7 @@ public class DefaultLogEventConfiguratorTest {
 
         firstProfileProperty.setProperty("root", "TRACE null");
         writeProps(propertiesDir.resolve("logevents-profile1.properties"), firstProfileProperty);
-        Thread.sleep(20);
+        Thread.sleep(70);
 
         assertEquals("TRACE", factory.getRootLogger().getLevelThreshold().toString());
         assertEquals("NullLogEventObserver", factory.getRootLogger().getObserver());
@@ -343,7 +346,7 @@ public class DefaultLogEventConfiguratorTest {
         newPropertiesFile.setProperty("root", "INFO");
         writeProps(propertiesDir.resolve("logevents-production.properties"), newPropertiesFile);
 
-        Thread.sleep(20);
+        Thread.sleep(70);
         assertEquals("INFO", factory.getRootLogger().getLevelThreshold().toString());
     }
 

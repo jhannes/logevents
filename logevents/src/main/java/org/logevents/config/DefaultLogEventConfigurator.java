@@ -114,6 +114,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                         WatchKey key = watchService.take();
                         boolean shouldReload = false;
                         List<String> fileNames = getConfigurationFileNames();
+                        Thread.sleep(50); // Short pause to queue up simultaneous events
                         for (WatchEvent<?> watchEvent : key.pollEvents()) {
                             Path context = (Path)watchEvent.context();
                             if (fileNames.contains(context.getFileName().toString())) {
@@ -156,7 +157,9 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
             applyConfigurationProperties(factory, loadConfigurationProperties());
         } catch (Exception e) {
             LogEventStatus.getInstance().addFatal(this, "Failed to load " + getConfigurationFileNames(), e);
-            factory.reset(new ConsoleLogEventObserver(), getDefaultRootLevel());
+            factory.setObservers(new HashMap<>());
+            factory.setRootLevel(getDefaultRootLevel());
+            factory.setRootObserver(new ConsoleLogEventObserver());
         }
     }
 
@@ -298,7 +301,9 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         observers.putIfAbsent("console", () -> createConsoleLogEventObserver(configuration));
         observers.putIfAbsent("file", () -> createFileObserver(configuration));
         factory.setObservers(observers);
-        factory.reset("console", getDefaultRootLevel());
+        factory.setRootLevel(getDefaultRootLevel());
+        factory.setRootObserver(factory.getObserver("console"));
+
         configureRootLogger(factory, configuration);
 
         for (Object key : configuration.keySet()) {
@@ -374,11 +379,11 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
 
         LoggerConfiguration logger = factory.getRootLogger();
-        LogEventStatus.getInstance().addDebug(this, "Setting level " + rootLevel + " for " + logger);
         if (rootLevel != null) {
             factory.setLevel(logger, rootLevel);
         }
         factory.setObserver(logger, CompositeLogEventObserver.combineList(observerSet), false);
+        LogEventStatus.getInstance().addDebug(this, "Set level " + rootLevel + " for " + logger);
     }
 
     private void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, boolean includeParent) {
@@ -395,7 +400,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                                 .filter(Objects::nonNull)
                                 .collect(Collectors.toCollection(LinkedHashSet::new));
                 factory.setObserver(logger, CompositeLogEventObserver.combineList(observers), includeParent);
-                LogEventStatus.getInstance().addDebug(this, "Setting observers " + observerNames + " for " + logger);
+                LogEventStatus.getInstance().addDebug(this, "Set observers " + observerNames + " for " + logger);
             }
         }
     }
