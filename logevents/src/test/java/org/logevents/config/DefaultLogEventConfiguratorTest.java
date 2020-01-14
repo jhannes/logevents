@@ -201,6 +201,28 @@ public class DefaultLogEventConfiguratorTest {
     }
 
     @Test
+    public void shouldRecoverToDefaultConfigurationOnInvalidConfigurationFile() throws IOException {
+        LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
+        propertiesDir = Paths.get("target", "test-data", "invalid", "properties");
+        deleteConfigFiles();
+        Files.createDirectories(propertiesDir);
+
+        Properties defaultProperties = new Properties();
+        defaultProperties.setProperty("logevents.what", "This should throw an error");
+        writeProps(propertiesDir.resolve("logevents.properties"), defaultProperties);
+
+        configurator = new DefaultLogEventConfigurator(propertiesDir);
+        configurator.configure(factory);
+
+        assertEquals(
+                "RootLoggerDelegator{ROOT,level=INFO,ownObserver=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}}",
+                factory.getRootLogger().toString());
+        assertEquals("Failed to load [logevents.properties]", LogEventStatus.getInstance().lastMessage().getMessage());
+        assertEquals("Unknown configuration options: [what] for logevents. Expected options: [installExceptionHandler, status]",
+                LogEventStatus.getInstance().lastMessage().getThrowable().getMessage());
+    }
+
+    @Test
     public void shouldWarnOnMisconfiguredObserver() {
         LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
 

@@ -58,6 +58,11 @@ public class ApplicationInsightsLogEventObserver extends FilteredLogEventObserve
 
     @Override
     protected void doLogEvent(LogEvent event) {
+        Telemetry telemetry = toTelemetry(event);
+        telemetryClient.track(telemetry);
+    }
+
+    Telemetry toTelemetry(LogEvent event) {
         Telemetry telemetry;
         if (event.getThrowable() != null) {
             ExceptionTelemetry exceptionTelemetry = new ExceptionTelemetry(event.getThrowable());
@@ -69,7 +74,7 @@ public class ApplicationInsightsLogEventObserver extends FilteredLogEventObserve
         }
         telemetry.getContext().getProperties().putAll(getCustomParameters(event));
         telemetry.setTimestamp(new Date(event.getTimeStamp()));
-        telemetryClient.track(telemetry);
+        return telemetry;
     }
 
     private SeverityLevel getLevel(Level level) {
