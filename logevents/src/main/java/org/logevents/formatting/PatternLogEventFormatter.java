@@ -23,8 +23,8 @@ import java.util.Properties;
  * <p>
  * The following conversion words are supported:
  * <ul>
- *     <li><code>%logger</code></li>
- *     <li><code>%class</code>: The logging class</li>
+ *     <li><code>%logger</code>: The logger (category)</li>
+ *     <li><code>%class</code>: The logging class (you should prefer %logger as it's more performant)</li>
  *     <li><code>%file</code>: The logging class filename</li>
  *     <li><code>%line</code>: The line number of the logging call</li>
  *     <li>
@@ -105,7 +105,8 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         });
 
         factory.put("level", spec -> e -> e.getLevel().toString());
-        factory.put("coloredLevel", spec -> e -> e.getLevel().toString());
+        factory.put("coloredLevel", spec ->
+                e -> ansiFormat.highlight(e.getLevel(), e.getLevel().toString()));
         factory.put("message", spec -> {
             MessageFormatter formatter = spec.getConfiguration().createInstanceWithDefault("messageFormatter", MessageFormatter.class);
             return logEvent -> formatter.format(logEvent.getMessage(), logEvent.getArgumentArray());
@@ -187,9 +188,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
     private LogEventFormatter converter;
 
     public PatternLogEventFormatter(String pattern) {
-        this.configuration = new Configuration();
-        this.exceptionFormatter = new ExceptionFormatter();
-        setPattern(pattern);
+        this(pattern, new Configuration());
     }
 
     public PatternLogEventFormatter(Properties properties, String prefix) {
@@ -201,6 +200,13 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", ExceptionFormatter.class);
         setPattern(configuration.getString("pattern"));
         configuration.checkForUnknownFields();
+    }
+
+    public PatternLogEventFormatter(String pattern, Configuration configuration) {
+        this.configuration = configuration;
+        this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", ExceptionFormatter.class);
+        configuration.checkForUnknownFields();
+        setPattern(pattern);
     }
 
     public Collection<String> getConversionWords() {
