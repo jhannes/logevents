@@ -6,8 +6,6 @@ import org.logevents.formatting.MessageFormatter;
 import org.slf4j.event.Level;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,7 +38,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     public SlackLogEventsFormatter(Optional<String> username, Optional<String> channel) {
         this.username = username;
         this.channel = channel;
-        this.nodeName = Configuration.calculateNodeName();
+        this.nodeName = new Configuration().getNodeName();
     }
 
     @Override

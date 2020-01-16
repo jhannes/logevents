@@ -24,6 +24,9 @@ import java.util.stream.Stream;
 
 public class Configuration {
 
+    private static final String defaultApplicationName = calculateApplicationName();
+    private static final String defaultNodeName = calculateNodeName();
+
     private Properties properties;
     private String prefix;
     private Set<String> expectedFields = new TreeSet<>();
@@ -44,15 +47,14 @@ public class Configuration {
      */
     public String getApplicationName() {
         return optionalString("applicationName")
-                .orElseGet(() -> optionalDefaultString("applicationName")
-                    .orElseGet(Configuration::calculateApplicationName));
+                .orElseGet(() -> optionalDefaultString("applicationName").orElse(defaultApplicationName));
     }
 
     /**
      * Calculates the name of the application based on the JAR-file of the main class.
      * If run from a directory classpath, use the name of the current working directory instead
      */
-    public static String calculateApplicationName() {
+    private static String calculateApplicationName() {
         return Thread.getAllStackTraces().entrySet().stream()
                 .filter(pair -> pair.getKey().getName().equals("main"))
                 .map(Map.Entry::getValue)
@@ -267,11 +269,10 @@ public class Configuration {
      */
     public String getNodeName() {
         return optionalString("nodeName")
-                .orElseGet(() -> optionalDefaultString("nodeName")
-                    .orElseGet(Configuration::calculateNodeName));
+                .orElseGet(() -> optionalDefaultString("nodeName").orElse(defaultNodeName));
     }
 
-    public static String calculateNodeName() {
+    private static String calculateNodeName() {
         try {
             return Optional.ofNullable(System.getenv("HOSTNAME"))
                     .orElse(Optional.ofNullable(System.getenv("HTTP_HOST"))

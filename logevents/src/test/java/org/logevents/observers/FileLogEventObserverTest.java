@@ -131,7 +131,7 @@ public class FileLogEventObserverTest {
         factory.setObserver(logger, observer, false);
         logger.warn("A warning message");
 
-        Path path = logDirectory.resolve("myApp-" + Configuration.calculateNodeName() + "-" + LocalDate.now() + ".log");
+        Path path = logDirectory.resolve("myApp-" + new Configuration().getNodeName() + "-" + LocalDate.now() + ".log");
 
         assertEquals(Arrays.asList(path),
                 Files.walk(logDirectory).filter(Files::isRegularFile).collect(Collectors.toList()));

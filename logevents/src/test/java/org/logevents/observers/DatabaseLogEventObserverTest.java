@@ -117,12 +117,8 @@ public class DatabaseLogEventObserverTest {
                 .findFirst()
                 .orElseThrow(() -> new AssertionFailedError("Didn't find <" + event.getMessage() + ">"));
 
-        assertEquals(Configuration.calculateNodeName(), savedEvent.get("node"));
-        assertEquals(Configuration.calculateApplicationName(), savedEvent.get("application"));
-    }
-
-    String getServerUser() {
-        return System.getProperty("user.name") + "@" + Configuration.calculateNodeName();
+        assertEquals(new Configuration().getNodeName(), savedEvent.get("node"));
+        assertEquals(new Configuration().getApplicationName(), savedEvent.get("application"));
     }
 
     @Test
@@ -170,7 +166,7 @@ public class DatabaseLogEventObserverTest {
         HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
         parameters.put("node", new String[] { "some.example.org" });
         assertDoesNotContain(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
-        parameters.put("node", new String[] { "some.example.org", Configuration.calculateNodeName() });
+        parameters.put("node", new String[] { "some.example.org", new Configuration().getNodeName() });
         assertContains(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
     }
 
@@ -182,7 +178,7 @@ public class DatabaseLogEventObserverTest {
         HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), event.getZonedDateTime(), Duration.ofSeconds(10));
         parameters.put("application", new String[] { "example-server" });
         assertDoesNotContain(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
-        parameters.put("application", new String[] { "example-server", Configuration.calculateApplicationName() });
+        parameters.put("application", new String[] { "example-server", new Configuration().getApplicationName() });
         assertContains(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
     }
 
@@ -310,8 +306,8 @@ public class DatabaseLogEventObserverTest {
                 summary.getLoggers());
         assertEquals(new HashSet<>(Arrays.asList(event1.getThreadName(), event2.getThreadName(), event3.getThreadName())),
                 summary.getThreads());
-        assertEquals(new HashSet<>(Arrays.asList(Configuration.calculateNodeName())), summary.getNodes());
-        assertEquals(new HashSet<>(Arrays.asList(Configuration.calculateApplicationName())), summary.getApplications());
+        assertEquals(new HashSet<>(Arrays.asList(new Configuration().getNodeName())), summary.getNodes());
+        assertEquals(new HashSet<>(Arrays.asList(new Configuration().getApplicationName())), summary.getApplications());
     }
 
     @Test

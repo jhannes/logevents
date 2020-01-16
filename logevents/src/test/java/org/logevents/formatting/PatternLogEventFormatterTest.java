@@ -7,8 +7,6 @@ import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.slf4j.Logger;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
 import java.time.Instant;
@@ -115,7 +113,7 @@ public class PatternLogEventFormatterTest {
         LogEvent event = buffer.getEvents().get(0);
 
         formatter.setPattern("%file:%line - %class#%method");
-        assertEquals("PatternLogEventFormatterTest.java:114 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
+        assertEquals("PatternLogEventFormatterTest.java:112 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
                 formatter.apply(event));
     }
 
@@ -223,9 +221,9 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(event.getMessage(), lines[0]);
         assertEquals(ex.toString(), lines[1]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:214)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:212)",
                 lines[2]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:220)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:218)",
                 lines[3]);
     }
 
@@ -238,7 +236,7 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(2+2, lines.length);
         assertEquals(event.getMessage(), lines[0]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:214)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:212)",
                 lines[2]);
     }
 
@@ -246,7 +244,7 @@ public class PatternLogEventFormatterTest {
     public void shouldIncludeApplicationAndNodeInformation() {
         formatter.setPattern("%application %node");
         String message = formatter.apply(new LogEventSampler().build());
-        assertEquals(Configuration.calculateApplicationName() + " " + Configuration.calculateNodeName() + "\n",
+        assertEquals(new Configuration().getApplicationName() + " " + new Configuration().getNodeName() + "\n",
                 message);
     }
 

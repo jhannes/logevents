@@ -22,17 +22,21 @@ public class FilenameFormatterTest {
     public void shouldRetrieveMdcValuesFromCurrentFilename() {
         String filenamePattern = "logs-%mdc{function:-core}/%application-%mdc{ip:-unknown}.log";
         Map<String, String> mdcValues = new FilenameFormatter(filenamePattern)
-                .parse("logs-usermanager/" + Configuration.calculateApplicationName() + "-127.0.0.1.log").getMdc();
+                .parse("logs-usermanager/" + getApplicationName() + "-127.0.0.1.log").getMdc();
         assertEquals("usermanager", mdcValues.get("function"));
         assertEquals("127.0.0.1", mdcValues.get("ip"));
         assertEquals(2, mdcValues.size());
+    }
+
+    private String getApplicationName() {
+        return new Configuration().getApplicationName();
     }
 
     @Test
     public void shouldRetrieveFromFilename() {
         String archiveFilenamePattern = "logs-%mdc{function:-core}/%date{yyyy-MM}/%application-%date.log";
         ZonedDateTime date = new FilenameFormatter(archiveFilenamePattern)
-                .parseDate("logs-core/2018-11/" + Configuration.calculateApplicationName() + "-2018-11-21.log");
+                .parseDate("logs-core/2018-11/" + getApplicationName() + "-2018-11-21.log");
         assertEquals(date.toLocalDate(), LocalDate.of(2018, 11, 21));
         assertEquals(date.toLocalTime(), LocalTime.of(0, 0));
     }

@@ -42,7 +42,7 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
     private final JsonLogEventFormatter jsonFormatter;
 
     public LogEventBuffer() {
-        this(Configuration.calculateNodeName(), Configuration.calculateApplicationName(), new JsonMessageFormatter(), new JsonExceptionFormatter());
+        this(new Configuration());
     }
 
     public LogEventBuffer(Properties properties, String prefix) {
@@ -66,11 +66,10 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
         messages.entrySet().stream()
                 .filter(level -> level.getKey().compareTo(threshold) <= 0)
                 .forEach(level -> allEvents.addAll(level.getValue()));
-        List<LogEvent> logEvents = allEvents.stream()
+        return allEvents.stream()
                 .filter(event -> event.getInstant().isAfter(start) && event.getInstant().isBefore(end))
+                .sorted(Comparator.comparing(LogEvent::getInstant))
                 .collect(Collectors.toList());
-        logEvents.sort(Comparator.comparing(LogEvent::getInstant));
-        return logEvents;
     }
 
     @Override

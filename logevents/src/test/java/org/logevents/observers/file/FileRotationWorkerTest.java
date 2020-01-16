@@ -45,8 +45,12 @@ public class FileRotationWorkerTest {
 
         ZonedDateTime fileTime = ZonedDateTime.of(2018, 11, 21, 11, 30, 0, 0, ZoneOffset.systemDefault());
 
-        assertEquals("logs/2018-11/" + Configuration.calculateApplicationName() + "-2018-11-21.log",
+        assertEquals("logs/2018-11/" + getApplicationName() + "-2018-11-21.log",
                 new FileRotationWorker("application.log", archiveFilenamePattern).getArchiveName("application.log", fileTime));
+    }
+
+    private String getApplicationName() {
+        return new Configuration().getApplicationName();
     }
 
     @Test
