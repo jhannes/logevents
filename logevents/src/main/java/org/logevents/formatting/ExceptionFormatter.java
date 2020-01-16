@@ -64,7 +64,7 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
         int ignored = 0;
         int actualLines = 0;
         for (int i = 0; i < uniquePrefix && actualLines < maxLength; i++) {
-            if (isIgnored(stackTrace[i])) {
+            if (i > 0 && isIgnored(stackTrace[i])) {
                 ignored++;
             } else {
                 outputStackFrame(stackTrace[i], ignored, indent, builder);
