@@ -1,6 +1,5 @@
 package org.logevents.observers.batch;
 
-import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.observers.BatchingLogEventObserver;
 import org.logevents.status.LogEventStatus;
@@ -131,6 +130,11 @@ public class CooldownBatcher<T> implements Batcher<T> {
         } catch (Exception e) {
             LogEventStatus.getInstance().addFatal(this, "Failed to process batch", e);
         }
+    }
+
+    @Override
+    public void run() {
+        flush();
     }
 
     protected List<T> takeCurrentBatch() {

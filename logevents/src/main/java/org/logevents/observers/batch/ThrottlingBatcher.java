@@ -72,6 +72,11 @@ public class ThrottlingBatcher<T> implements Batcher<T> {
         LogEventStatus.getInstance().addDebug(this, "Next flush in " + delay);
     }
 
+    @Override
+    public void run() {
+        flush();
+    }
+
     Duration getThrottles(int index) {
         return throttles.get(index);
     }
