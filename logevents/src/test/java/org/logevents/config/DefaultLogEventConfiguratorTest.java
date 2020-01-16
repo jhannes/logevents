@@ -402,7 +402,7 @@ public class DefaultLogEventConfiguratorTest {
         LogEvent logEvent = new LogEventSampler().build();
 
         String formattedMessage = new DefaultTestLogEventConfigurator()
-                .createConsoleLogEventObserver(new Properties())
+                .createConsoleLogEventObserver(new Configuration())
                 .getFormatter()
                 .apply(logEvent);
         assertTrue(formattedMessage + " should start with test name",

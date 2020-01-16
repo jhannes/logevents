@@ -29,7 +29,7 @@ public abstract class FilteredLogEventObserver implements LogEventObserver {
     }
 
     protected void configureFilter(Configuration configuration) {
-        this.threshold = configuration.optionalString("threshold").map(Level::valueOf).orElse(Level.TRACE);
+        this.threshold = configuration.getLevel("threshold", Level.TRACE);
         this.setSuppressMarkerStrings(configuration.getStringList("suppressMarkers"));
         this.setRequireMarkerName(configuration.getStringList("requireMarker"));
     }

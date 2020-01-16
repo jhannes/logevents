@@ -1,6 +1,7 @@
 package org.logevents.config;
 
 import org.logevents.status.LogEventStatus;
+import org.slf4j.event.Level;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -149,6 +150,10 @@ public class Configuration {
         return optionalString(key)
                 .map(Boolean::valueOf)
                 .orElse(false);
+    }
+
+    public Level getLevel(String key, Level defaultValue) {
+        return optionalString(key).map(Level::valueOf).orElse(defaultValue);
     }
 
     public List<String> getStringList(String key) {
@@ -304,4 +309,5 @@ public class Configuration {
     public String toString() {
         return "Configuration{prefix='" + prefix + '\'' + '}';
     }
+
 }

@@ -66,6 +66,10 @@ public class FileRotationWorker {
         this.archiveFilenameFormatter = new FilenameFormatter(archiveFilenamePattern, new Configuration());
     }
 
+    public FilenameFormatter getActiveLogFilenameFormatter() {
+        return activeLogFilenameFormatter;
+    }
+
     public void setRetention(Period retention) {
         this.retention = retention;
     }
@@ -108,6 +112,7 @@ public class FileRotationWorker {
     private void compressArchivedLogfiles() {
         if (compressAfter != null) {
             for (String archivedFile : archiveFilenameFormatter.findFileNames()) {
+                if (archivedFile.endsWith(".gz")) continue;
                 LogEventStatus.getInstance().addTrace(this, "Checking if file should be compressed: " + archivedFile);
                 try {
                     ZonedDateTime archiveDate = archiveFilenameFormatter.parseDate(archivedFile);

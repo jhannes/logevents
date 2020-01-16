@@ -101,8 +101,8 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
     }
 
     @Override
-    protected ConsoleLogEventObserver createConsoleLogEventObserver(Properties configuration) {
-        return new ConsoleLogEventObserver(new ConsoleLogEventTestFormatter(configuration, "observer.test"));
+    protected ConsoleLogEventObserver createConsoleLogEventObserver(Configuration configuration) {
+        return new ConsoleLogEventObserver(new ConsoleLogEventTestFormatter(configuration));
     }
 
     @Override

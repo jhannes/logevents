@@ -74,7 +74,9 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
     private FileRotationWorker fileRotationWorker;
 
     public static LogEventFormatter createFormatter(Configuration configuration) {
-        return configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class);
+        LogEventFormatter formatter = configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class);
+        formatter.configure(configuration);
+        return formatter;
     }
 
     /**
@@ -97,8 +99,6 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
 
     public FileLogEventObserver(Configuration configuration) {
         String filenamePattern = configuration.optionalString("filename").orElse(defaultFilename(configuration));
-        this.formatter = Optional.of(createFormatter(configuration)).orElse(new TTLLEventLogFormatter());
-
         this.filenameGenerator = new FilenameFormatter(filenamePattern.replaceAll("\\\\", "/"), configuration);
         this.destination = new FileDestination(configuration.getBoolean("lockOnWrite"));
 
@@ -112,17 +112,8 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
             startFileRotation(fileRotationWorker);
         });
 
-        formatter.configure(configuration);
+        this.formatter = createFormatter(configuration);
         configuration.checkForUnknownFields();
-    }
-
-    private ScheduledExecutorService executorService;
-
-    private void startFileRotation(FileRotationWorker fileRotationWorker) {
-        fileRotationWorker.rollover();
-        destination.reset();
-        long delay = fileRotationWorker.nextExecution().toInstant().toEpochMilli() - Instant.now().toEpochMilli();
-        executorService.schedule(() -> startFileRotation(fileRotationWorker), delay, TimeUnit.MILLISECONDS);
     }
 
     public FileLogEventObserver(Configuration configuration, String filenamePattern, Optional<LogEventFormatter> formatter) {
@@ -133,6 +124,24 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
 
     public FileLogEventObserver(String filenamePattern, LogEventFormatter formatter) {
         this(new Configuration(), filenamePattern, Optional.of(formatter));
+    }
+
+    public FileLogEventObserver(FileRotationWorker fileRotationWorker, LogEventFormatter formatter) {
+        this.fileRotationWorker = fileRotationWorker;
+        this.filenameGenerator = fileRotationWorker.getActiveLogFilenameFormatter();
+        this.formatter = formatter;
+        this.destination = new FileDestination(false);
+        executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("FileLogEventObserver"));
+        startFileRotation(fileRotationWorker);
+    }
+
+    private ScheduledExecutorService executorService;
+
+    private void startFileRotation(FileRotationWorker fileRotationWorker) {
+        fileRotationWorker.rollover();
+        destination.reset();
+        long delay = fileRotationWorker.nextExecution().toInstant().toEpochMilli() - Instant.now().toEpochMilli();
+        executorService.schedule(() -> startFileRotation(fileRotationWorker), delay, TimeUnit.MILLISECONDS);
     }
 
     @Override
