@@ -65,6 +65,9 @@ public class LogEventFactory implements ILoggerFactory {
 
     @Override
     public synchronized LoggerConfiguration getLogger(String name) {
+        if (name == null || name.equals(Logger.ROOT_LOGGER_NAME)) {
+            return rootLogger;
+        }
         if (!loggerCache.containsKey(name)) {
             int lastPeriodPos = name.lastIndexOf('.');
             LoggerDelegator parent = (LoggerDelegator)(lastPeriodPos < 0 ? rootLogger : getLogger(name.substring(0, lastPeriodPos)));

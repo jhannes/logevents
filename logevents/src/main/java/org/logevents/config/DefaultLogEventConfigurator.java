@@ -301,8 +301,6 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         observers.putIfAbsent("console", () -> createConsoleLogEventObserver(configuration));
         observers.putIfAbsent("file", () -> createFileObserver(configuration));
         factory.setObservers(observers);
-        factory.setRootLevel(getDefaultRootLevel());
-        factory.setRootObserver(factory.getObserver("console"));
 
         configureRootLogger(factory, configuration);
 
@@ -350,6 +348,27 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     private void configureRootLogger(LogEventFactory factory, Properties configuration) {
         LinkedHashSet<LogEventObserver> observerSet = new LinkedHashSet<>();
 
+        String rootConfiguration = configuration.getProperty("root");
+        if (rootConfiguration != null) {
+            int spacePos = rootConfiguration.indexOf(' ');
+            Level rootLevel = Level.valueOf(spacePos < 0 ? rootConfiguration : rootConfiguration.substring(0, spacePos).trim());
+            factory.setLevel(factory.getRootLogger(), rootLevel);
+
+            if (spacePos > 0) {
+                String observerNames = rootConfiguration.substring(spacePos + 1).trim();
+                Stream.of(observerNames.split(",\\s*"))
+                        .map(s -> factory.getObserver(s.trim()))
+                        .filter(Objects::nonNull)
+                        .forEach(observerSet::add);
+                LogEventStatus.getInstance().addDebug(this, "Setting root observers " + observerNames);
+            }
+        } else {
+            factory.setRootLevel(getDefaultRootLevel());
+        }
+        if (observerSet.isEmpty()) {
+            observerSet.add(factory.getObserver("console"));
+        }
+
         for (Object key : configuration.keySet()) {
             if (key.toString().startsWith("root.observer.")) {
                 String observerName = key.toString().substring("root.observer.".length());
@@ -362,28 +381,9 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
             }
         }
 
-        String rootConfiguration = configuration.getProperty("root");
-        Level rootLevel = null;
-        if (rootConfiguration != null) {
-            int spacePos = rootConfiguration.indexOf(' ');
-            rootLevel = Level.valueOf(spacePos < 0 ? rootConfiguration : rootConfiguration.substring(0, spacePos).trim());
-
-            if (spacePos > 0) {
-                String observerNames = rootConfiguration.substring(spacePos + 1).trim();
-                Stream.of(observerNames.split(",\\s*"))
-                        .map(s -> factory.getObserver(s.trim()))
-                        .filter(Objects::nonNull)
-                        .forEach(observerSet::add);
-                LogEventStatus.getInstance().addDebug(this, "Setting root observers " + observerNames);
-            }
-        }
-
         LoggerConfiguration logger = factory.getRootLogger();
-        if (rootLevel != null) {
-            factory.setLevel(logger, rootLevel);
-        }
         factory.setObserver(logger, CompositeLogEventObserver.combineList(observerSet), false);
-        LogEventStatus.getInstance().addDebug(this, "Set level " + rootLevel + " for " + logger);
+        LogEventStatus.getInstance().addDebug(this, "Setup " + logger);
     }
 
     private void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, boolean includeParent) {

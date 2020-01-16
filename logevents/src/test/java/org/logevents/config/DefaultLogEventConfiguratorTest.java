@@ -12,6 +12,7 @@ import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
+import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
 import java.io.File;
@@ -134,6 +135,30 @@ public class DefaultLogEventConfiguratorTest {
                 "CompositeLogEventObserver{"
                 + "[CircularBufferLogEventObserver{size=0}, CircularBufferLogEventObserver{size=0}]}",
                 factory.getLogger("org.example").getObserver());
+    }
+
+    @Test
+    public void shouldKeepDefaultLoggersWithAdditionalRootLoggers() {
+        configurator.applyConfigurationProperties(factory, configuration);
+        assertEquals("RootLoggerDelegator{ROOT,level=INFO,ownObserver=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}}",
+                factory.getLogger(Logger.ROOT_LOGGER_NAME).toString());
+
+        configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.setProperty("root.observer.buffer", "DEBUG");
+        configurator.applyConfigurationProperties(factory, configuration);
+        assertEquals("RootLoggerDelegator{ROOT,level=INFO,ownObserver=CompositeLogEventObserver{[" +
+                        "ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, " +
+                        "FixedLevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0}}" +
+                        "]}}",
+                factory.getLogger(Logger.ROOT_LOGGER_NAME).toString());
+
+        configuration.setProperty("root", "WARN");
+        configurator.applyConfigurationProperties(factory, configuration);
+        assertEquals("RootLoggerDelegator{ROOT,level=WARN,ownObserver=CompositeLogEventObserver{[" +
+                        "ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, " +
+                        "FixedLevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0}}" +
+                        "]}}",
+                factory.getLogger(Logger.ROOT_LOGGER_NAME).toString());
     }
 
     @Test
