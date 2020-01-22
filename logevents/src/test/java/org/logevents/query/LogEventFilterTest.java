@@ -183,9 +183,12 @@ public class LogEventFilterTest {
 
         LogEventFilter filter = new LogEventFilter(parameters("interval", "PT1M"));
 
-        Map<String, Object> facets = logsByLevel.query(filter).getSummary().toJson();
+        LogEventSummary summary = logsByLevel.query(filter).getSummary();
+        Map<String, Object> facets = summary.toJson();
         assertEquals(new HashSet<>(Arrays.asList("main", "TimeThread-8")),
                 facets.get("threads"));
+        assertEquals(2, summary.getRowCount());
+        assertEquals(2, summary.getFilteredRowCount());
     }
 
     @Test
@@ -194,9 +197,12 @@ public class LogEventFilterTest {
         record(new LogEventSampler().withThread("TimeThread-8").build());
 
         LogEventFilter filter = new LogEventFilter(parameters("thread", "main"));
-        Map<String, Object> facets = logsByLevel.query(filter).getSummary().toJson();
+        LogEventSummary summary = logsByLevel.query(filter).getSummary();
+        Map<String, Object> facets = summary.toJson();
         assertEquals(new HashSet<>(Arrays.asList("main", "TimeThread-8")),
                 facets.get("threads"));
+        assertEquals(2, summary.getRowCount());
+        assertEquals(1, summary.getFilteredRowCount());
     }
 
     @Test

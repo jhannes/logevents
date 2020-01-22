@@ -20,9 +20,13 @@ public class LogEventSummary {
     private Set<String> nodes = new TreeSet<>();
     private Set<String> applications = new TreeSet<>();
     private Map<String, Set<String>> mdcMap = new TreeMap<>();
+    private int rowCount;
+    private int filteredCount;
 
     public Map<String, Object> toJson() {
         Map<String, Object> facets = new LinkedHashMap<>();
+        facets.put("rowCount", rowCount);
+        facets.put("filteredCount", filteredCount);
         facets.put("threads", threads);
         facets.put("loggers", getLoggerSummary());
         facets.put("markers", markers);
@@ -56,6 +60,7 @@ public class LogEventSummary {
     }
 
     public void add(LogEvent event) {
+        this.rowCount++;
         this.loggers.add(event.getLoggerName());
         this.threads.add(event.getThreadName());
         Map<String, String> mdc = event.getMdcProperties();
@@ -115,5 +120,21 @@ public class LogEventSummary {
 
     public void setApplications(Set<String> applications) {
         this.applications = applications;
+    }
+
+    public void setCount(int rowCount) {
+        this.rowCount = rowCount;
+    }
+
+    public void setFilteredCount(int filteredCount) {
+        this.filteredCount = filteredCount;
+    }
+
+    public int getRowCount() {
+        return rowCount;
+    }
+
+    public int getFilteredRowCount() {
+        return filteredCount;
     }
 }

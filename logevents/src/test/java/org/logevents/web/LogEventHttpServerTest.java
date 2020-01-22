@@ -86,7 +86,7 @@ public class LogEventHttpServerTest {
 
         logEventHttpServer.httpHandler(mockExchange);
         Map<String, Object> events = JsonParser.parseObject(output.toString());
-        assertEquals(new HashSet<>(Arrays.asList("nodes", "loggers", "threads", "markers", "mdc", "applications")),
+        assertEquals(new HashSet<>(Arrays.asList("nodes", "loggers", "threads", "markers", "mdc", "applications", "rowCount", "filteredCount")),
                 ((Map<String, Object>)events.get("facets")).keySet());
     }
 

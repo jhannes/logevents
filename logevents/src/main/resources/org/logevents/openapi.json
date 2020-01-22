@@ -164,6 +164,14 @@
       "LogEventsQueryFacets": {
         "type": "object",
         "properties": {
+          "rowCount": {
+            "type": "integer",
+            "description": "The number of rows in the specified time interval and threshold, before other filters are applied"
+          },
+          "filteredCount": {
+            "type": "integer",
+            "description": "The number of rows matching the specified filter"
+          },
           "markers": {
             "type": "array",
             "items": {

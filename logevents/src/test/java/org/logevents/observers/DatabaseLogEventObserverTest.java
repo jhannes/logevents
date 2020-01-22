@@ -278,15 +278,18 @@ public class DatabaseLogEventObserverTest {
 
     @Test
     public void shouldIncludeMdcInFacets() throws SQLException {
+        ZonedDateTime now = ZonedDateTime.now().minusWeeks(2);
+        LogEventSampler sampler = new LogEventSampler().withTime(now);
         observer.processBatch(new LogEventBatch()
-                .add(new LogEventSampler().withMdc("ip", "127.0.0.1").withMdc("url", "/api/op").build())
-                .add(new LogEventSampler().withMdc("ip", "127.0.0.1").build())
-                .add(new LogEventSampler().withMdc("ip", "10.0.0.4").build()));
+                .add(sampler.withMdc("ip", "127.0.0.1").withMdc("url", "/api/op").build())
+                .add(sampler.withMdc("ip", "127.0.0.1").build())
+                .add(sampler.withMdc("ip", "10.0.0.4").build()));
 
-        LogEventSummary summary = observer.getSummary(listEvents(Optional.empty(), ZonedDateTime.now(), Duration.ofMinutes(10)));
+        LogEventSummary summary = observer.getSummary(listEvents(Optional.empty(), now, Duration.ofMinutes(10)));
         assertEquals(new HashSet<>(Arrays.asList("ip", "url")), summary.getMdcMap().keySet());
         assertEquals(new HashSet<>(Arrays.asList("127.0.0.1", "10.0.0.4")), summary.getMdcMap().get("ip"));
         assertEquals(new HashSet<>(Arrays.asList("/api/op")), summary.getMdcMap().get("url"));
+        assertEquals(3, summary.getFilteredRowCount());
     }
 
     @Test
@@ -329,11 +332,15 @@ public class DatabaseLogEventObserverTest {
                 .withLevel(Level.WARN).build();
         observer.processBatch(new LogEventBatch().add(event1).add(event2).add(event3));
 
-        LogEventSummary summary = observer.getSummary(filter(Optional.of(Level.WARN), time, interval));
+        HashMap<String, String[]> parameters = parameters(Optional.of(Level.WARN), time, interval);
+        parameters.put("marker", new String[] { "MY_MARKER" });
+        LogEventSummary summary = observer.getSummary(new LogEventFilter(parameters));
         assertEquals(new HashSet<>(Arrays.asList("mdcKey")), summary.getMdcMap().keySet());
         assertEquals(new HashSet<>(Arrays.asList("just right")), summary.getMdcMap().get("mdcKey"));
         Map<String, Object> facets = summary.toJson();
         assertEquals(new HashSet<>(Arrays.asList(OTHER_MARKER.toString())), summary.getMarkers());
+        assertEquals(1, summary.getRowCount());
+        assertEquals(0, summary.getFilteredRowCount());
     }
 
     private Collection<LogEvent> listEvents(Level level, ZonedDateTime zonedDateTime, Duration duration) {
