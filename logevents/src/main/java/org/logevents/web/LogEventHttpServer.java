@@ -214,8 +214,8 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
                 serveResource(exchange, "/org/logevents" + path.substring("/logs".length()), "text/css");
             } else if (path.matches("/logs/[a-zA-Z._-]+\\.js")) {
                 serveResource(exchange, "/org/logevents" + path.substring("/logs".length()), "text/javascript");
-            } else if (path.equals("/logs/swagger.json")) {
-                Map<String, Object> api = JsonParser.parseObject(getResourceFileAsString("/org/logevents/swagger.json"));
+            } else if (path.equals("/logs/openapi.json")) {
+                Map<String, Object> api = JsonParser.parseObject(getResourceFileAsString("/org/logevents/openapi.json"));
                 HashMap<Object, Object> localServer = new HashMap<>();
                 localServer.put("url", getAuthority(exchange) + "/logs");
                 api.put("servers", Collections.singletonList(localServer));

@@ -59,7 +59,7 @@ public class LogEventHttpServerTest {
     @Test
     public void shouldServerApiSpec() throws IOException, URISyntaxException {
         when(mockExchange.getRequestURI()).thenReturn(new URI(
-                "http://localhost/logs/swagger.json"));
+                "http://localhost/logs/openapi.json"));
 
         logEventHttpServer.httpHandler(mockExchange);
         Map<String, Object> openApiDefinition = JsonParser.parseObject(output.toString());

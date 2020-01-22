@@ -22,7 +22,6 @@ import org.logevents.util.openid.OpenIdConfiguration;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.event.Level;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -112,7 +111,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldFormatLogEvent() throws IOException, ServletException {
+    public void shouldFormatLogEvent() throws IOException {
         LogEventBuffer buffer = new LogEventBuffer();
         WebLogEventObserver observer = new WebLogEventObserver() {
             @Override
@@ -147,7 +146,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldGenerateAuthenticationUrl() throws IOException, ServletException {
+    public void shouldGenerateAuthenticationUrl() throws IOException {
         String openIdIssuer = "https://login.microsoftonline.com/common";
         Properties properties = new Properties();
         properties.put("observer.servlet.clientId", "my-application");
@@ -179,7 +178,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldCompleteLogin() throws IOException, GeneralSecurityException, ServletException {
+    public void shouldCompleteLogin() throws IOException, GeneralSecurityException {
         when(request.getPathInfo()).thenReturn("/oauth2callback");
         when(request.getParameter("code")).thenReturn(String.valueOf(random.nextInt()));
 
@@ -216,7 +215,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldRejectIdTokensWithoutRequiredClaims() throws ServletException, IOException {
+    public void shouldRejectIdTokensWithoutRequiredClaims() throws IOException {
         Properties properties = new Properties();
         properties.put("observer.servlet.clientId", "my-application");
         properties.put("observer.servlet.clientSecret", "abc123");
@@ -253,7 +252,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldGenerateLoginUrl() throws ServletException, IOException {
+    public void shouldGenerateLoginUrl() throws IOException {
         OpenIdConfiguration openIdConfiguration = new OpenIdConfiguration(null, null, null) {
             @Override
             protected String getAuthorizationEndpoint() {
@@ -274,8 +273,8 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldReturnOpenApiDefinition() throws IOException, ServletException {
-        String output = requestUrl("/swagger.json");
+    public void shouldReturnOpenApiDefinition() throws IOException {
+        String output = requestUrl("/openapi.json");
         verify(response).setContentType("application/json");
         Map<String, Object> openApiDefinition = JsonParser.parseObject(output);
         assertEquals("Log Events - a simple Java Logging library",
@@ -283,14 +282,14 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldReturnHtmlPage() throws IOException, ServletException {
+    public void shouldReturnHtmlPage() throws IOException {
         String output = requestUrl("/");
         verify(response).setContentType("text/html");
         assertTrue("Should be an HTML file: " + output, output.startsWith("<!DOCTYPE html>\n<html"));
     }
 
     @Test
-    public void shouldReturnJavaScript() throws IOException, ServletException {
+    public void shouldReturnJavaScript() throws IOException {
         String output = requestUrl("/logevents-common.js");
         verify(response).setContentType("text/javascript");
         assertTrue(output + " should contain 'function createElementWithText'",
@@ -298,7 +297,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldReturnCss() throws IOException, ServletException {
+    public void shouldReturnCss() throws IOException {
         String output = requestUrl("/logevents.css");
         verify(response).setContentType("text/css");
         assertTrue(output + " should contain 'nav .closeDrawer {'",
@@ -306,7 +305,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    public void shouldGive404OnUnknownUrl() throws IOException, ServletException {
+    public void shouldGive404OnUnknownUrl() throws IOException {
         when(request.getPathInfo()).thenReturn("/logevents-missing.js");
         servlet.doGet(request, response);
         verify(response).sendError(404);
@@ -345,7 +344,7 @@ public class LogEventsServletTest extends LogEventsServlet {
                         .collect(Collectors.toList()));
     }
 
-    private String requestUrl(String s) throws IOException, ServletException {
+    private String requestUrl(String s) throws IOException {
         when(request.getPathInfo()).thenReturn(s);
         StringWriter output = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(output));

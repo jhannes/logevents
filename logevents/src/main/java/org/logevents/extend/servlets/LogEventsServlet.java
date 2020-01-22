@@ -58,7 +58,7 @@ import static org.logevents.web.CryptoVault.randomString;
  *     </li>
  *     <li>
  *         If you mount LogEventsServlet on "/logs", the API will be at "/logs/events", the OpenAPI documentation
- *         will be at "/logs/swagger.json" and a simple client web page will be at "/logs/"".
+ *         will be at "/logs/openapi.json" and a simple client web page will be at "/logs/"".
  *     </li>
  * </ul>
  *
@@ -119,7 +119,7 @@ public class LogEventsServlet extends HttpServlet {
 
     private final static Logger logger = LoggerFactory.getLogger(LogEventsServlet.class);
     private static final Marker AUDIT = MarkerFactory.getMarker("AUDIT");
-    private static final String LOGEVENTS_API = "/org/logevents/swagger.json";
+    private static final String LOGEVENTS_API = "/org/logevents/openapi.json";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -137,7 +137,7 @@ public class LogEventsServlet extends HttpServlet {
         } else if (path.matches("/[a-zA-Z._-]+\\.js")) {
             resp.setContentType("text/javascript");
             copyResource(resp, "/org/logevents" + path);
-        } else if (path.equals("/swagger.json")) {
+        } else if (path.equals("/openapi.json")) {
             resp.setContentType("application/json");
             Map<String, Object> api = JsonParser.parseObject(getClass().getResourceAsStream(LOGEVENTS_API));
             HashMap<Object, Object> localServer = new HashMap<>();
@@ -229,7 +229,6 @@ public class LogEventsServlet extends HttpServlet {
             resp.sendError(403, "Unauthorized");
             return;
         }
-
 
         logger.warn(AUDIT, "User logged in {}", idToken);
         LogEventStatus.getInstance().addConfig(this, "User logged in " + idToken);
