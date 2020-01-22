@@ -98,9 +98,15 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
     protected Map<String, Object> createMdcAttachment(LogEvent event) {
         List<Map<String, Object>> fields = new ArrayList<>();
-        for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()){
+        int longestMdc = 0;
+        for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
             if (includedMdcKeys == null || includedMdcKeys.contains(entry.getKey())) {
-                fields.add(slackMessageField(entry.getKey(), entry.getValue(), true));
+                longestMdc = Math.max(longestMdc, entry.getValue().length());
+            }
+        }
+        for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
+            if (includedMdcKeys == null || includedMdcKeys.contains(entry.getKey())) {
+                fields.add(slackMessageField(entry.getKey(), entry.getValue(), longestMdc > 20));
             }
         }
         if (fields.isEmpty()) {
