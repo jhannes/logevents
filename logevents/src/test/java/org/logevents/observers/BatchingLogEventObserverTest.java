@@ -1,6 +1,5 @@
 package org.logevents.observers;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
@@ -35,25 +34,29 @@ public class BatchingLogEventObserverTest {
 
     @Test
     public void shouldSendSeparateBatchesForThrottledMarkers() {
-        Marker myMarker = MarkerFactory.getMarker("MY_MARKER");
+        Marker myMarker = MarkerFactory.getMarker("MY_MARKER_123");
         Marker otherMarker = MarkerFactory.getMarker("OTHER_MARKER");
+        Marker groupMarker = MarkerFactory.getMarker("MDC_GROUP_MARKER");
+        groupMarker.add(myMarker);
 
         Properties properties = new Properties();
-        properties.put("observer.test.markers.MY_MARKER.idleThreshold", "PT2S");
+        properties.put("observer.test.markers.MY_MARKER_123.idleThreshold", "PT2S");
         properties.put("observer.test.markers.OTHER_MARKER.idleThreshold", "PT2S");
         Observer observer = new Observer(properties, "observer.test");
 
         LogEvent myFirstEvent = new LogEventSampler().withMarker(myMarker).build();
         LogEvent mySecondEvent = new LogEventSampler().withMarker(myMarker).build();
+        LogEvent myGroupEvent = new LogEventSampler().withMarker(groupMarker).build();
         LogEvent otherEvent = new LogEventSampler().withMarker(otherMarker).build();
         LogEvent unknownEvent = new LogEventSampler().withMarker().build();
 
         observer.logEvent(myFirstEvent);
         observer.logEvent(mySecondEvent);
+        observer.logEvent(myGroupEvent);
         observer.logEvent(otherEvent);
         observer.logEvent(unknownEvent);
 
-        assertEquals(Arrays.asList(myFirstEvent, mySecondEvent),
+        assertEquals(Arrays.asList(myFirstEvent, mySecondEvent, myGroupEvent),
                 ((LogEventBatcher)observer.getMarkerBatcher(myMarker)).getCurrentBatch());
         assertEquals(Arrays.asList(otherEvent),
                 ((LogEventBatcher)observer.getMarkerBatcher(otherMarker)).getCurrentBatch());
