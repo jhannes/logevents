@@ -268,7 +268,6 @@ public class LogEventsServletTest extends LogEventsServlet {
         when(request.getPathInfo()).thenReturn("/login");
 
         servlet.doGet(request, response);
-        verify(response).addCookie(any());
         verify(response).sendRedirect(startsWith("https://accounts.example.com"));
     }
 

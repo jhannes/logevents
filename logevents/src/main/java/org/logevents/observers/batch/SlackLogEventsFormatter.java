@@ -182,7 +182,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     }
 
     protected String detailLink(LogEvent event, String url) {
-        return url + "?instant=" + event.getInstant() + "&thread=" + event.getThreadName() + "&interval=PT10S";
+        return url + "#instant=" + event.getInstant() + "&thread=" + event.getThreadName() + "&interval=PT10S";
     }
 
     protected Map<String, Object> createStackTraceAttachment(LogEvent event) {

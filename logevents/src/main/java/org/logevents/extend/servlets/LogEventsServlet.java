@@ -37,8 +37,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.logevents.web.CryptoVault.randomString;
-
 /**
  * A servlet that exposes log information to administrative users via a built in web page. To use, you need to:
  * <ul>
@@ -146,9 +144,6 @@ public class LogEventsServlet extends HttpServlet {
             resp.getWriter().write(JsonUtil.toIndentedJson(api));
         } else if (path.equals("/login")) {
             String state = OpenIdConfiguration.randomString(50);
-            Cookie cookie = new Cookie("logevents.query", req.getQueryString());
-            cookie.setMaxAge(300);
-            resp.addCookie(cookie);
             resp.sendRedirect(getOpenIdConfiguration().getAuthorizationUrl(
                     state, getServletUrl(req) + "/oauth2callback"
             ));

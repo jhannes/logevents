@@ -1,5 +1,5 @@
 function showFacets(facets) {
-    const currentFilter = new URLSearchParams(window.location.search.substr(1));
+    const currentFilter = new URLSearchParams(window.location.hash.substr(1));
 
     function checkbox(name, value, text) {
         const checkboxDiv = document.createElement("div");

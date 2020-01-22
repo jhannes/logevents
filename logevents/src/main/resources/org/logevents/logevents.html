@@ -70,16 +70,20 @@ function toggleNav(e) {
     e.preventDefault();
 }
 
+window.addEventListener("hashchange", () => {
+   fetchEvents();
+});
 
 async function fetchEvents() {
-    const response = await fetch("events" + window.location.search);
+    const response = await fetch("events?" + window.location.hash.substr(1));
     if (response.ok) {
         const json = await response.json();
         logEvents = json.events;
         showLogEventTable();
         showFacets(json.facets);
     } else if (response.status === 401) {
-        window.location = "login" + window.location.search;
+        localStorage.setItem("query", window.location.hash);
+        window.location = "login";
     } else {
         console.error(response);
     }
@@ -94,32 +98,39 @@ main.addEventListener("click", e => {
 });
 
 logEventsFilter.addEventListener("change", e => {
-    if (e.target.tagName === "SELECT" || (e.target.tagName === "INPUT" && e.target.type === "checkbox")) {
-        window.location.search = new URLSearchParams(new FormData(logEventsFilter)).toString();
-    }
+    window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
+});
+
+logEventsFilter.addEventListener("submit", e => {
+    e.preventDefault();
+    fetchEvents();
 });
 
 const clearButton = document.getElementById("clearButton");
 clearButton.addEventListener("click", e => {
     const d = new Date();
-    window.location.search = "time=" + hourMinute(new Date()) + "&interval=PT5M&level=TRACE&timezoneOffset=" + d.getTimezoneOffset();
+    window.location.hash = "time=" + hourMinute(new Date()) + "&interval=PT5M&level=TRACE&timezoneOffset=" + d.getTimezoneOffset();
     e.preventDefault();
 });
 
+if (!window.location.hash && localStorage.getItem("query")) {
+    window.location.hash = localStorage.getItem("query");
+    localStorage.removeItem("query");
+}
 
-if (!window.location.search) {
+if (!window.location.hash) {
     const d = new Date();
     document.getElementById("time").value = hourMinute(d);
     document.getElementById("timezoneOffset").value = d.getTimezoneOffset();
-    window.location.search = new URLSearchParams(new FormData(logEventsFilter)).toString();
+    window.location.hash = new URLSearchParams(new FormData(logEventsFilter)).toString();
 } else {
-    const currentFilter = new URLSearchParams(window.location.search.substr(1));
+    const currentFilter = new URLSearchParams(window.location.hash.substr(1));
     if (!currentFilter.get("time") && currentFilter.get("instant")) {
         const instant = new Date(currentFilter.get("instant"));
         currentFilter.delete("instant");
         currentFilter.set("time", hourMinuteSecond(instant));
         currentFilter.set("timezoneOffset", instant.getTimezoneOffset());
-        window.location.search = currentFilter;
+        window.location.hash = currentFilter.toString();
     } else {
         fetchEvents();
     }

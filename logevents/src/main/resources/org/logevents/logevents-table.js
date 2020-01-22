@@ -2,13 +2,13 @@ function showLogEventTable() {
     function listItem(header, text, filter) {
         const li = document.createElement("li");
         if (filter) {
-            const currentFilter = new URLSearchParams(window.location.search.substr(1));
+            const currentFilter = new URLSearchParams(window.location.hash.substr(1));
             const time = currentFilter.get("time");
             const interval = currentFilter.get("interval");
             const level = currentFilter.get("level") || "DEBUG";
             const timezoneOffset = currentFilter.get("timezoneOffset");
             li.innerHTML = `<strong>${header}:</strong>
-                <a href="?time=${time}&interval=${interval}&level=${level}&${filter}=${text}&timezoneOffset=${timezoneOffset}"
+                <a href="#time=${time}&interval=${interval}&level=${level}&${filter}=${text}&timezoneOffset=${timezoneOffset}"
                 >${text}</a>`;
         } else {
             li.innerHTML = `<strong>${header}:</strong> ${text}`;

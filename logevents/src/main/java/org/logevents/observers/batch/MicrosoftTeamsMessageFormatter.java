@@ -86,7 +86,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
     }
 
     private String messageLink(String url, LogEvent event) {
-        return url + "?instant=" + event.getInstant() + "&thread=" + event.getThreadName() + "&interval=PT10S";
+        return url + "#instant=" + event.getInstant() + "&thread=" + event.getThreadName() + "&interval=PT10S";
     }
 
     private Map<String, Object> createUriAction(String name, String uri) {
