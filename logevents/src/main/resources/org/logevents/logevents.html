@@ -7,21 +7,12 @@
 </head>
 <body>
 
+    <header>
+        <div><a href="#" onclick="toggleNav(event)">&#9776; Filter</a></div>
+        <h1>Logevents</h1>
+    </header>
     <nav>
-        <a href="#" class="closeDrawer" onclick="toggleNav(event)">&times;</a>
-        <form id="logEventsFilter" method="get">
-            <fieldset id="dateTime">
-                <input type="time" name="time" id="time">
-                <select name="interval">
-                    <option value="PT5S">+/- 5 sec</option>
-                    <option value="PT1M">+/- 1 min</option>
-                    <option value="PT5M" selected>+/- 5 min</option>
-                    <option value="PT15M">+/- 15 min</option>
-                    <option value="PT1H">+/- 1 hr</option>
-                </select>
-                <input type="hidden" name="timezoneOffset" id="timezoneOffset" />
-                <button>Update</button>
-            </fieldset>
+        <form id="logEventsFilter">
             <fieldset>
                 <select name="level">
                     <option value="TRACE">TRACE</option>
@@ -31,30 +22,54 @@
                     <option value="ERROR">ERROR</option>
                 </select>
             </fieldset>
-            <fieldset id="threads"></fieldset>
-            <fieldset id="loggers"></fieldset>
-            <fieldset id="markers"></fieldset>
-            <fieldset id="nodes"></fieldset>
-            <fieldset id="applications"></fieldset>
-            <fieldset id="mdcFilter">
+            <fieldset id="dateTime">
+            <div>
+                    <input type="time" name="time" id="time">
+                    <input type="hidden" name="timezoneOffset" id="timezoneOffset" />
+                    <button>Update</button>
+                </div>
                 <div>
-                    <label>
-                        User
-                        <select name="mdc.user">
-                            <option value="">all</option>
-                            <option value="user 1">user 1</option>
-                        </select>
-                    </label>
+                    <select name="interval">
+                        <option value="PT5S">+/- 5 sec</option>
+                        <option value="PT1M">+/- 1 min</option>
+                        <option value="PT5M" selected>+/- 5 min</option>
+                        <option value="PT15M">+/- 15 min</option>
+                        <option value="PT1H">+/- 1 hr</option>
+                    </select>
+                </div>
+                <div>
+                    <input type="date" name="date" id="date" />
                 </div>
             </fieldset>
+            <fieldset>
+                <span id="intervalMatchCount">No</span> hits in time interval
+            </fieldset>
+            <div id="detailedFilter">
+                <fieldset id="threads"></fieldset>
+                <fieldset id="loggers"></fieldset>
+                <fieldset id="markers"></fieldset>
+                <fieldset id="nodes"></fieldset>
+                <fieldset id="applications"></fieldset>
+                <fieldset id="mdcFilter">
+                    <div>
+                        <label>
+                            User
+                            <select name="mdc.user">
+                                <option value="">all</option>
+                                <option value="user 1">user 1</option>
+                            </select>
+                        </label>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <span id="filterMatchCount">No</span> rows match filter
+                </fieldset>
+            </div>
             <fieldset>
                 <button id="clearButton">Clear</button>
             </fieldset>
         </form>
     </nav>
-    <header>
-        <a href="#" onclick="toggleNav(event)">&#9776; Filter</a>
-    </header>
     <main></main>
     <div id="overlay" onclick="toggleNav(event)"></div>
 </body>

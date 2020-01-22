@@ -1,8 +1,17 @@
 body {
-    display: flex;
+    display: grid;
     margin: 0;
-    flex-direction: column;
     height: 100vh;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: auto 1fr;
+}
+
+header {
+    grid-column: 1 / -1;
+}
+
+header {
+    display: flex;
 }
 
 main, nav {
@@ -13,16 +22,17 @@ main {
     overflow: auto;
 }
 
+main div {
+    z-index: 5;
+}
+
 nav {
-    height: 100%;
     width: 0;
-    position: fixed;
     z-index: 10;
     top: 0;
     left: 0;
     background-color: #fff;
     overflow-x: hidden;
-    padding-top: 60px;
     border: 1px solid gray;
 }
 

@@ -56,6 +56,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
                 .orElse(ZoneId.systemDefault().getRules().getOffset(LocalDate.now().atStartOfDay()));
 
         LocalDate date = Optional.ofNullable(parameters.get("date"))
+                .filter(s -> !s[0].isEmpty())
                 .map(p -> LocalDate.parse(p[0]))
                 .orElseGet(() -> Instant.now().atOffset(timezoneOffset).toLocalDate());
 

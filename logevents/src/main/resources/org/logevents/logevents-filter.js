@@ -20,13 +20,13 @@ function showFacets(facets) {
         return option;
     }
 
-    const dateTimeFieldset = document.getElementById("dateTime");
     const loggersFieldset = document.getElementById("loggers");
     const markersFieldset = document.getElementById("markers");
     const nodesFieldset = document.getElementById("nodes");
     const applicationsFieldset = document.getElementById("applications");
 
     document.getElementById("time").value = currentFilter.get("time");
+    document.getElementById("date").value = currentFilter.get("date");
     const selectedInterval = document.querySelector("[name=interval] [value=" + currentFilter.get("interval") + "]");
     if (selectedInterval) {
         selectedInterval.selected = true;
@@ -44,15 +44,17 @@ function showFacets(facets) {
         selectedLevel.selected = true;
     }
 
-    if (currentFilter.get("date")) {
-        const dateInput = document.createElement("input");
-        dateInput.setAttribute("type", "hidden");
-        dateInput.setAttribute("name", "date");
-        dateInput.setAttribute("value", currentFilter.get("date"));
-        dateTimeFieldset.appendChild(dateInput);
-    }
     if (currentFilter.get("timezoneOffset")) {
         document.getElementById("timezoneOffset").value = currentFilter.get("timezoneOffset");
+    }
+
+    document.getElementById("intervalMatchCount").innerText = facets.rowCount;
+    document.getElementById("filterMatchCount").innerText = facets.filteredCount;
+    if (facets.rowCount === 0) {
+        document.getElementById("detailedFilter").style.display = "none";
+        body.classList.add("drawerOpen");
+    } else {
+        document.getElementById("detailedFilter").style.display = "block";
     }
 
     markersFieldset.innerHTML = "";

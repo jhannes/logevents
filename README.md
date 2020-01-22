@@ -565,7 +565,29 @@ If you're using logback today and would like to check out logevents, here's a si
 
 ### TODO
 
-* [ ] Show LogEventStatus in logevents.html
-* [ ] Make BatchingLogEventObserver delegate all batching to a batching strategy
-  * [ ] Implement MDC-based throttler
-    * [ ] Needs ThrottlerTracker to close old throttlers
+* [ ] logevent.html:
+   * [x] query #-fragments and push filter
+   * [x] date filter
+   * [x] Show logevent configuration as JSON
+   * [x] Show better view when no hits from server
+   * [x] Show decent title
+   * [ ] Test for multiple MDCs/mdc sorting
+   * [ ] pagination
+   * [ ] Show LogEventStatus in logevents.html
+   * [ ] negative marker and category filter
+   * [ ] large number of categories?
+* [x] Bugs
+   * [x] root.observer blows out default root logger
+   * [x] application name changes after main thread dies
+   * [x] String ROOT_LOGGER_NAME = "ROOT";
+   * [x] %coloredLevel
+   * [x] Shutdown handler expires
+* [ ] Performance
+   * [ ] 100 parallel threads logging to database and file
+* [x] Programmable configuration
+  * [x] Instantiate FileRotationWorker programmatically
+  * [x] A concept for reused configuration - imports? ServiceLocators subclassing default?
+* [x] JMX
+  * [x] Tests
+* [ ] Standard statistics root logger
+
