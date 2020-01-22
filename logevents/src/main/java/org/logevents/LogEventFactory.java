@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -115,12 +116,16 @@ public class LogEventFactory implements ILoggerFactory {
     }
 
     public void setObserver(String loggerName, LogEventObserver observer) {
-        setObserver(observer, getLogger(loggerName));
+        setObserver(getLogger(loggerName), observer);
     }
 
-    public void setObserver(LogEventObserver observer, LoggerConfiguration logger) {
+    public void setObserver(LoggerConfiguration logger, LogEventObserver observer) {
         logger.replaceObserver(observer);
         refreshLoggers((LoggerDelegator) logger);
+    }
+
+    public Collection<String> getObserverNames() {
+        return observerSuppliers.keySet();
     }
 
     public LogEventObserver getObserver(String observerName) {
@@ -245,5 +250,9 @@ public class LogEventFactory implements ILoggerFactory {
                 }
             }
         }
+    }
+
+    public boolean isObserverCreated(String observerName) {
+        return observers.containsKey(observerName);
     }
 }

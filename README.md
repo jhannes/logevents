@@ -23,10 +23,11 @@ Features:
 * [Display logs on a web dashboard](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)
 * [Elasticsearch](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ElasticsearchLogEventObserver.html). Logging directly to Elastic search Index API avoids edge cases when writing and parsing log files
 * [Azure Application Insights](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/azure/ApplicationInsightsLogEventObserver.html) (requires optional com.microsoft.azure:applicationinsights-core dependency)
+* [JMX integration](https://jhannes.github.io/logevents/apidocs/org/logevents/jmx/LogEventsMBeanFactory.html) to view the configuration and tweak log levels
 
 ## Quick start:
 
-1. Add `org.logevents:logevents:0.1.23` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
+1. Add `org.logevents:logevents:0.1.28` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
 2. Add `logevents.properties` to your current working directory or `src/main/resources` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` to log a particular package at DEBUG level. Read more about [logevents.properties](https://jhannes.github.io/logevents/apidocs/org/logevents/config/DefaultLogEventConfigurator.html). If you want to get messages from the internals of LogEvents, add `logevents.status=DEBUG`.
 3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to [the file](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) `logs/<your-app-name>-%date.log` and warning events to [console](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html).
 4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html">PatternEventLogFormatter</a> for more details.
@@ -40,8 +41,9 @@ Here is a simple, but powerful [`logevent.properties`](https://jhannes.github.io
 
 ```
 # Output LogEvents configuration to system err
-status=DEBUG
-installExceptionHandler=true
+logevents.status=DEBUG
+logevents.installExceptionHandler=true
+logevents.jmx=true
 
 observer.slack=SlackLogEventObserver
 observer.slack.slackUrl=....
@@ -527,9 +529,6 @@ public class ExpectedLogEventsRuleTest {
 ```
 
 
-### JMX (TODO)
-
-
 ## Questions and answers
 
 ### Why not logback
@@ -541,9 +540,17 @@ increased indirection.
 
 Based on the experience from using Logback, Logevents is trying to only support
 the flexibility that used in the most common scenarios for Logback. This means
-there are probably things Logback can do that Logevents will be unable to handle.
+there may be things Logback can do that Logevents will be unable to handle.
 On the other hand, most of the common extension scenarios will probably require
 less code to implement with Logevents.
+
+If you find yourself wanting to extend Logback but bogged down by the amount of
+work needed, you will probably find Logevents much easier to build upon.
+
+As a result of this, Logevents comes with a lot of features built in that require
+custom extensions with Logback, such as integration with Slack, Elasticsearch,
+and Application Insights and a built-in web console.
+
 
 ### How do I migrate from Logback?
 

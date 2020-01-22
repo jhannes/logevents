@@ -2,10 +2,12 @@ package org.logevents.impl;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
-import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 class LevelLoggingEventGenerator implements LogEventGenerator {
 
@@ -72,6 +74,11 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
     @Override
     public void log(Marker marker, String format, Object... args) {
         log(createEvent(format, marker, args));
+    }
+
+    @Override
+    public List<String> getObservers() {
+        return observer.toList().stream().map(Object::toString).collect(Collectors.toList());
     }
 
     private LogEvent createEvent(String format, Marker marker, Object[] args) {

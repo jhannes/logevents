@@ -2,6 +2,9 @@ package org.logevents.impl;
 
 import org.slf4j.Marker;
 
+import java.util.ArrayList;
+import java.util.List;
+
 class NullLoggingEventGenerator implements LogEventGenerator {
 
     @Override
@@ -48,6 +51,11 @@ class NullLoggingEventGenerator implements LogEventGenerator {
 
     @Override
     public void log(Marker marker, String format, Object... args) {
+    }
+
+    @Override
+    public List<String> getObservers() {
+        return new ArrayList<>();
     }
 
     NullLoggingEventGenerator() {}

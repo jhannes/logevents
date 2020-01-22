@@ -34,7 +34,6 @@ import static org.junit.Assert.assertTrue;
 
 public class DefaultLogEventConfiguratorTest {
 
-    private static final String FS = System.getProperty("file.separator");
     private static final String CWD = Paths.get("").toAbsolutePath().getFileName().toString();
 
     private LogEventFactory factory = new LogEventFactory();
@@ -243,7 +242,7 @@ public class DefaultLogEventConfiguratorTest {
                 "RootLoggerDelegator{ROOT,level=INFO,ownObserver=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}}",
                 factory.getRootLogger().toString());
         assertEquals("Failed to load [logevents.properties]", LogEventStatus.getInstance().lastMessage().getMessage());
-        assertEquals("Unknown configuration options: [what] for logevents. Expected options: [installExceptionHandler, status]",
+        assertEquals("Unknown configuration options: [what] for logevents. Expected options: [installExceptionHandler, jmx, status]",
                 LogEventStatus.getInstance().lastMessage().getThrowable().getMessage());
     }
 
@@ -430,7 +429,7 @@ public class DefaultLogEventConfiguratorTest {
     }
 
 
-    private void writeProps(Path file, Properties defaultProperties) throws IOException {
+    public static void writeProps(Path file, Properties defaultProperties) throws IOException {
         try (FileWriter writer = new FileWriter(file.toFile())) {
             defaultProperties.store(writer, "Default configuration file");
         }

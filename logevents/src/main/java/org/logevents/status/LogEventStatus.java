@@ -126,6 +126,13 @@ public class LogEventStatus {
         return headMessages;
     }
 
+    public List<StatusEvent> getAllMessages() {
+        ArrayList<StatusEvent> events = new ArrayList<>();
+        events.addAll(headMessages);
+        events.addAll(tailMessages);
+        return events;
+    }
+
     public StatusEvent lastMessage() {
         if (!tailMessages.isEmpty()) {
             return tailMessages.get(tailMessages.size()-1);

@@ -13,6 +13,7 @@ import org.slf4j.event.Level;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -111,6 +112,11 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
      */
     protected boolean inheritParentObserver = true;
 
+    @Override
+    public boolean isConfigured() {
+        return levelThreshold != null || !(ownObserver instanceof NullLogEventObserver) || !inheritParentObserver;
+    }
+
     /**
      * Calculated value. If {@link #inheritParentObserver} is true,
      * combines {@link #ownObserver} with parent {@link #observer},
@@ -122,6 +128,36 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
      * otherwise uses parent's {@link #effectiveThreshold}.
      */
     protected Level effectiveThreshold;
+
+    @Override
+    public Level getEffectiveThreshold() {
+        return effectiveThreshold;
+    }
+
+    @Override
+    public List<String> getTraceObservers() {
+        return traceEventGenerator.getObservers();
+    }
+
+    @Override
+    public List<String> getDebugObservers() {
+        return debugEventGenerator.getObservers();
+    }
+
+    @Override
+    public List<String> getInfoObservers() {
+        return infoEventGenerator.getObservers();
+    }
+
+    @Override
+    public List<String> getWarnObservers() {
+        return warnEventGenerator.getObservers();
+    }
+
+    @Override
+    public List<String> getErrorObservers() {
+        return errorEventGenerator.getObservers();
+    }
 
     private LogEventGenerator traceEventGenerator;
     private LogEventGenerator debugEventGenerator;

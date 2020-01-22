@@ -5,6 +5,8 @@ import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
+import java.util.List;
+
 public interface LogEventGenerator {
 
     boolean isEnabled();
@@ -37,4 +39,6 @@ public interface LogEventGenerator {
             return new LevelLoggingEventGenerator(name, level, combined);
         }
     }
+
+    List<String> getObservers();
 }

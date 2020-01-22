@@ -8,6 +8,9 @@ import org.logevents.observers.FileLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.event.Level;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * The main interface of the Log Event framework. Implement this
  * interface to process log events in your own way. The most used included
@@ -30,5 +33,9 @@ public interface LogEventObserver {
             return new NullLogEventObserver();
         }
         return this;
+    }
+
+    default List<LogEventObserver> toList() {
+        return Collections.singletonList(this);
     }
 }

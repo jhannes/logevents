@@ -4,6 +4,7 @@ import org.logevents.LogEventConfigurator;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
+import org.logevents.jmx.LogEventsMBeanFactory;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
@@ -297,7 +298,19 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         configureRootLogger(factory, configuration);
         configureLoggers(factory, configuration);
         installUncaughtExceptionHandler(factory, logeventsConfig);
+        installJmxAdaptor(factory, logeventsConfig);
         logeventsConfig.checkForUnknownFields();
+    }
+
+    private static LogEventsMBeanFactory mbeanFactory;
+
+    protected void installJmxAdaptor(LogEventFactory factory, Configuration config) {
+        if (!config.getBoolean("jmx") && mbeanFactory == null) {
+            return;
+        } else if (mbeanFactory == null) {
+            mbeanFactory = new LogEventsMBeanFactory();
+        }
+        mbeanFactory.setup(factory, this, config);
     }
 
     private Map<String, Supplier<? extends LogEventObserver>> configureObservers(Properties configuration) {
@@ -451,5 +464,19 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" + this.propertiesDir + "}";
+    }
+
+    public List<String> getConfigurationSources() {
+        List<String> result = new ArrayList<>();
+        for (String filename : getConfigurationFileNames()) {
+            if (getClass().getClassLoader().getResourceAsStream(filename) != null) {
+                result.add("classpath:" + filename);
+            }
+            Path path = this.propertiesDir.resolve(filename);
+            if (Files.isRegularFile(path)) {
+                result.add(path.toString());
+            }
+        }
+        return result;
     }
 }
