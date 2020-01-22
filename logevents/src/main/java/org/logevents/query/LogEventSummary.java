@@ -3,6 +3,7 @@ package org.logevents.query;
 import org.logevents.LogEvent;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public class LogEventSummary {
     private Set<String> threads = new TreeSet<>();
@@ -42,13 +44,14 @@ public class LogEventSummary {
     }
 
     private Object calculateMdc() {
-        List<Object> mdcSummary = new ArrayList<>();
+        List<Map<String, Object>> mdcSummary = new ArrayList<>();
         for (Map.Entry<String, Set<String>> entry : mdcMap.entrySet()) {
             Map<String, Object> mdcEntry = new LinkedHashMap<>();
             mdcEntry.put("name", entry.getKey());
-            mdcEntry.put("values", entry.getValue());
+            mdcEntry.put("values", entry.getValue().stream().sorted().collect(Collectors.toList()));
             mdcSummary.add(mdcEntry);
         }
+        mdcSummary.sort(Comparator.comparing(m -> m.get("name").toString()));
         return mdcSummary;
     }
 

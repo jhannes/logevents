@@ -1,5 +1,6 @@
 package org.logevents.query;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.extend.servlets.LogEventSampler;
@@ -29,7 +30,9 @@ public class LogEventFilterTest {
     private final Marker MY_MARKER = MarkerFactory.getMarker("MY_MARKER");
     private final Marker OTHER_MARKER = MarkerFactory.getMarker("OTHER_MARKER");
     private LogEventBuffer logsByLevel = new LogEventBuffer();
-    {
+
+    @Before
+    public void setUp() {
         LogEventBuffer.clear();
     }
 
@@ -244,8 +247,8 @@ public class LogEventFilterTest {
         Map<String, Object> urlMdc = mdc.stream().filter(m -> m.get("name").equals("url")).findAny()
                 .orElseThrow(() -> new IllegalArgumentException("missing ip in " + mdc));
 
-        assertEquals(new HashSet<>(Arrays.asList("127.0.0.1", "10.0.0.4")), ipMdc.get("values"));
-        assertEquals(new HashSet<>(Arrays.asList("/api/op")), urlMdc.get("values"));
+        assertEquals(Arrays.asList("10.0.0.4", "127.0.0.1"), ipMdc.get("values"));
+        assertEquals(Arrays.asList("/api/op"), urlMdc.get("values"));
     }
 
     private LogEvent record(LogEvent event) {
