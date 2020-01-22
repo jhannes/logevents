@@ -208,6 +208,7 @@ public class DatabaseLogEventObserverTest {
         assertDoesNotContain(event1.getMessage(), events, LogEvent::getMessage);
         assertDoesNotContain(event2.getMessage(), events, LogEvent::getMessage);
         assertContains(event3.getMessage(), events, LogEvent::getMessage);
+        parameters.remove("mdc[ip]");
 
         parameters.put("mdc[op]", new String[] { "secondOp" });
         events = listEvents(parameters);

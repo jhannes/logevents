@@ -249,7 +249,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                 parameters.add(name);
                 parameters.addAll(value);
             });
-            filters.add("(" + String.join(" OR ", mdcFilters) + ")");
+            filters.add("(" + String.join(" AND ", mdcFilters) + ")");
         });
 
         String sql = "select * from " + logEventsTable + " e left outer join " + logEventsMdcTable + "  m on e.event_id = m.event_id " +
