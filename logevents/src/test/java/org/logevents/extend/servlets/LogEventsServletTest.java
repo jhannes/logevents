@@ -8,7 +8,11 @@ import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.formatting.MessageFormatter;
+import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.observers.FixedLevelThresholdConditionalObserver;
+import org.logevents.observers.LevelThresholdConditionalObserver;
 import org.logevents.observers.LogEventBuffer;
+import org.logevents.observers.TestObserver;
 import org.logevents.observers.WebLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
@@ -16,6 +20,7 @@ import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.openid.OpenIdConfiguration;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.event.Level;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -31,6 +36,7 @@ import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +44,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -245,7 +252,6 @@ public class LogEventsServletTest extends LogEventsServlet {
         verify(response).sendError(eq(403), anyString());
     }
 
-
     @Test
     public void shouldGenerateLoginUrl() throws ServletException, IOException {
         OpenIdConfiguration openIdConfiguration = new OpenIdConfiguration(null, null, null) {
@@ -304,6 +310,39 @@ public class LogEventsServletTest extends LogEventsServlet {
         when(request.getPathInfo()).thenReturn("/logevents-missing.js");
         servlet.doGet(request, response);
         verify(response).sendError(404);
+    }
+
+    @Test
+    public void shouldReturnLoggersAsJson() {
+        LogEventFactory factory = new LogEventFactory();
+        LogEventObserver observers = CompositeLogEventObserver.combine(
+                new FixedLevelThresholdConditionalObserver(Level.DEBUG, new TestObserver("global")),
+                new LevelThresholdConditionalObserver(Level.INFO, new TestObserver("info")),
+                new LevelThresholdConditionalObserver(Level.WARN, new TestObserver("warn")),
+                new LevelThresholdConditionalObserver(Level.ERROR, new TestObserver("error"))
+        );
+        factory.setObserver(factory.getLogger("org.example"), observers);
+        factory.setLevel(factory.getLogger("org.example"), Level.WARN);
+        factory.setLevel(factory.getLogger("org.example.subexample"), Level.INFO);
+
+        Map<String, Object> loggers = servlet.loggersAsJson(factory);
+
+        List<Map<String, Object>> logArray = (List<Map<String, Object>>) loggers.get("loggers");
+        assertEquals(Arrays.asList("ROOT", "org.example", "org.example.subexample"),
+                logArray.stream().map(o -> o.get("loggerName")).collect(Collectors.toList()));
+        Map<String, Object> exampleLogger = logArray.stream()
+                .filter(o -> o.get("loggerName").equals("org.example"))
+                .findFirst().orElseThrow(AssertionError::new);
+        assertEquals(Arrays.asList("TestObserver{global}"),
+                ((List<?>)exampleLogger.get("info")).stream()
+                        .map(o -> (Map<String, Object>)o)
+                        .map(o -> o.get("observerDescription"))
+                        .collect(Collectors.toList()));
+        assertEquals(Arrays.asList("TestObserver{global}", "TestObserver{info}", "TestObserver{warn}"),
+                ((List<?>)exampleLogger.get("warn")).stream()
+                        .map(o -> (Map<String, Object>)o)
+                        .map(o -> o.get("observerDescription"))
+                        .collect(Collectors.toList()));
     }
 
     private String requestUrl(String s) throws IOException, ServletException {

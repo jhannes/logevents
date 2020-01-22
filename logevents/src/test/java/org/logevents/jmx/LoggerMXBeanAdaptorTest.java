@@ -1,13 +1,13 @@
 package org.logevents.jmx;
 
 import org.junit.Test;
-import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.FixedLevelThresholdConditionalObserver;
 import org.logevents.observers.LevelThresholdConditionalObserver;
+import org.logevents.observers.TestObserver;
 import org.slf4j.event.Level;
 
 import java.util.ArrayList;
@@ -18,24 +18,6 @@ import static org.junit.Assert.assertNull;
 
 public class LoggerMXBeanAdaptorTest {
 
-
-    private static class TestObserver implements LogEventObserver {
-        private final String name;
-
-        private TestObserver(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public void logEvent(LogEvent logEvent) {
-
-        }
-
-        @Override
-        public String toString() {
-            return "TestObserver{" + name + '}';
-        }
-    }
 
     private LogEventFactory factory = new LogEventFactory();
     private LoggerConfiguration logger = factory.getLogger("org.example");

@@ -1,9 +1,8 @@
 package org.logevents.impl;
 
+import org.logevents.LogEventObserver;
+import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Marker;
-
-import java.util.ArrayList;
-import java.util.List;
 
 class NullLoggingEventGenerator implements LogEventGenerator {
 
@@ -54,8 +53,8 @@ class NullLoggingEventGenerator implements LogEventGenerator {
     }
 
     @Override
-    public List<String> getObservers() {
-        return new ArrayList<>();
+    public LogEventObserver getObservers() {
+        return new NullLogEventObserver();
     }
 
     NullLoggingEventGenerator() {}

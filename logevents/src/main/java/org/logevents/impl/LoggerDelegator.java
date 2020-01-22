@@ -13,7 +13,6 @@ import org.slf4j.event.Level;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -135,27 +134,27 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
     }
 
     @Override
-    public List<String> getTraceObservers() {
+    public LogEventObserver getTraceObservers() {
         return traceEventGenerator.getObservers();
     }
 
     @Override
-    public List<String> getDebugObservers() {
+    public LogEventObserver getDebugObservers() {
         return debugEventGenerator.getObservers();
     }
 
     @Override
-    public List<String> getInfoObservers() {
+    public LogEventObserver getInfoObservers() {
         return infoEventGenerator.getObservers();
     }
 
     @Override
-    public List<String> getWarnObservers() {
+    public LogEventObserver getWarnObservers() {
         return warnEventGenerator.getObservers();
     }
 
     @Override
-    public List<String> getErrorObservers() {
+    public LogEventObserver getErrorObservers() {
         return errorEventGenerator.getObservers();
     }
 

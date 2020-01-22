@@ -6,9 +6,6 @@ import org.logevents.status.LogEventStatus;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 class LevelLoggingEventGenerator implements LogEventGenerator {
 
     private LogEventObserver observer;
@@ -77,8 +74,8 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
     }
 
     @Override
-    public List<String> getObservers() {
-        return observer.toList().stream().map(Object::toString).collect(Collectors.toList());
+    public LogEventObserver getObservers() {
+        return observer;
     }
 
     private LogEvent createEvent(String format, Marker marker, Object[] args) {

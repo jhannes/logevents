@@ -4,8 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.event.Level;
 import org.slf4j.spi.LocationAwareLogger;
 
-import java.util.List;
-
 /**
  * The configuration information of a Logger. Used for
  * logic that reports the current configuration.
@@ -28,13 +26,13 @@ public interface LoggerConfiguration extends Logger, LocationAwareLogger {
 
     Level getEffectiveThreshold();
 
-    List<String> getTraceObservers();
+    LogEventObserver getTraceObservers();
 
-    List<String> getDebugObservers();
+    LogEventObserver getDebugObservers();
 
-    List<String> getInfoObservers();
+    LogEventObserver getInfoObservers();
 
-    List<String> getWarnObservers();
+    LogEventObserver getWarnObservers();
 
-    List<String> getErrorObservers();
+    LogEventObserver getErrorObservers();
 }

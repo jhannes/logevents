@@ -1,6 +1,8 @@
 package org.logevents.extend.servlets;
 
 import org.logevents.LogEventFactory;
+import org.logevents.LogEventObserver;
+import org.logevents.LoggerConfiguration;
 import org.logevents.observers.LogEventSource;
 import org.logevents.observers.WebLogEventObserver;
 import org.logevents.query.LogEventFilter;
@@ -15,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -26,9 +27,11 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -119,7 +122,7 @@ public class LogEventsServlet extends HttpServlet {
     private static final String LOGEVENTS_API = "/org/logevents/swagger.json";
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String path = req.getPathInfo();
         String contextPath = req.getContextPath() != null ? req.getContextPath() : "";
         if (path == null) {
@@ -163,9 +166,52 @@ public class LogEventsServlet extends HttpServlet {
 
             resp.setContentType("application/json");
             resp.getWriter().write(JsonUtil.toIndentedJson(result));
+        } else if (path.equals("/loggers")) {
+            Map<String, Object> result = loggersAsJson(LogEventFactory.getInstance());
+            resp.setContentType("application/json");
+            resp.getWriter().write(JsonUtil.toIndentedJson(result));
         } else {
             resp.sendError(404, "Not found " + path);
         }
+    }
+
+    Map<String, Object> loggersAsJson(LogEventFactory factory) {
+        Map<String, Object> configuration = new HashMap<>();
+        List<Map<String, Object>> loggers = new ArrayList<>();
+
+        List<String> loggerNames = new ArrayList<>();
+        loggerNames.add(Logger.ROOT_LOGGER_NAME);
+        factory.getLoggers().entrySet().stream()
+                .filter(entry -> entry.getValue().isConfigured())
+                .map(Map.Entry::getKey)
+                .sorted()
+                .forEach(loggerNames::add);
+
+        for (String loggerName : loggerNames) {
+            Map<String, Object> loggerJson = new LinkedHashMap<>();
+            loggerJson.put("loggerName", loggerName);
+            LoggerConfiguration logger = factory.getLogger(loggerName);
+            loggerJson.put("trace", observersAsJson(logger.getTraceObservers()));
+            loggerJson.put("debug", observersAsJson(logger.getDebugObservers()));
+            loggerJson.put("info", observersAsJson(logger.getInfoObservers()));
+            loggerJson.put("warn", observersAsJson(logger.getWarnObservers()));
+            loggerJson.put("error", observersAsJson(logger.getErrorObservers()));
+            loggers.add(loggerJson);
+        }
+
+        configuration.put("loggers", loggers);
+        return configuration;
+    }
+
+    private List<Map<String, Object>> observersAsJson(LogEventObserver observers) {
+        return observers.toList().stream()
+                .map(o -> {
+                    Map<String, Object> observer = new HashMap<>();
+                    observer.put("observerClass", o.getClass().getName());
+                    observer.put("observerDescription", o.toString());
+                    return observer;
+                })
+                .collect(Collectors.toList());
     }
 
     protected void establishSession(HttpServletRequest req, HttpServletResponse resp) throws IOException {
