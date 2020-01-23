@@ -5,6 +5,7 @@ org.logevents.extend.junit
 org.logevents.extend.servlets
 org.logevents.formatting
 org.logevents.impl
+org.logevents.jmx
 org.logevents.observers
 org.logevents.observers.batch
 org.logevents.observers.file
