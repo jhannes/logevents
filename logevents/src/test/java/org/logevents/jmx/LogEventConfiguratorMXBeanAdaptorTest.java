@@ -1,5 +1,6 @@
 package org.logevents.jmx;
 
+import org.junit.After;
 import org.junit.Test;
 import org.logevents.config.DefaultLogEventConfigurator;
 
@@ -22,6 +23,11 @@ public class LogEventConfiguratorMXBeanAdaptorTest {
 
     private DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
     private LogEventConfiguratorMXBeanAdaptor mbean = new LogEventConfiguratorMXBeanAdaptor(configurator);
+
+    @After
+    public void tearDown() {
+        System.getProperties().remove("profiles");
+    }
 
     @Test
     public void shouldFindConfigurationSources() throws IOException {
