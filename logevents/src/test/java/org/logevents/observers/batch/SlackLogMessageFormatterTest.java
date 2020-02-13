@@ -40,10 +40,6 @@ public class SlackLogMessageFormatterTest {
         assertEquals("good", mainAttachment.get("color"));
     }
 
-    private String randomString() {
-        return Long.toString(random.nextLong () & Long.MAX_VALUE, 36);
-    }
-
     @Test
     public void shouldCollectMessagesInBatch() {
         LogEventBatch batch = new LogEventBatch();
@@ -166,6 +162,10 @@ public class SlackLogMessageFormatterTest {
     private void assertContains(String expected, String actual) {
         assertTrue("Expected <" + actual + "> to contain <" + expected + ">",
                 actual.contains(expected));
+    }
+
+    private String randomString() {
+        return Long.toString(random.nextLong () & Long.MAX_VALUE, 36);
     }
 
     private <T> T pickOne(T[] options) {

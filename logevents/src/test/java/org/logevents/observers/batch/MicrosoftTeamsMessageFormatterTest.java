@@ -2,11 +2,12 @@ package org.logevents.observers.batch;
 
 
 import org.junit.Test;
+import org.logevents.LogEvent;
 import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.observers.MicrosoftTeamsLogEventObserver;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -14,8 +15,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class MicrosoftTeamsMessageFormatterTest {
-
-    private String loggerName = getClass().getName();
 
     @Test
     public void shouldIncludeLevelInTeamsMessage() {
@@ -31,12 +30,30 @@ public class MicrosoftTeamsMessageFormatterTest {
         Map<String, Object> detailsSection = JsonUtil.getObject(JsonUtil.getList(teamsMessage, "sections"), 0);
 
         String level = null;
-        for (Map<String, Object> fact : ((List<Map<String, Object>>) detailsSection.get("facts"))) {
+        for (Map<String, Object> fact : JsonUtil.getObjectList(detailsSection, "facts")) {
             if (fact.get("name").equals("Level")) {
                 level = (String)fact.get("value");
             }
         }
         assertEquals("ERROR", level);
+    }
+
+    private Map<String, Object> postedJson;
+    @Test
+    public void shouldCreateObserver() {
+        Properties properties = new Properties();
+        properties.put("observer.teams.url", "http://example.com/webhook");
+        MicrosoftTeamsLogEventObserver observer = new MicrosoftTeamsLogEventObserver(properties, "observer.teams") {
+            @Override
+            protected String postJson(Map<String, Object> jsonMessage) {
+                postedJson = jsonMessage;
+                return "OK";
+            }
+        };
+        LogEvent event = new LogEventSampler().build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        assertContains(event.getMessage(), JsonUtil.getField(postedJson, "text").toString());
     }
 
     private void assertContains(String expected, String actual) {
