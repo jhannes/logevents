@@ -241,6 +241,7 @@ public abstract class AbstractExceptionFormatter {
      */
     public void configureSourceCode(Configuration configuration) {
         configuration.optionalString("sourceCode");
+        //protected final Map<String, Function<StackTraceElement, String>> sourcePackagePatterns = new LinkedHashMap<>();
 
         int index = 1;
         Optional<String> sourcePackages;
