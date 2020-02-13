@@ -75,7 +75,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.4.199</version>
+            <version>1.4.200</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -84,26 +84,13 @@
         <plugins>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.2.0</version>
                 <configuration>
                     <archive>
                         <manifestEntries>
                             <Automatic-Module-Name>org.logevents</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.1.1</version>
-                <configuration>
-                    <reportOutputDirectory>${project.basedir}/../docs</reportOutputDirectory>
-                    <detectLinks>true</detectLinks>
-                    <doclint>all,-missing</doclint>
-                    <links>
-                        <link>https://junit.org/junit5/docs/current/api/</link>
-                    </links>
                 </configuration>
             </plugin>
             <plugin>
