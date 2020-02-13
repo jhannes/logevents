@@ -119,9 +119,12 @@ public class LogEventsServletTest extends LogEventsServlet {
                 return buffer;
             }
         };
-        HashMap<String, Supplier<? extends LogEventObserver>> observers = new HashMap<>();
-        observers.put("servlet", () -> observer);
-        LogEventFactory.getInstance().setObservers(observers);
+        LogEventsServlet servlet = new LogEventsServlet() {
+            @Override
+            public WebLogEventObserver getObserver() {
+                return observer;
+            }
+        };
         LogEvent logEvent = new LogEventSampler().withMarker().withMdc("clientIp", "127.0.0.1")
                 .withThrowable(new IOException()).build();
         buffer.logEvent(logEvent);
