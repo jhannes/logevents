@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.observers.batch.LogEventGroup;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
@@ -42,8 +41,8 @@ public class SlackLogEventObserverTest {
         }
 
         @Override
-        protected String createText(LogEventGroup mainGroup) {
-            return mainGroup.headMessage().getMessage();
+        protected String createText(LogEvent event) {
+            return event.getMessage();
         }
     }
 

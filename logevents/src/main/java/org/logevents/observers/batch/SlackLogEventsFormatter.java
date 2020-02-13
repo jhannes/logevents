@@ -58,8 +58,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     /**
      * Override this method to customize the contents of messages to Slack
      */
-    protected String createText(LogEventGroup mainGroup) {
-        LogEvent event = mainGroup.headMessage();
+    protected String createText(LogEvent event) {
         Throwable throwable = event.getRootThrowable();
         String exceptionInfo = "";
         if (throwable != null) {
@@ -72,7 +71,6 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
             + exceptionInfo
             + formattedMessage
             + " [" + event.getAbbreviatedLoggerName(10) + "]"
-            + (mainGroup.size() > 1 ? " (" + mainGroup.size() + " repetitions)" : "")
             + (event.getLevel() == Level.ERROR ? " <!channel>" : "");
     }
 
@@ -82,16 +80,17 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     protected List<Map<String, Object>> createAttachments(LogEventBatch batch) {
         LogEvent event = batch.firstHighestLevelLogEventGroup().headMessage();
         ArrayList<Map<String, Object>> result = new ArrayList<>();
-        result.add(createDetailsAttachment(batch));
+        if (batch.size() == 1) {
+            result.add(createDetailsAttachment(event));
+        } else {
+            result.add(createThrottledEventsAttachment(batch));
+        }
         Map<String, Object> mdcAttachment = createMdcAttachment(event);
         if (!mdcAttachment.isEmpty()) {
             result.add(mdcAttachment);
         }
         if (event.getThrowable() != null) {
             result.add(createStackTraceAttachment(event));
-        }
-        if (batch.size() > 1) {
-            result.add(createThrottledEventsAttachment(batch));
         }
         return result;
     }
@@ -121,7 +120,6 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
     protected Map<String, Object> createThrottledEventsAttachment(LogEventBatch batch) {
         Map<String, Object> attachment = new HashMap<>();
-        attachment.put("title", "Throttled log events");
         Level level = batch.firstHighestLevelLogEventGroup().headMessage().getLevel();
         attachment.put("color", getColor(level));
         attachment.put("mrkdwn_in", singletonList("text"));
@@ -130,14 +128,19 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         if (showRepeatsIndividually) {
             for (LogEvent logEvent : batch) {
                 String message = formatMessage(logEvent);
-                text.append(JsonLogEventsBatchFormatter.emojiiForLevel(logEvent.getLevel()))
-                        .append(" _").append(logEvent.getLocalTime()).append("_: ");
+                text.append("• ")
+                        .append(JsonLogEventsBatchFormatter.emojiiForLevel(logEvent.getLevel()))
+                        .append(" ").append(italic(logEvent.getLocalTime())).append(": ");
                 text.append(message);
                 text.append("\n");
             }
         } else {
             for (LogEventGroup group : batch.groups()) {
-                text.append("• ").append(italic(group.headMessage().getZonedDateTime().toLocalTime())).append(": ");
+                text.append("• ")
+                        .append(JsonLogEventsBatchFormatter.emojiiForLevel(group.getLevel()))
+                        .append(" ")
+                        .append(italic(group.headMessage().getZonedDateTime().toLocalTime()))
+                        .append(": ");
                 if (group.size() > 1) {
                     String message = group.headMessage().getMessage();
                     text.append(batch.isMainGroup(group) ? bold(message) : message);
@@ -165,13 +168,12 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         return level == Level.ERROR ? "danger" : (level == Level.WARN ? "warning" : "good");
     }
 
-    protected Map<String, Object> createDetailsAttachment(LogEventBatch batch) {
-        LogEvent event = batch.firstHighestLevelLogEventGroup().headMessage();
+    protected Map<String, Object> createDetailsAttachment(LogEvent event) {
         Map<String, Object> attachment = new HashMap<>();
         if (event.getMarker() != null) {
             attachment.put("title", event.getMarker().getName());
         }
-        attachment.put("text", createText(batch.firstHighestLevelLogEventGroup()));
+        attachment.put("text", createText(event));
         attachment.put("color", getColor(event.getLevel()));
         attachment.put("fields", createDetailsField(event));
         return attachment;

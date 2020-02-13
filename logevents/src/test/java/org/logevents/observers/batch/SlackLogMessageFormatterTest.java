@@ -56,8 +56,7 @@ public class SlackLogMessageFormatterTest {
         Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.empty(), Optional.empty())
                 .createMessage(batch);
 
-        Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);
-        assertEquals("Throttled log events", JsonUtil.getField(suppressedEventsAttachment, "title"));
+        Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 0);
         assertContains(": A lesser important message",
                 JsonUtil.getField(suppressedEventsAttachment, "text").toString());
         assertContains(": *A more important message* (2 repetitions)",
@@ -78,8 +77,7 @@ public class SlackLogMessageFormatterTest {
                 sampler.withArgs("bad", "today").build()
         );
         Map<String, Object> message = formatter.createMessage(batch);
-        Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(message, "attachments"), 1);
-        assertEquals("Throttled log events", JsonUtil.getField(suppressedEventsAttachment, "title"));
+        Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(message, "attachments"), 0);
         String text = JsonUtil.getField(suppressedEventsAttachment, "text").toString();
         assertContains(": Something very good has happened yesterday", text);
         assertContains(": Something very bad has happened today", text);
