@@ -41,6 +41,9 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 /**
+ * <p>You can extends this class and put the classname your configurator in
+ * <code>META-INF/services/org.logevents.LogEventConfigurator</code> override the default behavior.</p>
+ *
  * Default implementation of {@link LogEventConfigurator} which reads the
  * logging configuration from <code>logevents.properties</code>-files in the
  * directory specified by the system property <strong><code>logevents.directory</code></strong>
@@ -177,7 +180,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @return A merged Properties object with all relevant files merged together
      */
     public Properties loadConfigurationProperties() {
-        return loadPropertiesFromFiles(getConfigurationFileNames());
+        return loadPropertiesFromFiles(getConfigurationFileNames(), new Properties());
     }
 
     /**
@@ -212,11 +215,11 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * from classpath and current working directory.
      *
      * @param configurationFileNames the file names to load
+     * @param properties the Properties object to load into
      * @return Properties with the configuration of all files merged together
      */
-    protected Properties loadPropertiesFromFiles(List<String> configurationFileNames) {
+    protected Properties loadPropertiesFromFiles(List<String> configurationFileNames, Properties properties) {
         LogEventStatus.getInstance().addConfig(this, "Loading configuration from " + configurationFileNames);
-        Properties properties = new Properties();
         for (String filename : configurationFileNames) {
             loadConfigResource(properties, filename);
             loadConfigFile(properties, filename);
@@ -347,6 +350,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                 boolean includeParent = !"false".equalsIgnoreCase(configuration.getProperty("includeParent." + loggerName));
                 String logger = configuration.getProperty(key.toString());
                 configureLogger(factory, factory.getLogger(loggerName), logger, includeParent);
+                LogEventStatus.getInstance().addConfig(this, "Logger: " + logger);
             }
         }
     }
@@ -396,31 +400,33 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         } else {
             factory.setRootLevel(getDefaultRootLevel());
         }
+
         if (observerSet.isEmpty()) {
             observerSet.add(factory.getObserver("console"));
         }
 
-        observerSet.addAll(configureGlobalObservers(factory, configuration));
+        HashMap<String, LogEventObserver> globalObservers = new HashMap<>();
+        configureGlobalObservers(globalObservers, factory, configuration);
+        observerSet.addAll(globalObservers.values());
 
         LoggerConfiguration logger = factory.getRootLogger();
         factory.setObserver(logger, CompositeLogEventObserver.combineList(observerSet), false);
         LogEventStatus.getInstance().addDebug(this, "Setup " + logger);
+        LogEventStatus.getInstance().addConfig(this, "ROOT logger: " + logger);
     }
 
-    protected List<LogEventObserver> configureGlobalObservers(LogEventFactory factory, Properties configuration) {
-        List<LogEventObserver> rootObservers = new ArrayList<>();
+    protected void configureGlobalObservers(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Properties configuration) {
         for (Object key : configuration.keySet()) {
             if (key.toString().startsWith("root.observer.")) {
                 String observerName = key.toString().substring("root.observer.".length());
                 LogEventObserver observer = factory.getObserver(observerName);
                 Level observerThreshold = Level.valueOf(configuration.getProperty(key.toString()));
                 if (observer != null) {
-                    rootObservers.add(new FixedLevelThresholdConditionalObserver(observerThreshold, observer));
+                    globalObservers.put(observerName, new FixedLevelThresholdConditionalObserver(observerThreshold, observer));
                 }
-                LogEventStatus.getInstance().addDebug(this, "Adding root observer " + observerName);
+                LogEventStatus.getInstance().addConfig(this, "Adding root observer " + observerName);
             }
         }
-        return rootObservers;
     }
 
     protected void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, boolean includeParent) {
