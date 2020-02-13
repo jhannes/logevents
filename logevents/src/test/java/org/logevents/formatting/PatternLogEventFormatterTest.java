@@ -113,7 +113,7 @@ public class PatternLogEventFormatterTest {
         LogEvent event = buffer.getEvents().get(0);
 
         formatter.setPattern("%file:%line - %class#%method");
-        assertEquals("PatternLogEventFormatterTest.java:112 - org.logevents.formatting.PatternLogEventFormatterTest#shouldOutputLocation\n",
+        assertEquals("FrameworkMethod.java:50 - org.junit.runners.model.FrameworkMethod$1#runReflectiveCall\n",
                 formatter.apply(event));
     }
 

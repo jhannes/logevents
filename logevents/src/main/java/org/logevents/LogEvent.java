@@ -262,7 +262,11 @@ public class LogEvent implements LoggingEvent {
 
     private boolean isLoggingClass(StackTraceElement stackTraceElement) {
         String className = stackTraceElement.getClassName();
-        return className.startsWith("org.apache.commons.logging.")
+        return className.startsWith("org.logevents.")
+                || className.startsWith("sun.reflect.")
+                || className.startsWith("jdk.internal.reflect.")
+                || className.startsWith("java.lang.reflect.")
+                || className.startsWith("org.apache.commons.logging.")
                 || className.startsWith("org.flywaydb.core.internal.util.logging.")
                 || className.startsWith("org.flywaydb.core.internal.logging.")
                 || className.startsWith("org.eclipse.jetty.util.log")
