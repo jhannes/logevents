@@ -294,30 +294,30 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                 for (LogEvent logEvent : batch) {
                     String id = UUID.randomUUID().toString();
                     eventStmt.setString(1, id);
-                    eventStmt.setString(2, logEvent.getLoggerName());
+                    eventStmt.setString(2, truncate(logEvent.getLoggerName(), 100));
                     eventStmt.setString(3, logEvent.getLevel().toString());
                     eventStmt.setInt(4, logEvent.getLevel().toInt());
                     eventStmt.setString(5, logEvent.getMessage());
                     eventStmt.setString(6, messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray()));
                     eventStmt.setString(7, JsonUtil.toIndentedJson(jsonMessageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray())));
                     eventStmt.setLong(8, logEvent.getTimeStamp());
-                    eventStmt.setString(9, logEvent.getThreadName());
+                    eventStmt.setString(9, truncate(logEvent.getThreadName(), 100));
                     eventStmt.setString(10, JsonUtil.toIndentedJson(
                             Stream.of(logEvent.getArgumentArray()).map(o -> o != null ? o.toString() : null).collect(Collectors.toList())
                     ));
-                    eventStmt.setString(11, toString(logEvent.getMarker()));
+                    eventStmt.setString(11, truncate(toString(logEvent.getMarker()), 100));
                     eventStmt.setString(12, logEvent.getThrowable() != null ? logEvent.getThrowable().toString() : null);
                     eventStmt.setString(13, logEvent.getThrowable() != null
                             ? JsonUtil.toIndentedJson(exceptionFormatter.createStackTrace(logEvent.getThrowable()))
                             : null);
-                    eventStmt.setString(14, nodeName);
-                    eventStmt.setString(15, applicationName);
+                    eventStmt.setString(14, truncate(nodeName, 100));
+                    eventStmt.setString(15, truncate(applicationName, 100));
                     eventStmt.addBatch();
 
                     for (Map.Entry<String, String> entry : logEvent.getMdcProperties().entrySet()) {
                         mdcStmt.setString(1, id);
-                        mdcStmt.setString(2, entry.getKey());
-                        mdcStmt.setString(3, entry.getValue());
+                        mdcStmt.setString(2, truncate(entry.getKey(), 100));
+                        mdcStmt.setString(3, truncate(entry.getValue(), 1000));
                         mdcStmt.addBatch();
                     }
                 }
@@ -327,6 +327,11 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         } catch (SQLException e) {
             LogEventStatus.getInstance().addError(this, "Failed to write log record", e);
         }
+    }
+
+    private String truncate(String s, int maxLength) {
+        if (s == null || s.length() < maxLength) return s;
+        return s.substring(0, maxLength);
     }
 
     private final MessageFormatter messageFormatter;

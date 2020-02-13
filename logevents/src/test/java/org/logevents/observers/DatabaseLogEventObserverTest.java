@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class DatabaseLogEventObserverTest {
@@ -86,6 +87,21 @@ public class DatabaseLogEventObserverTest {
                 .findFirst()
                 .orElseThrow(() -> new AssertionFailedError("Didn't find <" + event.getMessage() + ">"));
         assertArrayEquals(event.getArgumentArray(), savedEvent.getArgumentArray());
+    }
+
+    @Test
+    public void shouldTruncateLongFieldsWhenSaving() {
+        String loggerNamePart = "abc12345678901234567890xyz12345678901234567890";
+        String veryLongLoggerName = loggerNamePart + "." + loggerNamePart + "." + loggerNamePart + "." + loggerNamePart;
+        LogEvent event = new LogEventSampler().withLoggerName(veryLongLoggerName).build();
+        observer.processBatch(new LogEventBatch().add(event));
+
+        LogEvent savedEvent = listEvents(event.getLevel(), event.getZonedDateTime(), Duration.ofSeconds(1))
+                .stream().filter(e -> e.getMessage().equals(event.getMessage()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionFailedError("Didn't find <" + event.getMessage() + ">"));
+        assertEquals(100, savedEvent.getLoggerName().length());
+        assertTrue(veryLongLoggerName.startsWith(savedEvent.getLoggerName()));
     }
 
     @Test
@@ -337,7 +353,6 @@ public class DatabaseLogEventObserverTest {
         LogEventSummary summary = observer.getSummary(new LogEventFilter(parameters));
         assertEquals(new HashSet<>(Arrays.asList("mdcKey")), summary.getMdcMap().keySet());
         assertEquals(new HashSet<>(Arrays.asList("just right")), summary.getMdcMap().get("mdcKey"));
-        Map<String, Object> facets = summary.toJson();
         assertEquals(new HashSet<>(Arrays.asList(OTHER_MARKER.toString())), summary.getMarkers());
         assertEquals(1, summary.getRowCount());
         assertEquals(0, summary.getFilteredRowCount());
