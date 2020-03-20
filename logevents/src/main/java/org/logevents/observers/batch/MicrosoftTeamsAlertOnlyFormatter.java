@@ -2,9 +2,6 @@ package org.logevents.observers.batch;
 
 import org.logevents.LogEvent;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -15,11 +12,6 @@ import java.util.Properties;
 public class MicrosoftTeamsAlertOnlyFormatter extends MicrosoftTeamsMessageFormatter {
     public MicrosoftTeamsAlertOnlyFormatter(Properties properties, String prefix) {
         super(properties, prefix);
-    }
-
-    @Override
-    protected List<Map<String, Object>> createSections(LogEventBatch batch) {
-        return Arrays.asList(createOverviewSection(batch));
     }
 
     @Override

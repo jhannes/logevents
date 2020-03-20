@@ -3,6 +3,7 @@ package org.logevents.observers.batch;
 
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.MicrosoftTeamsLogEventObserver;
 import org.logevents.util.JsonUtil;
@@ -19,23 +20,22 @@ public class MicrosoftTeamsMessageFormatterTest {
     @Test
     public void shouldIncludeLevelInTeamsMessage() {
         LogEventBatch batch = new LogEventBatch();
-        batch.add(new LogEventSampler().build());
-        batch.add(new LogEventSampler().build());
+        LogEvent event1 = new LogEventSampler().build();
+        batch.add(event1);
+        LogEvent event2 = new LogEventSampler().build();
+        batch.add(event2);
         batch.add(new LogEventSampler().withLevel(Level.ERROR).build());
         batch.add(new LogEventSampler().build());
 
         Map<String, Object> teamsMessage = new MicrosoftTeamsMessageFormatter(
                 new Properties(), "observer.teams.formatter"
         ).createMessage(batch);
-        Map<String, Object> detailsSection = JsonUtil.getObject(JsonUtil.getList(teamsMessage, "sections"), 0);
 
-        String level = null;
-        for (Map<String, Object> fact : JsonUtil.getObjectList(detailsSection, "facts")) {
-            if (fact.get("name").equals("Level")) {
-                level = (String)fact.get("value");
-            }
-        }
-        assertEquals("ERROR", level);
+        assertEquals(MicrosoftTeamsMessageFormatter.getLevelColor(Level.ERROR), teamsMessage.get("themeColor"));
+
+        Map<String, Object> detailsSection = JsonUtil.getObject(JsonUtil.getList(teamsMessage, "sections"), 0);
+        assertEquals(new Configuration().getApplicationNode(), detailsSection.get("activitySubtitle"));
+        assertContains(event1.getMessage(), detailsSection.get("title").toString());
     }
 
     private Map<String, Object> postedJson;
@@ -53,7 +53,7 @@ public class MicrosoftTeamsMessageFormatterTest {
         LogEvent event = new LogEventSampler().build();
         observer.processBatch(new LogEventBatch().add(event));
 
-        assertContains(event.getMessage(), JsonUtil.getField(postedJson, "text").toString());
+        assertContains(event.getMessage(), JsonUtil.getField(postedJson, "summary").toString());
     }
 
     private void assertContains(String expected, String actual) {

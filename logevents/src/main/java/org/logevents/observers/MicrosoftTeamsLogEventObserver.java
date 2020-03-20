@@ -1,8 +1,11 @@
 package org.logevents.observers;
 
 import org.logevents.config.Configuration;
+import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.MicrosoftTeamsMessageFormatter;
+import org.logevents.observers.batch.SlackLogEventsFormatter;
+import org.logevents.observers.batch.ThrottlingBatcher;
 
 import java.util.Map;
 import java.util.Properties;
@@ -16,7 +19,23 @@ import java.util.Properties;
  * determine when to flush the batch. It support {@link FilteredLogEventObserver} properties
  * <code>threshold</code>, <code>suppressMarkers</code> and <code>requireMarker</code> to filter sent messages
  *
- * <p><strong>State: Preview.</strong></p>
+ * <p>
+ * Example configuration:
+ * <pre>
+ * observer.teams=SlackLogEventObserver
+ * observer.teams.format.detailUrl=link to your {@link LogEventsServlet}
+ * observer.teams.url=https://outlook.office.com/webhook/.../IncomingWebHook/...
+ * observer.teams.threshold=WARN
+ * observer.teams.suppressMarkers=BORING_MARKER
+ * observer.teams.requireMarker=MY_MARKER, MY_OTHER_MARKER
+ * observer.teams.cooldownTime=PT10S
+ * observer.teams.maximumWaitTime=PT5M
+ * observer.teams.idleThreshold=PT5S
+ * </pre>
+ *
+ * @see BatchingLogEventObserver
+ * @see SlackLogEventsFormatter
+ * @see ThrottlingBatcher
  */
 public class MicrosoftTeamsLogEventObserver extends HttpPostJsonLogEventObserver {
 

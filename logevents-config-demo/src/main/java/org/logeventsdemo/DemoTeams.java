@@ -26,6 +26,7 @@ public class DemoTeams {
         properties.setProperty("observer.teams.idleThreshold", Duration.ofSeconds(3).toString());
         properties.setProperty("observer.teams.cooldownTime", Duration.ofSeconds(5).toString());
         properties.setProperty("observer.teams.maximumWaitTime", Duration.ofMinutes(3).toString());
+        properties.setProperty("observer.teams.formatter.detailUrl", "http://www.google.com");
 
         MicrosoftTeamsLogEventObserver teamsObserver = new MicrosoftTeamsLogEventObserver(
                 properties, "observer.teams"
@@ -37,21 +38,25 @@ public class DemoTeams {
                 teamsObserver,
                 new ConsoleLogEventObserver()));
 
+        Logger logger = factory.getLogger(DemoTeams.class.getName());
+        logger.warn("Here is a message");
+        Thread.sleep(5500); // Cooldown time from previous batch
+
         MDC.put("User", System.getProperty("user.name"));
 
-        Logger logger = factory.getLogger(DemoTeams.class.getName());
-        logger.info("This message should not go to Teams");
-
-        logger.warn("This message should go to teams after 3 seconds idle delay");
-        Thread.sleep(3500);
+        logger.error("Here is a message with an exception", new RuntimeException("Uh oh!"));
+        Thread.sleep(5500); // Cooldown time from previous batch
 
         logger.warn("This message about {} should be collected together", "one thing");
         logger.warn("This message about {} should be collected together", "another thing");
         logger.warn("This message about {} should be collected together", "something else");
-        logger.error("Wait, what?", new IOException("Something went wrong"));
         Thread.sleep(5500); // Cooldown time from previous batch
 
-        logger.error("Here is a message with an exception", new RuntimeException("Uh oh!"));
+        MDC.put("Request", "https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=");
+        logger.warn("This message about {} should be collected together", "one thing");
+        logger.warn("This message about {} should be collected together", "another thing");
+        logger.warn("This message about {} should be collected together", "something else");
+        logger.error("Wait, what?", new IOException("Something went wrong"));
         Thread.sleep(5500); // Cooldown time from previous batch
     }
 
