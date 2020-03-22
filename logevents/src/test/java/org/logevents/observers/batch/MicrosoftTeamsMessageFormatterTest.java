@@ -9,6 +9,7 @@ import org.logevents.observers.MicrosoftTeamsLogEventObserver;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
@@ -37,7 +38,24 @@ public class MicrosoftTeamsMessageFormatterTest {
         assertEquals(new Configuration().getApplicationNode(), detailsSection.get("activitySubtitle"));
     }
 
+    @Test
+    public void shouldIncludeStackTrace() {
+        RuntimeException exception = new RuntimeException(new IOException("Something went wrong"));
+        LogEvent event = new LogEventSampler().withThrowable(exception).build();
+
+        Map<String, Object> teamsMessage = new MicrosoftTeamsMessageFormatter(
+                new Properties(), "observer.teams.formatter"
+        ).createMessage(new LogEventBatch().add(event));
+
+        Map<String, Object> exceptionSection = JsonUtil.getObject(JsonUtil.getList(teamsMessage, "sections"), 1);
+        assertEquals("**" + exception + "**", exceptionSection.get("title").toString());
+        assertContains("MicrosoftTeamsMessageFormatterTest.shouldIncludeStackTrace", exceptionSection.get("text").toString());
+        assertContains("java.lang.reflect.Method.invoke", exceptionSection.get("text").toString());
+    }
+
+
     private Map<String, Object> postedJson;
+
     @Test
     public void shouldCreateObserver() {
         Properties properties = new Properties();
@@ -56,7 +74,7 @@ public class MicrosoftTeamsMessageFormatterTest {
     }
 
     private void assertContains(String expected, String actual) {
-        assertTrue("Expected <" + actual + "> to contain <" + expected + ">",
+        assertTrue("Expected to find <" + expected + "> in <" + actual + ">",
                 actual.contains(expected));
     }
 

@@ -24,6 +24,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
     private Optional<String> detailUrl;
     private final String applicationNode;
     private List<String> includedMdcKeys = null;
+    private MicrosoftTeamsExceptionFormatter exceptionFormatter;
 
     static String getLevelColor(Level level) {
         return colors.get(level);
@@ -36,6 +37,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
     public MicrosoftTeamsMessageFormatter(Configuration configuration) {
         detailUrl = configuration.optionalString("detailUrl");
         messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class, TeamsMessageFormatter.class);
+        exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", MicrosoftTeamsExceptionFormatter.class);
         applicationNode = configuration.getApplicationNode();
         configuration.checkForUnknownFields();
     }
@@ -67,9 +69,19 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
             mdcSection.put("facts", facts);
             sections.add(mdcSection);
         }
+        if (batch.firstHighestLevelLogEventGroup().headMessage().getThrowable() != null) {
+            sections.add(createExceptionSection(batch.firstHighestLevelLogEventGroup().headMessage().getThrowable()));
+        }
 
         message.put("sections", sections);
         return message;
+    }
+
+    private Map<String, Object> createExceptionSection(Throwable throwable) {
+        Map<String, Object> section = new HashMap<>();
+        section.put("title", "**" + throwable + "**");
+        section.put("text", exceptionFormatter.format(throwable));
+        return section;
     }
 
     private String messageLink(String url, LogEvent event) {
@@ -126,6 +138,10 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
 
     public void setIncludedMdcKeys(List<String> includedMdcKeys) {
         this.includedMdcKeys = includedMdcKeys;
+    }
+
+    public void setPackageFilter(List<String> packageFilter) {
+        this.exceptionFormatter.setPackageFilter(packageFilter);
     }
 
     public static class TeamsMessageFormatter extends MessageFormatter {
