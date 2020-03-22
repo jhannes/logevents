@@ -22,7 +22,7 @@ public class SlackExceptionFormatter extends CauseFirstExceptionFormatter {
         }
         if (ignored > 0) {
             builder.append(" ");
-            outputIgnoredLineCount(ignored, indent, builder);
+            outputIgnoredLineCount(ignored, builder);
         }
         builder.append(newLine());
     }

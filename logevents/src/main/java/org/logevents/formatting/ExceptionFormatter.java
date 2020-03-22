@@ -30,12 +30,20 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
     public ExceptionFormatter() {
     }
 
+    protected String initialIndent() {
+        return "";
+    }
+
+    protected String increaseIndent(String indent) {
+        return indent + "\t";
+    }
+
     public String format(Throwable ex) {
         if (ex == null) {
             return "";
         }
         StringBuilder builder = new StringBuilder();
-        outputException(ex, null, "", "", builder);
+        outputException(ex, null, "", initialIndent(), builder);
         return builder.toString();
     }
 
@@ -45,7 +53,7 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
         outputStack(ex, indent, enclosing, builder);
 
         for (Throwable suppressedException : ex.getSuppressed()) {
-            outputException(suppressedException, ex, "Suppressed: ", indent + "\t", builder);
+            outputException(suppressedException, ex, "Suppressed: ", increaseIndent(indent), builder);
         }
 
         Throwable cause = ex.getCause();
@@ -73,7 +81,8 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
             }
         }
         if (ignored > 0) {
-            outputIgnoredLineCount(ignored, indent, builder).append(newLine());
+            builder.append(indent);
+            outputIgnoredLineCount(ignored, builder).append(newLine());
         }
         if (uniquePrefix < stackTrace.length && uniquePrefix < maxLength) {
             outputIgnoredCommonLines(stackTrace.length - uniquePrefix, indent, builder);
@@ -81,10 +90,10 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
     }
 
     protected void outputStackFrame(StackTraceElement frame, int ignored, String indent, StringBuilder builder) {
-        builder.append(indent).append("\tat ").append(frame);
+        builder.append(increaseIndent(indent)).append("at ").append(frame);
         if (ignored > 0) {
             builder.append(" ");
-            outputIgnoredLineCount(ignored, indent, builder);
+            outputIgnoredLineCount(ignored, builder);
         }
         if (includePackagingData) {
             builder.append(" ").append(getPackagingData(frame));
@@ -93,10 +102,10 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
     }
 
     protected void outputIgnoredCommonLines(int commonLines, String indent, StringBuilder builder) {
-        builder.append(indent).append("\t... ").append(commonLines).append(" more").append(newLine());
+        builder.append(increaseIndent(indent)).append("... ").append(commonLines).append(" more").append(newLine());
     }
 
-    protected StringBuilder outputIgnoredLineCount(int ignored, String indent, StringBuilder builder) {
-        return builder.append(indent).append("[").append(ignored).append(" skipped]");
+    protected StringBuilder outputIgnoredLineCount(int ignored, StringBuilder builder) {
+        return builder.append("[").append(ignored).append(" skipped]");
     }
 }
