@@ -213,6 +213,7 @@ public class ExceptionFormatterTest {
         };
         exception.setStackTrace(stackTrace);
 
+        properties.setProperty("observer.file.formatter.exceptionFormatter.packageFilter", "none");
         properties.setProperty("observer.file.formatter.exceptionFormatter.includePackagingData", "true");
 
         String[] lines = getFormatter().format(exception).split("\r?\n");

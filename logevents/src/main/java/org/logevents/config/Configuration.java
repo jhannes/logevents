@@ -26,6 +26,9 @@ public class Configuration {
 
     private static final String defaultApplicationName = calculateApplicationName();
     private static final String defaultNodeName = calculateNodeName();
+    static final String[] DEFAULT_PACKAGE_FILTER = {"sun.net.www", "java.util.stream", "sun.net.www.protocol.https", "sun.nio.fs",
+            "sun.reflect.", "jdk.internal.reflect",
+            "org.junit.", "com.intellij.junit", "com.intellij.rt"};
 
     private Properties properties;
     private String prefix;
@@ -293,16 +296,14 @@ public class Configuration {
         }
     }
 
-    public List<String> getPackageFilters() {
-        List<String> packageFilters = getStringList("packageFilter");
-        if (!packageFilters.isEmpty()) {
-            return packageFilters;
+    public List<String> getPackageFilter() {
+        List<String> packageFilter = getStringList("packageFilter");
+        if (!packageFilter.isEmpty()) {
+            return packageFilter;
         } else if (!getDefaultStringList("packageFilter").isEmpty()) {
             return getDefaultStringList("packageFilter");
         } else {
-            return Arrays.asList(
-                    "sun.net.www","java.util.stream","sun.net.www.protocol.https","sun.nio.fs"
-            );
+            return Arrays.asList(DEFAULT_PACKAGE_FILTER);
         }
     }
 

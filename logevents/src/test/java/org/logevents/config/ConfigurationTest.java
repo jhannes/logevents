@@ -143,11 +143,11 @@ public class ConfigurationTest {
         properties.put("observer.*.packageFilter", "junit");
 
         assertEquals(Arrays.asList("com.sun", "javax.servlet", "com.foo"),
-                new Configuration(properties, "observer.test").getPackageFilters());
+                new Configuration(properties, "observer.test").getPackageFilter());
         assertEquals(Arrays.asList("junit"),
-                new Configuration(properties, "observer.random").getPackageFilters());
-        assertEquals(Arrays.asList("sun.net.www","java.util.stream","sun.net.www.protocol.https","sun.nio.fs"),
-                new Configuration(new Properties(), "observer.test").getPackageFilters());
+                new Configuration(properties, "observer.random").getPackageFilter());
+        assertEquals(Arrays.asList(Configuration.DEFAULT_PACKAGE_FILTER),
+                new Configuration(new Properties(), "observer.test").getPackageFilter());
     }
 
     @Test

@@ -71,7 +71,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
 
     public void configure(Configuration configuration) {
         getExceptionFormatter().ifPresent(exceptionFormatter ->
-                exceptionFormatter.setPackageFilter(configuration.getPackageFilters())
+                exceptionFormatter.setPackageFilter(configuration.getPackageFilter())
         );
         includedMdcKeys = configuration.getIncludedMdcKeys();
     }

@@ -63,6 +63,7 @@ public class MicrosoftTeamsLogEventObserver extends HttpPostJsonLogEventObserver
 
         this.formatter = configuration.createInstanceWithDefault("formatter", MicrosoftTeamsMessageFormatter.class);
         formatter.setIncludedMdcKeys(configuration.getIncludedMdcKeys());
+        formatter.setPackageFilter(configuration.getPackageFilter());
 
         configuration.checkForUnknownFields();
     }

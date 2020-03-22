@@ -83,7 +83,7 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
                 Optional.ofNullable(configuration.optionalString("username")
                         .orElseGet(configuration::getApplicationNode))
         );
-        formatter.setPackageFilter(configuration.getPackageFilters());
+        formatter.setPackageFilter(configuration.getPackageFilter());
         formatter.setIncludedMdcKeys(configuration.getIncludedMdcKeys());
         formatter.setChannel(configuration.optionalString("channel"));
         formatter.setIconEmoji(configuration.optionalString("iconEmoji"));
