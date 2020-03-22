@@ -271,6 +271,8 @@ public class LogEvent implements LoggingEvent {
                 || className.startsWith("org.flywaydb.core.internal.logging.")
                 || className.startsWith("org.eclipse.jetty.util.log")
                 || className.startsWith("java.util.logging.")
+                || className.startsWith("sun.util.logging.")
+                || className.startsWith("sun.security.ssl.SSLLogger")
                 || className.startsWith("org.log4j.");
     }
 

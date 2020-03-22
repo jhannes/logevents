@@ -27,6 +27,19 @@ public class JavaUtilLoggingAdapter extends Handler {
         java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
         Stream.of(rootLogger.getHandlers()).forEach(rootLogger::removeHandler);
         rootLogger.addHandler(new JavaUtilLoggingAdapter(factory));
+        rootLogger.setLevel(toJavaUtilLoggingLevel(factory.getRootLogger().getLevelThreshold()));
+    }
+
+    private static Level toJavaUtilLoggingLevel(org.slf4j.event.Level level) {
+        switch (level) {
+            case ERROR: return Level.SEVERE;
+            case WARN: return Level.WARNING;
+            case INFO: return Level.INFO;
+            case DEBUG: return Level.FINE;
+            case TRACE: return Level.ALL;
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 
     @Override
@@ -46,7 +59,7 @@ public class JavaUtilLoggingAdapter extends Handler {
     private int fromJavaUtilLoggingLevel(Level level) {
         if (level.intValue() <= Level.FINER.intValue()) {
             return LocationAwareLogger.TRACE_INT;
-        } else if (level.intValue() <= Level.FINEST.intValue()) {
+        } else if (level.intValue() <= Level.FINE.intValue()) {
             return LocationAwareLogger.DEBUG_INT;
         } else if (level.intValue() <= Level.INFO.intValue()) {
             return LocationAwareLogger.INFO_INT;
