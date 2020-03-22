@@ -100,13 +100,13 @@ public class ExceptionFormatterTest {
         assertEquals(nested.toString(), lines[0]);
         assertEquals("\tat " + nioInternalMethod, lines[1]);
 
-        assertEquals("\tSuppressed: " + nestedSuppressed, lines[6]);
-        assertEquals("\t\tat " + ioApiMethod, lines[7]);
-        assertEquals("\t\t... 4 more", lines[8]);
+        assertEquals("\tSuppressed: " + nestedSuppressed, lines[5]);
+        assertEquals("\t\tat " + ioApiMethod, lines[6]);
+        assertEquals("\t\t... 4 more", lines[7]);
 
-        assertEquals("\t\tSuppressed: " + suppressedSuppressed, lines[9]);
-        assertEquals("\t\t\tat " + ioInternalMethod, lines[10]);
-        assertEquals("\t\t\t... 5 more", lines[11]);
+        assertEquals("\t\tSuppressed: " + suppressedSuppressed, lines[8]);
+        assertEquals("\t\t\tat " + ioInternalMethod, lines[9]);
+        assertEquals("\t\t\t... 5 more", lines[10]);
     }
 
     @Test
@@ -132,7 +132,7 @@ public class ExceptionFormatterTest {
         assertEquals("\tat " + publicMethod, lines[2]);
         assertEquals("Caused by: " + nested, lines[3]);
         assertEquals("\tat " + ioApiMethod, lines[4]);
-        assertEquals("\tat " + nioInternalMethod, lines[5]);
+        assertEquals("[2 skipped]", lines[5]);
         assertEquals("Caused by: " + nestedNested, lines[6]);
         assertEquals("\tat " + ioInternalMethod, lines[7]);
         assertEquals("\t... 6 more", lines[8]);

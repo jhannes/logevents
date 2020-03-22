@@ -146,7 +146,7 @@ public class ConfigurationTest {
                 new Configuration(properties, "observer.test").getPackageFilters());
         assertEquals(Arrays.asList("junit"),
                 new Configuration(properties, "observer.random").getPackageFilters());
-        assertEquals(new ArrayList<>(),
+        assertEquals(Arrays.asList("sun.net.www","java.util.stream","sun.net.www.protocol.https","sun.nio.fs"),
                 new Configuration(new Properties(), "observer.test").getPackageFilters());
     }
 

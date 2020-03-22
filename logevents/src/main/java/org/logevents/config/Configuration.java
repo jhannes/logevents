@@ -295,10 +295,14 @@ public class Configuration {
 
     public List<String> getPackageFilters() {
         List<String> packageFilters = getStringList("packageFilter");
-        if (packageFilters.isEmpty()) {
+        if (!packageFilters.isEmpty()) {
+            return packageFilters;
+        } else if (!getDefaultStringList("packageFilter").isEmpty()) {
             return getDefaultStringList("packageFilter");
         } else {
-            return packageFilters;
+            return Arrays.asList(
+                    "sun.net.www","java.util.stream","sun.net.www.protocol.https","sun.nio.fs"
+            );
         }
     }
 
