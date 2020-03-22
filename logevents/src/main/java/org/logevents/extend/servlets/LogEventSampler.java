@@ -1,6 +1,7 @@
 package org.logevents.extend.servlets;
 
 import org.logevents.LogEvent;
+import org.logevents.config.DefaultTestLogEventConfigurator;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -89,7 +90,7 @@ public class LogEventSampler {
         int length = args.length;
         if (length > 0 && args[length-1] instanceof Throwable) length--;
         String ending = IntStream.range(0, length).mapToObj(i -> "{}").collect(Collectors.joining(" "));
-        return "Here is a " + level + " test message of " + random.nextInt(10000) + " with " + ending;
+        return "Here is a " + level + " test message from " + DefaultTestLogEventConfigurator.getTestMethodName(new Exception().getStackTrace()) + " of " + random.nextInt(10000) + " with " + ending;
     }
 
     public LogEventSampler withMarker(Marker marker) {
