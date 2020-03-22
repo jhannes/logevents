@@ -129,6 +129,9 @@ public class LogEventsServletTest extends LogEventsServlet {
                 .withThrowable(new IOException()).build();
         buffer.logEvent(logEvent);
 
+        HashMap<String, String[]> parameters = new HashMap<>();
+        parameters.put("level", new String[] { "ERROR" });
+        when(request.getParameterMap()).thenReturn(parameters);
         when(request.getPathInfo()).thenReturn("/events");
         Map<String, Object> idToken = createSessionCookieToken(Instant.now().getEpochSecond());
         when(request.getCookies()).thenReturn(new Cookie[] { servlet.createSessionCookie(idToken)});
