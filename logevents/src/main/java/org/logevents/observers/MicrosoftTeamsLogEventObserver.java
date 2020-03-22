@@ -31,7 +31,17 @@ import java.util.Properties;
  * observer.teams.cooldownTime=PT10S
  * observer.teams.maximumWaitTime=PT5M
  * observer.teams.idleThreshold=PT5S
+ * observer.teams.includedMdcKeys=clientIp
+ * observer.teams.markers.MY_MARKER.throttle=PT1M PT10M PT30M
+ * observer.teams.markers.MY_MARKER.mdc=userId
  * </pre>
+ *
+ * <h2>Implementation notes</h2>
+ *
+ * <ul>
+ *     <li>Unfortunately, the ability to mention &#064;channel is still
+ *      <a href="https://microsoftteams.uservoice.com/forums/555103-public/suggestions/17153099-webhook-needs-to-support-forced-notification-a-la>Unavailable in Teams</a></li>
+ * </ul>
  *
  * @see BatchingLogEventObserver
  * @see SlackLogEventsFormatter
@@ -49,7 +59,10 @@ public class MicrosoftTeamsLogEventObserver extends HttpPostJsonLogEventObserver
         super(configuration.getUrl("url"));
         configureFilter(configuration);
         configureBatching(configuration);
+        configureMarkers(configuration);
+
         this.formatter = configuration.createInstanceWithDefault("formatter", MicrosoftTeamsMessageFormatter.class);
+        formatter.setIncludedMdcKeys(configuration.getIncludedMdcKeys());
 
         configuration.checkForUnknownFields();
     }

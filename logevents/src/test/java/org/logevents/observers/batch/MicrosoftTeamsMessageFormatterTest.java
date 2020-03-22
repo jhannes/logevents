@@ -35,7 +35,6 @@ public class MicrosoftTeamsMessageFormatterTest {
 
         Map<String, Object> detailsSection = JsonUtil.getObject(JsonUtil.getList(teamsMessage, "sections"), 0);
         assertEquals(new Configuration().getApplicationNode(), detailsSection.get("activitySubtitle"));
-        assertContains(event1.getMessage(), detailsSection.get("title").toString());
     }
 
     private Map<String, Object> postedJson;
@@ -53,7 +52,7 @@ public class MicrosoftTeamsMessageFormatterTest {
         LogEvent event = new LogEventSampler().build();
         observer.processBatch(new LogEventBatch().add(event));
 
-        assertContains(event.getMessage(), JsonUtil.getField(postedJson, "summary").toString());
+        assertContains(event.getMessage(), JsonUtil.getField(postedJson, "text").toString());
     }
 
     private void assertContains(String expected, String actual) {

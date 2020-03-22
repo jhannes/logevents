@@ -23,6 +23,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
     private MessageFormatter messageFormatter;
     private Optional<String> detailUrl;
     private final String applicationNode;
+    private List<String> includedMdcKeys = null;
 
     static String getLevelColor(Level level) {
         return colors.get(level);
@@ -43,11 +44,10 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
     public Map<String, Object> createMessage(LogEventBatch batch) {
         Map<String, Object> message = new LinkedHashMap<>();
         message.put("@type", "MessageCard");
-        message.put("summary", createTitle(batch));
+        message.put("text", createText(batch));
         message.put("themeColor", getLevelColor(batch.firstHighestLevelLogEventGroup().getLevel()));
         List<Map<String, Object>> sections = new ArrayList<>();
         Map<String, Object> overviewSection = new HashMap<>();
-        overviewSection.put("title", createTitle(batch));
         overviewSection.put("activitySubtitle", applicationNode);
         detailUrl.ifPresent(uri ->
                 overviewSection.put("potentialAction",
@@ -56,14 +56,15 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         sections.add(overviewSection);
 
         Map<String, String> mdcProperties = batch.firstHighestLevelLogEventGroup().headMessage().getMdcProperties();
-        if (!mdcProperties.isEmpty()) {
-            HashMap<String, Object> mdcSection = new HashMap<>();
-            List<Map<String, Object>> facts = new ArrayList<>();
-            for (Map.Entry<String, String> entry : mdcProperties.entrySet()) {
+        List<Map<String, Object>> facts = new ArrayList<>();
+        for (Map.Entry<String, String> entry : mdcProperties.entrySet()) {
+            if (includedMdcKeys == null || includedMdcKeys.contains(entry.getKey())) {
                 facts.add(createSingleFact(entry.getKey(), entry.getValue()));
             }
+        }
+        if (!facts.isEmpty()) {
+            HashMap<String, Object> mdcSection = new HashMap<>();
             mdcSection.put("facts", facts);
-
             sections.add(mdcSection);
         }
 
@@ -93,7 +94,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         return fact;
     }
 
-    protected String createTitle(LogEventBatch batch) {
+    protected String createText(LogEventBatch batch) {
         List<String> lines = new ArrayList<>();
         for (LogEventGroup group : batch.groups()) {
             LogEvent event = group.headMessage();
@@ -121,6 +122,10 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
 
     protected String formatMessage(LogEvent event) {
         return messageFormatter.format(event.getMessage(), event.getArgumentArray());
+    }
+
+    public void setIncludedMdcKeys(List<String> includedMdcKeys) {
+        this.includedMdcKeys = includedMdcKeys;
     }
 
     public static class TeamsMessageFormatter extends MessageFormatter {

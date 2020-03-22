@@ -32,7 +32,7 @@ public class MicrosoftTeamsAlertOnlyFormatterTest {
                         .withLevel(Level.ERROR)
                         .build()
                 ));
-        assertEquals("\uD83D\uDED1 Message {} with argument {}", message.get("summary"));
+        assertEquals("\uD83D\uDED1 Message {} with argument {}", message.get("text"));
         List<Map<String, Object>> potentialAction = (List<Map<String, Object>>)
                 getObjectList(message, "sections").get(0).get("potentialAction");
         assertEquals("OpenUri", potentialAction.get(0).get("@type"));

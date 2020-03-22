@@ -64,6 +64,19 @@ import java.util.function.Consumer;
  * observer.sample.throttle=PT30S PT5M PT15M
  * </pre>
  *
+ * <h3>Marker-specific configuration</h3>
+ *
+ * The following will throttle messages with MY_MARKER, grouped by MDC value userId. If there is a log
+ * event with an unused userId, it will be sent immediately. Then all events for the next minute
+ * <em>for the same userId</em> will be collected, then the next hour and then the next day. If there
+ * are log events for other userIds, they will be batched separately. This is useful for situations like
+ * API batch users where the credentials have expired, for example.
+ *
+ * <pre>
+ * observer.sample.markers.MY_MARKER.throttle=PT1M PT1H PT24H
+ * observer.sample.markers.MY_MARKER.mdc=userId
+ * </pre>
+ *
  * @see SlackLogEventObserver
  * @see MicrosoftTeamsLogEventObserver
  * @see SmtpLogEventObserver

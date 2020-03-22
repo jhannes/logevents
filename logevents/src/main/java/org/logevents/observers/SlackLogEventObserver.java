@@ -41,6 +41,7 @@ import java.util.function.Consumer;
  * observer.slack.packageFilter=sun.www, com.example.uninteresting
  * observer.slack.includedMdcKeys=clientIp
  * observer.slack.markers.MY_MARKER.throttle=PT1M PT10M PT30M
+ * observer.slack.markers.MY_MARKER.mdc=userId
  * observer.slack.markers.MY_MARKER.emoji=:rocket:
  * </pre>
  *
