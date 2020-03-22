@@ -6,7 +6,6 @@ import org.logevents.formatting.MessageFormatter;
 import org.slf4j.event.Level;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,10 +50,6 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         List<Map<String, Object>> sections = new ArrayList<>();
         Map<String, Object> overviewSection = new HashMap<>();
         overviewSection.put("activitySubtitle", applicationNode);
-        detailUrl.ifPresent(uri ->
-                overviewSection.put("potentialAction",
-                        Arrays.asList(createUriAction(messageLink(uri, batch.firstHighestLevelLogEventGroup().headMessage()))))
-        );
         sections.add(overviewSection);
 
         Map<String, String> mdcProperties = batch.firstHighestLevelLogEventGroup().headMessage().getMdcProperties();
@@ -88,17 +83,6 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         return url + "#instant=" + event.getInstant() + "&thread=" + event.getThreadName() + "&interval=PT10S";
     }
 
-    private Map<String, Object> createUriAction(String uri) {
-        Map<String, Object> action = new HashMap<>();
-        action.put("@type", "OpenUri");
-        action.put("name", "See details");
-        Map<String, Object> target = new HashMap<>();
-        target.put("uri", uri);
-        target.put("os", "default");
-        action.put("targets", Arrays.asList(target));
-        return action;
-    }
-
     private Map<String, Object> createSingleFact(String name, String value) {
         HashMap<String, Object> fact = new HashMap<>();
         fact.put("name", name);
@@ -115,12 +99,21 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
             if (throwable != null) {
                 exceptionInfo = throwable.getMessage() + " (**" + throwable.getClass().getName() + "**). ";
             }
-            lines.add((batch.groups().size() > 1 ? "* " : "")
-                    + JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()) + " "
-                    + exceptionInfo
-                    + formatMessage(event)
-                    + (group.size() > 1 ? " (" + group.size() + " repetitions)" : "")
-                    + (batch.size() > 1 ? " (more)" : ""));
+            StringBuilder eventLine = new StringBuilder()
+                    .append(batch.groups().size() > 1 ? "* " : "")
+                    .append(JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()))
+                    .append(" ")
+                    .append(exceptionInfo)
+                    .append(formatMessage(event))
+                    .append(group.size() > 1 ? " (" + group.size() + " repetitions)" : "")
+                    .append(batch.size() > 1 ? " (more)" : "");
+            detailUrl.ifPresent(uri ->
+                    eventLine
+                            .append(" [|See details|](")
+                            .append(messageLink(uri, group.headMessage()))
+                            .append(")")
+            );
+            lines.add(eventLine.toString());
         }
         return String.join("\n", lines);
     }
