@@ -2,7 +2,6 @@ package org.logevents.extend.servlets;
 
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
@@ -112,7 +111,6 @@ public class LogEventsServletTest extends LogEventsServlet {
     }
 
     @Test
-    @Ignore("Ignore temporarily to see if Github Action builds successfulwly")
     public void shouldFormatLogEvent() throws IOException {
         LogEventBuffer buffer = new LogEventBuffer();
         WebLogEventObserver observer = new WebLogEventObserver() {
@@ -143,6 +141,7 @@ public class LogEventsServletTest extends LogEventsServlet {
         Map<String, Object> object = JsonParser.parseObject(result.toString());
 
         List<Object> events = JsonUtil.getList(object, "events");
+        assertEquals(events.toString(), 1, events.size());
         Object classNameOfStacktrace = JsonUtil.getField(
                 JsonUtil.getObject(
                         JsonUtil.getList(JsonUtil.getObject(events, 0), "stackTrace"),
