@@ -125,12 +125,14 @@ public class LogEventsServletTest extends LogEventsServlet {
                 return observer;
             }
         };
-        LogEvent logEvent = new LogEventSampler().withMarker().withMdc("clientIp", "127.0.0.1")
+        LogEvent logEvent = new LogEventSampler()
+                .withLevel(Level.ERROR)
+                .withMarker().withMdc("clientIp", "127.0.0.1")
                 .withThrowable(new IOException()).build();
         buffer.logEvent(logEvent);
 
         HashMap<String, String[]> parameters = new HashMap<>();
-        parameters.put("level", new String[] { "WARN" });
+        parameters.put("level", new String[] { "ERROR" });
         when(request.getParameterMap()).thenReturn(parameters);
         when(request.getPathInfo()).thenReturn("/events");
         Map<String, Object> idToken = createSessionCookieToken(Instant.now().getEpochSecond());
