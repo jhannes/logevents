@@ -20,13 +20,15 @@ public class ObserverMXBeanAdaptorTest {
 
     @Test
     public void shouldShowCreatedObservers() {
-        observerSuppliers.put("console", ConsoleLogEventObserver::new);
+        ConsoleLogEventObserver observer = new ConsoleLogEventObserver();
+        observerSuppliers.put("console", () -> observer);
         factory.setObservers(observerSuppliers);
         factory.getObserver("console");
 
         ObserverMXBeanAdaptor mBean = new ObserverMXBeanAdaptor(factory, "console");
         assertTrue(mBean.isCreated());
-        assertEquals(new ConsoleLogEventObserver().toString(), mBean.getContent());
+        assertEquals(observer.toString(), mBean.getContent());
+        assertEquals(observer.getThreshold().toString(), mBean.getThreshold());
     }
 
     @Test

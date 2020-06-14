@@ -6,4 +6,5 @@ public interface ObserverMXBean {
 
     String getContent();
 
+    String getThreshold();
 }
