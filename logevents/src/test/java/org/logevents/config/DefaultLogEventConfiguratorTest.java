@@ -241,7 +241,7 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(
                 "RootLoggerDelegator{ROOT,level=INFO,ownObserver=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}}",
                 factory.getRootLogger().toString());
-        assertEquals("Failed to load [logevents.properties]", LogEventStatus.getInstance().lastMessage().getMessage());
+        assertEquals("Failed to load [logevents.properties, logevents-test.properties]", LogEventStatus.getInstance().lastMessage().getMessage());
         assertEquals("Unknown configuration options: [what] for logevents. Expected options: [installExceptionHandler, jmx, status]",
                 LogEventStatus.getInstance().lastMessage().getThrowable().getMessage());
     }

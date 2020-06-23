@@ -47,13 +47,6 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
     }
 
     @Override
-    protected List<String> getProfiles() {
-        List<String> profiles = new ArrayList<>(super.getProfiles());
-        profiles.add("test");
-        return profiles;
-    }
-
-    @Override
     protected ConsoleLogEventObserver createConsoleLogEventObserver(Configuration configuration) {
         return new ConsoleLogEventObserver(new ConsoleLogEventTestFormatter(configuration));
     }

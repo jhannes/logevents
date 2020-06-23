@@ -82,6 +82,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     public static final String WELCOME_MESSAGE = "Logging by LogEvents (http://logevents.org). Create a file logevents.properties with the line logevents.status=INFO to suppress this message";
     private Path propertiesDir;
     private Thread configurationWatcher;
+    private boolean runningInsideJunit;
 
     public DefaultLogEventConfigurator(Path propertiesDir) {
         this.propertiesDir = propertiesDir;
@@ -97,6 +98,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      */
     @Override
     public void configure(LogEventFactory factory) {
+        runningInsideJunit = factory.isRunningInsideJunit();
         resetConfigurationFromFiles(factory);
         startConfigurationFileWatcher(factory);
     }
@@ -207,6 +209,9 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         Optional.ofNullable(System.getProperty("spring.profiles.active"))
                 .map(s -> s.split(","))
                 .ifPresent(p -> profiles.addAll(Arrays.asList(p)));
+        if (runningInsideJunit) {
+            profiles.add("test");
+        }
         return profiles;
     }
 
