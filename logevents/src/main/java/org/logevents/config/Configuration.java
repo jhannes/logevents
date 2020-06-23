@@ -190,7 +190,7 @@ public class Configuration {
     }
 
     private String getEnvironmentVariableName(String fullKey) {
-        return "LOGEVENTS_" + fullKey.toUpperCase().replace('.', '_');
+        return (fullKey.startsWith("LOGEVENTS_") ? "LOGEVENTS_" : "") + fullKey.toUpperCase().replace('.', '_');
     }
 
     private static Optional<String> getEnvironmentVariable(String name) {

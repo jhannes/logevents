@@ -6,6 +6,7 @@ import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.config.DefaultLogEventConfigurator;
 import org.logevents.observers.CircularBufferLogEventObserver;
+import org.logevents.observers.StatisticsLogEventsObserver;
 import org.slf4j.event.Level;
 
 import javax.management.MBeanServer;
@@ -31,6 +32,9 @@ public class LogEventsMBeanFactoryTest {
     private LogEventFactory factory = new LogEventFactory();
     private LogEventsMBeanFactory logEventsMBeanFactory = new LogEventsMBeanFactory();
     private Properties properties = new Properties();
+    {
+        properties.put("logevents.jmx", "true");
+    }
     private Configuration config = new Configuration(properties, "logevents");
 
     @Test
@@ -40,7 +44,6 @@ public class LogEventsMBeanFactoryTest {
         factory.setObserver("com.example.foo", new CircularBufferLogEventObserver());
         factory.getLogger("com.example.foo.bar");
 
-        properties.put("logevents.jmx", "true");
         logEventsMBeanFactory.setup(factory, new DefaultLogEventConfigurator(null), config);
 
         Set<ObjectInstance> mBeans = mbeanServer.queryMBeans(new ObjectName("org.logevents:type=Logger,name=*"), null);
@@ -62,7 +65,6 @@ public class LogEventsMBeanFactoryTest {
         observerSuppliers.put("observer2", CircularBufferLogEventObserver::new);
         factory.setObservers(observerSuppliers);
 
-        properties.put("logevents.jmx", "true");
         logEventsMBeanFactory.setup(factory, new DefaultLogEventConfigurator(null), config);
 
         Set<ObjectInstance> mBeans = mbeanServer.queryMBeans(new ObjectName("org.logevents:type=Observer,name=*"), null);
@@ -73,12 +75,19 @@ public class LogEventsMBeanFactoryTest {
 
     @Test
     public void shouldUnregisterMBeans() throws MalformedObjectNameException {
-        properties.put("logevents.jmx", "true");
         logEventsMBeanFactory.setup(factory, new DefaultLogEventConfigurator(null), config);
         assertFalse(mbeanServer.queryMBeans(new ObjectName("org.logevents:*"), null).isEmpty());
 
         properties.remove("logevents.jmx");
         logEventsMBeanFactory.setup(factory, new DefaultLogEventConfigurator(null), config);
         assertTrue(mbeanServer.queryMBeans(new ObjectName("org.logevents:*"), null).isEmpty());
+    }
+
+    @Test
+    public void shouldRegisterStatistics() throws MalformedObjectNameException {
+        factory.setRootObserver(new StatisticsLogEventsObserver());
+        logEventsMBeanFactory.setup(factory, new DefaultLogEventConfigurator(null), config);
+        Set<ObjectInstance> mBeans = mbeanServer.queryMBeans(new ObjectName("org.logevents:type=Statistics,name=*"), null);
+        assertFalse("should find org.logevents:type=Statistics,name=*", mBeans.isEmpty());
     }
 }

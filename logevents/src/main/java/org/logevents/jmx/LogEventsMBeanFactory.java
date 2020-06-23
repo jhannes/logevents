@@ -4,8 +4,10 @@ import org.logevents.LogEventFactory;
 import org.logevents.LoggerConfiguration;
 import org.logevents.config.Configuration;
 import org.logevents.config.DefaultLogEventConfigurator;
+import org.logevents.observers.StatisticsLogEventsObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
@@ -49,10 +51,21 @@ public class LogEventsMBeanFactory {
                     table.put("name", observerName);
                     mbeanServer.registerMBean(new ObserverMXBeanAdaptor(factory, observerName), new ObjectName(JMX_DOMAIN, table));
                 }
+
+                if (isStatisticsInstalled(factory)) {
+                    table.put("type", "Statistics");
+                    for (Level level : Level.values()) {
+                        table.put("name", level.toString());
+                        mbeanServer.registerMBean(new StatisticsMXBeanAdaptor(level), new ObjectName(JMX_DOMAIN, table));
+                    }
+                }
             }
         } catch (JMException e) {
             LogEventStatus.getInstance().addError(this, "Failed to register MBean", e);
         }
+    }
 
+    private boolean isStatisticsInstalled(LogEventFactory factory) {
+        return factory.getRootLogger().getInfoObservers().toList().stream().anyMatch(o -> o instanceof StatisticsLogEventsObserver);
     }
 }

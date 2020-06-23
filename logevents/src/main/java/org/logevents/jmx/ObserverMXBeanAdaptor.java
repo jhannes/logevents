@@ -21,18 +21,22 @@ public class ObserverMXBeanAdaptor implements ObserverMXBean {
 
     @Override
     public String getContent() {
-        return isCreated() ? factory.getObserver(observerName).toString() : null;
+        return isCreated() ? getObserver().toString() : null;
     }
 
     @Override
     public String getThreshold() {
         if (!isCreated()) return null;
-        LogEventObserver observer = factory.getObserver(observerName);
+        LogEventObserver observer = getObserver();
         if (observer instanceof FilteredLogEventObserver) {
             return ((FilteredLogEventObserver)observer).getThreshold().toString();
         } else if (observer instanceof FixedLevelThresholdConditionalObserver) {
             return ((FixedLevelThresholdConditionalObserver)observer).getThreshold().toString();
         }
         return null;
+    }
+
+    private LogEventObserver getObserver() {
+        return factory.getObserver(observerName);
     }
 }
