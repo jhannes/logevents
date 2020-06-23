@@ -74,6 +74,8 @@ root.observer.slack=WARN
 logger.org.example=DEBUG
 ```
 
+Properties can also be read from environment variables, LOGEVENTS_OBSERVER_CONSOLE_THRESHOLD=ERROR or LOGEVENTS_OBSERVER_SERVLET_CLIENT_SECRET=abc123
+
 ![cmd screenshot](doc/cmd-with-bash-cropped.png)
 ![Slack screenshot](doc/slack-notification-tray-cropped.jpg)
 
@@ -89,7 +91,7 @@ logger.org.example=DEBUG
 
 ![Web dashboard filter screenshot](doc/web-dashboard-filter.png)
 
-You can also set up environment specific logging with a file named `logevents-<profile>.properties` or you can configure Logevents programmatically:
+You can also set up environment specific logging with a file named `logevents-<profile>.properties`, with environment variables or you can configure Logevents programmatically:
 
 ```
 LogEventFactory logEventFactory = LogEventFactory.getInstance();

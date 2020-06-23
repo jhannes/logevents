@@ -71,14 +71,14 @@ public class OpenIdConfiguration {
         }
 
         if (!openIdIssuer.startsWith("https://login.microsoftonline.com/") && requiredClaims.isEmpty()) {
-            throw new LogEventConfigurationException(configuration.fullKey("requiredClaim") + ".<someClaim> must be set unless openIdIssues is an organization (like Active Directory)");
+            throw new LogEventConfigurationException(configuration.prefixedKey("requiredClaim") + ".<someClaim> must be set unless openIdIssues is an organization (like Active Directory)");
         }
     }
 
     private static String getClientId(Configuration configuration) {
         return configuration.optionalString("clientId")
                 .orElseThrow(() -> {
-                    String message = "Missing required key <" + configuration.fullKey("clientId") + ">.";
+                    String message = "Missing required key <" + configuration.prefixedKey("clientId") + ">.";
                     if (getOpenIdIssuer(configuration).startsWith("https://accounts.google.com")) {
                         message += " Create your credentials at https://console.developers.google.com/apis/credentials";
                     }
@@ -88,7 +88,7 @@ public class OpenIdConfiguration {
 
     private static String getOpenIdIssuer(Configuration configuration) {
         return configuration.optionalString("openIdIssuer")
-                .orElseThrow(() -> new LogEventConfigurationException("Missing require key <" + configuration.fullKey("openIdIssuer") + ">. Try https://accounts.google.com for Google or https://login.microsoftonline.com/{tenantId}/v2.0/ for Active Directory"));
+                .orElseThrow(() -> new LogEventConfigurationException("Missing require key <" + configuration.prefixedKey("openIdIssuer") + ">. Try https://accounts.google.com for Google or https://login.microsoftonline.com/{tenantId}/v2.0/ for Active Directory"));
     }
 
     public OpenIdConfiguration(String openIdIssuer, String clientId, String clientSecret) {

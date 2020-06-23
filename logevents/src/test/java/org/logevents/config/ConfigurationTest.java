@@ -87,7 +87,7 @@ public class ConfigurationTest {
 
     @Test
     public void shouldGiveGoodErrorMessageMissingConfig() {
-        assertConfigurationErrorContains(() -> ConfigUtil.create("observer.foo.thread", "org.example", properties),
+        assertConfigurationErrorContains(() -> ConfigUtil.create("observer.foo.thread", "org.example", null, properties),
                 "Missing configuration for class in observer.foo.thread");
     }
 

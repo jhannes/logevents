@@ -20,6 +20,7 @@ public class DemoTeams {
 
         // Get yours webhook at https://docs.microsoft.com/en-us/microsoftteams/platform/concepts/connectors/connectors-using
         //  and put in logevents.properties as observer.teams.url=https://outlook.office.com/webhook/.../IncomingWebHook/...
+        //  or run with environement variable LOGEVENTS_OBSERVER_TEAMS_URL=https://outlook.office.com/webhook/.../IncomingWebHook/...
 
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
         Properties properties = configurator.loadConfigurationProperties();

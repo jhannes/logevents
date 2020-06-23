@@ -6,14 +6,7 @@ import java.util.Properties;
 
 public class ConfigUtil {
 
-    public static <T> T create(String prefix, String defaultPackage, Properties properties) {
-        Class<?> clazz = getClass(prefix, defaultPackage, properties)
-                .orElseThrow(() -> new LogEventConfigurationException("Missing configuration for class in " + prefix));
-        return create(prefix, clazz, properties);
-    }
-
-    public static Optional<Class<?>> getClass(String prefix, String defaultPackage, Properties properties) {
-        String className = properties.getProperty(prefix);
+        public static Optional<Class<?>> getClass(String prefix, String defaultPackage, String className) {
         if (className == null) {
             return Optional.empty();
         }
@@ -25,6 +18,12 @@ public class ConfigUtil {
         } catch (ClassNotFoundException e) {
             throw new LogEventConfigurationException("Can't create " + prefix + "=" + className + ": " + e);
         }
+    }
+
+    public static <T> T create(String prefix, String defaultPackage, String className, Properties properties) {
+        Class<?> clazz = getClass(prefix, defaultPackage, className)
+                .orElseThrow(() -> new LogEventConfigurationException("Missing configuration for class in " + prefix));
+        return create(prefix, clazz, properties);
     }
 
     @SuppressWarnings("unchecked")

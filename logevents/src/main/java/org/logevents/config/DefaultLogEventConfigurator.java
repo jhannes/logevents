@@ -460,7 +460,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                 String prefix = "observer." + name;
                 try {
                     LogEventStatus.getInstance().addDebug(this, "Configuring " + prefix);
-                    LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", configuration);
+                    LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", configuration.getProperty(prefix), configuration);
                     LogEventStatus.getInstance().addDebug(this, "Configured " + observer);
                     return observer;
                 } catch (RuntimeException e) {

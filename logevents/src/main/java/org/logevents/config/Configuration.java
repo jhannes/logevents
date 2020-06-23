@@ -26,13 +26,15 @@ public class Configuration {
 
     private static final String defaultApplicationName = calculateApplicationName();
     private static final String defaultNodeName = calculateNodeName();
-    static final String[] DEFAULT_PACKAGE_FILTER = {"sun.net.www", "java.util.stream", "sun.net.www.protocol.https", "sun.nio.fs",
-            "sun.reflect.", "jdk.internal.reflect",
-            "org.junit.", "com.intellij.junit", "com.intellij.rt"};
+    static final String[] DEFAULT_PACKAGE_FILTER = {
+            "sun.net.www", "java.util.stream", "sun.net.www.protocol.https",
+            "sun.nio.fs", "sun.reflect.", "jdk.internal.reflect", "org.junit.",
+            "com.intellij.junit", "com.intellij.rt"
+    };
 
-    private Properties properties;
-    private String prefix;
-    private Set<String> expectedFields = new TreeSet<>();
+    private final Properties properties;
+    private final String prefix;
+    private final Set<String> expectedFields = new TreeSet<>();
 
     public Configuration(Properties properties, String prefix) {
         this.properties = properties;
@@ -113,7 +115,7 @@ public class Configuration {
         try {
             return new URL(string);
         } catch (MalformedURLException e) {
-            throw new LogEventConfigurationException(fullKey(key) + " value " + string + ": " + e.getMessage());
+            throw new LogEventConfigurationException(prefixedKey(key) + " value " + string + ": " + e.getMessage());
         }
     }
 
@@ -130,7 +132,7 @@ public class Configuration {
         try {
             return Duration.parse(getString(key));
         } catch (DateTimeParseException e) {
-            throw new LogEventConfigurationException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
+            throw new LogEventConfigurationException(prefixedKey(key) + " value " + getString(key) + ": " + e.getMessage());
         }
     }
 
@@ -138,13 +140,13 @@ public class Configuration {
         try {
             return optionalString(key).map(Duration::parse);
         } catch (DateTimeParseException e) {
-            throw new LogEventConfigurationException(fullKey(key) + " value " + getString(key) + ": " + e.getMessage());
+            throw new LogEventConfigurationException(prefixedKey(key) + " value " + getString(key) + ": " + e.getMessage());
         }
     }
 
     public String getString(String key) {
         return optionalString(key)
-                .orElseThrow(() -> new LogEventConfigurationException("Missing required key <" + fullKey(key) + "> in <" + sorted(properties.keySet()) + ">"));
+                .orElseThrow(() -> new LogEventConfigurationException("Missing required key <" + prefixedKey(key) + "> in <" + sorted(properties.keySet()) + ">"));
     }
 
     private List<String> sorted(Set<Object> strings) {
@@ -175,51 +177,62 @@ public class Configuration {
 
     public Optional<String> optionalString(String key) {
         expectedFields.add(key);
-        String property = properties.getProperty(fullKey(key));
-        return property == null || property.isEmpty() ? Optional.empty() : Optional.of(property);
+        return getProperty(prefixedKey(key)).filter(s -> !s.isEmpty());
     }
 
     public Optional<String> optionalDefaultString(String key) {
-        String property = properties.getProperty(defaultKey(key));
-        return property == null || property.isEmpty() ? Optional.empty() : Optional.of(property);
+        return getProperty(defaultKey(key)).filter(s -> !s.isEmpty());
+    }
+
+    private Optional<String> getProperty(String fullKey) {
+        Optional<String> result = Optional.ofNullable(properties.getProperty(fullKey));
+        return result.isPresent() ? result : getEnvironmentVariable(getEnvironmentVariableName(fullKey));
+    }
+
+    private String getEnvironmentVariableName(String fullKey) {
+        return "LOGEVENTS_" + fullKey.toUpperCase().replace('.', '_');
+    }
+
+    private static Optional<String> getEnvironmentVariable(String name) {
+        return Optional.ofNullable(System.getenv(name));
     }
 
     private String defaultKey(String key) {
         return "observer.*." + key;
     }
 
-    public String fullKey(String key) {
+    public String prefixedKey(String key) {
         return prefix + "." + key;
     }
 
     public <T> T createInstance(String key, Class<T> clazz) {
         optionalString(key)
-            .orElseThrow(() -> new IllegalArgumentException("Missing configuration for " + clazz.getSimpleName() + " in " + fullKey(key)));
+            .orElseThrow(() -> new IllegalArgumentException("Missing configuration for " + clazz.getSimpleName() + " in " + prefixedKey(key)));
         LogEventStatus.getInstance().addDebug(this, "Creating " + key);
-        return ConfigUtil.create(fullKey(key), clazz.getPackage().getName(), properties);
+        return ConfigUtil.create(prefixedKey(key), clazz.getPackage().getName(), optionalString(key).orElse(null), properties);
     }
 
     public <T> T createInstance(String key, Class<T> clazz, String defaultPackage) {
         optionalString(key)
-            .orElseThrow(() -> new IllegalArgumentException("Missing configuration for " + clazz.getSimpleName() + " in " + fullKey(key)));
+            .orElseThrow(() -> new IllegalArgumentException("Missing configuration for " + clazz.getSimpleName() + " in " + prefixedKey(key)));
         LogEventStatus.getInstance().addDebug(this, "Creating " + key);
-        return ConfigUtil.create(fullKey(key), defaultPackage, properties);
+        return ConfigUtil.create(prefixedKey(key), defaultPackage, optionalString(key).orElse(null), properties);
     }
 
     public <T> T createInstanceWithDefault(String key, Class<T> defaultClass) {
         expectedFields.add(key);
-        Class<?> clazz = ConfigUtil.getClass(fullKey(key), defaultClass.getPackage().getName(), properties)
+        Class<?> clazz = ConfigUtil.getClass(prefixedKey(key), defaultClass.getPackage().getName(), optionalString(key).orElse(null))
                 .orElse(defaultClass);
         LogEventStatus.getInstance().addDebug(this, "Creating " + key);
-        return ConfigUtil.create(fullKey(key), clazz, properties);
+        return ConfigUtil.create(prefixedKey(key), clazz, properties);
     }
 
     public <T> T  createInstanceWithDefault(String key, Class<T> targetType, Class<? extends T> defaultClass) {
         expectedFields.add(key);
-        Class<?> clazz = ConfigUtil.getClass(fullKey(key), targetType.getPackage().getName(), properties)
+        Class<?> clazz = ConfigUtil.getClass(prefixedKey(key), targetType.getPackage().getName(), optionalString(key).orElse(null))
                 .orElse(defaultClass);
         LogEventStatus.getInstance().addDebug(this, "Creating " + key);
-        return ConfigUtil.create(fullKey(key), clazz, properties);
+        return ConfigUtil.create(prefixedKey(key), clazz, properties);
     }
 
     public String getPrefix() {
@@ -277,9 +290,9 @@ public class Configuration {
 
     private static String calculateNodeName() {
         try {
-            return Optional.ofNullable(System.getenv("HOSTNAME"))
-                    .orElse(Optional.ofNullable(System.getenv("HTTP_HOST"))
-                            .orElse(Optional.ofNullable(System.getenv("COMPUTERNAME"))
+            return getEnvironmentVariable("HOSTNAME")
+                    .orElse(getEnvironmentVariable("HTTP_HOST")
+                            .orElse(getEnvironmentVariable("COMPUTERNAME")
                                     .orElse(InetAddress.getLocalHost().getHostName())));
         } catch (UnknownHostException ignored) {
             return "unknown host";
@@ -287,9 +300,9 @@ public class Configuration {
     }
 
     public List<String> getIncludedMdcKeys() {
-        if (properties.getProperty(fullKey("includedMdcKeys")) != null) {
+        if (getProperty(prefixedKey("includedMdcKeys")).isPresent()) {
             return getStringList("includedMdcKeys");
-        } else if (properties.getProperty(defaultKey("includedMdcKeys")) != null) {
+        } else if (getProperty(defaultKey("includedMdcKeys")).isPresent()) {
             return getDefaultStringList("includedMdcKeys");
         } else {
             return null;
