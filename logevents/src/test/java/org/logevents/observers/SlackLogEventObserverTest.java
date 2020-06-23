@@ -110,10 +110,10 @@ public class SlackLogEventObserverTest {
         properties.put("observer.slack.slackUrl", "http://localhost:1234");
         properties.put("observer.slack.channel", "general");
         properties.put("observer.slack.username", "MyTestApp");
-        properties.put("observer.slack.sourceCode.1.package", "org.logevents");
-        properties.put("observer.slack.sourceCode.1.maven", "org.logevents/logevents");
-        properties.put("observer.slack.sourceCode.2.package", "org.junit");
-        properties.put("observer.slack.sourceCode.2.github", "https://github.com/junit-team/junit4");
+        properties.put("observer.slack.formatter.sourceCode.1.package", "org.logevents");
+        properties.put("observer.slack.formatter.sourceCode.1.maven", "org.logevents/logevents");
+        properties.put("observer.slack.formatter.sourceCode.2.package", "org.junit");
+        properties.put("observer.slack.formatter.sourceCode.2.github", "https://github.com/junit-team/junit4");
 
         SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack");
 

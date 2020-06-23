@@ -3,17 +3,16 @@ package org.logevents.observers.batch;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
+import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -112,8 +111,10 @@ public class SlackLogMessageFormatterTest {
     @Test
     @Ignore("How do we reliably find a pom.xml-file in classpath?")
     public void shouldCreateSourceLinkInStackTrace() {
-        SlackExceptionFormatter formatter = new SlackExceptionFormatter();
-        formatter.addPackageMavenLocation("org.logevents", "org.logevents/logevents");
+        Properties properties = new Properties();
+        properties.put("formatter.sourceCode.1.package", "org.logevents");
+        properties.put("formatter.sourceCode.1.maven", "org.logevents/logevents");
+        SlackExceptionFormatter formatter = new SlackExceptionFormatter(new Configuration(properties, "formatter"));
 
         StringBuilder builder = new StringBuilder();
         StackTraceElement frame = new StackTraceElement(SlackExceptionFormatter.class.getName(),
@@ -128,10 +129,11 @@ public class SlackLogMessageFormatterTest {
 
     @Test
     public void shouldCreateSourceLinkInBitbucket() {
-        SlackExceptionFormatter formatter = new SlackExceptionFormatter();
-        formatter.addPackageBitbucket5Location("com.atlassian.labs.hipchat",
-                "https://bitbucket.org/atlassian/hipchat-for-jira/src/51fead28c419edae0aa120e0f03c78d043cc81a5/",
-                Optional.of("hipchat-for-jira-plugin-1.3.7"));
+        Properties properties = new Properties();
+        properties.put("formatter.sourceCode.1.package", "com.atlassian.labs.hipchat");
+        properties.put("formatter.sourceCode.1.bitbucket", "https://bitbucket.org/atlassian/hipchat-for-jira/src/51fead28c419edae0aa120e0f03c78d043cc81a5/");
+        properties.put("formatter.sourceCode.1.tag", "hipchat-for-jira-plugin-1.3.7");
+        SlackExceptionFormatter formatter = new SlackExceptionFormatter(new Configuration(properties, "formatter"));
 
         StringBuilder builder = new StringBuilder();
         StackTraceElement frame = new StackTraceElement("com.atlassian.labs.hipchat.action.Configuration",
@@ -141,21 +143,6 @@ public class SlackLogMessageFormatterTest {
         assertContains("https://bitbucket.org/atlassian/hipchat-for-jira/src",
                 builder.toString());
         assertContains("src/main/java/com/atlassian/labs/hipchat/action/Configuration.java?at=hipchat-for-jira-plugin-1.3.7#35",
-                builder.toString());
-    }
-
-    @Test
-    public void shouldReadSourceLinkFromPomFile() throws IOException, ParserConfigurationException, SAXException {
-        SlackExceptionFormatter formatter = new SlackExceptionFormatter();
-        try (FileInputStream pomResource = new FileInputStream("../pom.xml")) {
-            formatter.addPackageMavenLocation("org.logevents", pomResource);
-        }
-        StringBuilder builder = new StringBuilder();
-        StackTraceElement frame = new StackTraceElement(SlackExceptionFormatter.class.getName(),
-                "addPackageMavenLocation", "SlackExceptionFormatter.java", 35);
-        formatter.outputStackFrame(frame , 0, "", builder);
-
-        assertContains("https://github.com/jhannes/logevents/",
                 builder.toString());
     }
 

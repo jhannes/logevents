@@ -47,8 +47,8 @@ logevents.jmx=true
 
 observer.slack=SlackLogEventObserver
 observer.slack.slackUrl=....
-observer.slack.sourceCode.1.package=org.logevents
-observer.slack.sourceCode.1.maven=org.logevents/logevents
+observer.slack.formatter.sourceCode.1.package=org.logevents
+observer.slack.formatter.sourceCode.1.maven=org.logevents/logevents
 
 observer.console.threshold=WARN
 # If you want LogEvents to output to standard error instead of standard out
@@ -470,20 +470,20 @@ source code repository. Currently, Github and Bitbucket 5 URLs are supported.
 Examples:
 
 ```properties
-observer.slack.sourceCode.1.packages=org.logevents
+observer.slack.formatter.sourceCode.1.packages=org.logevents
 # See if META-INF/maven/org.logevents/logevents/pom.xml is available
 #  If so, look for the <scm> tag in the pom-file
-observer.slack.sourceCode.1.maven=org.logevents/logevents
+observer.slack.formatter.sourceCode.1.maven=org.logevents/logevents
 
-observer.slack.sourceCode.2.packages=org.slf4j
+observer.slack.formatter.sourceCode.2.packages=org.slf4j
 # Link to Github
-observer.slack.sourceCode.2.github=https://github.com/qos-ch/slf4j
-observer.slack.sourceCode.2.tag=v_1.7.25
+observer.slack.formatter.sourceCode.2.github=https://github.com/qos-ch/slf4j
+observer.slack.formatter.sourceCode.2.tag=v_1.7.25
 
-observer.slack.sourceCode.3.packages=com.example
+observer.slack.formatter.sourceCode.3.packages=com.example
 # Link to Bitbucket: https://bitbucket.example.com/EX/project/src/main/java/<java-path>?at=release#<line>
-observer.slack.sourceCode.3.github=https://bitbucket.example.com/EX/project/
-observer.slack.sourceCode.3.tag=release
+observer.slack.formatter.sourceCode.3.github=https://bitbucket.example.com/EX/project/
+observer.slack.formatter.sourceCode.3.tag=release
 ```
 
 
@@ -568,28 +568,12 @@ If you're using logback today and would like to check out logevents, here's a si
 ### TODO
 
 * [ ] logevent.html:
-   * [x] query #-fragments and push filter
-   * [x] date filter
-   * [x] Show logevent configuration as JSON
-   * [x] Show better view when no hits from server
-   * [x] Show decent title
    * [ ] Test for multiple MDCs/mdc sorting
    * [ ] pagination
    * [ ] Show LogEventStatus in logevents.html
    * [ ] negative marker and category filter
    * [ ] large number of categories?
-* [x] Bugs
-   * [x] root.observer blows out default root logger
-   * [x] application name changes after main thread dies
-   * [x] String ROOT_LOGGER_NAME = "ROOT";
-   * [x] %coloredLevel
-   * [x] Shutdown handler expires
 * [ ] Performance
    * [ ] 100 parallel threads logging to database and file
-* [x] Programmable configuration
-  * [x] Instantiate FileRotationWorker programmatically
-  * [x] A concept for reused configuration - imports? ServiceLocators subclassing default?
-* [x] JMX
-  * [x] Tests
 * [ ] Standard statistics root logger
 

@@ -1,5 +1,7 @@
 package org.logevents.formatting;
 
+import org.logevents.config.Configuration;
+
 import java.util.Properties;
 
 /**
@@ -13,6 +15,8 @@ import java.util.Properties;
  * <pre>
  * observer.x.formatter.exceptionFormatter={@link CauseFirstExceptionFormatter}
  * observer.x.formatter.exceptionFormatter.packageFilter=sun.www, com.example.uninteresting
+ * observer.x.formatter.sourceCode.1.package=org.logevents
+ * observer.x.formatter.sourceCode.1.github=jhannes/logevents
  * </pre>
  *
  * You can also specify package filters for all observers:
@@ -23,11 +27,15 @@ import java.util.Properties;
  * @author Johannes Brodwall
  */
 public class ExceptionFormatter extends AbstractExceptionFormatter {
-    public ExceptionFormatter(Properties properties, String prefix) {
-        super(properties, prefix);
+    public ExceptionFormatter() {
     }
 
-    public ExceptionFormatter() {
+    public ExceptionFormatter(Properties properties, String prefix) {
+        this(new Configuration(properties, prefix));
+    }
+
+    public ExceptionFormatter(Configuration configuration) {
+        super(configuration);
     }
 
     protected String initialIndent() {

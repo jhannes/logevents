@@ -1,11 +1,17 @@
 package org.logevents.formatting;
 
+import org.logevents.config.Configuration;
+
 import java.util.Properties;
 
 public class CauseFirstExceptionFormatter extends ExceptionFormatter {
 
     public CauseFirstExceptionFormatter(Properties properties, String prefix) {
-        super(properties, prefix);
+        this(new Configuration(properties, prefix));
+    }
+
+    public CauseFirstExceptionFormatter(Configuration configuration) {
+        super(configuration);
     }
 
     @Override

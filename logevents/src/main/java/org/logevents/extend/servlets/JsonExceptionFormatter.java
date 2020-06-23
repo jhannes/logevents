@@ -34,14 +34,10 @@ import java.util.Properties;
  *
  * @author Johannes Brodwall
  */
-
 public class JsonExceptionFormatter extends AbstractExceptionFormatter {
 
     public JsonExceptionFormatter(Properties properties, String prefix) {
         super(properties, prefix);
-    }
-
-    public JsonExceptionFormatter() {
     }
 
     public List<Map<String, Object>> createStackTrace(Throwable ex) {
@@ -76,7 +72,7 @@ public class JsonExceptionFormatter extends AbstractExceptionFormatter {
         jsonElement.put("methodName", element.getMethodName());
         jsonElement.put("lineNumber", String.valueOf(element.getLineNumber()));
         jsonElement.put("fileName", element.getFileName());
-        jsonElement.put("sourceLink", getSourceLink(element));
+        jsonElement.put("sourceLink", sourceCodeLookup.getSourceLink(element));
         jsonElement.put("ignoredFrames", ignored);
         return jsonElement;
     }

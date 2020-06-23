@@ -89,7 +89,6 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
         formatter.setIconEmoji(configuration.optionalString("iconEmoji"));
         formatter.setShowRepeatsIndividually(configuration.getBoolean("showRepeatsIndividually"));
         formatter.setDetailUrl(configuration.optionalString("detailUrl"));
-        formatter.configureSourceCode(configuration);
 
         return formatter;
     }

@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 import static java.util.Collections.singletonList;
 
@@ -21,8 +22,8 @@ import static java.util.Collections.singletonList;
  */
 public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
-    private MessageFormatter messageFormatter = new MessageFormatter();
-    private SlackExceptionFormatter exceptionFormatter = new SlackExceptionFormatter();
+    private final MessageFormatter messageFormatter = new MessageFormatter();
+    private final SlackExceptionFormatter exceptionFormatter;
     protected Optional<String> username;
     protected Optional<String> channel;
     protected Optional<String> iconEmoji = Optional.empty();
@@ -36,9 +37,23 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     }
 
     public SlackLogEventsFormatter(Optional<String> username, Optional<String> channel) {
+        this(new Configuration());
         this.username = username;
         this.channel = channel;
-        this.nodeName = new Configuration().getNodeName();
+    }
+
+    public SlackLogEventsFormatter(Properties properties, String prefix) {
+        this(new Configuration(properties, prefix));
+    }
+
+    public SlackLogEventsFormatter(Configuration configuration) {
+        this.username = Optional.ofNullable(configuration.optionalString("username")
+                        .orElseGet(configuration::getApplicationNode));
+        this.nodeName = configuration.getNodeName();
+        setIncludedMdcKeys(configuration.getIncludedMdcKeys());
+        exceptionFormatter = new SlackExceptionFormatter(configuration);
+        exceptionFormatter.configureSourceCode(configuration);
+        exceptionFormatter.setPackageFilter(configuration.getPackageFilter());
     }
 
     @Override
@@ -207,18 +222,6 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
 
     protected String bold(String s) {
         return "*" + s + "*";
-    }
-
-    public void addPackageGithubLocation(String sourcePackages, String project, Optional<String> tag) {
-        exceptionFormatter.addPackageGithubLocation(sourcePackages, project, tag);
-    }
-
-    public void addPackageBitbucket5Location(String sourcePackages, String url, Optional<String> tag) {
-        exceptionFormatter.addPackageBitbucket5Location(sourcePackages, url, tag);
-    }
-
-    public void addPackageMavenLocation(String sourcePackages, String mavenLocation) {
-        exceptionFormatter.addPackageMavenLocation(sourcePackages, mavenLocation);
     }
 
     public void setPackageFilter(List<String> packageFilter) {

@@ -229,45 +229,6 @@ public class ExceptionFormatterTest {
                 Arrays.asList(lines));
     }
 
-    @Test
-    public void shouldLinkToSourceCode() {
-        properties.put("observer.file.formatter.exceptionFormatter.sourceCode.1.package", "org.logevents");
-        properties.put("observer.file.formatter.exceptionFormatter.sourceCode.1.github", "jhannes/logevents");
-
-        StackTraceElement stackFrame = new StackTraceElement(getClass().getName(), "shouldLinkToSourceCode", "ExceptionFormatterTest.java", 235);
-        String sourceLink = getFormatter().getSourceLink(stackFrame);
-        assertEquals(
-                "https://github.com/jhannes/logevents/blob/master/src/main/java/org/logevents/formatting/ExceptionFormatterTest.java#L235",
-                sourceLink);
-    }
-
-    @Test
-    public void shouldLinkToGithubModule() {
-        ExceptionFormatter formatter = new ExceptionFormatter();
-        formatter.addPackageGithubLocation("org.logevents", "jhannes/logevents/logevents", Optional.empty());
-
-        StackTraceElement stackFrame = new StackTraceElement(getClass().getName(), "shouldLinkToGithubModule", "ExceptionFormatterTest.java", 248);
-        String sourceLink = formatter.getSourceLink(stackFrame);
-        assertEquals(
-                "https://github.com/jhannes/logevents/blob/master/logevents/src/main/java/org/logevents/formatting/ExceptionFormatterTest.java#L248",
-                sourceLink);
-    }
-
-
-
-
-    @Test
-    public void shouldConfigureDefaultLinkToSourceCode() {
-        properties.put("observer.*.sourceCode.1.package", "org.logevents");
-        properties.put("observer.*.sourceCode.1.github", "jhannes/logevents");
-
-        StackTraceElement stackFrame = new StackTraceElement(getClass().getName(), "shouldConfigureDefaultLinkToSourceCode", "ExceptionFormatterTest.java", 251);
-        String sourceLink = getFormatter().getSourceLink(stackFrame);
-        assertEquals(
-                "https://github.com/jhannes/logevents/blob/master/src/main/java/org/logevents/formatting/ExceptionFormatterTest.java#L251",
-                sourceLink);
-    }
-
     private ExceptionFormatter getFormatter() {
         Configuration configuration = new Configuration(properties, "observer.file.formatter");
         return configuration.createInstance("exceptionFormatter", ExceptionFormatter.class);

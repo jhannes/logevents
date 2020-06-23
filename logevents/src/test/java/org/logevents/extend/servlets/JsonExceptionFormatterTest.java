@@ -1,6 +1,8 @@
 package org.logevents.extend.servlets;
 
 import org.junit.Test;
+import org.logevents.config.Configuration;
+import org.logevents.formatting.ExceptionFormatter;
 import org.logevents.util.JsonUtil;
 
 import java.io.IOException;
@@ -8,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -22,7 +24,8 @@ public class JsonExceptionFormatterTest {
     private StackTraceElement nioInternalMethod = new StackTraceElement("sun.nio.fs.WindowsException", "translateToIOException", "WindowsException.java", 79);
     private StackTraceElement ioApiMethod = new StackTraceElement("java.io.FilterOutputStream", "close", "FilterOutputStream.java", 180);
     private StackTraceElement ioInternalMethod = new StackTraceElement("java.io.FileOutputStream", "close", "FileOutputStream.java", 323);
-    private JsonExceptionFormatter formatter = new JsonExceptionFormatter();
+    private JsonExceptionFormatter formatter = new JsonExceptionFormatter(new Properties(), "formatter");
+    private Properties properties = new Properties();
 
     @Test
     public void shouldFormatSimpleException() {
@@ -67,16 +70,15 @@ public class JsonExceptionFormatterTest {
                 new StackTraceElement("org.logevents.extend.servlets.JsonExceptionFormatter", "createStackTraceElement", "JsonExceptionFormatter.java", 44),
                 new StackTraceElement("org.junit.internal.runners.model.ReflectiveCallable", "run", ".ReflectiveCallable.java", 12)
         });
-        formatter.addPackageGithubLocation("org.logevents", "jhannes/logevents", Optional.empty());
+        properties.put("formatter.sourceCode.1.package", "org.logevents");
+        properties.put("formatter.sourceCode.1.github", "jhannes/logevents");
+        JsonExceptionFormatter formatter = new JsonExceptionFormatter(properties, "formatter");
 
         List<Map<String, Object>> stackTrace = formatter.createStackTrace(exception);
         assertEquals("https://github.com/jhannes/logevents/blob/master/src/main/java/org/logevents/extend/servlets/JsonExceptionFormatter.java#L44",
                 JsonUtil.getObject(stackTrace, 0).get("sourceLink"));
         assertNull(JsonUtil.getObject(stackTrace, 1).get("sourceLink"));
     }
-
-    /*
-
 
     @Test
     public void shouldOutputNestedExceptions() {
@@ -123,13 +125,13 @@ public class JsonExceptionFormatterTest {
         assertEquals(nested.toString(), lines[0]);
         assertEquals("\tat " + nioInternalMethod, lines[1]);
 
-        assertEquals("\tSuppressed: " + nestedSuppressed, lines[6]);
-        assertEquals("\t\tat " + ioApiMethod, lines[7]);
-        assertEquals("\t\t... 4 more", lines[8]);
+        assertEquals("\tSuppressed: " + nestedSuppressed, lines[5]);
+        assertEquals("\t\tat " + ioApiMethod, lines[6]);
+        assertEquals("\t\t... 4 more", lines[7]);
 
-        assertEquals("\t\tSuppressed: " + suppressedSuppressed, lines[9]);
-        assertEquals("\t\t\tat " + ioInternalMethod, lines[10]);
-        assertEquals("\t\t\t... 5 more", lines[11]);
+        assertEquals("\t\tSuppressed: " + suppressedSuppressed, lines[8]);
+        assertEquals("\t\t\tat " + ioInternalMethod, lines[9]);
+        assertEquals("\t\t\t... 5 more", lines[10]);
     }
 
     @Test
@@ -155,7 +157,7 @@ public class JsonExceptionFormatterTest {
         assertEquals("\tat " + publicMethod, lines[2]);
         assertEquals("Caused by: " + nested, lines[3]);
         assertEquals("\tat " + ioApiMethod, lines[4]);
-        assertEquals("\tat " + nioInternalMethod, lines[5]);
+        assertEquals("[2 skipped]", lines[5]);
         assertEquals("Caused by: " + nestedNested, lines[6]);
         assertEquals("\tat " + ioInternalMethod, lines[7]);
         assertEquals("\t... 6 more", lines[8]);
@@ -183,6 +185,8 @@ public class JsonExceptionFormatterTest {
 
     }
 
-    */
-
+    private ExceptionFormatter getFormatter() {
+        Configuration configuration = new Configuration(properties, "observer.file.formatter");
+        return configuration.createInstanceWithDefault("exceptionFormatter", ExceptionFormatter.class);
+    }
 }

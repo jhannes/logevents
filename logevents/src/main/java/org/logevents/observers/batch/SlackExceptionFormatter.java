@@ -1,18 +1,17 @@
 package org.logevents.observers.batch;
 
+import org.logevents.config.Configuration;
 import org.logevents.formatting.CauseFirstExceptionFormatter;
-
-import java.util.Properties;
 
 public class SlackExceptionFormatter extends CauseFirstExceptionFormatter {
 
-    public SlackExceptionFormatter() {
-        super(new Properties(), "");
+    public SlackExceptionFormatter(Configuration configuration) {
+        super(configuration);
     }
 
     @Override
     protected void outputStackFrame(StackTraceElement frame, int ignored, String indent, StringBuilder builder) {
-        String sourceLink = getSourceLink(frame);
+        String sourceLink = sourceCodeLookup.getSourceLink(frame);
         if (sourceLink == null) {
             builder.append(indent).append("\tat ").append(frame);
         } else {
