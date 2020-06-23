@@ -9,7 +9,7 @@ import java.util.function.Function;
 /**
  * Used to parse a single conversion for {@link PatternLogEventFormatter}. A
  * conversion is on the format
- * "%[&lt;minlength&gt;][.&lt;maxlength&gt;]&lt;conversion word&gt;[(&lt;conversion subpattern&gt;)][{&lt;parameter&gt;,&lt;parameter&gt;}]".
+ * "<code>%[&lt;minlength&gt;][.&lt;maxlength&gt;]&lt;conversion word&gt;[(&lt;conversion subpattern&gt;)][{&lt;parameter&gt;,&lt;parameter&gt;}]</code>".
  *
  * @author Johannes Brodwall
  *

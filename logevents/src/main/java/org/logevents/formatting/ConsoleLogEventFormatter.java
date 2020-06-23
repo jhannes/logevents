@@ -18,6 +18,13 @@ import java.util.Optional;
  * <pre>
  * observer.foo.includedMdcKeys=clientIp
  * observer.*.packageFilter=sun.www, com.example.uninteresting
+ * observer.foo.formatter.color=true
+ * </pre>
+ *
+ * This is equivalent to
+ * <pre>
+ * observer...formatter=PatternLogEventFormatter
+ * observer...formatter.pattern=%time [%thread] [%coloredLevel] [%bold(%location)]%mdc: %message
  * </pre>
  *
  * @author Johannes Brodwall
@@ -25,7 +32,7 @@ import java.util.Optional;
  */
 public class ConsoleLogEventFormatter implements LogEventFormatter {
 
-    protected final ConsoleFormatting format = ConsoleFormatting.getInstance();
+    protected ConsoleFormatting format = ConsoleFormatting.getInstance();
 
     protected MessageFormatter messageFormatter = new ConsoleMessageFormatter(format);
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
@@ -60,7 +67,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
      * Output ANSI color coded level string, where ERROR is bold red, WARN is
      * red, INFO is blue and other levels are default color.
      */
-    protected String colorizedLevel(Level level) {
+    public String colorizedLevel(Level level) {
         return format.highlight(level, LogEventFormatter.rightPad(level, 5, ' '));
     }
 
@@ -74,6 +81,10 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 exceptionFormatter.setPackageFilter(configuration.getPackageFilter())
         );
         includedMdcKeys = configuration.getIncludedMdcKeys();
+
+        if (configuration.optionalString("color").isPresent()) {
+            format = configuration.getBoolean("color") ? ConsoleFormatting.ANSI_FORMATTING : ConsoleFormatting.NULL_FORMATTING;
+        }
     }
 
 }

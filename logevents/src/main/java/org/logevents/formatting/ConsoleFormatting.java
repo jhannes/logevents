@@ -17,20 +17,23 @@ import java.util.Locale;
  */
 public class ConsoleFormatting {
 
+    static ConsoleFormatting NULL_FORMATTING = nullConsoleFormatting();
+    static ConsoleFormatting ANSI_FORMATTING = new ConsoleFormatting();
+
     private static ConsoleFormatting instance;
 
     public synchronized static ConsoleFormatting getInstance() {
         if (instance == null) {
             if (!isRunningInCmd()) {
-                instance = new ConsoleFormatting();
+                instance = ANSI_FORMATTING;
             } else {
                 try {
                     Class.forName("org.fusesource.jansi.AnsiConsole");
                     AnsiConsole.systemInstall();
-                    instance = new ConsoleFormatting();
+                    instance = ANSI_FORMATTING;
                 } catch (ClassNotFoundException e) {
                     LogEventStatus.getInstance().addConfig(ConsoleFormatting.class, "Could not load jansi - color output not supported on Windows ");
-                    instance = nullConsoleFormatting();
+                    instance = NULL_FORMATTING;
                 }
             }
         }

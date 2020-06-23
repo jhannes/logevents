@@ -16,7 +16,7 @@ import java.util.Properties;
  * This class represents a {@link LogEventFormatter} which outputs the
  * {@link LogEvent} based on a configured pattern. The pattern consists of
  * constant parts and conversion parts, which starts with %-signs. The general format for conversion parts
- * is %[&lt;minlength&gt;][.&lt;maxlength&gt;]&lt;conversion word&gt;[(&lt;conversion subpattern&gt;)][{&lt;parameter&gt;,&lt;parameter&gt;}].
+ * is <code>%[&lt;minlength&gt;][.&lt;maxlength&gt;]&lt;conversion word&gt;[(&lt;conversion subpattern&gt;)][{&lt;parameter&gt;,&lt;parameter&gt;}]</code>.
  * Conversion parts are handled with {@link PatternConverterSpecWithSubpattern}. A conversion
  * is specified with a conversion word, and you can extend {@link PatternLogEventFormatter}
  * with your own conversion words by adding them to the ConverterBuilderFactory.
@@ -25,6 +25,7 @@ import java.util.Properties;
  * <ul>
  *     <li><code>%logger</code>: The logger (category)</li>
  *     <li><code>%class</code>: The logging class (you should prefer %logger as it's more performant)</li>
+ *     <li><code>%location</code>: The filename and line number in a format that's usually clickable, e.g. LogEvent.getSimpleCallerLocation(LogEvent.java:259)</li>
  *     <li><code>%file</code>: The logging class filename</li>
  *     <li><code>%line</code>: The line number of the logging call</li>
  *     <li>
@@ -49,7 +50,14 @@ import java.util.Properties;
  *         Highlights the subpattern based on the log level of the message: ERROR is bold red, WARN is red,
  *         and INFO is blue
  *     </li>
- *     <li>Colors: E.g. %boldGreen{%thread}</li>
+ *     <li>
+ *          Colors: E.g. <code>%boldGreen(%thread)</code>.
+ *          The following are supported: <code>%black(...)</code>, <code>%red(...)</code>, <code>%green(...)</code>
+ *          <code>%yellow(...)</code>, <code>%blue(...)</code>, <code>%magenta(...)</code>, <code>%cyan(...)</code>,
+ *          <code>%white(...)</code>,
+ *          as well as <code>%bold(...)</code>, <code>%italic(...)</code>, <code>%underline(...)</code> and
+ *          %bold<em>color</em>(...)</code> for all colors
+ *     </li>
  * </ul>
  *
  * Ansi colors will be used if running on a non-Windows shell or if
@@ -82,6 +90,8 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
         factory.put("line", spec -> e -> String.valueOf(e.getCallerLine()));
         factory.putAliases("line", new String[] { "L" });
+
+        factory.put("location", spec -> LogEvent::getSimpleCallerLocation);
 
         factory.put("date", spec -> {
             DateTimeFormatter formatter = spec.getParameter(0)

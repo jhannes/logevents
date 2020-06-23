@@ -9,6 +9,13 @@ import java.util.List;
  * A simple and convenient {@link LogEventFormatter} which outputs
  * Time, Thread, Level, Logger as well as the log message and stack trace.
  *
+ * This is equivalent to:
+ *
+ * <pre>
+ * observer...formatter=PatternLogEventFormatter
+ * observer...formatter.pattern=%time [%thread] [%5level] [%logger]%mdc: %message
+ * </pre>
+ *
  * @author Johannes Brodwall
  */
 public final class TTLLEventLogFormatter implements LogEventFormatter {

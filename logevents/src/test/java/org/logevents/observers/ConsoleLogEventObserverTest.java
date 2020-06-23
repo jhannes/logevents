@@ -1,10 +1,15 @@
-package org.logevents.formatting;
+package org.logevents.observers;
 
 import org.junit.Test;
+import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.formatting.ConsoleFormatting;
+import org.logevents.formatting.ConsoleLogEventFormatter;
 import org.slf4j.event.Level;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -14,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class ConsoleLogEventFormatterTest {
+public class ConsoleLogEventObserverTest {
 
     protected ConsoleFormatting format = ConsoleFormatting.getInstance();
     private ConsoleLogEventFormatter formatter = new ConsoleLogEventFormatter();
@@ -23,14 +28,17 @@ public class ConsoleLogEventFormatterTest {
 
     @Test
     public void shouldLogMessage() {
-        String message = formatter.apply(new LogEventSampler()
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        ConsoleLogEventObserver observer = new ConsoleLogEventObserver(formatter, new PrintStream(buffer));
+        observer.logEvent(new LogEventSampler()
                 .withLevel(Level.INFO)
                 .withTime(time)
                 .withThread("main")
                 .withLoggerName(loggerName)
                 .withFormat("Hello {}").withArgs("there")
                 .build());
-        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mConsoleLogEventFormatterTest.shouldLogMessage(ConsoleLogEventFormatterTest.java:32)\033[m]: Hello \033[4;mthere\033[m\n",
+        String message = new String(buffer.toByteArray());
+        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mConsoleLogEventObserverTest.shouldLogMessage(ConsoleLogEventObserverTest.java:39)\033[m]: Hello \033[4;mthere\033[m\n",
                 message);
     }
 
@@ -40,6 +48,23 @@ public class ConsoleLogEventFormatterTest {
         assertEquals(format.red("WARN "), formatter.colorizedLevel(Level.WARN));
         assertEquals(format.blue("INFO "), formatter.colorizedLevel(Level.INFO));
         assertEquals("DEBUG", formatter.colorizedLevel(Level.DEBUG));
+    }
+
+    @Test
+    public void shouldTurnOffAnsiLogging() {
+        Properties properties = new Properties();
+        properties.put("observer.console.color", "false");
+        formatter.configure(new Configuration(properties, "observer.console"));
+
+        String message = formatter.apply(new LogEventSampler()
+                .withLevel(Level.INFO)
+                .withTime(time)
+                .withThread("main")
+                .withLoggerName(loggerName)
+                .withFormat("Test")
+                .build());
+        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:65)]: Test\n",
+                message);
     }
 
     @Test

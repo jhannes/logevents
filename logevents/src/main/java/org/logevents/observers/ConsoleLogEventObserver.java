@@ -13,8 +13,8 @@ import java.util.Properties;
  * Ansi colors will be used if running on a non-Windows shell or if
  * <a href="https://github.com/fusesource/jansi">JANSI</a> is in class path.
  * (Color on Windows is supported in IntelliJ, Cygwin and Ubuntu for Windows).
- * <p>
- * Example configuration
+ *
+ * <p>Example configuration (not usually needed, default configuration should serve most purposes)
  *
  * <pre>
  * observer.console.threshold=WARN
@@ -22,6 +22,14 @@ import java.util.Properties;
  * observer.console.includedMdcKeys=clientIp
  * observer.console.suppressMarkers=UNINTERESTING, PERSONAL_DATA
  * observer.console.packageFilter=sun.www, com.example.uninteresting
+ * observer.console.formatter=PatternLogEventFormatter
+ * observer.console.formatter.pattern=%time [%thread] [%coloredLevel] [%bold(%location)]%mdc: %message
+ * </pre>
+ *
+ * To override ANSI formatting in {@link ConsoleLogEventFormatter}, use:
+ *
+ * <pre>
+ * observer.console.formatter.colors=false
  * </pre>
  *
  * @author Johannes Brodwall
@@ -29,11 +37,15 @@ import java.util.Properties;
 public class ConsoleLogEventObserver extends FilteredLogEventObserver {
 
     private final LogEventFormatter formatter;
-    private PrintStream out;
+    private final PrintStream out;
+
+    public ConsoleLogEventObserver(LogEventFormatter formatter, PrintStream out) {
+        this.formatter = formatter;
+        this.out = out;
+    }
 
     public ConsoleLogEventObserver(LogEventFormatter formatter) {
-        this.formatter = formatter;
-        out = System.out;
+        this(formatter, System.out);
     }
 
     public ConsoleLogEventObserver() {
@@ -41,12 +53,13 @@ public class ConsoleLogEventObserver extends FilteredLogEventObserver {
     }
 
     public ConsoleLogEventObserver(Configuration configuration) {
-        this.formatter = configuration.createInstanceWithDefault("formatter",
-                LogEventFormatter.class, ConsoleLogEventFormatter.class);
+        this(configuration.createInstanceWithDefault(
+                "formatter", LogEventFormatter.class, ConsoleLogEventFormatter.class
+                ),
+                configuration.getBoolean("outputToSyserr") ? System.err : System.out
+        );
         configureFilter(configuration);
         formatter.configure(configuration);
-        boolean outputToSyserr = configuration.getBoolean("outputToSyserr");
-        out = outputToSyserr ? System.err : System.out;
         configuration.checkForUnknownFields();
     }
 
@@ -57,7 +70,6 @@ public class ConsoleLogEventObserver extends FilteredLogEventObserver {
     public LogEventFormatter getFormatter() {
         return formatter;
     }
-
 
     @Override
     protected void doLogEvent(LogEvent logEvent) {

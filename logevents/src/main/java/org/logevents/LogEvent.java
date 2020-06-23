@@ -252,6 +252,10 @@ public class LogEvent implements LoggingEvent {
         throw new RuntimeException("Could not find calling stack trace element!");
     }
 
+    /**
+     * Returns the logging location in a format that is usually clickable in IntelliJ, e.g.
+     * LogEvent.getSimpleCallerLocation(LogEvent.java:259)
+     */
     public String getSimpleCallerLocation() {
         StackTraceElement callerLocation = getCallerLocation();
         String className = callerLocation.getClassName();
