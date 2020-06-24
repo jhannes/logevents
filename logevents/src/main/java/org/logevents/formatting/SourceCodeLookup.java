@@ -85,11 +85,11 @@ public class SourceCodeLookup {
         }
 
         index = 1;
-        while ((sourcePackages = configuration.optionalDefaultString("sourceCode." + index + ".package")).isPresent()) {
-            Optional<String> githubLocation = configuration.optionalDefaultString("sourceCode." + index + ".github");
-            Optional<String> mavenLocation = configuration.optionalDefaultString("sourceCode." + index + ".maven");
-            Optional<String> bitbucketLocation = configuration.optionalDefaultString("sourceCode." + index + ".bitbucket");
-            Optional<String> tag = configuration.optionalDefaultString("sourceCode." + index + ".tag");
+        while ((sourcePackages = configuration.optionalGlobalString("sourceCode." + index + ".package")).isPresent()) {
+            Optional<String> githubLocation = configuration.optionalGlobalString("sourceCode." + index + ".github");
+            Optional<String> mavenLocation = configuration.optionalGlobalString("sourceCode." + index + ".maven");
+            Optional<String> bitbucketLocation = configuration.optionalGlobalString("sourceCode." + index + ".bitbucket");
+            Optional<String> tag = configuration.optionalGlobalString("sourceCode." + index + ".tag");
             addPackageLocation(sourcePackages.get(), githubLocation, mavenLocation, bitbucketLocation, tag);
             index++;
         }

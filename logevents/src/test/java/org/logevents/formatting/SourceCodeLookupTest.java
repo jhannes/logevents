@@ -1,16 +1,19 @@
 package org.logevents.formatting;
 
 import org.junit.Test;
+import org.logevents.config.Configuration;
 import org.logevents.observers.batch.SlackExceptionFormatter;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SourceCodeLookupTest {
 
@@ -50,6 +53,46 @@ public class SourceCodeLookupTest {
         assertEquals(
                 "https://github.com/jhannes/logevents/blob/master/src/main/java/org/logevents/formatting/SourceCodeLookupTest.java#L251",
                 sourceLink);
+    }
+
+    public static class MySourceCode extends SourceCodeLookup {
+        private final List<String> packages;
+
+        public MySourceCode(Properties properties, String prefix) {
+            super(properties, prefix);
+            this.packages = new Configuration(properties, prefix).getStringList("packages");
+        }
+
+        @Override
+        public String getSourceLink(StackTraceElement stackTraceElement) {
+            for (String aPackage : packages) {
+                if (stackTraceElement.getClassName().startsWith(aPackage)) {
+                    return "http://example.com/ABC";
+                }
+            }
+
+            return super.getSourceLink(stackTraceElement);
+        }
+    }
+
+    @Test
+    public void shouldConfigureGlobalSourceLinkClass() {
+        properties.put("observer.*.sourceCode", MySourceCode.class.getName());
+        properties.put("observer.*.sourceCode.packages", "net.example");
+        ExceptionFormatter formatter = new ExceptionFormatter(properties, "observer.test.formatter");
+        StackTraceElement frame = new StackTraceElement("net.example.hello.MainClas",
+                "main", "MainClass.java", 35);
+        assertEquals("http://example.com/ABC", formatter.sourceCodeLookup.getSourceLink(frame));
+    }
+
+    @Test
+    public void shouldConfigureSourceLinkClass() {
+        properties.put("observer.test.formatter.sourceCode", MySourceCode.class.getName());
+        properties.put("observer.test.formatter.sourceCode.packages", "net.example");
+        ExceptionFormatter formatter = new ExceptionFormatter(properties, "observer.test.formatter");
+        StackTraceElement frame = new StackTraceElement("net.example.hello.MainClas",
+                "main", "MainClass.java", 35);
+        assertEquals("http://example.com/ABC", formatter.sourceCodeLookup.getSourceLink(frame));
     }
 
     @Test

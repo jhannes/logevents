@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -87,7 +88,7 @@ public class ConfigurationTest {
 
     @Test
     public void shouldGiveGoodErrorMessageMissingConfig() {
-        assertConfigurationErrorContains(() -> ConfigUtil.create("observer.foo.thread", "org.example", null, properties),
+        assertConfigurationErrorContains(() -> ConfigUtil.create("observer.foo.thread", "org.example", Optional.empty(), properties),
                 "Missing configuration for class in observer.foo.thread");
     }
 

@@ -146,7 +146,11 @@ public abstract class AbstractExceptionFormatter {
     }
 
     public void configureSourceCode(Configuration configuration) {
-        setSourceCodeLookup(configuration.createInstanceWithDefault("sourceCode", SourceCodeLookup.class));
+        setSourceCodeLookup(createSourceCodeLookup(configuration));
+    }
+
+    private SourceCodeLookup createSourceCodeLookup(Configuration configuration) {
+        return configuration.createInstanceOrGlobal("sourceCode", SourceCodeLookup.class, SourceCodeLookup.class);
     }
 
     public void setSourceCodeLookup(SourceCodeLookup sourceCodeLookup) {

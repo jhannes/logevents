@@ -52,7 +52,7 @@ public class Configuration {
      */
     public String getApplicationName() {
         return optionalString("applicationName")
-                .orElseGet(() -> optionalDefaultString("applicationName").orElse(defaultApplicationName));
+                .orElseGet(() -> optionalGlobalString("applicationName").orElse(defaultApplicationName));
     }
 
     /**
@@ -169,8 +169,8 @@ public class Configuration {
                 .orElse(Collections.emptyList());
     }
 
-    public List<String> getDefaultStringList(String key) {
-        return optionalDefaultString(key)
+    public List<String> getGlobalStringList(String key) {
+        return optionalGlobalString(key)
                 .map(s -> Stream.of(s.split(",\\s*")).map(String::trim).collect(Collectors.toList()))
                 .orElse(Collections.emptyList());
     }
@@ -180,8 +180,8 @@ public class Configuration {
         return getProperty(prefixedKey(key)).filter(s -> !s.isEmpty());
     }
 
-    public Optional<String> optionalDefaultString(String key) {
-        return getProperty(defaultKey(key)).filter(s -> !s.isEmpty());
+    public Optional<String> optionalGlobalString(String key) {
+        return getProperty(globalKey(key)).filter(s -> !s.isEmpty());
     }
 
     private Optional<String> getProperty(String fullKey) {
@@ -190,14 +190,14 @@ public class Configuration {
     }
 
     private String getEnvironmentVariableName(String fullKey) {
-        return (fullKey.startsWith("LOGEVENTS_") ? "LOGEVENTS_" : "") + fullKey.toUpperCase().replace('.', '_');
+        return (!fullKey.startsWith("LOGEVENTS_") ? "LOGEVENTS_" : "") + fullKey.toUpperCase().replace('.', '_');
     }
 
     private static Optional<String> getEnvironmentVariable(String name) {
         return Optional.ofNullable(System.getenv(name));
     }
 
-    private String defaultKey(String key) {
+    private String globalKey(String key) {
         return "observer.*." + key;
     }
 
@@ -209,28 +209,50 @@ public class Configuration {
         optionalString(key)
             .orElseThrow(() -> new IllegalArgumentException("Missing configuration for " + clazz.getSimpleName() + " in " + prefixedKey(key)));
         LogEventStatus.getInstance().addDebug(this, "Creating " + key);
-        return ConfigUtil.create(prefixedKey(key), clazz.getPackage().getName(), optionalString(key).orElse(null), properties);
+        return ConfigUtil.create(prefixedKey(key), clazz.getPackage().getName(), optionalString(key), properties);
     }
 
     public <T> T createInstance(String key, Class<T> clazz, String defaultPackage) {
         optionalString(key)
             .orElseThrow(() -> new IllegalArgumentException("Missing configuration for " + clazz.getSimpleName() + " in " + prefixedKey(key)));
         LogEventStatus.getInstance().addDebug(this, "Creating " + key);
-        return ConfigUtil.create(prefixedKey(key), defaultPackage, optionalString(key).orElse(null), properties);
+        return ConfigUtil.create(prefixedKey(key), defaultPackage, optionalString(key), properties);
     }
 
     public <T> T createInstanceWithDefault(String key, Class<T> defaultClass) {
-        expectedFields.add(key);
-        Class<?> clazz = ConfigUtil.getClass(prefixedKey(key), defaultClass.getPackage().getName(), optionalString(key).orElse(null))
+        Class<T> clazz = optionalString(key)
+                .map(c -> (Class<T>) ConfigUtil.getClass(prefixedKey(key), defaultClass.getPackage().getName(), c))
                 .orElse(defaultClass);
         LogEventStatus.getInstance().addDebug(this, "Creating " + key);
         return ConfigUtil.create(prefixedKey(key), clazz, properties);
     }
 
-    public <T> T  createInstanceWithDefault(String key, Class<T> targetType, Class<? extends T> defaultClass) {
-        expectedFields.add(key);
-        Class<?> clazz = ConfigUtil.getClass(prefixedKey(key), targetType.getPackage().getName(), optionalString(key).orElse(null))
-                .orElse(defaultClass);
+    public <T> T createInstanceOrGlobal(String key, Class<T> targetType, Class<? extends T> defaultClass) {
+        Optional<String> specificClass = optionalString(key);
+        if (specificClass.isPresent()) {
+            return ConfigUtil.create(
+                    prefixedKey(key),
+                    ConfigUtil.getClass(prefixedKey(key), targetType.getPackage().getName(), specificClass.get()),
+                    properties
+            );
+        }
+        Optional<String> globalClass = optionalGlobalString(key);
+        if (globalClass.isPresent()) {
+            LogEventStatus.getInstance().addDebug(this, "Creating " + globalKey(key));
+            return ConfigUtil.create(
+                    globalKey(key),
+                    ConfigUtil.getClass(globalKey(key), targetType.getPackage().getName(), globalClass.get()),
+                    properties
+            );
+        }
+        LogEventStatus.getInstance().addDebug(this, "Creating " + prefixedKey(key));
+        return ConfigUtil.create(prefixedKey(key), defaultClass, properties);
+    }
+
+    public <T> T createInstanceWithDefault(String key, Class<T> targetType, Class<? extends T> defaultClass) {
+        Class<T> clazz = optionalString(key)
+                .map(c -> (Class<T>) ConfigUtil.getClass(prefixedKey(key), targetType.getPackage().getName(), c))
+                .orElseGet(() -> (Class)defaultClass);
         LogEventStatus.getInstance().addDebug(this, "Creating " + key);
         return ConfigUtil.create(prefixedKey(key), clazz, properties);
     }
@@ -285,7 +307,7 @@ public class Configuration {
      */
     public String getNodeName() {
         return optionalString("nodeName")
-                .orElseGet(() -> optionalDefaultString("nodeName").orElse(defaultNodeName));
+                .orElseGet(() -> optionalGlobalString("nodeName").orElse(defaultNodeName));
     }
 
     private static String calculateNodeName() {
@@ -302,8 +324,8 @@ public class Configuration {
     public List<String> getIncludedMdcKeys() {
         if (getProperty(prefixedKey("includedMdcKeys")).isPresent()) {
             return getStringList("includedMdcKeys");
-        } else if (getProperty(defaultKey("includedMdcKeys")).isPresent()) {
-            return getDefaultStringList("includedMdcKeys");
+        } else if (getProperty(globalKey("includedMdcKeys")).isPresent()) {
+            return getGlobalStringList("includedMdcKeys");
         } else {
             return null;
         }
@@ -313,8 +335,8 @@ public class Configuration {
         List<String> packageFilter = getStringList("packageFilter");
         if (!packageFilter.isEmpty()) {
             return packageFilter;
-        } else if (!getDefaultStringList("packageFilter").isEmpty()) {
-            return getDefaultStringList("packageFilter");
+        } else if (!getGlobalStringList("packageFilter").isEmpty()) {
+            return getGlobalStringList("packageFilter");
         } else {
             return Arrays.asList(DEFAULT_PACKAGE_FILTER);
         }
