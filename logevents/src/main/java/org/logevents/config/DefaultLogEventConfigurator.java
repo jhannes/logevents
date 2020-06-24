@@ -421,17 +421,35 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     }
 
     protected void configureGlobalObservers(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Properties configuration) {
+        configureGlobalObserversFromProperties(globalObservers, factory, configuration);
+        configureGlobalObserversFromEnvironment(globalObservers, factory, System.getenv());
+    }
+
+    protected void configureGlobalObserversFromEnvironment(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Map<String, String> environment) {
+        for (Map.Entry<String, String> env : environment.entrySet()) {
+            if (env.getKey().startsWith("LOGEVENTS_ROOT_OBSERVER_")) {
+                String observerName = env.getKey().substring("LOGEVENTS_ROOT_OBSERVER_".length()).toLowerCase();
+                addGlobalObserver(globalObservers, factory, observerName, Level.valueOf(env.getValue()));
+            }
+        }
+    }
+
+    protected void configureGlobalObserversFromProperties(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Properties configuration) {
         for (Object key : configuration.keySet()) {
             if (key.toString().startsWith("root.observer.")) {
                 String observerName = key.toString().substring("root.observer.".length());
-                LogEventObserver observer = factory.getObserver(observerName);
                 Level observerThreshold = Level.valueOf(configuration.getProperty(key.toString()));
-                if (observer != null) {
-                    globalObservers.put(observerName, new FixedLevelThresholdConditionalObserver(observerThreshold, observer));
-                }
-                LogEventStatus.getInstance().addConfig(this, "Adding root observer " + observerName);
+                addGlobalObserver(globalObservers, factory, observerName, observerThreshold);
             }
         }
+    }
+
+    private void addGlobalObserver(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, String observerName, Level observerThreshold) {
+        LogEventObserver observer = factory.getObserver(observerName);
+        if (observer != null) {
+            globalObservers.put(observerName, new FixedLevelThresholdConditionalObserver(observerThreshold, observer));
+        }
+        LogEventStatus.getInstance().addConfig(this, "Adding root observer " + observerName);
     }
 
     protected void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, boolean includeParent) {
@@ -460,7 +478,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                 String prefix = "observer." + name;
                 try {
                     LogEventStatus.getInstance().addDebug(this, "Configuring " + prefix);
-                    LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", configuration.getProperty(prefix), configuration);
+                    LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", Optional.ofNullable(configuration.getProperty(prefix)), configuration);
                     LogEventStatus.getInstance().addDebug(this, "Configured " + observer);
                     return observer;
                 } catch (RuntimeException e) {

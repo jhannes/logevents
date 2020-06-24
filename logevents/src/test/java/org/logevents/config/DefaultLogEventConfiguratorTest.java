@@ -6,10 +6,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
+import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
+import org.logevents.observers.FixedLevelThresholdConditionalObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.slf4j.Logger;
@@ -26,6 +28,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -36,9 +40,9 @@ public class DefaultLogEventConfiguratorTest {
 
     private static final String CWD = Paths.get("").toAbsolutePath().getFileName().toString();
 
-    private LogEventFactory factory = new LogEventFactory();
+    private final LogEventFactory factory = new LogEventFactory();
     private DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
-    private Properties configuration = new Properties();
+    private final Properties configuration = new Properties();
     private Path propertiesDir = Paths.get("target", "test-data", "properties");
 
     @Test
@@ -182,6 +186,20 @@ public class DefaultLogEventConfiguratorTest {
                 ((CircularBufferLogEventObserver) factory.getObserver("buffer2")).getMessages());
         assertEquals(Arrays.asList("only to buffer3", "to buffer2 and buffer3", "to buffer1, buffer2 and buffer3"),
                 ((CircularBufferLogEventObserver) factory.getObserver("buffer3")).getMessages());
+    }
+
+    @Test
+    public void shouldInstallRootObserverFromEnvironment() {
+        configuration.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
+        configurator.applyConfigurationProperties(factory, configuration);
+
+        HashMap<String, LogEventObserver> globalObservers = new HashMap<>();
+        Map<String, String> environment = new HashMap<>();
+        environment.put("LOGEVENTS_ROOT_OBSERVER_BUFFER1", "ERROR");
+        configurator.configureGlobalObserversFromEnvironment(globalObservers, factory, environment);
+        assertEquals(Collections.singleton("buffer1"), globalObservers.keySet());
+        assertEquals(Level.ERROR,
+                ((FixedLevelThresholdConditionalObserver) globalObservers.get("buffer1")).getThreshold());
     }
 
     @Test
