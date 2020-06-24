@@ -16,7 +16,7 @@ jobs:
     - name: Build with Maven
       run: mvn -B package --file pom.xml
     - name: Generate coverage
-      run: mvn javacoco:report coveralls:report
+      run: mvn jacoco:report coveralls:report
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
