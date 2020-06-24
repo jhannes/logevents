@@ -139,7 +139,7 @@ In order to log to SLF4J, include the `slf4j-api` dependency with Maven (or grad
 <dependency>
     <groupId>org.slf4j</groupId>
     <artifactId>slf4j-api</artifactId>
-    <version>1.7.25</version>
+    <version>1.7.30</version>
 </dependency>
 ```
 
@@ -404,7 +404,7 @@ simply need to include a dependency in your `pom.xml`:
 <dependency>
     <groupId>org.slf4j</groupId>
     <artifactId>log4j-to-slf4j</artifactId>
-    <version>1.7.25</version>
+    <version>1.7.30</version>
 </dependency>
 ```
 
