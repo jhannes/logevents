@@ -15,9 +15,7 @@ jobs:
         java-version: 1.8
     - name: Build with Maven
       run: mvn -B package --file pom.xml
-    - name: Generate coverage
+    - name: Coveralls.io coverage report
       run: mvn jacoco:report coveralls:report
-    - name: Coveralls
-      uses: coverallsapp/github-action@master
-      with:
         key: ${{ secrets.GITHUB_TOKEN }}
+
