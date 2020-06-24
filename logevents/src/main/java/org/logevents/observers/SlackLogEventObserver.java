@@ -27,6 +27,7 @@ import java.util.function.Consumer;
  * <pre>
  * observer.slack=SlackLogEventObserver
  * observer.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
+ * observer.slack.proxy=proxy.example.net:8888
  * observer.slack.threshold=WARN
  * observer.slack.slackLogEventsFormatter={@link SlackLogEventsFormatter}
  * observer.slack.showRepeatsIndividually=false
@@ -64,6 +65,7 @@ public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
         configureFilter(configuration);
         configureBatching(configuration);
         configureMarkers(configuration);
+        configureProxy(configuration);
 
         configuration.checkForUnknownFields();
     }

@@ -6,10 +6,12 @@ import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
+import org.logevents.observers.batch.LogEventBatcher;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.logevents.status.StatusEvent.StatusLevel;
+import org.logevents.util.JsonUtil;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -128,11 +130,27 @@ public class SlackLogEventObserverTest {
         properties.put("observer.slack.markers.FOO.throttle", "PT30S");
         properties.put("observer.slack.markers.FOO.channel", "fooMessages");
 
-        SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack");
+        SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack") {
+            @Override
+            protected String postJson(Map<String, Object> jsonMessage) {
+                assertEquals("fooMessages", jsonMessage.get("channel"));
+                return "ok";
+            }
+        };
         Marker marker = MarkerFactory.getMarker("FOO");
-        observer.logEvent(new LogEventSampler().withMarker(marker).build());
+        LogEvent event = new LogEventSampler().withMarker(marker).build();
+        observer.logEvent(event);
+        ((LogEventBatcher) observer.getBatcher(event)).run();
+    }
 
-        // TODO: Verify that log goes to correct channel
+    @Test
+    public void shouldConfigureProxy() {
+        Properties properties = new Properties();
+        properties.put("observer.slack.slackUrl", "http://localhost:1234");
+        properties.put("observer.slack.proxy", "proxy.example.org:8888");
+
+        SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack");
+        assertEquals(new InetSocketAddress("proxy.example.org", 8888), observer.getProxy().address());
     }
 
     private HttpServer startServer(HttpHandler httpHandler) throws IOException {

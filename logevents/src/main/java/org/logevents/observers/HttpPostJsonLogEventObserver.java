@@ -1,11 +1,14 @@
 package org.logevents.observers;
 
+import org.logevents.config.Configuration;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.NetUtils;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.util.Map;
 import java.util.function.Function;
@@ -14,7 +17,8 @@ import java.util.function.Function;
  * Convenience superclass for observers that send JSON over HTTP
  */
 public abstract class HttpPostJsonLogEventObserver extends BatchingLogEventObserver {
-    private URL url;
+    private final URL url;
+    private Proxy proxy = Proxy.NO_PROXY;
 
     public HttpPostJsonLogEventObserver(URL url) {
         this.url = url;
@@ -22,6 +26,19 @@ public abstract class HttpPostJsonLogEventObserver extends BatchingLogEventObser
 
     public URL getUrl() {
         return url;
+    }
+
+    public Proxy getProxy() {
+        return proxy;
+    }
+
+    public void configureProxy(Configuration configuration) {
+        configuration.optionalString("proxy").ifPresent(proxyHost -> {
+            int colonPos = proxyHost.lastIndexOf(':');
+            String hostname = colonPos != -1 ? proxyHost.substring(0, colonPos) : proxyHost;
+            int proxyPort = colonPos != -1 ? Integer.parseInt(proxyHost.substring(colonPos+1)) : 80;
+            this.proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(hostname, proxyPort));
+        });
     }
 
     @Override
@@ -57,7 +74,7 @@ public abstract class HttpPostJsonLogEventObserver extends BatchingLogEventObser
      * For example, this is a good place to put authentication logic
      */
     protected String postJson(Map<String, Object> jsonMessage) throws IOException {
-        return NetUtils.postJson(url, JsonUtil.toIndentedJson(jsonMessage));
+        return NetUtils.postJson(url, JsonUtil.toIndentedJson(jsonMessage), proxy);
     }
 
     /**

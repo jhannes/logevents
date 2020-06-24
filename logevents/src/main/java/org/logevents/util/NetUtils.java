@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
+import java.net.Proxy;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Map;
@@ -14,7 +15,11 @@ import java.util.stream.Collectors;
 public class NetUtils {
 
     public static HttpURLConnection post(URL url, String contentBody, String contentType) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        return post(url, contentBody, contentType, Proxy.NO_PROXY);
+    }
+
+    public static HttpURLConnection post(URL url, String contentBody, String contentType, Proxy proxy) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection(proxy);
         connection.setRequestMethod("POST");
         connection.setDoInput(true);
         connection.setDoOutput(true);
@@ -24,8 +29,8 @@ public class NetUtils {
         return connection;
     }
 
-    public static String postJson(URL url, String json) throws IOException {
-        HttpURLConnection connection = post(url, json, "application/json");
+    public static String postJson(URL url, String json, Proxy proxy) throws IOException {
+        HttpURLConnection connection = post(url, json, "application/json", proxy);
 
         int statusCode = connection.getResponseCode();
         if (statusCode >= 400) {

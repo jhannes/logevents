@@ -25,6 +25,7 @@ import java.util.Properties;
  * observer.teams=SlackLogEventObserver
  * observer.teams.format.detailUrl=link to your {@link LogEventsServlet}
  * observer.teams.url=https://outlook.office.com/webhook/.../IncomingWebHook/...
+ * observer.teams.proxy=proxy.example.net:8888
  * observer.teams.threshold=WARN
  * observer.teams.suppressMarkers=BORING_MARKER
  * observer.teams.requireMarker=MY_MARKER, MY_OTHER_MARKER
@@ -40,7 +41,7 @@ import java.util.Properties;
  *
  * <ul>
  *     <li>Unfortunately, the ability to mention &#064;channel is still
- *      <a href="https://microsoftteams.uservoice.com/forums/555103-public/suggestions/17153099-webhook-needs-to-support-forced-notification-a-la>Unavailable in Teams</a></li>
+ *      <a href="https://microsoftteams.uservoice.com/forums/555103-public/suggestions/17153099-webhook-needs-to-support-forced-notification-a-la">Unavailable in Teams</a></li>
  * </ul>
  *
  * @see BatchingLogEventObserver
@@ -60,6 +61,7 @@ public class MicrosoftTeamsLogEventObserver extends HttpPostJsonLogEventObserver
         configureFilter(configuration);
         configureBatching(configuration);
         configureMarkers(configuration);
+        configureProxy(configuration);
 
         this.formatter = configuration.createInstanceWithDefault("formatter", MicrosoftTeamsMessageFormatter.class);
         formatter.setIncludedMdcKeys(configuration.getIncludedMdcKeys());

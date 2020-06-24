@@ -27,4 +27,8 @@ public class LogEventBatcher implements LogEventObserver {
     public List<LogEvent> getCurrentBatch() {
         return batcher.getCurrentBatch();
     }
+
+    public void run() {
+        batcher.run();
+    }
 }

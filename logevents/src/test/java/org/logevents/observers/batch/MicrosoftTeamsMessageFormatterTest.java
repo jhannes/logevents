@@ -1,11 +1,15 @@
 package org.logevents.observers.batch;
 
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
+import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.MicrosoftTeamsLogEventObserver;
+import org.logevents.status.LogEventStatus;
+import org.logevents.status.StatusEvent;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
@@ -14,9 +18,13 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class MicrosoftTeamsMessageFormatterTest {
+
+    @Rule
+    public LogEventStatusRule statusRule = new LogEventStatusRule();
 
     @Test
     public void shouldIncludeLevelInTeamsMessage() {
@@ -71,6 +79,25 @@ public class MicrosoftTeamsMessageFormatterTest {
         observer.processBatch(new LogEventBatch().add(event));
 
         assertContains(event.getMessage(), JsonUtil.getField(postedJson, "text").toString());
+    }
+
+    @Test
+    public void shouldLogErrorOnFormatting() {
+        Properties properties = new Properties();
+        properties.put("observer.teams.url", "http://example.com/webhook");
+        MicrosoftTeamsLogEventObserver observer = new MicrosoftTeamsLogEventObserver(properties, "observer.teams") {
+            @Override
+            protected Map<String, Object> formatBatch(LogEventBatch batch) {
+                throw new RuntimeException("Could not format the batch");
+            }
+        };
+        statusRule.setStatusLevel(StatusEvent.StatusLevel.NONE);
+        LogEventStatus.getInstance().clear();
+        assertNull(LogEventStatus.getInstance().lastMessage());
+        observer.processBatch(new LogEventBatch().add(new LogEventSampler().build()));
+        StatusEvent statusEvent = LogEventStatus.getInstance().lastMessage();
+        assertEquals(StatusEvent.StatusLevel.FATAL, statusEvent.getLevel());
+        assertEquals("Runtime error generating message", statusEvent.getMessage());
     }
 
     private void assertContains(String expected, String actual) {
