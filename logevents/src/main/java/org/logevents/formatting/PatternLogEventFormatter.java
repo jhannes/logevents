@@ -56,7 +56,7 @@ import java.util.Properties;
  *          <code>%yellow(...)</code>, <code>%blue(...)</code>, <code>%magenta(...)</code>, <code>%cyan(...)</code>,
  *          <code>%white(...)</code>,
  *          as well as <code>%bold(...)</code>, <code>%italic(...)</code>, <code>%underline(...)</code> and
- *          %bold<em>color</em>(...)</code> for all colors
+ *          <code>%bold<em>color</em>(...)</code> for all colors
  *     </li>
  * </ul>
  *
