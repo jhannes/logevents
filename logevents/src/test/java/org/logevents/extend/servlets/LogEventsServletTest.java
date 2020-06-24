@@ -59,10 +59,10 @@ import static org.mockito.Mockito.when;
 
 public class LogEventsServletTest extends LogEventsServlet {
 
-    private LogEventsServlet servlet = new LogEventsServlet();
-    private Random random = new Random();
-    private HttpServletResponse response = mock(HttpServletResponse.class);
-    private HttpServletRequest request = mock(HttpServletRequest.class);
+    private final LogEventsServlet servlet = new LogEventsServlet();
+    private final Random random = new Random();
+    private final HttpServletResponse response = mock(HttpServletResponse.class);
+    private final HttpServletRequest request = mock(HttpServletRequest.class);
 
     @Before
     public void setupRequest() {
@@ -113,6 +113,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     @Test
     public void shouldFormatLogEvent() throws IOException {
         LogEventBuffer buffer = new LogEventBuffer();
+        LogEventBuffer.clear();
         WebLogEventObserver observer = new WebLogEventObserver() {
             @Override
             public LogEventBuffer getLogEventSource() {
@@ -334,7 +335,7 @@ public class LogEventsServletTest extends LogEventsServlet {
 
         Map<String, Object> loggers = servlet.loggersAsJson(factory);
 
-        List<Map<String, Object>> logArray = (List<Map<String, Object>>) loggers.get("loggers");
+        List<Map<String, Object>> logArray = JsonUtil.getObjectList(loggers, "loggers");
         assertEquals(Arrays.asList("ROOT", "org.example", "org.example.subexample"),
                 logArray.stream().map(o -> o.get("loggerName")).collect(Collectors.toList()));
         Map<String, Object> exampleLogger = logArray.stream()
