@@ -23,9 +23,8 @@ import java.util.Properties;
  * Example configuration:
  * <pre>
  * observer.teams=SlackLogEventObserver
- * observer.teams.format.detailUrl=link to your {@link LogEventsServlet}
  * observer.teams.url=https://outlook.office.com/webhook/.../IncomingWebHook/...
- * observer.teams.proxy=proxy.example.net:8888
+ * observer.teams.format.detailUrl=link to your {@link LogEventsServlet}
  * observer.teams.threshold=WARN
  * observer.teams.suppressMarkers=BORING_MARKER
  * observer.teams.requireMarker=MY_MARKER, MY_OTHER_MARKER
@@ -35,6 +34,7 @@ import java.util.Properties;
  * observer.teams.includedMdcKeys=clientIp
  * observer.teams.markers.MY_MARKER.throttle=PT1M PT10M PT30M
  * observer.teams.markers.MY_MARKER.mdc=userId
+ * observer.teams.proxy=proxy.example.net:8888
  * </pre>
  *
  * <h2>Implementation notes</h2>

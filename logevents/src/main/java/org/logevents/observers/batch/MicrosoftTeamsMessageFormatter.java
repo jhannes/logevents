@@ -19,11 +19,11 @@ import java.util.Properties;
 */
 public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatter {
 
-    private MessageFormatter messageFormatter;
-    private Optional<String> detailUrl;
+    private final MessageFormatter messageFormatter;
+    private final Optional<String> detailUrl;
     private final String applicationNode;
     private List<String> includedMdcKeys = null;
-    private MicrosoftTeamsExceptionFormatter exceptionFormatter;
+    private final MicrosoftTeamsExceptionFormatter exceptionFormatter;
 
     static String getLevelColor(Level level) {
         return colors.get(level);
@@ -105,8 +105,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
                     .append(" ")
                     .append(exceptionInfo)
                     .append(formatMessage(event))
-                    .append(group.size() > 1 ? " (" + group.size() + " repetitions)" : "")
-                    .append(batch.size() > 1 ? " (more)" : "");
+                    .append(group.size() > 1 ? " (" + group.size() + " repetitions)" : "");
             detailUrl.ifPresent(uri ->
                     eventLine
                             .append(" [|See details|](")

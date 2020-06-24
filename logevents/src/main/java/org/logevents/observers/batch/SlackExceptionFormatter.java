@@ -10,19 +10,14 @@ public class SlackExceptionFormatter extends CauseFirstExceptionFormatter {
     }
 
     @Override
-    protected void outputStackFrame(StackTraceElement frame, int ignored, String indent, StringBuilder builder) {
+    protected void formatFrame(StringBuilder builder, StackTraceElement frame) {
         String sourceLink = sourceCodeLookup.getSourceLink(frame);
         if (sourceLink == null) {
-            builder.append(indent).append("\tat ").append(frame);
+            builder.append(frame);
         } else {
-            builder.append(indent).append("\tat ").append("<").append(sourceLink)
-            .append("|").append(frame.getClassName()).append(".").append(frame.getMethodName())
-            .append(" 🔗>");
+            builder.append("<").append(sourceLink)
+                    .append("|").append(frame.getClassName()).append(".").append(frame.getMethodName())
+                    .append(" 🔗>");
         }
-        if (ignored > 0) {
-            builder.append(" ");
-            outputIgnoredLineCount(ignored, builder);
-        }
-        builder.append(newLine());
     }
 }

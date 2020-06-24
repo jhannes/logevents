@@ -119,7 +119,7 @@ public class SlackLogMessageFormatterTest {
         StringBuilder builder = new StringBuilder();
         StackTraceElement frame = new StackTraceElement(SlackExceptionFormatter.class.getName(),
                 "addPackageMavenLocation", "SlackExceptionFormatter.java", 72);
-        formatter.outputStackFrame(frame , 2, "", builder);
+        formatter.outputStackFrame(frame, 2, "", builder);
 
         assertContains("https://github.com/jhannes/logevents/blob",
                 builder.toString());

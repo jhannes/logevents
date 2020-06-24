@@ -97,8 +97,9 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
         }
     }
 
-    protected void outputStackFrame(StackTraceElement frame, int ignored, String indent, StringBuilder builder) {
-        builder.append(increaseIndent(indent)).append("at ").append(frame);
+    public void outputStackFrame(StackTraceElement frame, int ignored, String indent, StringBuilder builder) {
+        builder.append(increaseIndent(indent)).append("at ");
+        formatFrame(builder, frame);
         if (ignored > 0) {
             builder.append(" ");
             outputIgnoredLineCount(ignored, builder);
@@ -107,6 +108,10 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
             builder.append(" ").append(getPackagingData(frame));
         }
         builder.append(newLine());
+    }
+
+    protected void formatFrame(StringBuilder builder, StackTraceElement frame) {
+        builder.append(frame);
     }
 
     protected void outputIgnoredCommonLines(int commonLines, String indent, StringBuilder builder) {
