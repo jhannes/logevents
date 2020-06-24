@@ -33,7 +33,6 @@ import java.util.Optional;
 public class ConsoleLogEventFormatter implements LogEventFormatter {
 
     protected ConsoleFormatting format = ConsoleFormatting.getInstance();
-
     protected MessageFormatter messageFormatter = new ConsoleMessageFormatter(format);
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     protected final DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
@@ -84,6 +83,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
 
         if (configuration.optionalString("color").isPresent()) {
             format = configuration.getBoolean("color") ? ConsoleFormatting.ANSI_FORMATTING : ConsoleFormatting.NULL_FORMATTING;
+            messageFormatter = new ConsoleMessageFormatter(format);
         }
     }
 
