@@ -58,6 +58,7 @@ observer.servlet=WebLogEventObserver
 observer.servlet.openIdIssuer=https://login.microsoftonline.com/.../v2.0
 observer.servlet.clientId=..
 observer.servlet.clientSecret=...
+observer.servlet.source=DatabaseLogEventObserver
 observer.servlet.source.jdbcUrl=jdbc:postgresql:logevents
 observer.servlet.source.jdbcUsername=logevents
 observer.servlet.source.jdbcPassword=33sg423sgaw21

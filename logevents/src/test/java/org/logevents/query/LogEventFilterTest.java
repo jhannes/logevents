@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -218,6 +219,25 @@ public class LogEventFilterTest {
     }
 
     @Test
+    public void shouldLimitFilter() {
+        Marker UNIQUE_MARKER = MarkerFactory.getMarker("Marker-" + UUID.randomUUID());
+
+        record(new LogEventSampler().withMarker(UNIQUE_MARKER).build());
+        record(new LogEventSampler().withMarker(UNIQUE_MARKER).build());
+        record(new LogEventSampler().withMarker(UNIQUE_MARKER).build());
+
+        HashMap<String, String[]> parameters = new HashMap<>();
+        parameters.put("marker", new String[]{UNIQUE_MARKER.getName()});
+        parameters.put("limit", new String[]{"2"});
+        LogEventQueryResult queryResult = logsByLevel.query(new LogEventFilter(parameters));
+        assertEquals(2, queryResult.getEvents().size());
+        assertEquals(3, queryResult.getSummary().getRowCount());
+
+        parameters.remove("limit");
+        assertEquals(3, logsByLevel.query(new LogEventFilter(parameters)).getEvents().size());
+    }
+
+    @Test
     public void shouldIncludeLoggersInFacets() {
         String firstLogger = "com.example.ClassOne";
         String secondLogger = "com.example.ClassTwo";
@@ -242,7 +262,7 @@ public class LogEventFilterTest {
     @Test
     public void shouldIncludeMdcInFacets() {
         record(new LogEventSampler().withMdc("ip", "127.0.0.1").withMdc("url", "/api/op").build());
-        record(new LogEventSampler().withMdc("ip", "127.0.0.1").build());
+        record(new LogEventSampler().withMdc("ip", "127.0.0.1").withMdc("url", null).build());
         record(new LogEventSampler().withMdc("ip", "10.0.0.4").build());
 
         Map<String, Object> facets = logsByLevel.query(new LogEventFilter(new HashMap<>())).getSummary().toJson();

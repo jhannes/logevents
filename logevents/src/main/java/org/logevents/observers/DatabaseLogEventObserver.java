@@ -61,6 +61,8 @@ import java.util.stream.Stream;
  * observer.db.jdbcPassword=sdgawWWF/)l31L
  * observer.db.logeventsTable=log_events
  * observer.db.logeventsMdcTable=log_events_mdc
+ * observer.db.loginTimeout=20
+ * observer.db.noFetchFirstSupport=false
  * </pre>
  */
 public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventSource {
@@ -70,8 +72,25 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     private final String jdbcPassword;
     private final String nodeName;
     private final String applicationName;
+
+    /** The table name in the database to use for logevents. Will be created at startup if it doesn't exist */
     private final String logEventsTable;
+
+    /** The table name in the database to use for MDC. Will be created at startup if it doesn't exist */
     private final String logEventsMdcTable;
+
+    /**
+     * Unless set to <em>true</em>, {@link LogEventFilter#getLimit()} will be added as
+     * <code>SELECT ... FETCH FIRST ... ROWS</code>. FETCH FIRST was introduced in
+     * <a href="https://en.wikipedia.org/wiki/Select_%28SQL%29#Limiting_result_rows">SQL:2008</a>
+     * and is supported by Postgresql 8.4, Oracle 12c, IBM DB2, HSQLDB, H2, and SQL Server 2012.
+     * If you use an older database or a vendor that doesn't support it, set
+     * <code>observer...noFetchFirstSupport=true</code>
+     */
+    private final boolean noFetchFirstSupport;
+
+    /** Calls DriverManager::setLoginTimeout with this value (if present) at startup <strong>NB: This is a global value for the JVM</strong> */
+    private final Optional<Integer> loginTimeout;
 
     public DatabaseLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
@@ -83,16 +102,20 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         this.jdbcPassword = configuration.optionalString("jdbcPassword").orElse("");
         this.logEventsTable = configuration.optionalString("logEventsTable").orElse("LOG_EVENTS").toUpperCase();
         this.logEventsMdcTable = configuration.optionalString("logEventsMdcTable").orElse(logEventsTable + "_MDC").toUpperCase();
+        this.noFetchFirstSupport = configuration.getBoolean("noFetchFirstSupport");
         this.nodeName = configuration.getNodeName();
         this.applicationName = configuration.getApplicationName();
         this.messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
         this.jsonMessageFormatter = configuration.createInstanceWithDefault("jsonMessageFormatter", JsonMessageFormatter.class);
         this.exceptionFormatter = configuration.createInstanceWithDefault("exceptionFormatter", JsonExceptionFormatter.class);
+        this.loginTimeout = configuration.optionalInt("loginTimeout");
         configuration.checkForUnknownFields();
 
         LogEventStatus.getInstance().addDebug(this, "Connecting to " + jdbcUrl + " as " + jdbcUsername);
 
+        loginTimeout.ifPresent(DriverManager::setLoginTimeout);
         try (Connection connection = getConnection()) {
+            LogEventStatus.getInstance().addDebug(this, "Setting up to " + jdbcUrl + " as " + jdbcUsername);
             if (!tableExists(connection, logEventsTable)) {
                 LogEventStatus.getInstance().addConfig(this, "Creating table " + logEventsTable);
                 createLogEventsTable(connection);
@@ -106,7 +129,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                 LogEventStatus.getInstance().addDebug(this, "Table " + logEventsMdcTable + " already exists");
             }
         } catch (SQLException e) {
-            LogEventStatus.getInstance().addFatal(this, "Failed to initialize database", e);
+            LogEventStatus.getInstance().addFatal(this, "Failed to initialize database " + jdbcUrl, e);
         }
     }
 
@@ -125,7 +148,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
             statement.executeUpdate("create table " + logEventsMdcTable + " (" +
                     "event_id varchar(100) not null references " + logEventsTable + "(event_id), " +
                     "name varchar(100) not null, " +
-                    "value varchar(1000) not null" +
+                    "value varchar(1000)" +
                     ")"
             );
             statement.executeUpdate("create index " + logEventsMdcTable + "_idx on " + logEventsMdcTable + "(name, value)");
@@ -179,14 +202,18 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
 
             String sql = "select * from " + logEventsTable + " e left outer join " + logEventsMdcTable + "  m on e.event_id = m.event_id " +
                     " where " + String.join(" AND ", filters) + " order by instant";
+            if (!noFetchFirstSupport) {
+                sql += " FETCH FIRST " + filter.getLimit() + " ROWS ONLY";
+            }
 
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 int parameterIndex = 1;
                 for (Object parameter : parameters) {
                     statement.setObject(parameterIndex++, parameter);
                 }
+                long startTime = System.currentTimeMillis();
                 try (ResultSet rs = statement.executeQuery()) {
-                    while (rs.next()) {
+                    while (rs.next() && idToJson.size() < filter.getLimit()) {
                         String id = rs.getString("event_id");
                         if (!idToJson.containsKey(id)) {
                             Map<String, Object> jsonEvent = new HashMap<>();
@@ -203,7 +230,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                             jsonEvent.put("throwable", rs.getString("throwable"));
                             jsonEvent.put("stackTrace", JsonParser.parseArray(rs.getString("stack_trace")));
 
-                            jsonEvent.put("abbreviatedLogger", LogEvent.getAbbreviatedLoggerName(jsonEvent.get("logger").toString(), 0));
+                            jsonEvent.put("abbreviatedLogger", LogEvent.getAbbreviatedClassName(jsonEvent.get("logger").toString(), 0));
                             jsonEvent.put("levelIcon", JsonLogEventsBatchFormatter.emojiiForLevel(Level.valueOf(jsonEvent.get("level").toString())));
                             jsonEvent.put("node", rs.getString("node_name"));
                             jsonEvent.put("application", rs.getString("application_name"));
@@ -222,6 +249,8 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
                         }
                     }
                 }
+                long executionTime = System.currentTimeMillis() - startTime;
+                LogEventStatus.getInstance().addTrace(this, "Retrieved " + idToJson.size() + " events in " + (executionTime/1000.0) + "s");
             }
         } catch (SQLException e) {
             LogEventStatus.getInstance().addError(this, "Failed to write log record", e);
@@ -282,7 +311,9 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
 
     @Override
     public void processBatch(LogEventBatch batch) {
-        saveLogEvents(batch);
+        if (!batch.isEmpty()) {
+            saveLogEvents(batch);
+        }
     }
 
     private void saveLogEvents(LogEventBatch batch) {
@@ -354,7 +385,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         LogEventSummary summary = new LogEventSummary();
 
         try (Connection connection = getConnection()) {
-            summary.setCount(countRows(connection, filter));
+            summary.setRowCount(countRows(connection, filter));
             summary.setFilteredCount(countFilteredRows(connection, filter));
             summary.setMarkers(listDistinct(connection, filter, "marker"));
             summary.setThreads(listDistinct(connection, filter, "thread"));

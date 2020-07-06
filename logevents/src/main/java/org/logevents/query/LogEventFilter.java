@@ -43,6 +43,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
     private final Optional<List<String>> loggers;
     private final Optional<List<Marker>> markers;
     private final Optional<Map<String, List<String>>> mdcFilter;
+    private final int limit;
 
     @SuppressWarnings("unchecked")
     public LogEventFilter(Map untypedParameters) {
@@ -77,6 +78,9 @@ public class LogEventFilter implements Predicate<LogEvent> {
                 .map(m -> m.stream().map(MarkerFactory::getMarker).collect(Collectors.toList()));
         this.nodeNames = getParameter(parameters, "node");
         this.applications = getParameter(parameters, "application");
+        this.limit = getParameter(parameters, "limit")
+                .map(list -> Integer.parseInt(list.get(0)))
+                .orElse(1000);
 
         Map<String, List<String>> mdcFilter = new HashMap<>();
         Pattern pattern = Pattern.compile("mdc\\[(.*)]");
@@ -167,4 +171,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
         return level;
     }
 
+    public int getLimit() {
+        return limit;
+    }
 }

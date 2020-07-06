@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.2",
+  "openapi": "3.0.3",
   "info": {
     "description": "Log Events - a simple Java Logging library",
     "version": "1.0.0-draft",
@@ -26,7 +26,7 @@
         "parameters": [
           {
             "in": "query",
-            "name": "time",
+            "name": "instant",
             "description": "Point of time to center search around",
             "schema": {
               "type": "string",
@@ -119,6 +119,14 @@
             "name": "mdc",
             "schema": {
               "type": "object"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "Limit to this number of events",
+            "schema": {
+              "type": "integer"
             }
           }
         ],

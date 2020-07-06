@@ -122,7 +122,7 @@ public class LogEventSummary {
         this.applications = applications;
     }
 
-    public void setCount(int rowCount) {
+    public void setRowCount(int rowCount) {
         this.rowCount = rowCount;
     }
 

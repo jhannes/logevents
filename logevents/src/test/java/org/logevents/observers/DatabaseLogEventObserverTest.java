@@ -7,6 +7,7 @@ import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.query.LogEventFilter;
+import org.logevents.query.LogEventQueryResult;
 import org.logevents.query.LogEventSummary;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -208,6 +209,31 @@ public class DatabaseLogEventObserverTest {
         assertDoesNotContain(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
         parameters.put("thread", new String[] { "Thread-nonexisting", event.getThreadName() });
         assertContains(event.getMessage(), listEvents(parameters), LogEvent::getMessage);
+    }
+
+    @Test
+    public void shouldLimitFilter() {
+        ZonedDateTime logTime = ZonedDateTime.now().minusSeconds(100 * 24 * 60 * 60);
+        LogEventSampler logEventSampler = new LogEventSampler().withTime(logTime);
+        observer.processBatch(new LogEventBatch().add(logEventSampler.build()));
+        observer.processBatch(new LogEventBatch().add(logEventSampler.build()));
+        observer.processBatch(new LogEventBatch().add(logEventSampler.build()));
+        observer.processBatch(new LogEventBatch().add(logEventSampler.build()));
+
+        HashMap<String, String[]> parameters = parameters(Optional.of(Level.DEBUG), logTime, Duration.ofMinutes(1));
+        parameters.put("limit", new String[]{"2"});
+        LogEventQueryResult result = observer.query(new LogEventFilter(parameters));
+        assertEquals(2, listEvents(parameters).size());
+        assertEquals(4, result.getSummary().getRowCount());
+
+        properties.setProperty("observer.db.noFetchFirstSupport", "true");
+        observer = new DatabaseLogEventObserver(properties, "observer.db");
+        result = observer.query(new LogEventFilter(parameters));
+        assertEquals(2, result.getEvents().size());
+        assertEquals(4, result.getSummary().getRowCount());
+
+        parameters.remove("limit");
+        assertEquals(4, listEvents(parameters).size());
     }
 
     @Test

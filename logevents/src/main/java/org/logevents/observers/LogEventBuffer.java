@@ -83,7 +83,7 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
         LogEventSummary summary = new LogEventSummary();
         allEvents.forEach(summary::add);
         List<Map<String, Object>> eventsAsJson = allEvents.stream()
-                .filter(filter).map(jsonFormatter).collect(Collectors.toList());
+                .filter(filter).map(jsonFormatter).limit(filter.getLimit()).collect(Collectors.toList());
         summary.setFilteredCount(eventsAsJson.size());
         return new LogEventQueryResult(summary, eventsAsJson);
     }
