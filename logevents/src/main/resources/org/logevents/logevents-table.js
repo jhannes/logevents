@@ -4,11 +4,12 @@ function showLogEventTable() {
         if (filter) {
             const currentFilter = new URLSearchParams(window.location.hash.substr(1));
             const time = currentFilter.get("time");
+            const date = currentFilter.get("date");
             const interval = currentFilter.get("interval");
-            const level = currentFilter.get("level") || "DEBUG";
+            const level = currentFilter.get("level") || "INFO";
             const timezoneOffset = currentFilter.get("timezoneOffset");
             li.innerHTML = `<strong>${header}:</strong>
-                <a href="#time=${time}&interval=${interval}&level=${level}&${filter}=${text}&timezoneOffset=${timezoneOffset}"
+                <a href="#time=${time}&interval=${interval}&date=${date}&level=${level}&${filter}=${text}&timezoneOffset=${timezoneOffset}"
                 >${text}</a>`;
         } else {
             li.innerHTML = `<strong>${header}:</strong> ${text}`;
@@ -41,6 +42,7 @@ function showLogEventTable() {
         const eventDetails = document.createElement("div");
         eventDetails.classList.add("details");
         const ul = document.createElement("ul");
+        ul.appendChild(listItem("Time", hourMinuteSecond(new Date(logEvent.time)), "time"));
         ul.appendChild(listItem("Logger", logEvent.logger, "logger"));
         ul.appendChild(listItem("Thread", logEvent.thread, "thread"));
         ul.appendChild(listItem("Node", logEvent.node, "node"));

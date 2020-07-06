@@ -35,6 +35,7 @@
                         <option value="PT5M" selected>+/- 5 min</option>
                         <option value="PT15M">+/- 15 min</option>
                         <option value="PT1H">+/- 1 hr</option>
+                        <option value="PT6H">+/- 6 hr</option>
                     </select>
                 </div>
                 <div>
@@ -90,6 +91,7 @@ window.addEventListener("hashchange", () => {
 });
 
 async function fetchEvents() {
+    main.innerHTML = "<div>Loading</div>";
     const response = await fetch("events?" + window.location.hash.substr(1));
     if (response.ok) {
         const json = await response.json();
@@ -124,7 +126,7 @@ logEventsFilter.addEventListener("submit", e => {
 const clearButton = document.getElementById("clearButton");
 clearButton.addEventListener("click", e => {
     const d = new Date();
-    window.location.hash = "time=" + hourMinute(new Date()) + "&interval=PT5M&level=TRACE&timezoneOffset=" + d.getTimezoneOffset();
+    window.location.hash = "time=" + hourMinute(new Date()) + "&interval=PT5M&level=INFO&timezoneOffset=" + d.getTimezoneOffset();
     e.preventDefault();
 });
 

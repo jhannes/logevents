@@ -128,7 +128,7 @@ public class LogEventsServlet extends HttpServlet {
                     (req.getQueryString() != null ? "?" + req.getQueryString() : ""));
         } else if (path.equals("/")) {
             resp.setContentType("text/html");
-            copyResource(resp, getObserver().getLogEventsHtml());
+            copyResource(resp, getLogEventsHtml());
         } else if (path.matches("/[a-zA-Z._-]+\\.css")) {
             resp.setContentType("text/css");
             copyResource(resp, "/org/logevents" + path);
@@ -168,6 +168,10 @@ public class LogEventsServlet extends HttpServlet {
         } else {
             resp.sendError(404, "Not found " + path);
         }
+    }
+
+    protected String getLogEventsHtml() {
+        return getObserver().getLogEventsHtml();
     }
 
     Map<String, Object> loggersAsJson(LogEventFactory factory) {
@@ -236,7 +240,7 @@ public class LogEventsServlet extends HttpServlet {
         resp.sendRedirect(redirectTo);
     }
 
-    private LogEventSource getLogEventSource() {
+    protected LogEventSource getLogEventSource() {
         return getObserver().getLogEventSource();
     }
 
@@ -271,7 +275,7 @@ public class LogEventsServlet extends HttpServlet {
         return getCookieVault().decrypt(value);
     }
 
-    private synchronized CryptoVault getCookieVault() {
+    protected synchronized CryptoVault getCookieVault() {
         return getObserver().getCookieVault();
     }
 
