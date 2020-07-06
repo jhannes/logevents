@@ -266,11 +266,11 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
         filters.add("level_int >= ?");
         parameters.add(filter.getThreshold().toInt());
         filter.getMarkers().ifPresent(markers -> {
-            filters.add("marker in (" + questionMarks(markers.size()) + ")");
+            filters.add(filter.isIncludeMarkers() ? "marker in (" + questionMarks(markers.size()) + ")" : "(marker is null or marker not in (" + questionMarks(markers.size()) + "))");
             markers.stream().map(Marker::getName).forEach(parameters::add);
         });
         filter.getLoggers().ifPresent(loggers -> {
-            filters.add("logger in (" + questionMarks(loggers.size()) + ")");
+            filters.add(filter.isIncludeLoggers() ? "logger in (" + questionMarks(loggers.size()) + ")" : "logger not in (" + questionMarks(loggers.size()) + ")");
             parameters.addAll(loggers);
         });
         filter.getThreadNames().ifPresent(threads -> {

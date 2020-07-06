@@ -41,6 +41,10 @@ nav form {
     width: 250px;
 }
 
+nav label {
+    white-space:nowrap;
+}
+
 .drawerOpen nav {
     width: 250px;
 }

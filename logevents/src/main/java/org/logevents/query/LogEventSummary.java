@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -50,10 +51,12 @@ public class LogEventSummary {
     private Object calculateMdc() {
         List<Map<String, Object>> mdcSummary = new ArrayList<>();
         for (Map.Entry<String, Set<String>> entry : mdcMap.entrySet()) {
-            Map<String, Object> mdcEntry = new LinkedHashMap<>();
-            mdcEntry.put("name", entry.getKey());
-            mdcEntry.put("values", entry.getValue().stream().sorted().collect(Collectors.toList()));
-            mdcSummary.add(mdcEntry);
+            if (entry.getValue().size() < 20) {
+                Map<String, Object> mdcEntry = new LinkedHashMap<>();
+                mdcEntry.put("name", entry.getKey());
+                mdcEntry.put("values", entry.getValue().stream().filter(Objects::nonNull).sorted().collect(Collectors.toList()));
+                mdcSummary.add(mdcEntry);
+            }
         }
         mdcSummary.sort(Comparator.comparing(m -> m.get("name").toString()));
         return mdcSummary;

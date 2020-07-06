@@ -164,6 +164,36 @@ public class DatabaseLogEventObserverTest {
     }
 
     @Test
+    public void shouldExcludeLoggersAndMarkers() {
+        String includedLogger = "com.example.foo.FooLogger";
+        String excludedLogger = "com.example.foo.BarLogger";
+        Marker includedMarker = MY_MARKER;
+        Marker excludedMarker = OTHER_MARKER;
+        ZonedDateTime logTime = ZonedDateTime.now().minusYears(9);
+        LogEventSampler sampler = new LogEventSampler().withTime(logTime);
+        LogEvent eventWithIncludedMarkerAndLogger = sampler.withMarker(includedMarker).withLoggerName(includedLogger).build();
+        LogEvent eventWithIncludedLogger = sampler.withMarker(null).withLoggerName(includedLogger).build();
+        LogEvent eventWithExcludedLogger = sampler.withLoggerName(excludedLogger).build();
+        LogEvent eventWithExcludedMarker = sampler.withMarker(excludedMarker).withLoggerName(includedLogger).build();
+        observer.processBatch(new LogEventBatch()
+                .add(eventWithIncludedMarkerAndLogger)
+                .add(eventWithIncludedLogger)
+                .add(eventWithExcludedLogger)
+                .add(eventWithExcludedMarker));
+
+        HashMap<String, String[]> parameters = parameters(Optional.of(Level.INFO), logTime, Duration.ofSeconds(10));
+        parameters.put("marker", new String[] { excludedMarker.getName() });
+        parameters.put("includeMarkers", new String[] { "exclude" });
+        parameters.put("logger", new String[] { excludedLogger });
+        parameters.put("includeLoggers", new String[] { "exclude" });
+        assertContains(eventWithIncludedMarkerAndLogger.getMessage(), listEvents(parameters), LogEvent::getMessage);
+        assertContains(eventWithIncludedLogger.getMessage(), listEvents(parameters), LogEvent::getMessage);
+        assertDoesNotContain(eventWithExcludedMarker.getMessage(), listEvents(parameters), LogEvent::getMessage);
+        assertDoesNotContain(eventWithExcludedLogger.getMessage(), listEvents(parameters), LogEvent::getMessage);
+    }
+
+
+    @Test
     public void shouldFilterOnLoggers() {
         LogEvent event = new LogEventSampler().withLevel(Level.INFO).withMarker().build();
         observer.processBatch(new LogEventBatch().add(event));

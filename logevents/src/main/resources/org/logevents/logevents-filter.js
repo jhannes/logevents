@@ -1,6 +1,14 @@
 function showFacets(facets) {
     const currentFilter = new URLSearchParams(window.location.hash.substr(1));
 
+    function includeExcludeSelect(name) {
+        const includeExcludeSelect = document.createElement("select");
+        includeExcludeSelect.name = name;
+        includeExcludeSelect.appendChild(option(name, "include", "Include"));
+        includeExcludeSelect.appendChild(option(name, "exclude", "Exclude"));
+        return includeExcludeSelect;
+    }
+
     function checkbox(name, value, text) {
         const checkboxDiv = document.createElement("div");
         const checked = (currentFilter.getAll(name).indexOf(value) >= 0) ? ' checked="checked"' : "";
@@ -20,10 +28,6 @@ function showFacets(facets) {
         return option;
     }
 
-    const loggersFieldset = document.getElementById("loggers");
-    const markersFieldset = document.getElementById("markers");
-    const nodesFieldset = document.getElementById("nodes");
-    const applicationsFieldset = document.getElementById("applications");
 
     document.getElementById("time").value = currentFilter.get("time");
     document.getElementById("date").value = currentFilter.get("date");
@@ -57,11 +61,6 @@ function showFacets(facets) {
         document.getElementById("detailedFilter").style.display = "block";
     }
 
-    markersFieldset.innerHTML = "";
-    for (const marker of facets.markers) {
-        markersFieldset.appendChild(checkbox("marker", marker));
-    }
-
     const threads = document.getElementById("threads");
     const threadsSelect = document.createElement("select");
     threadsSelect.setAttribute("name", "thread");
@@ -72,17 +71,30 @@ function showFacets(facets) {
     threads.innerHTML = "";
     threads.appendChild(threadsSelect);
 
+    const loggersFieldset = document.getElementById("loggers");
     loggersFieldset.innerHTML = "";
+    loggersFieldset.appendChild(includeExcludeSelect("includeLoggers"));
     for (const logger of facets.loggers) {
         loggersFieldset.appendChild(checkbox("logger", logger.name, logger.abbreviatedName));
     }
-    nodesFieldset.innerHTML = "";
-    for (const node of facets.nodes) {
-        nodesFieldset.appendChild(checkbox("node", node));
+
+    const markersFieldset = document.getElementById("markers");
+    markersFieldset.innerHTML = "";
+    markersFieldset.appendChild(includeExcludeSelect("includeMarkers"))
+    for (const marker of facets.markers) {
+        markersFieldset.appendChild(checkbox("marker", marker));
     }
+
+    const applicationsFieldset = document.getElementById("applications");
     applicationsFieldset.innerHTML = "";
     for (const node of facets.applications) {
         applicationsFieldset.appendChild(checkbox("application", node));
+    }
+
+    const nodesFieldset = document.getElementById("nodes");
+    nodesFieldset.innerHTML = "";
+    for (const node of facets.nodes) {
+        nodesFieldset.appendChild(checkbox("node", node));
     }
 
     const mdcFilter = document.getElementById("mdcFilter");
@@ -99,8 +111,9 @@ function showFacets(facets) {
         for (const alternative of mdcEntry.values) {
             mdcSelect.appendChild(option("mdc[" + mdcEntry.name + "]", alternative));
         }
-
-        mdcLabel.appendChild(mdcSelect);
+        const mdcSelectDiv = document.createElement("div");
+        mdcSelectDiv.appendChild(mdcSelect);
+        mdcLabel.appendChild(mdcSelectDiv);
         const mdcDiv = document.createElement("div");
         mdcDiv.appendChild(mdcLabel);
 

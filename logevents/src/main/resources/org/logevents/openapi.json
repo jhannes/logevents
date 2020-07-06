@@ -68,6 +68,15 @@
           },
           {
             "in": "query",
+            "name": "includeLoggers",
+            "description": "If 'include', only return events from the specified loggers, if 'exclude', only return events not from the specified loggers",
+            "schema": {
+              "type": "string",
+              "enum": ["include", "exclude"]
+            }
+          },
+          {
+            "in": "query",
             "name": "level",
             "description": "Level threshold to include",
             "schema": {
@@ -86,6 +95,15 @@
                 "type": "string",
                 "example": "MY_MARKER"
               }
+            }
+          },
+          {
+            "in": "query",
+            "name": "includeMarkers",
+            "description": "If 'include', only return events with the specified markers, if 'exclude', only return events without the specified markers",
+            "schema": {
+              "type": "string",
+              "enum": ["include", "exclude"]
             }
           },
           {

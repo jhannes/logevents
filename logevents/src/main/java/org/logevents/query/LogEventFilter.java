@@ -41,7 +41,9 @@ public class LogEventFilter implements Predicate<LogEvent> {
     private final Optional<List<String>> nodeNames;
     private Optional<List<String>> applications;
     private final Optional<List<String>> loggers;
+    private final boolean includeLoggers;
     private final Optional<List<Marker>> markers;
+    private final boolean includeMarkers;
     private final Optional<Map<String, List<String>>> mdcFilter;
     private final int limit;
 
@@ -70,12 +72,16 @@ public class LogEventFilter implements Predicate<LogEvent> {
                 .map(t -> Duration.parse(t[0]))
                 .orElse(Duration.ofMinutes(10));
         this.loggers = getParameter(parameters, "logger");
+        this.includeLoggers = getParameter(parameters, "includeLoggers")
+                .map(p -> !p.contains("exclude")).orElse(true);
         this.threadNames = getParameter(parameters, "thread");
         this.level = getParameter(parameters, "level")
                 .map(list -> Level.valueOf(list.get(0)))
                 .orElse(Level.INFO);
         this.markers = getParameter(parameters,"marker")
                 .map(m -> m.stream().map(MarkerFactory::getMarker).collect(Collectors.toList()));
+        this.includeMarkers = getParameter(parameters, "includeMarkers")
+                .map(p -> !p.contains("exclude")).orElse(true);
         this.nodeNames = getParameter(parameters, "node");
         this.applications = getParameter(parameters, "application");
         this.limit = getParameter(parameters, "limit")
@@ -108,18 +114,45 @@ public class LogEventFilter implements Predicate<LogEvent> {
 
     @Override
     public boolean test(LogEvent logEvent) {
-        return threadNames.map(names -> names.contains(logEvent.getThreadName())).orElse(true) &&
-                loggers.map(l -> l.contains(logEvent.getLoggerName())).orElse(true) &&
-                markers.map(m -> m.contains(logEvent.getMarker())).orElse(true) &&
-                mdcFilter.map(mdc -> matchesMdc(logEvent, mdc)).orElse(true);
+        return isThreadIncluded(logEvent) && isLoggerIncluded(logEvent) && isMarkerIncluded(logEvent) && isMdcIncluded(logEvent);
+    }
+
+    private boolean isMdcIncluded(LogEvent logEvent) {
+        return mdcFilter.map(mdc -> matchesMdc(logEvent, mdc)).orElse(true);
+    }
+
+    private boolean isThreadIncluded(LogEvent logEvent) {
+        return threadNames.map(names -> names.contains(logEvent.getThreadName())).orElse(true);
+    }
+
+    private boolean isMarkerIncluded(LogEvent logEvent) {
+        return markers.map(includeMarkers
+                        ? (l -> l.contains(logEvent.getMarker()))
+                        : (l -> !l.contains(logEvent.getMarker())))
+                .orElse(true);
+    }
+
+    private boolean isLoggerIncluded(LogEvent logEvent) {
+        return loggers.map(includeLoggers
+                        ? (l -> l.contains(logEvent.getLoggerName()))
+                        : (l -> !l.contains(logEvent.getLoggerName())))
+                .orElse(true);
     }
 
     public Optional<List<Marker>> getMarkers() {
         return markers;
     }
 
+    public boolean isIncludeMarkers() {
+        return includeMarkers;
+    }
+
     public Optional<List<String>> getLoggers() {
         return loggers;
+    }
+
+    public boolean isIncludeLoggers() {
+        return includeLoggers;
     }
 
     public Optional<List<String>> getThreadNames() {

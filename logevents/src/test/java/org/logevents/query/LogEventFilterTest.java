@@ -82,6 +82,26 @@ public class LogEventFilterTest {
     }
 
     @Test
+    public void shouldExcludeLoggersAndMarkers() {
+        String includedLogger = "com.example.foo.FooLogger";
+        String excludedLogger = "com.example.foo.BarLogger";
+        Marker includedMarker = MY_MARKER;
+        Marker excludedMarker = OTHER_MARKER;
+
+        HashMap<String, String[]> parameters = new HashMap<>();
+        parameters.put("marker", new String[] { excludedMarker.getName() });
+        parameters.put("includeMarkers", new String[] { "exclude" });
+        parameters.put("logger", new String[] { excludedLogger });
+        parameters.put("includeLoggers", new String[] { "exclude" });
+        LogEventFilter filter = new LogEventFilter(parameters);
+
+        assertMatches(new LogEventSampler().withLoggerName(includedLogger).withMarker(includedMarker).build(), filter);
+        assertMatches(new LogEventSampler().withLoggerName(includedLogger).build(), filter);
+        assertDoesNotMatch(new LogEventSampler().withLoggerName(includedLogger).withMarker(excludedMarker).build(), filter);
+        assertDoesNotMatch(new LogEventSampler().withLoggerName(excludedLogger).withMarker(includedMarker).build(), filter);
+    }
+
+    @Test
     public void filterByMdc() {
         Map<String, String[]> parameters = new HashMap<>();
         parameters.put("mdc[user]", new String[] { "adminUser", "limitedUser" });

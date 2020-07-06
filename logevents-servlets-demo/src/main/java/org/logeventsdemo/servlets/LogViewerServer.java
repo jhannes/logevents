@@ -39,7 +39,7 @@ public class LogViewerServer {
     private void setConfiguration(Properties properties) {
         listener.setOpenIdConfiguration(new OpenIdConfiguration(new Configuration(properties, "openid")));
         listener.setLogEventSource(new DatabaseLogEventObserver(properties, "database"));
-        listener.setCookieEncryptionKey(properties.getProperty("cookieEncryptionKey"));
+        listener.setCookieEncryptionKey(properties.getProperty("cookie.secret"));
     }
 
     private void start() throws Exception {
