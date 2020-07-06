@@ -55,7 +55,7 @@ public class CauseFirstExceptionFormatterTest {
         assertEquals("\t... 5 more", lines[2]);
         assertEquals("Wrapped by: " + nested, lines[3]);
         assertEquals("\tat " + ioApiMethod, lines[4]);
-        assertEquals("[1 skipped]", lines[5]);
+        assertEquals("\t[1 skipped]", lines[5]);
         assertEquals("\t... 3 more", lines[6]);
         assertEquals("Wrapped by: " + exception, lines[7]);
         assertEquals("\tat " + internalMethod, lines[8]);

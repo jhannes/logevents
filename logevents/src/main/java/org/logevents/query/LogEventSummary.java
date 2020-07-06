@@ -41,7 +41,7 @@ public class LogEventSummary {
         for (String loggerName : loggers) {
             Map<String, String> logger = new HashMap<>();
             logger.put("name", loggerName);
-            logger.put("abbreviatedName", LogEvent.getAbbreviatedLoggerName(loggerName, 0));
+            logger.put("abbreviatedName", LogEvent.getAbbreviatedClassName(loggerName, 0));
             result.add(logger);
         }
         return result;

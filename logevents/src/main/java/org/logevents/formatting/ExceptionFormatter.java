@@ -38,10 +38,6 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
         super(configuration);
     }
 
-    protected String initialIndent() {
-        return "";
-    }
-
     protected String increaseIndent(String indent) {
         return indent + "\t";
     }
@@ -51,7 +47,7 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
             return "";
         }
         StringBuilder builder = new StringBuilder();
-        outputException(ex, null, "", initialIndent(), builder);
+        outputException(ex, null, "", "", builder);
         return builder.toString();
     }
 
@@ -77,20 +73,20 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
     protected void outputStack(Throwable ex, String indent, Throwable enclosing, StringBuilder builder) {
         int uniquePrefix = uniquePrefix(ex, enclosing);
         StackTraceElement[] stackTrace = ex.getStackTrace();
-        int ignored = 0;
+        int ignoredLineCount = 0;
         int actualLines = 0;
         for (int i = 0; i < uniquePrefix && actualLines < maxLength; i++) {
             if (i > 0 && isIgnored(stackTrace[i])) {
-                ignored++;
+                ignoredLineCount++;
             } else {
-                outputStackFrame(stackTrace[i], ignored, indent, builder);
+                outputStackFrame(stackTrace[i], ignoredLineCount, indent, builder);
                 actualLines++;
-                ignored = 0;
+                ignoredLineCount = 0;
             }
         }
-        if (ignored > 0) {
-            builder.append(indent);
-            outputIgnoredLineCount(ignored, builder).append(newLine());
+        if (ignoredLineCount > 0) {
+            builder.append(increaseIndent(indent));
+            outputIgnoredFrameCount(ignoredLineCount, builder).append(newLine());
         }
         if (uniquePrefix < stackTrace.length && uniquePrefix < maxLength) {
             outputIgnoredCommonLines(stackTrace.length - uniquePrefix, indent, builder);
@@ -102,7 +98,7 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
         formatFrame(builder, frame);
         if (ignored > 0) {
             builder.append(" ");
-            outputIgnoredLineCount(ignored, builder);
+            outputIgnoredFrameCount(ignored, builder);
         }
         if (includePackagingData) {
             builder.append(" ").append(getPackagingData(frame));
@@ -118,7 +114,7 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
         builder.append(increaseIndent(indent)).append("... ").append(commonLines).append(" more").append(newLine());
     }
 
-    protected StringBuilder outputIgnoredLineCount(int ignored, StringBuilder builder) {
+    protected StringBuilder outputIgnoredFrameCount(int ignored, StringBuilder builder) {
         return builder.append("[").append(ignored).append(" skipped]");
     }
 }

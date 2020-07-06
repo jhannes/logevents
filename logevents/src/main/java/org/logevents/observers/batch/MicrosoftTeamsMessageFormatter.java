@@ -105,6 +105,9 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
                     .append(" ")
                     .append(exceptionInfo)
                     .append(formatMessage(event))
+                    .append(" **[")
+                    .append(event.getAbbreviatedLoggerName(0))
+                    .append("]**")
                     .append(group.size() > 1 ? " (" + group.size() + " repetitions)" : "");
             detailUrl.ifPresent(uri ->
                     eventLine

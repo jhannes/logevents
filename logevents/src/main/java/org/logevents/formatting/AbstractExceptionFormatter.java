@@ -36,8 +36,8 @@ import java.util.Properties;
 public abstract class AbstractExceptionFormatter {
 
     protected SourceCodeLookup sourceCodeLookup;
-    protected final boolean includePackagingData;
-    private List<String> packageFilter = new ArrayList<>();
+    protected boolean includePackagingData;
+    protected List<String> packageFilter = new ArrayList<>();
     protected int maxLength = Integer.MAX_VALUE;
 
     public AbstractExceptionFormatter() {

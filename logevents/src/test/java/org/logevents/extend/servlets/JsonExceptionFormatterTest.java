@@ -157,7 +157,7 @@ public class JsonExceptionFormatterTest {
         assertEquals("\tat " + publicMethod, lines[2]);
         assertEquals("Caused by: " + nested, lines[3]);
         assertEquals("\tat " + ioApiMethod, lines[4]);
-        assertEquals("[2 skipped]", lines[5]);
+        assertEquals("\t[2 skipped]", lines[5]);
         assertEquals("Caused by: " + nestedNested, lines[6]);
         assertEquals("\tat " + ioInternalMethod, lines[7]);
         assertEquals("\t... 6 more", lines[8]);
@@ -180,7 +180,7 @@ public class JsonExceptionFormatterTest {
         assertEquals(exceptions.toString(), lines[0]);
         assertEquals("\tat " + ioInternalMethod, lines[1]);
         assertEquals("\tat " + ioApiMethod, lines[2]);
-        assertEquals("[5 skipped]", lines[3]);
+        assertEquals("\t[5 skipped]", lines[3]);
         assertEquals(4, lines.length);
 
     }
