@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -58,10 +59,10 @@ public class JsonLogEventFormatter implements Function<LogEvent, Map<String, Obj
 
     public List<Map<String, String>> formatMdc(LogEvent event) {
         List<Map<String, String>> mdc = new ArrayList<>();
-        for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
+        for (String name : new TreeSet<>(event.getMdcProperties().keySet())) {
             Map<String, String> mdcEntry = new HashMap<>();
-            mdcEntry.put("name", entry.getKey());
-            mdcEntry.put("value", entry.getValue());
+            mdcEntry.put("name", name);
+            mdcEntry.put("value", event.getMdcProperties().get(name));
             mdc.add(mdcEntry);
         }
         return mdc;

@@ -12,7 +12,7 @@ function showFacets(facets) {
     function checkbox(name, value, text) {
         const checkboxDiv = document.createElement("div");
         const checked = (currentFilter.getAll(name).indexOf(value) >= 0) ? ' checked="checked"' : "";
-        checkboxDiv.innerHTML = `<label><input type="checkbox" name=${name} value="${value}" ${checked}>${text || value}</label>`;
+        checkboxDiv.innerHTML = `<label title="${text || value}"><input type="checkbox" name=${name} value="${value}" ${checked}>${text || value}</label>`;
         return checkboxDiv;
     }
 
@@ -65,7 +65,7 @@ function showFacets(facets) {
     const threadsSelect = document.createElement("select");
     threadsSelect.setAttribute("name", "thread");
     threadsSelect.appendChild(option("thread"));
-    for (const thread of facets.threads) {
+    for (const thread of facets.threads.sort()) {
         threadsSelect.appendChild(option("thread", thread));
     }
     threads.innerHTML = "";
@@ -74,26 +74,26 @@ function showFacets(facets) {
     const loggersFieldset = document.getElementById("loggers");
     loggersFieldset.innerHTML = "";
     loggersFieldset.appendChild(includeExcludeSelect("includeLoggers"));
-    for (const logger of facets.loggers) {
+    for (const logger of facets.loggers.sort()) {
         loggersFieldset.appendChild(checkbox("logger", logger.name, logger.abbreviatedName));
     }
 
     const markersFieldset = document.getElementById("markers");
     markersFieldset.innerHTML = "";
     markersFieldset.appendChild(includeExcludeSelect("includeMarkers"))
-    for (const marker of facets.markers) {
+    for (const marker of facets.markers.sort()) {
         markersFieldset.appendChild(checkbox("marker", marker));
     }
 
     const applicationsFieldset = document.getElementById("applications");
     applicationsFieldset.innerHTML = "";
-    for (const node of facets.applications) {
+    for (const node of facets.applications.sort()) {
         applicationsFieldset.appendChild(checkbox("application", node));
     }
 
     const nodesFieldset = document.getElementById("nodes");
     nodesFieldset.innerHTML = "";
-    for (const node of facets.nodes) {
+    for (const node of facets.nodes.sort()) {
         nodesFieldset.appendChild(checkbox("node", node));
     }
 

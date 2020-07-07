@@ -42,6 +42,7 @@ import java.util.Properties;
  * observer.servlet.openIdIssuer=https://login.microsoftonline.com/common
  * observer.servlet.clientId=12345678-abcd-pqrs-9876-9abcdef01234
  * observer.servlet.clientSecret=3¤..¤!?qwer
+ * observer.servlet.cookieEncryptionKey=32s...r2
  * observer.servlet.source=DatabaseLogEventObserver
  * observer.servlet.source.jdbcUrl=...
  * observer.servlet.httpPort=8080

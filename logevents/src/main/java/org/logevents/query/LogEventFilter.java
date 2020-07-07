@@ -86,7 +86,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
         this.applications = getParameter(parameters, "application");
         this.limit = getParameter(parameters, "limit")
                 .map(list -> Integer.parseInt(list.get(0)))
-                .orElse(1000);
+                .orElse(4000);
 
         Map<String, List<String>> mdcFilter = new HashMap<>();
         Pattern pattern = Pattern.compile("mdc\\[(.*)]");

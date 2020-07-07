@@ -201,7 +201,7 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
             buildFilter(filter, filters, parameters);
 
             String sql = "select * from " + logEventsTable + " e left outer join " + logEventsMdcTable + "  m on e.event_id = m.event_id " +
-                    " where " + String.join(" AND ", filters) + " order by instant";
+                    " where " + String.join(" AND ", filters) + " order by instant, m.name, m.value";
             if (!noFetchFirstSupport) {
                 sql += " FETCH FIRST " + filter.getLimit() + " ROWS ONLY";
             }
@@ -451,8 +451,8 @@ public class DatabaseLogEventObserver extends BatchingLogEventObserver implement
     }
 
     private Map<String, Set<String>> getMdcMap(Connection connection, LogEventFilter filter) throws SQLException {
-        Map<String, Set<String>> mdcMap = new HashMap<>();
-        try (PreparedStatement statement = connection.prepareStatement("select distinct name, value from " + logEventsMdcTable + " m inner join "  + logEventsTable + " e on m.event_id = e.event_id where instant between ? and ? and level_int >= ?")) {
+        Map<String, Set<String>> mdcMap = new LinkedHashMap<>();
+        try (PreparedStatement statement = connection.prepareStatement("select distinct name, value from " + logEventsMdcTable + " m inner join "  + logEventsTable + " e on m.event_id = e.event_id where instant between ? and ? and level_int >= ? order by name, value")) {
             statement.setLong(1, filter.getStartTime().toEpochMilli());
             statement.setLong(2, filter.getEndTime().toEpochMilli());
             statement.setLong(3, filter.getThreshold().toInt());
