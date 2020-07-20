@@ -65,7 +65,7 @@ import java.util.stream.Stream;
  * observer.db.noFetchFirstSupport=false
  * </pre>
  */
-public class DatabaseLogEventObserver extends BatchingLogEventObserver implements LogEventSource {
+public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver implements LogEventSource {
 
     private final String jdbcUrl;
     private final String jdbcUsername;

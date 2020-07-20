@@ -52,7 +52,7 @@ public class CompositeLogEventObserverTest {
         CircularBufferLogEventObserver debug = new CircularBufferLogEventObserver();
         LogEventObserver debugObserver = new LevelThresholdConditionalObserver(Level.DEBUG, debug);
         LogEventObserver warnObserver = new LevelThresholdConditionalObserver(Level.WARN, new CircularBufferLogEventObserver());
-        LogEventObserver infoObserver = new FilteredLogEventObserver() {
+        LogEventObserver infoObserver = new AbstractFilteredLogEventObserver() {
             {
                 setThreshold(Level.INFO);
             }

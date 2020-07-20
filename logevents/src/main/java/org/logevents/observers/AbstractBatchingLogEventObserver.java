@@ -30,9 +30,9 @@ import java.util.function.Consumer;
  * inefficient or noisy, such as email or Slack and for logging asynchronously to
  * external systems over network such as databases or Elasticsearch.
  * <p>
- * {@link BatchingLogEventObserver} can decide how to batch events with batchers,
+ * {@link AbstractBatchingLogEventObserver} can decide how to batch events with batchers,
  * for example {@link ThrottlingBatcher} and {@link CooldownBatcher}. When processing,
- * the {@link BatchingLogEventObserver} calls {@link #processBatch(List)}
+ * the {@link AbstractBatchingLogEventObserver} calls {@link #processBatch(List)}
  * with the whole batch to process the log events, which should be overridden by
  * subclasses. Consecutive Log events with the same message pattern and log level
  * are grouped together so the processor can easily ignore duplicate messages.
@@ -85,7 +85,7 @@ import java.util.function.Consumer;
  *
  * @author Johannes Brodwall
  */
-public abstract class BatchingLogEventObserver extends FilteredLogEventObserver {
+public abstract class AbstractBatchingLogEventObserver extends AbstractFilteredLogEventObserver {
 
     protected static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
             new DaemonThreadFactory("BatchingLogEventObserver"));
@@ -99,11 +99,11 @@ public abstract class BatchingLogEventObserver extends FilteredLogEventObserver 
     private LogEventObserver defaultBatcher;
     protected ScheduledExecutorService executor;
 
-    public BatchingLogEventObserver() {
+    public AbstractBatchingLogEventObserver() {
         this(scheduledExecutorService);
     }
 
-    public BatchingLogEventObserver(ScheduledExecutorService executor) {
+    public AbstractBatchingLogEventObserver(ScheduledExecutorService executor) {
         defaultBatcher = new LogEventBatcher(new CooldownBatcherFactory(executor, shutdownHook).createBatcher(this::processBatch));
         this.executor = executor;
     }

@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 
 public class BatchingLogEventObserverTest {
 
-    private class Observer extends BatchingLogEventObserver {
+    private class Observer extends AbstractBatchingLogEventObserver {
 
         public Observer(Properties properties, String prefix) {
             Configuration config = new Configuration(properties, prefix);

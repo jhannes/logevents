@@ -34,7 +34,7 @@ import java.util.Properties;
  *
  * @author Johannes Brodwall
  */
-public class ConsoleLogEventObserver extends FilteredLogEventObserver {
+public class ConsoleLogEventObserver extends AbstractFilteredLogEventObserver {
 
     private final LogEventFormatter formatter;
     private final PrintStream out;

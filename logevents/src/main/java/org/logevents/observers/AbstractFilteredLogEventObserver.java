@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * <code>threshold</code> on {@link Level}, <code>suppressMarkers</code> (don't log messages with any
  * of the given markers) and <code>requiredMarker</code> (only log messages with one of the given markers)
  */
-public abstract class FilteredLogEventObserver implements LogEventObserver {
+public abstract class AbstractFilteredLogEventObserver implements LogEventObserver {
     private Level threshold = Level.TRACE;
     private List<Marker> suppressedMarkers = new ArrayList<>();
     private List<Marker> requireMarker = new ArrayList<>();

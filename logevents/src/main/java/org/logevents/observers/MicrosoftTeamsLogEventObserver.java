@@ -14,9 +14,9 @@ import java.util.Properties;
  * Sends log messages to Microsoft Teams through a webhook extension. Must be configured
  * with a <code>.url</code> property as a webhook. See <a href="https://docs.microsoft.com/en-us/microsoftteams/platform/concepts/connectors/connectors-using"
  * >Microsoft documentation</a> on how to get a Webhook url.
- * This observer batches messages as standard for {@link BatchingLogEventObserver},
+ * This observer batches messages as standard for {@link AbstractBatchingLogEventObserver},
  * using the <code>idleThreshold</code>, <code>idleThreshold</code>, and <code>cooldownTime</code> to
- * determine when to flush the batch. It support {@link FilteredLogEventObserver} properties
+ * determine when to flush the batch. It support {@link AbstractFilteredLogEventObserver} properties
  * <code>threshold</code>, <code>suppressMarkers</code> and <code>requireMarker</code> to filter sent messages
  *
  * <p>
@@ -44,11 +44,11 @@ import java.util.Properties;
  *      <a href="https://microsoftteams.uservoice.com/forums/555103-public/suggestions/17153099-webhook-needs-to-support-forced-notification-a-la">Unavailable in Teams</a></li>
  * </ul>
  *
- * @see BatchingLogEventObserver
+ * @see AbstractBatchingLogEventObserver
  * @see SlackLogEventsFormatter
  * @see ThrottlingBatcher
  */
-public class MicrosoftTeamsLogEventObserver extends HttpPostJsonLogEventObserver {
+public class MicrosoftTeamsLogEventObserver extends AbstractHttpPostJsonLogEventObserver {
 
     private final MicrosoftTeamsMessageFormatter formatter;
 

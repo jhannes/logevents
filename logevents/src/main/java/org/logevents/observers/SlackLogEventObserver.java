@@ -46,11 +46,11 @@ import java.util.function.Consumer;
  * observer.slack.markers.MY_MARKER.emoji=:rocket:
  * </pre>
  *
- * @see BatchingLogEventObserver
+ * @see AbstractBatchingLogEventObserver
  * @see MicrosoftTeamsLogEventObserver
  * @see ThrottlingBatcher
  */
-public class SlackLogEventObserver extends HttpPostJsonLogEventObserver {
+public class SlackLogEventObserver extends AbstractHttpPostJsonLogEventObserver {
 
     private final SlackLogEventsFormatter formatter;
 

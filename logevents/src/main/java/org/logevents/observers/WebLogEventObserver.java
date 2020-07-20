@@ -51,7 +51,7 @@ import java.util.Properties;
  * @see LogEventsServlet
  * @see OpenIdConfiguration
  */
-public class WebLogEventObserver extends FilteredLogEventObserver {
+public class WebLogEventObserver extends AbstractFilteredLogEventObserver {
 
     private final MessageFormatter messageFormatter;
     private final LogEventSource source;

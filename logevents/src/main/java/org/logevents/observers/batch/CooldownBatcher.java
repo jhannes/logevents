@@ -1,7 +1,7 @@
 package org.logevents.observers.batch;
 
 import org.logevents.config.Configuration;
-import org.logevents.observers.BatchingLogEventObserver;
+import org.logevents.observers.AbstractBatchingLogEventObserver;
 import org.logevents.status.LogEventStatus;
 
 import java.time.Duration;
@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  * {@link #setIdleThreshold(Duration)} (minimum time between log events in the batch)
  * and {@link #setMaximumWaitTime(Duration)} (maximum time from the first message in a batch
  * was generated until the batch is processed). When processing, the
- * {@link BatchingLogEventObserver} calls {@link #processor}
+ * {@link AbstractBatchingLogEventObserver} calls {@link #processor}
  * with the whole batch to process the log events. Consecutive Log events with
  * the same message pattern and log level are grouped together so the processor
  * can easily ignore duplicate messages.

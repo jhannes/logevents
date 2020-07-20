@@ -2,7 +2,7 @@ package org.logevents.jmx;
 
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
-import org.logevents.observers.FilteredLogEventObserver;
+import org.logevents.observers.AbstractFilteredLogEventObserver;
 import org.logevents.observers.FixedLevelThresholdConditionalObserver;
 
 public class ObserverMXBeanAdaptor implements ObserverMXBean {
@@ -28,8 +28,8 @@ public class ObserverMXBeanAdaptor implements ObserverMXBean {
     public String getThreshold() {
         if (!isCreated()) return null;
         LogEventObserver observer = getObserver();
-        if (observer instanceof FilteredLogEventObserver) {
-            return ((FilteredLogEventObserver)observer).getThreshold().toString();
+        if (observer instanceof AbstractFilteredLogEventObserver) {
+            return ((AbstractFilteredLogEventObserver)observer).getThreshold().toString();
         } else if (observer instanceof FixedLevelThresholdConditionalObserver) {
             return ((FixedLevelThresholdConditionalObserver)observer).getThreshold().toString();
         }

@@ -16,11 +16,11 @@ import java.util.function.Function;
 /**
  * Convenience superclass for observers that send JSON over HTTP
  */
-public abstract class HttpPostJsonLogEventObserver extends BatchingLogEventObserver {
+public abstract class AbstractHttpPostJsonLogEventObserver extends AbstractBatchingLogEventObserver {
     private final URL url;
     private Proxy proxy = Proxy.NO_PROXY;
 
-    public HttpPostJsonLogEventObserver(URL url) {
+    public AbstractHttpPostJsonLogEventObserver(URL url) {
         this.url = url;
     }
 

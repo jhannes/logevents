@@ -8,7 +8,7 @@ import com.microsoft.applicationinsights.telemetry.TraceTelemetry;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.formatting.MessageFormatter;
-import org.logevents.observers.FilteredLogEventObserver;
+import org.logevents.observers.AbstractFilteredLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
 
@@ -26,7 +26,7 @@ import java.util.Properties;
  * This class uses an optional dependency on com.microsoft.azure:applicationinsights-core,
  * which you must include in order to use it.
  */
-public class ApplicationInsightsLogEventObserver extends FilteredLogEventObserver {
+public class ApplicationInsightsLogEventObserver extends AbstractFilteredLogEventObserver {
 
     private TelemetryClient telemetryClient;
 

@@ -8,7 +8,7 @@
  * {@link org.logevents.observers.ConsoleLogEventObserver},
  * {@link org.logevents.observers.FileLogEventObserver},
  * {@link org.logevents.observers.DatabaseLogEventObserver} as well as
- * {@link org.logevents.observers.BatchingLogEventObserver}, which is
+ * {@link org.logevents.observers.AbstractBatchingLogEventObserver}, which is
  * the superclass of {@link org.logevents.observers.MicrosoftTeamsLogEventObserver},
  * {@link org.logevents.observers.SmtpLogEventObserver} and {@link org.logevents.observers.SlackLogEventObserver}</p>
  */

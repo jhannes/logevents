@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * observer.elastic.suppressMarkers=PERSONAL_DATA
  * </pre>
  */
-public class ElasticsearchLogEventObserver extends BatchingLogEventObserver {
+public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObserver {
 
     private final URL elasticsearchUrl;
     private final String index;

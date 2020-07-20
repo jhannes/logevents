@@ -7,8 +7,6 @@ import org.logevents.LogEventFactory;
 import org.logevents.extend.junit.LogEventRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
 import java.util.Arrays;
@@ -22,7 +20,7 @@ public class FilteredLogEventObserverTest {
     private LogEventRule logEventRule = new LogEventRule(Level.INFO, FilteredLogEventObserverTest.class);
 
     private static final Logger logger = LoggerFactory.getLogger(FilteredLogEventObserverTest.class);
-    private FilteredLogEventObserver observer = new FilteredLogEventObserver() {
+    private AbstractFilteredLogEventObserver observer = new AbstractFilteredLogEventObserver() {
         @Override
         protected void doLogEvent(LogEvent logEvent) {
             logEventRule.logEvent(logEvent);

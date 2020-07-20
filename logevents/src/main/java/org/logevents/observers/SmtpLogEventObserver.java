@@ -37,7 +37,7 @@ import java.util.Properties;
  * observer.email.host=smtp.example.com
  * </pre>
  */
-public class SmtpLogEventObserver extends BatchingLogEventObserver {
+public class SmtpLogEventObserver extends AbstractBatchingLogEventObserver {
     private final MessageFormatter messageFormatter;
     private final String nodeName;
     private String fromAddress;

@@ -22,7 +22,7 @@ import java.util.Map;
  * logevents.jmx=true
  * </pre>
  */
-public class StatisticsLogEventsObserver extends FilteredLogEventObserver {
+public class StatisticsLogEventsObserver extends AbstractFilteredLogEventObserver {
 
     private static Map<Level, Counter> logEventsPerHour = Collections.synchronizedMap(new EnumMap<>(Level.class));
     private static Map<Level, Counter> logEventsPerMinute = Collections.synchronizedMap(new EnumMap<>(Level.class));

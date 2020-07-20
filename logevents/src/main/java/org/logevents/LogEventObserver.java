@@ -1,6 +1,6 @@
 package org.logevents;
 
-import org.logevents.observers.BatchingLogEventObserver;
+import org.logevents.observers.AbstractBatchingLogEventObserver;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
@@ -18,7 +18,7 @@ import java.util.List;
  * {@link ConsoleLogEventObserver} (to standard out, with ANSI colors),
  * {@link CompositeLogEventObserver} (used to call multiple observers),
  * {@link CircularBufferLogEventObserver} (used to keep an internal buffer of log events)
- * and {@link BatchingLogEventObserver} (used to batch up multiple events before
+ * and {@link AbstractBatchingLogEventObserver} (used to batch up multiple events before
  * processing).
  *
  * @author Johannes Brodwall.
