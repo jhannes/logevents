@@ -1,4 +1,4 @@
-package org.logevents.observers.stats;
+package org.logevents.util;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

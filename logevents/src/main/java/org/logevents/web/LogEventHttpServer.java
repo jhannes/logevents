@@ -5,7 +5,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsExchange;
 import com.sun.net.httpserver.HttpsServer;
-import org.logevents.observers.LogEventSource;
+import org.logevents.query.LogEventSource;
 import org.logevents.observers.WebLogEventObserver;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventQueryResult;

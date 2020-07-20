@@ -1,7 +1,7 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
-import org.logevents.observers.stats.Counter;
+import org.logevents.util.Counter;
 import org.slf4j.event.Level;
 
 import java.time.Instant;

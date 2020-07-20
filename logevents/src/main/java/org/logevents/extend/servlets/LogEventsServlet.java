@@ -3,7 +3,7 @@ package org.logevents.extend.servlets;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
-import org.logevents.observers.LogEventSource;
+import org.logevents.query.LogEventSource;
 import org.logevents.observers.WebLogEventObserver;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventQueryResult;

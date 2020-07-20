@@ -4,6 +4,7 @@ import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.formatting.MessageFormatter;
+import org.logevents.query.LogEventSource;
 import org.logevents.util.openid.OpenIdConfiguration;
 import org.logevents.web.CryptoVault;
 import org.logevents.web.LogEventHttpServer;

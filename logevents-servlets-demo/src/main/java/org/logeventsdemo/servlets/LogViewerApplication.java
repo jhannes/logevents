@@ -1,6 +1,6 @@
 package org.logeventsdemo.servlets;
 
-import org.logevents.observers.LogEventSource;
+import org.logevents.query.LogEventSource;
 import org.logevents.util.openid.OpenIdConfiguration;
 
 import javax.servlet.ServletContext;

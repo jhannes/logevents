@@ -1,6 +1,7 @@
-package org.logevents.observers.stats;
+package org.logevents.util;
 
 import org.junit.Test;
+import org.logevents.util.Counter;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
