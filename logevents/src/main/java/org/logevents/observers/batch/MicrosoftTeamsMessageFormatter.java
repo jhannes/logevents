@@ -94,20 +94,9 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         List<String> lines = new ArrayList<>();
         for (LogEventGroup group : batch.groups()) {
             LogEvent event = group.headMessage();
-            Throwable throwable = event.getRootThrowable();
-            String exceptionInfo = "";
-            if (throwable != null) {
-                exceptionInfo = throwable.getMessage() + " (**" + throwable.getClass().getName() + "**). ";
-            }
             StringBuilder eventLine = new StringBuilder()
                     .append(batch.groups().size() > 1 ? "* " : "")
-                    .append(JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()))
-                    .append(" ")
-                    .append(exceptionInfo)
-                    .append(formatMessage(event))
-                    .append(" **[")
-                    .append(event.getAbbreviatedLoggerName(0))
-                    .append("]**")
+                    .append(messageToText(event))
                     .append(group.size() > 1 ? " (" + group.size() + " repetitions)" : "");
             detailUrl.ifPresent(uri ->
                     eventLine
@@ -120,15 +109,26 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         return String.join("\n", lines);
     }
 
+    protected String messageToText(LogEvent event) {
+        Throwable throwable = event.getRootThrowable();
+        return String.format("%s %s%s%s **[%s]**",
+                JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()),
+                event.getLevel() == Level.ERROR ? "@channel " : "",
+                throwable != null ? throwable.getMessage() + " (**" + throwable.getClass().getName() + "**). " : "",
+                formatMessage(event),
+                event.getAbbreviatedLoggerName(0)
+        );
+    }
+
+    protected String formatMessage(LogEvent event) {
+        return messageFormatter.format(event.getMessage(), event.getArgumentArray());
+    }
+
     protected static Map<Level, String> colors = new HashMap<>();
     static {
         colors.put(Level.ERROR, "fd6a02");
         colors.put(Level.WARN, "f8a502");
         colors.put(Level.INFO, "1034a6");
-    }
-
-    protected String formatMessage(LogEvent event) {
-        return messageFormatter.format(event.getMessage(), event.getArgumentArray());
     }
 
     public void setIncludedMdcKeys(List<String> includedMdcKeys) {

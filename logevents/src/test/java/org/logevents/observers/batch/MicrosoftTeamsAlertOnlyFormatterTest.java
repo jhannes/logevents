@@ -28,7 +28,7 @@ public class MicrosoftTeamsAlertOnlyFormatterTest {
                         .withLevel(Level.ERROR)
                         .build()
                 ));
-        assertContains("\uD83D\uDED1 Message {} with argument {}", message.get("text").toString());
+        assertContains("\uD83D\uDED1 @channel Message {} with argument {}", message.get("text").toString());
         assertContains(detailsUrl, message.get("text").toString());
     }
 
