@@ -154,9 +154,7 @@ public class Configuration {
     }
 
     public boolean getBoolean(String key) {
-        return optionalString(key)
-                .map(Boolean::valueOf)
-                .orElse(false);
+        return optionalString(key).map(Boolean::valueOf).orElse(false);
     }
 
     public Level getLevel(String key, Level defaultValue) {

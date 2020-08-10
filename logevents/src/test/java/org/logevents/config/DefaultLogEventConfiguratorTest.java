@@ -11,6 +11,7 @@ import org.logevents.LoggerConfiguration;
 import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
+import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FixedLevelThresholdConditionalObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
@@ -31,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -74,6 +76,19 @@ public class DefaultLogEventConfiguratorTest {
         assertTrue(factory.getLoggers() + " should be empty", factory.getLoggers().isEmpty());
         assertEquals(Level.TRACE, factory.getRootLogger().getLevelThreshold());
         assertEquals(oldObserver, factory.getRootLogger().getObserver());
+    }
+
+    @Test
+    public void shouldSetRootLevelFromEnvironment() {
+        ConsoleLogEventObserver observer = new ConsoleLogEventObserver();
+        HashMap<String, Supplier<? extends LogEventObserver>> observers = new HashMap<>();
+        observers.put("console", () -> observer);
+        factory.setObservers(observers);
+        Map<String, String> environment = new HashMap<>();
+        environment.put("LOGEVENTS_ROOT", "DEBUG console");
+        configurator.configureRootLogger(factory, configuration, environment);
+        assertEquals(Level.DEBUG, factory.getRootLogger().getLevelThreshold());
+        assertEquals(observer.toString(), factory.getRootLogger().getObserver());
     }
 
     @Test
@@ -367,7 +382,6 @@ public class DefaultLogEventConfiguratorTest {
                     LogEventStatus.getInstance().lastMessage().getMessage());
         }
     }
-
 
     @Test
     public void shouldWriteStatusLogIfConfigResourceIsLocked() throws IOException {

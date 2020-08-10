@@ -66,9 +66,24 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * observer.name=ObserverClass
  * observer.name.property=value
  * </pre>
- * By default, observers named <code>observer.console</code> {@link ConsoleLogEventObserver} and
+ * <p>By default, observers named <code>observer.console</code> {@link ConsoleLogEventObserver} and
  * <code>observer.file</code> {@link FileLogEventObserver} are created. By default, the <code>root</code>
- * root logger is set to <code>INFO console</code>.
+ * root logger is set to <code>INFO console</code>.</p>
+ *
+ * <h3>Log configuration can also be loaded from environment variables:</h3>
+ *
+ * <ul>
+ *     <li><strong>LOGEVENTS_STATUS</strong>:
+ *      {@link org.logevents.status.StatusEvent.StatusLevel} for internal diagnostics
+ *     </li>
+ *     <li><strong>LOGEVENTS_ROOT=&lt;LEVEL [logger1,logger2,...]&gt;</strong>:
+ *      The root level and observer, for example <code>DEBUG console</code></li>
+ *     <li><strong>LOGEVENTS_ROOT_OBSERVER_&lt;observerName&gt;=&lt;LEVEL&gt;</strong>:
+ *     Add a global observer, for example <code>LOGEVENTS_ROOT_OBSERVER_STATS=DEBUG</code></li>
+ *     <li><strong>LOGEVENT_OBSERVER_&lt;observerName&gt;_PROPERTY</strong>: observer configuration</li>
+ *     <li><strong>It's not supported to configure arbitrary LOGGERS or <em>defining</em>
+ *     OBSERVERS, with environment variables, only setting properties for already defined observers</strong></li>
+ * </ul>
  *
  * <p>
  * This class is designed with subclassing in mind. When subclassing,
@@ -80,7 +95,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
     public static final String WELCOME_MESSAGE = "Logging by LogEvents (http://logevents.org). Create a file logevents.properties with the line logevents.status=INFO to suppress this message";
-    private Path propertiesDir;
+    private final Path propertiesDir;
     private Thread configurationWatcher;
     private boolean runningInsideJunit;
 
@@ -120,7 +135,8 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                         WatchKey key = watchService.take();
                         boolean shouldReload = false;
                         List<String> fileNames = getConfigurationFileNames();
-                        Thread.sleep(50); // Short pause to queue up simultaneous events
+                        //noinspection BusyWait: Short pause to queue up simultaneous events
+                        Thread.sleep(50);
                         for (WatchEvent<?> watchEvent : key.pollEvents()) {
                             Path context = (Path)watchEvent.context();
                             if (fileNames.contains(context.getFileName().toString())) {
@@ -295,16 +311,16 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * (e.g. <code>observer.slack=SlackLogEventObserver</code>).
      *
      * @param factory The LogEventFactory that this configurator should configure
-     * @param configuration The merged configuration that should be applied to the factory
+     * @param properties The merged configuration that should be applied to the factory
      */
-    public void applyConfigurationProperties(LogEventFactory factory, Properties configuration) {
-        Configuration logeventsConfig = new Configuration(configuration, "logevents");
+    public void applyConfigurationProperties(LogEventFactory factory, Properties properties) {
+        Configuration logeventsConfig = new Configuration(properties, "logevents");
         LogEventStatus.getInstance().configure(logeventsConfig);
-        showWelcomeMessage(configuration);
+        showWelcomeMessage(properties);
 
-        factory.setObservers(configureObservers(configuration));
-        configureRootLogger(factory, configuration);
-        configureLoggers(factory, configuration);
+        factory.setObservers(configureObservers(properties));
+        configureRootLogger(factory, properties, System.getenv());
+        configureLoggers(factory, properties);
         installUncaughtExceptionHandler(factory, logeventsConfig);
         installJmxAdaptor(factory, logeventsConfig);
         logeventsConfig.checkForUnknownFields();
@@ -340,10 +356,10 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    private void readObservers(Properties configuration, Map<String, Supplier<? extends LogEventObserver>> observers) {
-        for (Object key : configuration.keySet()) {
+    private void readObservers(Properties properties, Map<String, Supplier<? extends LogEventObserver>> observers) {
+        for (Object key : properties.keySet()) {
             if (key.toString().matches("observer\\.\\w+")) {
-                configureObserver(observers, key.toString(), configuration);
+                configureObserver(observers, key.toString(), properties);
             }
         }
     }
@@ -385,23 +401,14 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         return observer;
     }
 
-    private void configureRootLogger(LogEventFactory factory, Properties configuration) {
+    protected void configureRootLogger(LogEventFactory factory, Properties properties, Map<String, String> environment) {
         LinkedHashSet<LogEventObserver> observerSet = new LinkedHashSet<>();
 
-        String rootConfiguration = configuration.getProperty("root");
+        String rootConfiguration = properties.getProperty("root");
         if (rootConfiguration != null) {
-            int spacePos = rootConfiguration.indexOf(' ');
-            Level rootLevel = Level.valueOf(spacePos < 0 ? rootConfiguration : rootConfiguration.substring(0, spacePos).trim());
-            factory.setLevel(factory.getRootLogger(), rootLevel);
-
-            if (spacePos > 0) {
-                String observerNames = rootConfiguration.substring(spacePos + 1).trim();
-                Stream.of(observerNames.split(",\\s*"))
-                        .map(s -> factory.getObserver(s.trim()))
-                        .filter(Objects::nonNull)
-                        .forEach(observerSet::add);
-                LogEventStatus.getInstance().addDebug(this, "Setting root observers " + observerNames);
-            }
+            setRootObservers(factory, observerSet, rootConfiguration);
+        } else if (environment.containsKey("LOGEVENTS_ROOT")) {
+            setRootObservers(factory, observerSet, environment.get("LOGEVENTS_ROOT"));
         } else {
             factory.setRootLevel(getDefaultRootLevel());
         }
@@ -411,7 +418,8 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
 
         HashMap<String, LogEventObserver> globalObservers = new HashMap<>();
-        configureGlobalObservers(globalObservers, factory, configuration);
+        configureGlobalObserversFromProperties(globalObservers, factory, properties);
+        configureGlobalObserversFromEnvironment(globalObservers, factory, environment);
         observerSet.addAll(globalObservers.values());
 
         LoggerConfiguration logger = factory.getRootLogger();
@@ -420,9 +428,19 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         LogEventStatus.getInstance().addConfig(this, "ROOT logger: " + logger);
     }
 
-    protected void configureGlobalObservers(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Properties configuration) {
-        configureGlobalObserversFromProperties(globalObservers, factory, configuration);
-        configureGlobalObserversFromEnvironment(globalObservers, factory, System.getenv());
+    private void setRootObservers(LogEventFactory factory, LinkedHashSet<LogEventObserver> observerSet, String rootConfiguration) {
+        int spacePos = rootConfiguration.indexOf(' ');
+        Level rootLevel = Level.valueOf(spacePos < 0 ? rootConfiguration : rootConfiguration.substring(0, spacePos).trim());
+        factory.setLevel(factory.getRootLogger(), rootLevel);
+
+        if (spacePos > 0) {
+            String observerNames = rootConfiguration.substring(spacePos + 1).trim();
+            Stream.of(observerNames.split(",\\s*"))
+                    .map(s -> factory.getObserver(s.trim()))
+                    .filter(Objects::nonNull)
+                    .forEach(observerSet::add);
+            LogEventStatus.getInstance().addDebug(this, "Setting root observers " + observerNames);
+        }
     }
 
     protected void configureGlobalObserversFromEnvironment(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Map<String, String> environment) {
@@ -471,14 +489,14 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    private void configureObserver(Map<String, Supplier<? extends LogEventObserver>> observers, String key, Properties configuration) {
+    private void configureObserver(Map<String, Supplier<? extends LogEventObserver>> observers, String key, Properties properties) {
         String name = key.split("\\.")[1];
         if (!observers.containsKey(name)) {
             observers.put(name, () -> {
                 String prefix = "observer." + name;
                 try {
                     LogEventStatus.getInstance().addDebug(this, "Configuring " + prefix);
-                    LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", Optional.ofNullable(configuration.getProperty(prefix)), configuration);
+                    LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", Optional.ofNullable(properties.getProperty(prefix)), properties);
                     LogEventStatus.getInstance().addDebug(this, "Configured " + observer);
                     return observer;
                 } catch (RuntimeException e) {
