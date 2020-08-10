@@ -2,10 +2,12 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.config.Configuration;
 import org.logevents.extend.junit.LogEventRule;
 import org.logevents.util.CircularBuffer;
 
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
@@ -18,7 +20,23 @@ import java.util.stream.Collectors;
  */
 public class CircularBufferLogEventObserver implements LogEventObserver {
 
-    private CircularBuffer<LogEvent> circularBuffer = new CircularBuffer<>();
+    private final CircularBuffer<LogEvent> circularBuffer;
+
+    public CircularBufferLogEventObserver(int capacity) {
+        circularBuffer = new CircularBuffer<>(capacity);
+    }
+
+    public CircularBufferLogEventObserver() {
+        this(200);
+    }
+
+    public CircularBufferLogEventObserver(Configuration configuration) {
+        this(configuration.optionalInt("capacity").orElse(200));
+    }
+
+    public CircularBufferLogEventObserver(Properties properties, String prefix) {
+        this(new Configuration(properties, prefix));
+    }
 
     @Override
     public void logEvent(LogEvent logEvent) {
@@ -32,7 +50,7 @@ public class CircularBufferLogEventObserver implements LogEventObserver {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{size=" + circularBuffer.size() + "}";
+        return getClass().getSimpleName() + "{size=" + circularBuffer.size() + ",capacity=" + circularBuffer.getCapacity() + "}";
     }
 
     public String singleMessage() {

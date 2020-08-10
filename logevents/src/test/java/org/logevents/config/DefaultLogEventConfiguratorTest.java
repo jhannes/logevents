@@ -151,8 +151,29 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(Level.ERROR, factory.getLogger("org.example").getLevelThreshold());
         assertEquals(
                 "CompositeLogEventObserver{"
-                + "[CircularBufferLogEventObserver{size=0}, CircularBufferLogEventObserver{size=0}]}",
+                + "[CircularBufferLogEventObserver{size=0,capacity=200}, CircularBufferLogEventObserver{size=0,capacity=200}]}",
                 factory.getLogger("org.example").getObserver());
+    }
+
+    @Test
+    public void shouldSetLoggerAndObserverFromEnvironment() {
+        Map<String, String> environment = new HashMap<>();
+        environment.put("LOGEVENTS_OBSERVER_CONSOLE", "ConsoleLogEventObserver");
+        environment.put("LOGEVENTS_LOGGER_ORG_EXAMPLE_DEMO", "DEBUG console");
+        environment.put("LOGEVENTS_INCLUDEPARENT_ORG_EXAMPLE_DEMO", "false");
+        configurator.applyConfigurationProperties(factory, configuration, environment);
+        assertEquals(Level.DEBUG, factory.getLogger("org.example.demo").getLevelThreshold());
+        assertEquals("ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}",
+                factory.getLogger("org.example.demo").getObserver());
+    }
+
+    @Test
+    public void shouldConfigureObserverFromEnvironment() {
+        HashMap<String, String> environment = new HashMap<>();
+        environment.put("LOGEVENTS_OBSERVER_BUFFER_CAPACITY", "666");
+        Configuration configuration = new Configuration(new Properties(), "observer.buffer", environment);
+        CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver(configuration);
+        assertEquals("CircularBufferLogEventObserver{size=0,capacity=666}", observer.toString());
     }
 
     @Test
@@ -166,7 +187,7 @@ public class DefaultLogEventConfiguratorTest {
         configurator.applyConfigurationProperties(factory, configuration);
         assertEquals("RootLoggerDelegator{ROOT,level=INFO,ownObserver=CompositeLogEventObserver{[" +
                         "ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, " +
-                        "FixedLevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0}}" +
+                        "FixedLevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0,capacity=200}}" +
                         "]}}",
                 factory.getLogger(Logger.ROOT_LOGGER_NAME).toString());
 
@@ -174,7 +195,7 @@ public class DefaultLogEventConfiguratorTest {
         configurator.applyConfigurationProperties(factory, configuration);
         assertEquals("RootLoggerDelegator{ROOT,level=WARN,ownObserver=CompositeLogEventObserver{[" +
                         "ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, " +
-                        "FixedLevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0}}" +
+                        "FixedLevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0,capacity=200}}" +
                         "]}}",
                 factory.getLogger(Logger.ROOT_LOGGER_NAME).toString());
     }
@@ -253,7 +274,7 @@ public class DefaultLogEventConfiguratorTest {
                 new ArrayList<>(((CircularBufferLogEventObserver) factory.getObserver("buffer1")).getEvents()));
 
         assertEquals(
-                "CircularBufferLogEventObserver{size=1}",
+                "CircularBufferLogEventObserver{size=1,capacity=200}",
                 factory.getLogger("org.example").getObserver());
     }
 

@@ -1,5 +1,6 @@
 package org.logevents.util;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -120,9 +121,7 @@ public class CircularBuffer<T> implements Collection<T> {
 
     @Override
     public void clear() {
-        for (int i = 0; i < buffer.length; i++) {
-            buffer[i] = null;
-        }
+        Arrays.fill(buffer, null);
         size = 0;
         start = 0;
     }
@@ -132,4 +131,7 @@ public class CircularBuffer<T> implements Collection<T> {
         return getClass().getSimpleName() + "{size=" + size + ",capacity=" + capacity + ",start=" + start + "}";
     }
 
+    public int getCapacity() {
+        return capacity;
+    }
 }

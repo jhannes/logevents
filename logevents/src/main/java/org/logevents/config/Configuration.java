@@ -35,10 +35,16 @@ public class Configuration {
     private final Properties properties;
     private final String prefix;
     private final Set<String> expectedFields = new TreeSet<>();
+    private Map<String, String> environment;
 
     public Configuration(Properties properties, String prefix) {
+        this(properties, prefix, System.getenv());
+    }
+
+    public Configuration(Properties properties, String prefix, Map<String, String> environment) {
         this.properties = properties;
         this.prefix = prefix;
+        this.environment = environment;
     }
 
     public Configuration() {
@@ -184,15 +190,15 @@ public class Configuration {
 
     private Optional<String> getProperty(String fullKey) {
         Optional<String> result = Optional.ofNullable(properties.getProperty(fullKey));
-        return result.isPresent() ? result : getEnvironmentVariable(getEnvironmentVariableName(fullKey));
+        return result.isPresent() ? result : getEnvironmentVariable(getEnvironmentVariableName(fullKey), environment);
     }
 
     private String getEnvironmentVariableName(String fullKey) {
         return (!fullKey.startsWith("LOGEVENTS_") ? "LOGEVENTS_" : "") + fullKey.toUpperCase().replace('.', '_');
     }
 
-    private static Optional<String> getEnvironmentVariable(String name) {
-        return Optional.ofNullable(System.getenv(name));
+    private static Optional<String> getEnvironmentVariable(String name, Map<String, String> environment) {
+        return Optional.ofNullable(environment.get(name));
     }
 
     private String globalKey(String key) {
@@ -310,9 +316,10 @@ public class Configuration {
 
     private static String calculateNodeName() {
         try {
-            return getEnvironmentVariable("HOSTNAME")
-                    .orElse(getEnvironmentVariable("HTTP_HOST")
-                            .orElse(getEnvironmentVariable("COMPUTERNAME")
+            Map<String, String> environment = System.getenv();
+            return getEnvironmentVariable("HOSTNAME", environment)
+                    .orElse(getEnvironmentVariable("HTTP_HOST", environment)
+                            .orElse(getEnvironmentVariable("COMPUTERNAME", environment)
                                     .orElse(InetAddress.getLocalHost().getHostName())));
         } catch (UnknownHostException ignored) {
             return "unknown host";

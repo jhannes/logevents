@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 
 /**
@@ -45,8 +46,6 @@ import java.util.function.Supplier;
 public class LogEventFactory implements ILoggerFactory {
 
     private static LogEventFactory instance;
-    private Map<String, Supplier<? extends LogEventObserver>> observerSuppliers = new HashMap<>();
-    private Map<String, LogEventObserver> observers = new HashMap<>();
 
     /**
      * Retrieve the singleton instance for the JVM.
@@ -60,9 +59,11 @@ public class LogEventFactory implements ILoggerFactory {
         return instance;
     }
 
-    private LoggerDelegator rootLogger = LoggerDelegator.rootLogger();
+    private final Map<String, Supplier<? extends LogEventObserver>> observerSuppliers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private final Map<String, LogEventObserver> observers = new HashMap<>();
 
-    private Map<String, LoggerDelegator> loggerCache = new HashMap<>();
+    private final LoggerDelegator rootLogger = LoggerDelegator.rootLogger();
+    private final Map<String, LoggerDelegator> loggerCache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     @Override
     public synchronized LoggerConfiguration getLogger(String name) {
@@ -217,7 +218,8 @@ public class LogEventFactory implements ILoggerFactory {
     public void setObservers(Map<String, Supplier<? extends LogEventObserver>> observerSuppliers) {
         shutdownObservers();
         this.observers.clear();
-        this.observerSuppliers = observerSuppliers;
+        this.observerSuppliers.clear();
+        this.observerSuppliers.putAll(observerSuppliers);
         rootLogger.reset();
         loggerCache.values().forEach(LoggerDelegator::reset);
         refreshLoggers(rootLogger);

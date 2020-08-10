@@ -49,11 +49,11 @@ public class LogEventsConfigurationServletTest {
         Map<String, Object> json = servlet.logConfigurationToJson(factory);
 
         Map<String, Object> observers = JsonUtil.getObject(json, "observers");
-        assertEquals("CircularBufferLogEventObserver{size=0}",
+        assertEquals("CircularBufferLogEventObserver{size=0,capacity=200}",
                 JsonUtil.getField(observers, "/"));
-        assertEquals("CompositeLogEventObserver{[CircularBufferLogEventObserver{size=0}, CircularBufferLogEventObserver{size=0}]}",
+        assertEquals("CompositeLogEventObserver{[CircularBufferLogEventObserver{size=0,capacity=200}, CircularBufferLogEventObserver{size=0,capacity=200}]}",
                 JsonUtil.getField(observers, "org.example"));
-        assertEquals("CircularBufferLogEventObserver{size=0}",
+        assertEquals("CircularBufferLogEventObserver{size=0,capacity=200}",
                 JsonUtil.getField(observers, "org"));
     }
 
