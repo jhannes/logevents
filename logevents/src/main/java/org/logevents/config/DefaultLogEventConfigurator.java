@@ -383,7 +383,6 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                 boolean includeParent = !"false".equalsIgnoreCase(configuration.getProperty("includeParent." + loggerName));
                 String loggerConfig = configuration.getProperty(key.toString());
                 configureLogger(factory, factory.getLogger(loggerName), loggerConfig, includeParent);
-                LogEventStatus.getInstance().addConfig(this, "Logger: " + loggerName + "=" + loggerConfig);
             }
         }
         for (String key : environment.keySet()) {
@@ -392,7 +391,6 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                 boolean includeParent = !"false".equalsIgnoreCase(environment.get("LOGEVENTS_INCLUDEPARENT_" + loggerName));
                 String loggerConfig = environment.get(key);
                 configureLogger(factory, factory.getLogger(loggerName.replace('_', '.')), loggerConfig, includeParent);
-                LogEventStatus.getInstance().addConfig(this, "Logger: " + loggerName + "=" + loggerConfig);
             }
         }
     }
@@ -513,6 +511,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                 factory.setObserver(logger, CompositeLogEventObserver.combineList(observers), includeParent);
                 LogEventStatus.getInstance().addDebug(this, "Set observers " + observerNames + " for " + logger);
             }
+            LogEventStatus.getInstance().addConfig(this, "Logger: " + logger);
         }
     }
 

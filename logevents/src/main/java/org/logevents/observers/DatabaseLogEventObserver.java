@@ -207,6 +207,7 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
                 sql += " FETCH FIRST " + filter.getLimit() + " ROWS ONLY";
             }
 
+            LogEventStatus.getInstance().addTrace(this, sql);
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 int parameterIndex = 1;
                 for (Object parameter : parameters) {
