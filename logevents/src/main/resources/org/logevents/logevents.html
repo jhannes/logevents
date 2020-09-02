@@ -102,6 +102,7 @@ async function fetchEvents() {
         localStorage.setItem("query", window.location.hash);
         window.location = "login";
     } else {
+        main.innerHTML = "<div>Error: " + response.error() + "</div>";
         console.error(response);
     }
 }
