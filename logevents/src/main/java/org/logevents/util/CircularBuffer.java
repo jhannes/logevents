@@ -23,12 +23,12 @@ public class CircularBuffer<T> implements Collection<T> {
         this(200);
     }
 
-    public T get(int index) {
+    public synchronized T get(int index) {
         return buffer[(start + index) % capacity];
     }
 
     @Override
-    public boolean add(T e) {
+    public synchronized boolean add(T e) {
         if (size < capacity) {
             buffer[size++] = e;
         } else {
@@ -66,7 +66,7 @@ public class CircularBuffer<T> implements Collection<T> {
     }
 
     @Override
-    public boolean contains(Object o) {
+    public synchronized boolean contains(Object o) {
         for (T t : buffer) {
             if (t.equals(o)) return true;
         }
@@ -120,7 +120,7 @@ public class CircularBuffer<T> implements Collection<T> {
     }
 
     @Override
-    public void clear() {
+    public synchronized void clear() {
         Arrays.fill(buffer, null);
         size = 0;
         start = 0;
