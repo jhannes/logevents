@@ -108,7 +108,7 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
             configuration.optionalString("retention").map(Period::parse).ifPresent(fileRotationWorker::setRetention);
             configuration.optionalString("compressAfter").map(Period::parse).ifPresent(fileRotationWorker::setCompressAfter);
 
-            executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("FileLogEventObserver"));
+            executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("FileLogEventObserver", 3));
             startFileRotation(fileRotationWorker);
         });
 
@@ -131,7 +131,7 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
         this.filenameGenerator = fileRotationWorker.getActiveLogFilenameFormatter();
         this.formatter = formatter;
         this.destination = new FileDestination(false);
-        executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("FileLogEventObserver"));
+        executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("FileLogEventObserver", 3));
         startFileRotation(fileRotationWorker);
     }
 

@@ -88,15 +88,15 @@ import java.util.function.Consumer;
 public abstract class AbstractBatchingLogEventObserver extends AbstractFilteredLogEventObserver {
 
     protected static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
-            new DaemonThreadFactory("BatchingLogEventObserver"));
+            new DaemonThreadFactory("BatchingLogEventObserver", 3));
 
     protected static LogEventShutdownHook shutdownHook = new LogEventShutdownHook();
     static {
         Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
 
-    private Map<Marker, LogEventObserver> markerBatchers = new HashMap<>();
-    private LogEventObserver defaultBatcher;
+    private final Map<Marker, LogEventObserver> markerBatchers = new HashMap<>();
+    protected LogEventObserver defaultBatcher;
     protected ScheduledExecutorService executor;
 
     public AbstractBatchingLogEventObserver() {
