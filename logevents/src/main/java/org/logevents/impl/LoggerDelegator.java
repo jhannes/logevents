@@ -499,6 +499,24 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
         }
     }
 
+    @Override
+    public LogEventGenerator getLogger(Level level) {
+        switch (level) {
+            case ERROR: return errorEventGenerator;
+            case WARN: return warnEventGenerator;
+            case INFO: return infoEventGenerator;
+            case DEBUG: return debugEventGenerator;
+            case TRACE: return traceEventGenerator;
+        }
+        throw new IllegalArgumentException("Illegal level " + level);
+    }
+
+    public static Level getLevel(int levelInt) {
+        return Stream.of(Level.TRACE, Level.DEBUG, Level.INFO, Level.WARN, Level.ERROR)
+                        .filter(l -> l.toInt() >= levelInt)
+                        .findFirst().orElse(Level.ERROR);
+    }
+
     public void setLevelThreshold(Level levelThreshold) {
         this.levelThreshold = levelThreshold;
     }

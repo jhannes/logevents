@@ -1,19 +1,27 @@
 package org.logevents.impl;
 
+import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
+import org.slf4j.MDC;
 import org.slf4j.spi.LocationAwareLogger;
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
+import java.util.logging.SimpleFormatter;
 import java.util.stream.Stream;
 
 /**
  * An adapter from java.util.logging to LogEvents. Install by calling {@link #install(LogEventFactory)}
  */
 public class JavaUtilLoggingAdapter extends Handler {
-    private LogEventFactory factory;
+    private final LogEventFactory factory;
+    private final SimpleFormatter simpleFormatter = new SimpleFormatter();
 
     public JavaUtilLoggingAdapter(LogEventFactory factory) {
         this.factory = factory;
@@ -45,15 +53,20 @@ public class JavaUtilLoggingAdapter extends Handler {
     @Override
     public void publish(LogRecord record) {
         if (record != null) {
-            factory.getLogger(record.getLoggerName()).log(
-                    null,
-                    java.util.logging.Logger.class.getName(),
-                    fromJavaUtilLoggingLevel(record.getLevel()),
-                    record.getMessage(), // May be null
-                    record.getParameters(),
-                    record.getThrown()
-            );
+            org.slf4j.event.Level level = getLevel(record);
+            LogEventGenerator logger = factory.getLogger(record.getLoggerName()).getLogger(level);
+            if (logger.isEnabled()) {
+                if (record.getThrown() != null) {
+                    logger.log(simpleFormatter.formatMessage(record), record.getThrown());
+                } else {
+                    logger.log(simpleFormatter.formatMessage(record));
+                }
+            }
         }
+    }
+
+    private org.slf4j.event.Level getLevel(LogRecord record) {
+        return LoggerDelegator.getLevel(fromJavaUtilLoggingLevel(record.getLevel()));
     }
 
     private int fromJavaUtilLoggingLevel(Level level) {

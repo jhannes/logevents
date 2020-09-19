@@ -13,7 +13,7 @@ public class JavaUtilLoggingAdapterTest {
     @Rule
     public LogEventRule rule = new LogEventRule(Level.TRACE, getClass());
 
-    private Logger logger = Logger.getLogger(getClass().getName());
+    private final Logger logger = Logger.getLogger(getClass().getName());
 
     @Test
     public void shouldLogFinestLevelToTrace() {

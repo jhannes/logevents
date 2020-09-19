@@ -82,7 +82,7 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
         return new LogEvent(this.loggerName, this.level, marker, format, args);
     }
 
-    private void log(LogEvent logEvent) {
+    public void log(LogEvent logEvent) {
         try {
             observer.logEvent(logEvent);
         } catch (Exception e) {
