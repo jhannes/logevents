@@ -3,7 +3,7 @@ package org.logevents.query;
 import org.junit.Before;
 import org.junit.Test;
 import org.logevents.LogEvent;
-import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.observers.LogEventBuffer;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;

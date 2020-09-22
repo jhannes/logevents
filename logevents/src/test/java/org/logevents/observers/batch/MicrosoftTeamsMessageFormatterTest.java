@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.extend.junit.LogEventStatusRule;
-import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.observers.MicrosoftTeamsLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;

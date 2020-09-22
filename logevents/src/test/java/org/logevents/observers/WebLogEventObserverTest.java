@@ -4,7 +4,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.extend.junit.LogEventStatusRule;
-import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.status.StatusEvent;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;

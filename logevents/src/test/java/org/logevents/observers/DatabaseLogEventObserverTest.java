@@ -4,7 +4,7 @@ import junit.framework.AssertionFailedError;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventQueryResult;

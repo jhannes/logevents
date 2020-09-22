@@ -1,4 +1,4 @@
-package org.logevents.extend.servlets;
+package org.logevents.extend.junit;
 
 import org.logevents.LogEvent;
 import org.logevents.config.DefaultTestLogEventConfigurator;

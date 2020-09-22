@@ -7,6 +7,7 @@ import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.FixedLevelThresholdConditionalObserver;

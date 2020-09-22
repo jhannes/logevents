@@ -9,7 +9,7 @@ import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.extend.junit.LogEventStatusRule;
-import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FixedLevelThresholdConditionalObserver;

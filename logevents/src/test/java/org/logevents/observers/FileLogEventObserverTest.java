@@ -9,7 +9,7 @@ import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.config.Configuration;
-import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.formatting.PatternLogEventFormatter;
 import org.logevents.formatting.TTLLEventLogFormatter;

@@ -3,7 +3,7 @@ package org.logevents.observers;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatcher;
 import org.logevents.observers.batch.LogEventBatcherWithMdc;

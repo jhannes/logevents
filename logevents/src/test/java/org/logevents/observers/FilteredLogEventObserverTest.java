@@ -11,9 +11,9 @@ import org.slf4j.event.Level;
 
 import java.util.Arrays;
 
-import static org.logevents.extend.servlets.LogEventSampler.AUDIT;
-import static org.logevents.extend.servlets.LogEventSampler.PERSONAL_DATA;
-import static org.logevents.extend.servlets.LogEventSampler.SECURITY;
+import static org.logevents.extend.junit.LogEventSampler.AUDIT;
+import static org.logevents.extend.junit.LogEventSampler.PERSONAL_DATA;
+import static org.logevents.extend.junit.LogEventSampler.SECURITY;
 
 public class FilteredLogEventObserverTest {
 

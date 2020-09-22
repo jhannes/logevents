@@ -6,7 +6,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import org.logevents.LogEvent;
-import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.PatternLogEventFormatter;
 import org.logevents.formatting.TTLLEventLogFormatter;

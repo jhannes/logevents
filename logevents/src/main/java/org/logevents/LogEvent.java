@@ -1,6 +1,6 @@
 package org.logevents;
 
-import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.impl.LoggerDelegator;
 import org.slf4j.Logger;
 import org.slf4j.MDC;

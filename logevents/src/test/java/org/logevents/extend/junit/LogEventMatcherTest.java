@@ -4,7 +4,6 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.logevents.LogEvent;
-import org.logevents.extend.servlets.LogEventSampler;
 import org.slf4j.event.Level;
 
 import javax.mail.MessagingException;

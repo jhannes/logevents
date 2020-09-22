@@ -4,7 +4,7 @@ import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.config.Configuration;
-import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;

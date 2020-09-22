@@ -2,7 +2,7 @@ package org.logevents.observers;
 
 import org.junit.Test;
 import org.logevents.config.Configuration;
-import org.logevents.extend.servlets.LogEventSampler;
+import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.slf4j.event.Level;
 
