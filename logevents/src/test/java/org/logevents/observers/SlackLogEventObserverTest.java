@@ -11,7 +11,6 @@ import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.logevents.status.StatusEvent.StatusLevel;
-import org.logevents.util.JsonUtil;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -140,7 +139,7 @@ public class SlackLogEventObserverTest {
         Marker marker = MarkerFactory.getMarker("FOO");
         LogEvent event = new LogEventSampler().withMarker(marker).build();
         observer.logEvent(event);
-        ((LogEventBatcher) observer.getBatcher(event)).run();
+        ((LogEventBatcher) observer.getBatcher(event)).flush();
     }
 
     @Test

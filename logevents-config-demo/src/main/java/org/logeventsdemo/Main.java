@@ -9,6 +9,7 @@ import org.slf4j.MarkerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.net.NoRouteToHostException;
 
 public class Main {
@@ -33,7 +34,7 @@ public class Main {
 
             Logger logger2 = LoggerFactory.getLogger("com.example.myapp.DatabaseActionController");
             logger2.info("Action={} caseNumber={}", "Delete case", 2311);
-            logger2.error(AUDIT, "Unauthorized action: user={} action={}", "Alice", "Delete case");
+            logger2.error(AUDIT, "Unauthorized action: user={} action={}", "Alice", "Delete case", new IOException("Network Failure"));
             Thread.sleep(100);
             logger2.info("Action={} caseNumber={}", "Remove logs", 2311);
             logger2.error(AUDIT, "Unauthorized action: user={} action={}", "Alice", "Remove logs");
@@ -47,7 +48,7 @@ public class Main {
             } catch (FileNotFoundException e) {
                 logger2.error("Something went wrong ", e);
             }
-
+        } finally {
             Thread.sleep(14 * 1000);
         }
     }

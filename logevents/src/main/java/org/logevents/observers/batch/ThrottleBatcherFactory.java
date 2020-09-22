@@ -18,7 +18,7 @@ public class ThrottleBatcherFactory implements BatcherFactory {
     @Override
     public <T> Batcher<T> createBatcher(Consumer<List<T>> processor) {
         ThrottlingBatcher<T> batcher = new ThrottlingBatcher<>(throttles, processor, executor);
-        shutdownHook.addAction(batcher);
+        shutdownHook.addAction(batcher::shutdown);
         return batcher;
     }
 

@@ -49,7 +49,8 @@ public class ThrottlingBatcher<T> implements Batcher<T> {
         }
     }
 
-    synchronized void flush() {
+    @Override
+    public synchronized void flush() {
         List<T> currentBatch = this.batch;
         this.batch = Collections.synchronizedList(new ArrayList<>());
         LogEventStatus.getInstance().addTrace(this, "flush " + currentBatch.size() + " messages");
@@ -72,8 +73,7 @@ public class ThrottlingBatcher<T> implements Batcher<T> {
         LogEventStatus.getInstance().addDebug(this, "Next flush in " + delay);
     }
 
-    @Override
-    public void run() {
+    public void shutdown() {
         flush();
     }
 

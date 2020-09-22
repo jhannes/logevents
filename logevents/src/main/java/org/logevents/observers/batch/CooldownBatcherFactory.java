@@ -35,7 +35,7 @@ public class CooldownBatcherFactory implements BatcherFactory {
     public <T> Batcher<T> createBatcher(Consumer<List<T>> processor) {
         CooldownBatcher<T> batcher = new CooldownBatcher<>(processor, executor);
         configureBatcher(batcher);
-        shutdownHook.addAction(batcher);
+        shutdownHook.addAction(batcher::shutdown);
         return batcher;
     }
 

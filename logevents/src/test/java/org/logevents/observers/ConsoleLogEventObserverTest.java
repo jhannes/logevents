@@ -1,7 +1,6 @@
 package org.logevents.observers;
 
 import org.junit.Test;
-import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventSampler;
 import org.logevents.formatting.ConsoleFormatting;
