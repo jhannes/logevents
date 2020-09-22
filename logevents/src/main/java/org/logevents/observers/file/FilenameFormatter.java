@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Creates, parses and scans for file names matching a specified pattern, such as
@@ -164,11 +165,10 @@ public class FilenameFormatter {
         if (fileParts[index].matches("^[.$a-zA-Z0-9_-]+")) {
             findFileNames(prefix + fileParts[index] + "/", directory.resolve(fileParts[index]), fileParts, index+1, collectedFiles);
         } else {
-            try {
-                for (Path path : Files.list(directory)
-                        .filter(p -> p.getFileName().toString().matches(fileParts[index]))
+            try (Stream<Path> fileStream = Files.list(directory)) {
+                for (Path path : fileStream.filter(p -> p.getFileName().toString().matches(fileParts[index]))
                         .collect(Collectors.toList())) {
-                    findFileNames(prefix + path.getFileName().toString() + "/", path, fileParts, index+1, collectedFiles);
+                    findFileNames(prefix + path.getFileName().toString() + "/", path, fileParts, index + 1, collectedFiles);
                 }
             } catch (IOException e) {
                 LogEventStatus.getInstance().addError(this, "Failed to list logfiles in " + directory, e);
