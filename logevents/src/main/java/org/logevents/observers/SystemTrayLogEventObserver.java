@@ -36,7 +36,6 @@ public class SystemTrayLogEventObserver extends AbstractBatchingLogEventObserver
     private Image image;
     private String tooltip;
     private MessageFormatter messageFormatter = new MessageFormatter();
-    private TrayIcon trayIcon;
 
     public SystemTrayLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
@@ -49,8 +48,6 @@ public class SystemTrayLogEventObserver extends AbstractBatchingLogEventObserver
         image = createImageFromResource(configuration.optionalString("icon").orElse("logevents-icon.png"));
         tooltip = configuration.optionalString("tooltip").orElse("Log Events");
         configuration.checkForUnknownFields();
-        trayIcon = new TrayIcon(image, tooltip);
-        trayIcon.setImageAutoSize(true);
     }
 
     private Image createImageFromResource(String name) {
@@ -68,6 +65,8 @@ public class SystemTrayLogEventObserver extends AbstractBatchingLogEventObserver
     private void sendNotification(String title, Level level, String text) {
         LogEventStatus.getInstance().addTrace(this, "Displaying message " + title);
         try {
+            TrayIcon trayIcon = new TrayIcon(image, tooltip);
+            trayIcon.setImageAutoSize(true);
             SystemTray.getSystemTray().add(trayIcon);
             trayIcon.displayMessage(
                     title,
