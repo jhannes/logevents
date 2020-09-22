@@ -21,9 +21,9 @@ import static org.junit.Assert.assertTrue;
 public class ConsoleLogEventObserverTest {
 
     protected ConsoleFormatting format = ConsoleFormatting.getInstance();
-    private ConsoleLogEventFormatter formatter = new ConsoleLogEventFormatter();
-    private String loggerName = "com.example.LoggerName";
-    private Instant time = ZonedDateTime.of(2018, 8, 1, 10, 0, 0, 0, ZoneId.systemDefault()).toInstant();
+    private final ConsoleLogEventFormatter formatter = new ConsoleLogEventFormatter();
+    private final String loggerName = "com.example.LoggerName";
+    private final Instant time = ZonedDateTime.of(2018, 8, 1, 10, 0, 0, 0, ZoneId.systemDefault()).toInstant();
 
     @Test
     public void shouldLogMessage() {
@@ -37,7 +37,7 @@ public class ConsoleLogEventObserverTest {
                 .withFormat("Hello {}").withArgs("there")
                 .build());
         String message = new String(buffer.toByteArray());
-        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mConsoleLogEventObserverTest.shouldLogMessage(ConsoleLogEventObserverTest.java:39)\033[m]: Hello \033[4;mthere\033[m\n",
+        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mConsoleLogEventObserverTest.shouldLogMessage(ConsoleLogEventObserverTest.java:38)\033[m]: Hello \033[4;mthere\033[m\n",
                 message);
     }
 
@@ -62,7 +62,7 @@ public class ConsoleLogEventObserverTest {
                 .withLoggerName(loggerName)
                 .withFormat("Test")
                 .build());
-        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:65)]: Test\n",
+        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:64)]: Test\n",
                 message);
     }
 
