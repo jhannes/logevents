@@ -16,7 +16,7 @@ import org.logevents.config.Configuration;
  *
  * @author Johannes Brodwall
  */
-public final class TTLLEventLogFormatter implements LogEventFormatter {
+public final class TTLLLogEventFormatter implements LogEventFormatter {
 
     protected MessageFormatter messageFormatter = new MessageFormatter();
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();

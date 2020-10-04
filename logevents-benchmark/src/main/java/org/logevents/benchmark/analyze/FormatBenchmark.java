@@ -9,7 +9,7 @@ import org.logevents.LogEvent;
 import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.formatting.PatternLogEventFormatter;
-import org.logevents.formatting.TTLLEventLogFormatter;
+import org.logevents.formatting.TTLLLogEventFormatter;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
@@ -18,13 +18,13 @@ import org.openjdk.jmh.annotations.State;
 @State(Scope.Benchmark)
 public class FormatBenchmark {
 
-    private LogEventFormatter baseline = logEvent -> logEvent.getMessage();
+    private LogEventFormatter baseline = LogEvent::getMessage;
 
     private LogEventFormatter logeventsComplexFormatter = new PatternLogEventFormatter("[%coloredLevel] [%file:%line] (%mdc) %message");
 
     private LogEventFormatter logeventsSimpleFormatter = new PatternLogEventFormatter("[%level] [%file:%line] %mdc %message");
 
-    private LogEventFormatter logeventsPlainFormatter = new TTLLEventLogFormatter();
+    private LogEventFormatter logeventsPlainFormatter = new TTLLLogEventFormatter();
 
     private PatternLayout logbackLayout;
     private Logger logger;

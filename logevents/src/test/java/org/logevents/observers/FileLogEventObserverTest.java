@@ -12,7 +12,7 @@ import org.logevents.config.Configuration;
 import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.formatting.PatternLogEventFormatter;
-import org.logevents.formatting.TTLLEventLogFormatter;
+import org.logevents.formatting.TTLLLogEventFormatter;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -95,7 +95,7 @@ public class FileLogEventObserverTest {
         FileLogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
         assertEquals("FileLogEventObserver{" +
                         "filename=FilenameFormatter{logs/%application.log}," +
-                        "formatter=TTLLEventLogFormatter," +
+                        "formatter=TTLLLogEventFormatter," +
                         "fileRotationWorker=FileRotationWorker{" +
                             "archiveFilenameFormatter=FilenameFormatter{logs/old/%application-%date.log}," +
                             "retention=P2M}}",
@@ -110,7 +110,7 @@ public class FileLogEventObserverTest {
         Files.deleteIfExists(path);
         Files.deleteIfExists(path.getParent());
 
-        LogEventObserver observer = new FileLogEventObserver(path.toString(), new TTLLEventLogFormatter());
+        LogEventObserver observer = new FileLogEventObserver(path.toString(), new TTLLLogEventFormatter());
         factory.setObserver(logger, observer, false);
 
         assertFalse(Files.exists(path.getParent()));

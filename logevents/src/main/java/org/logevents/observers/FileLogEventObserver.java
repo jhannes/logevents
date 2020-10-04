@@ -4,7 +4,7 @@ import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.formatting.LogEventFormatter;
-import org.logevents.formatting.TTLLEventLogFormatter;
+import org.logevents.formatting.TTLLLogEventFormatter;
 import org.logevents.observers.file.FileDestination;
 import org.logevents.observers.file.FileRotationWorker;
 import org.logevents.observers.file.FilenameFormatter;
@@ -74,7 +74,7 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
     private FileRotationWorker fileRotationWorker;
 
     public static LogEventFormatter createFormatter(Configuration configuration) {
-        LogEventFormatter formatter = configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLEventLogFormatter.class);
+        LogEventFormatter formatter = configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLLogEventFormatter.class);
         formatter.configure(configuration);
         return formatter;
     }
@@ -117,7 +117,7 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
     }
 
     public FileLogEventObserver(Configuration configuration, String filenamePattern, Optional<LogEventFormatter> formatter) {
-        this.formatter = formatter.orElse(new TTLLEventLogFormatter());
+        this.formatter = formatter.orElse(new TTLLLogEventFormatter());
         this.filenameGenerator = new FilenameFormatter(filenamePattern.replaceAll("\\\\", "/"), configuration);
         this.destination = new FileDestination(configuration.getBoolean("lockOnWrite"));
     }

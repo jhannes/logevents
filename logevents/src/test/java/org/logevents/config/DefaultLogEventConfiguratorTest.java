@@ -103,7 +103,7 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(
                 "DateRollingLogEventObserver{"
                 + "filename=FilenameFormatter{logs/application.log},"
-                + "formatter=TTLLEventLogFormatter,fileRotationWorker=null}",
+                + "formatter=TTLLLogEventFormatter,fileRotationWorker=null}",
                 factory.getRootLogger().getObserver());
     }
 
@@ -117,7 +117,7 @@ public class DefaultLogEventConfiguratorTest {
                 "CompositeLogEventObserver{["
                 +"ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, "
                 +"FileLogEventObserver{filename=FilenameFormatter{logs/" + CWD + "-test.log}," +
-                        "formatter=TTLLEventLogFormatter," +
+                        "formatter=TTLLLogEventFormatter," +
                         "fileRotationWorker=null}]}",
                 factory.getRootLogger().getObserver());
     }
