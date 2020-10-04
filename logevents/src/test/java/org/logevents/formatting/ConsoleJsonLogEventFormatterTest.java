@@ -3,15 +3,12 @@ package org.logevents.formatting;
 import org.junit.Test;
 import org.logevents.config.Configuration;
 import org.logevents.extend.junit.LogEventSampler;
-import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Properties;
@@ -26,19 +23,16 @@ public class ConsoleJsonLogEventFormatterTest {
     @Test
     public void shouldLogMessage() {
         String loggerName = "com.example.LoggerName";
-        Instant time = ZonedDateTime.of(2018, 8, 1, 10, 0, 0, 0, ZoneId.systemDefault()).toInstant();
+        Instant time = ZonedDateTime.of(2018, 8, 1, 10, 0, 0, 0, ZoneOffset.UTC).toInstant();
 
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        ConsoleLogEventObserver observer = new ConsoleLogEventObserver(formatter, new PrintStream(buffer));
-        observer.logEvent(new LogEventSampler()
+        String message = formatter.apply(new LogEventSampler()
                 .withLevel(Level.INFO)
                 .withTime(time)
                 .withThread("main")
                 .withLoggerName(loggerName)
                 .withFormat("Hello {}").withArgs("there")
                 .build());
-        String message = new String(buffer.toByteArray());
-        assertEquals("{\"@timestamp\": \"2018-08-01T10:00:00+02:00\",\"messageFormat\": \"Hello {}\",\"level\": \"INFO\",\"level_value\": 20,\"marker\": \"AUDIT\",\"logger\": \"com.example.LoggerName\",\"thread\": \"main\",\"message\": \"Hello there\",\"class\": \"org.logevents.formatting.ConsoleJsonLogEventFormatterTest\"}\n",
+        assertEquals("{\"@timestamp\": \"2018-08-01T10:00:00Z\",\"messageFormat\": \"Hello {}\",\"level\": \"INFO\",\"level_value\": 20,\"marker\": \"AUDIT\",\"logger\": \"com.example.LoggerName\",\"thread\": \"main\",\"message\": \"Hello there\",\"class\": \"org.logevents.formatting.ConsoleJsonLogEventFormatterTest\"}\n",
                 message);
     }
 

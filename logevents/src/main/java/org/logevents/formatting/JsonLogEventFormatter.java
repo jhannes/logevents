@@ -26,7 +26,7 @@ public class JsonLogEventFormatter implements LogEventFormatter {
     protected MessageFormatter messageFormatter = new MessageFormatter();
     protected ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     protected MdcFilter mdcFilter;
-    private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+    private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_INSTANT;
     private String node;
     private String applicationName;
 
