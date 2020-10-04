@@ -173,7 +173,7 @@ public class FileRotationWorker {
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     // TODO: If we upgrade to Java 9, replace with <code>in.transferTo(out);</code>
-    private void transfer(InputStream in, OutputStream out) throws IOException {
+    public static void transfer(InputStream in, OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
         int read;
