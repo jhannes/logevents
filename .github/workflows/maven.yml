@@ -14,7 +14,11 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      run: mvn test --batch-mode -Dmaven.test.failure.ignore=true
+    - name: Publish Test Report
+      uses: scacap/action-surefire-report@v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Coveralls.io coverage report
       run: mvn jacoco:report coveralls:report -DrepoToken=${{ secrets.coveralls }}
 
