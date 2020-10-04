@@ -69,7 +69,7 @@ public class ApplicationInsightsLogEventObserver extends AbstractFilteredLogEven
             exceptionTelemetry.setSeverityLevel(getLevel(event.getLevel()));
             telemetry = exceptionTelemetry;
         } else {
-            String message = new MessageFormatter().format(event.getMessage(), event.getArgumentArray());
+            String message = event.getMessage(new MessageFormatter());
             telemetry = new TraceTelemetry(message, getLevel(event.getLevel()));
         }
         telemetry.getContext().getProperties().putAll(getCustomParameters(event));

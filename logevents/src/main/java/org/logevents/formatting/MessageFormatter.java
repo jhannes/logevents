@@ -1,8 +1,10 @@
 package org.logevents.formatting;
 
+import org.logevents.LogEvent;
+
 /**
  * Output a message format with embedded message arguments. This is a reimplementation of
- * {@link org.slf4j.helpers.MessageFormatter}, which allows for custom formatting of
+ * {@link org.slf4j.helpers.MessageFormatter} which allows for custom formatting of
  * the embedded message arguments.
  */
 public class MessageFormatter extends AbstractMessageFormatter<StringBuilder> {

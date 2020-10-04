@@ -98,7 +98,7 @@ public class SmtpLogEventObserver extends AbstractBatchingLogEventObserver {
         message.setFrom(fromAddress);
         message.setRecipients(Message.RecipientType.TO, recipients);
         LogEvent logEvent = batch.firstHighestLevelLogEventGroup().headMessage();
-        message.setSubject("[" + nodeName + "] " + messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray()));
+        message.setSubject("[" + nodeName + "] " + logEvent.getMessage(messageFormatter));
         message.setText(formatMessageBatch(batch));
         return message;
     }
@@ -107,7 +107,7 @@ public class SmtpLogEventObserver extends AbstractBatchingLogEventObserver {
         StringBuilder text = new StringBuilder();
         for (LogEventGroup group : batch.groups()) {
             LogEvent logEvent = group.headMessage();
-            String message = messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray());
+            String message = logEvent.getMessage(messageFormatter);
             if (group.size() > 1) {
                 message += " (" + group.size() + " repetitions)";
             }

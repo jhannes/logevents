@@ -119,7 +119,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
                 e -> ansiFormat.highlight(e.getLevel(), e.getLevel().toString()));
         factory.put("message", spec -> {
             MessageFormatter formatter = spec.getConfiguration().createInstanceWithDefault("messageFormatter", MessageFormatter.class);
-            return logEvent -> formatter.format(logEvent.getMessage(), logEvent.getArgumentArray());
+            return event -> event.getMessage(formatter);
         });
         factory.putAliases("message", new String[] { "m", "msg" });
         factory.put("thread", spec -> LogEvent::getThreadName);

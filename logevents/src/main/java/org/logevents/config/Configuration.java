@@ -1,5 +1,6 @@
 package org.logevents.config;
 
+import org.logevents.formatting.MdcFilter;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
 
@@ -223,6 +224,7 @@ public class Configuration {
         return ConfigUtil.create(prefixedKey(key), defaultPackage, optionalString(key), properties);
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T createInstanceWithDefault(String key, Class<T> defaultClass) {
         Class<T> clazz = optionalString(key)
                 .map(c -> (Class<T>) ConfigUtil.getClass(prefixedKey(key), defaultClass.getPackage().getName(), c))
@@ -253,6 +255,7 @@ public class Configuration {
         return ConfigUtil.create(prefixedKey(key), defaultClass, properties);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public <T> T createInstanceWithDefault(String key, Class<T> targetType, Class<? extends T> defaultClass) {
         Class<T> clazz = optionalString(key)
                 .map(c -> (Class<T>) ConfigUtil.getClass(prefixedKey(key), targetType.getPackage().getName(), c))
@@ -326,13 +329,25 @@ public class Configuration {
         }
     }
 
-    public List<String> getIncludedMdcKeys() {
-        if (getProperty(prefixedKey("includedMdcKeys")).isPresent()) {
-            return getStringList("includedMdcKeys");
+    public List<String> getStringListOrGlobal(String key) {
+        if (getProperty(prefixedKey(key)).isPresent()) {
+            return getStringList(key);
         } else if (getProperty(globalKey("includedMdcKeys")).isPresent()) {
-            return getGlobalStringList("includedMdcKeys");
+            return getGlobalStringList(key);
         } else {
             return null;
+        }
+    }
+
+    public MdcFilter getMdcFilter() {
+        List<String> includedMdcKeys = getStringListOrGlobal("includedMdcKeys");
+        List<String> excludedMdcKeys = getStringListOrGlobal("excludedMdcKeys");
+        if (includedMdcKeys != null) {
+            return includedMdcKeys::contains;
+        } else if (excludedMdcKeys != null) {
+            return key -> !excludedMdcKeys.contains(key);
+        } else {
+            return key -> true;
         }
     }
 

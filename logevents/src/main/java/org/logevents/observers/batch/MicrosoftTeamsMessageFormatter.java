@@ -2,6 +2,7 @@ package org.logevents.observers.batch;
 
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
+import org.logevents.formatting.MdcFilter;
 import org.logevents.formatting.MessageFormatter;
 import org.slf4j.event.Level;
 
@@ -22,7 +23,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
     private final MessageFormatter messageFormatter;
     private final Optional<String> detailUrl;
     private final String applicationNode;
-    private List<String> includedMdcKeys = null;
+    private MdcFilter mdcFilter = null;
     private final MicrosoftTeamsExceptionFormatter exceptionFormatter;
 
     static String getLevelColor(Level level) {
@@ -55,7 +56,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         Map<String, String> mdcProperties = batch.firstHighestLevelLogEventGroup().headMessage().getMdcProperties();
         List<Map<String, Object>> facts = new ArrayList<>();
         for (Map.Entry<String, String> entry : mdcProperties.entrySet()) {
-            if (includedMdcKeys == null || includedMdcKeys.contains(entry.getKey())) {
+            if (mdcFilter == null || mdcFilter.isKeyIncluded(entry.getKey())) {
                 facts.add(createSingleFact(entry.getKey(), entry.getValue()));
             }
         }
@@ -121,7 +122,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
     }
 
     protected String formatMessage(LogEvent event) {
-        return messageFormatter.format(event.getMessage(), event.getArgumentArray());
+        return event.getMessage(messageFormatter);
     }
 
     protected static Map<Level, String> colors = new HashMap<>();
@@ -131,8 +132,8 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         colors.put(Level.INFO, "1034a6");
     }
 
-    public void setIncludedMdcKeys(List<String> includedMdcKeys) {
-        this.includedMdcKeys = includedMdcKeys;
+    public void setMdcFilter(MdcFilter mdcFilter) {
+        this.mdcFilter = mdcFilter;
     }
 
     public void setPackageFilter(List<String> packageFilter) {

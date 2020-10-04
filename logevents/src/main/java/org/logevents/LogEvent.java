@@ -1,6 +1,7 @@
 package org.logevents;
 
 import org.logevents.extend.junit.LogEventSampler;
+import org.logevents.formatting.MessageFormatter;
 import org.logevents.impl.LoggerDelegator;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
@@ -35,7 +36,7 @@ public class LogEvent implements LoggingEvent {
     private final String loggerName;
     private final Level level;
     private final Marker marker;
-    private final String format;
+    private final String messageFormat;
     private final Object[] args;
     private final Throwable throwable;
     private final long threadId = Thread.currentThread().getId();
@@ -52,7 +53,7 @@ public class LogEvent implements LoggingEvent {
             String threadName,
             Instant timestamp,
             Marker marker,
-            String format,
+            String messageFormat,
             Object[] args,
             Throwable throwable,
             Map<String, String> mdcProperties
@@ -60,7 +61,7 @@ public class LogEvent implements LoggingEvent {
         this.loggerName = loggerName;
         this.level = level;
         this.marker = marker;
-        this.format = format;
+        this.messageFormat = messageFormat;
         this.args = args != null ? args : new Object[0];
         this.throwable = throwable;
         this.threadName = threadName;
@@ -68,14 +69,14 @@ public class LogEvent implements LoggingEvent {
         this.mdcProperties = mdcProperties;
     }
 
-    public LogEvent(String loggerName, Level level, Marker marker, String format, Object[] args) {
+    public LogEvent(String loggerName, Level level, Marker marker, String messageFormat, Object[] args) {
         this(
             loggerName,
             level,
             Thread.currentThread().getName(),
             Instant.now(),
             marker,
-            format,
+            messageFormat,
             args,
             Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>())
         );
@@ -87,7 +88,7 @@ public class LogEvent implements LoggingEvent {
             String threadName,
             Instant timestamp,
             Marker marker,
-            String format,
+            String messageFormat,
             Object[] args,
             Map<String, String> mdcProperties
     ) {
@@ -95,7 +96,7 @@ public class LogEvent implements LoggingEvent {
         this.level = level;
         this.threadName = threadName;
         this.marker = marker;
-        this.format = format;
+        this.messageFormat = messageFormat;
         if (args.length > 0 && args[args.length-1] instanceof Throwable) {
             this.args = new Object[args.length-1];
             System.arraycopy(args, 0, this.args, 0, this.args.length);
@@ -175,7 +176,11 @@ public class LogEvent implements LoggingEvent {
 
     @Override
     public String getMessage() {
-        return format;
+        return messageFormat;
+    }
+
+    public String getMessage(MessageFormatter messageFormatter) {
+        return messageFormatter.format(messageFormat, args);
     }
 
     @Override
@@ -305,7 +310,7 @@ public class LogEvent implements LoggingEvent {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + loggerName + "," + level + "," + format + "}";
+        return getClass().getSimpleName() + "{" + loggerName + "," + level + "," + messageFormat + "}";
     }
 
     public String getMdc() {
@@ -333,13 +338,13 @@ public class LogEvent implements LoggingEvent {
                 Objects.equals(loggerName, logEvent.loggerName) &&
                 level == logEvent.level &&
                 Objects.equals(marker, logEvent.marker) &&
-                Objects.equals(format, logEvent.format) &&
+                Objects.equals(messageFormat, logEvent.messageFormat) &&
                 Objects.equals(threadName, logEvent.threadName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(loggerName, level, marker, format, threadId, threadName, timestamp);
+        return Objects.hash(loggerName, level, marker, messageFormat, threadId, threadName, timestamp);
     }
 
     public boolean isBelowThreshold(Level threshold) {

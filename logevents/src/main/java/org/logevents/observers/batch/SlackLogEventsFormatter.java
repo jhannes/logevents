@@ -2,6 +2,7 @@ package org.logevents.observers.batch;
 
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
+import org.logevents.formatting.MdcFilter;
 import org.logevents.formatting.MessageFormatter;
 import org.slf4j.event.Level;
 
@@ -30,7 +31,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     private boolean showRepeatsIndividually;
     protected Optional<String> detailUrl = Optional.empty();
     private final String nodeName;
-    private List<String> includedMdcKeys = null;
+    private MdcFilter mdcFilter = null;
 
     public SlackLogEventsFormatter() {
         this(Optional.empty(), Optional.empty());
@@ -50,7 +51,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         this.username = Optional.ofNullable(configuration.optionalString("username")
                         .orElseGet(configuration::getApplicationNode));
         this.nodeName = configuration.getNodeName();
-        setIncludedMdcKeys(configuration.getIncludedMdcKeys());
+        setMdcFilter(configuration.getMdcFilter());
         exceptionFormatter = new SlackExceptionFormatter(configuration);
         exceptionFormatter.configureSourceCode(configuration);
         exceptionFormatter.setPackageFilter(configuration.getPackageFilter());
@@ -114,12 +115,12 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         List<Map<String, Object>> fields = new ArrayList<>();
         int longestMdc = 0;
         for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
-            if (includedMdcKeys == null || includedMdcKeys.contains(entry.getKey())) {
+            if (mdcFilter == null || mdcFilter.isKeyIncluded(entry.getKey())) {
                 longestMdc = Math.max(longestMdc, entry.getValue().length());
             }
         }
         for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
-            if (includedMdcKeys == null || includedMdcKeys.contains(entry.getKey())) {
+            if (mdcFilter == null || mdcFilter.isKeyIncluded(entry.getKey())) {
                 fields.add(slackMessageField(entry.getKey(), entry.getValue(), longestMdc > 20));
             }
         }
@@ -176,7 +177,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     }
 
     protected String formatMessage(LogEvent logEvent) {
-        return messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray());
+        return logEvent.getMessage(messageFormatter);
     }
 
     protected String getColor(Level level) {
@@ -257,7 +258,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         this.detailUrl = detailUrl;
     }
 
-    public void setIncludedMdcKeys(List<String> includedMdcKeys) {
-        this.includedMdcKeys = includedMdcKeys;
+    public void setMdcFilter(MdcFilter mdcFilter) {
+        this.mdcFilter = mdcFilter;
     }
 }

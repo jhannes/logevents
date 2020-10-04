@@ -5,8 +5,8 @@ import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
-import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.junit.LogEventSampler;
+import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
@@ -21,7 +21,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class ElasticsearchLogEventObserverTest {
         LogEvent event = new LogEventSampler().withMarker().build();
         Map<String, Object> payload = observer.formatMessage(event);
 
-        assertEquals(event.getInstant(), Instant.parse(payload.get("@timestamp").toString()));
+        assertEquals(event.getInstant(), ZonedDateTime.parse(payload.get("@timestamp").toString()).toInstant());
         assertEquals(event.getLoggerName(), payload.get("logger"));
         assertEquals(event.getLevel().name(), payload.get("level"));
         assertEquals(event.getMessage(), payload.get("message"));
@@ -62,8 +62,7 @@ public class ElasticsearchLogEventObserverTest {
         LogEvent event = new LogEventSampler().withArgs("a", "b", "c").build();
         Map<String, Object> payload = observer.formatMessage(event);
 
-        assertEquals(new MessageFormatter().format(event.getMessage(), event.getArgumentArray()),
-                payload.get("formattedMessage"));
+        assertEquals(event.getMessage(new MessageFormatter()), payload.get("message"));
     }
 
     @Test
@@ -71,8 +70,8 @@ public class ElasticsearchLogEventObserverTest {
         LogEvent event = new LogEventSampler().withMdc("ip", "10.0.12.11").withMdc("op", "execute").build();
         Map<String, Object> payload = observer.formatMessage(event);
 
-        assertEquals(event.getMdcProperties().get("ip"), payload.get("mdc.ip"));
-        assertEquals(event.getMdcProperties().get("op"), payload.get("mdc.op"));
+        assertEquals(event.getMdcProperties().get("ip"), JsonUtil.getObject(payload, "mdc").get("ip"));
+        assertEquals(event.getMdcProperties().get("op"), JsonUtil.getObject(payload, "mdc").get("op"));
     }
 
     @Test
@@ -82,7 +81,7 @@ public class ElasticsearchLogEventObserverTest {
 
         assertEquals(payload.get("exception.class"), event.getThrowable().getClass().getName());
         assertEquals(payload.get("exception.message"), event.getThrowable().getMessage());
-        Assert.assertThat(payload.get("exception.stacktrace").toString(),
+        Assert.assertThat(payload.get("exception").toString(),
                 containsString("at org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)"));
     }
 
@@ -102,6 +101,7 @@ public class ElasticsearchLogEventObserverTest {
         Properties properties = new Properties();
         properties.put("observer.elastic.elasticsearchUrl", "http://localhost:-1");
         properties.put("observer.elastic.index", "my-test-index");
+        properties.put("observer.elastic.formatter.excludedMdcKeys", "excludedKey");
         properties.put("observer.elastic.maximumWaitTime", maximumWaitTime.toString());
         observer = new ElasticsearchLogEventObserver(properties, "observer.elastic");
 
@@ -116,7 +116,7 @@ public class ElasticsearchLogEventObserverTest {
 
     /**
      * To run this test, you can run Elastic Search in Docker.
-     * <code>docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:7.2.0</code>
+     * <code>docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:7.9.2</code>
      * (elasticsearch doesn't have a :latest-tag, so explicit version is needed. I don't know if it's needed to map port 9300 as well as 9200)
      * To troubleshoot docker, run <code>docker logs elasticsearch</code>. To see the data that the test is indexing in
      * Elasticsearch, you can check out http://localhost:9200/logevents-unit-test/_search

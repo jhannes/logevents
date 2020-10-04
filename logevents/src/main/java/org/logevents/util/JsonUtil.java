@@ -27,6 +27,10 @@ public class JsonUtil {
         this.indent = indent;
     }
 
+    public static String toCompactJson(Map<String, Object> jsonObject) {
+        return new JsonUtil("", "").toJson(jsonObject);
+    }
+
     public static String toIndentedJson(Map<String, ?> jsonObject) {
         return new JsonUtil("  ", "\n").toJson(jsonObject);
     }

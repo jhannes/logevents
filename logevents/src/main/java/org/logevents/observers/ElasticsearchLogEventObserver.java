@@ -2,8 +2,7 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.formatting.ExceptionFormatter;
-import org.logevents.formatting.MessageFormatter;
+import org.logevents.formatting.JsonLogEventFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonParser;
@@ -33,31 +32,32 @@ import java.util.stream.Collectors;
  * observer.elastic.cooldownTime=PT1S
  * observer.elastic.maximumWaitTime=PT30S
  * observer.elastic.suppressMarkers=PERSONAL_DATA
+ * observer.elastic.formatter.excludedMdcKeys=secret
  * </pre>
  */
 public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObserver {
 
     private final URL elasticsearchUrl;
     private final String index;
-    private MessageFormatter messageFormatter = new MessageFormatter();
-
-    private ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
+    private final JsonLogEventFormatter formatter;
 
     public ElasticsearchLogEventObserver(Properties properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 
     public ElasticsearchLogEventObserver(Configuration configuration) {
-        this(configuration.getUrl("elasticsearchUrl"), configuration.getString("index"));
+        this.elasticsearchUrl = configuration.getUrl("elasticsearchUrl");
+        this.index = configuration.getString("index");
+        this.formatter = configuration.createInstanceWithDefault("formatter", JsonLogEventFormatter.class);
         this.configureBatching(configuration);
         this.configureFilter(configuration);
-        this.messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
         configuration.checkForUnknownFields();
     }
 
     public ElasticsearchLogEventObserver(URL elasticsearchUrl, String index) {
         this.elasticsearchUrl = elasticsearchUrl;
         this.index = index;
+        this.formatter = new JsonLogEventFormatter();
     }
 
     @Override
@@ -72,21 +72,7 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
     }
 
     public Map<String, Object> formatMessage(LogEvent event) {
-        Map<String, Object> doc = new HashMap<>();
-        doc.put("@timestamp", event.getInstant().toString());
-        doc.put("thread", event.getThreadName());
-        doc.put("level", event.getLevel().toString());
-        doc.put("logger", event.getLoggerName());
-        doc.put("message", event.getMessage());
-        doc.put("formattedMessage", messageFormatter.format(event.getMessage(), event.getArgumentArray()));
-        doc.put("marker", event.getMarker() != null ? event.getMarker().getName() : null);
-        if (event.getThrowable() != null) {
-            doc.put("exception.class", event.getThrowable().getClass().getName());
-            doc.put("exception.message", event.getThrowable().getMessage());
-            doc.put("exception.stacktrace", exceptionFormatter.format(event.getThrowable()));
-        }
-        event.getMdcProperties().forEach((k, v) -> doc.put("mdc." + k, v));
-        return doc;
+        return formatter.toJsonObject(event);
     }
 
     public Map<String, Object> getIndexHeader() {

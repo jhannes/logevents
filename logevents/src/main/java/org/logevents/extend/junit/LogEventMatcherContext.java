@@ -82,7 +82,7 @@ public class LogEventMatcherContext {
     }
 
     public LogEventMatcherContext formattedMessage(String formattedMessage) {
-        String message = new MessageFormatter().format(getEvent().getMessage(), getEvent().getArgumentArray());
+        String message = getEvent().getMessage(new MessageFormatter());
         return compareFields("formattedMessage", message, formattedMessage, false);
     }
 

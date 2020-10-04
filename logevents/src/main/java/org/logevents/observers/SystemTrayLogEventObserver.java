@@ -92,7 +92,7 @@ public class SystemTrayLogEventObserver extends AbstractBatchingLogEventObserver
     }
 
     protected String formatMessage(LogEvent event) {
-        return messageFormatter.format(event.getMessage(), event.getArgumentArray());
+        return event.getMessage(messageFormatter);
     }
 
     protected String getCaption(LogEventBatch batch) {

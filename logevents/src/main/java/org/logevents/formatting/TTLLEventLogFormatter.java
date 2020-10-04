@@ -3,8 +3,6 @@ package org.logevents.formatting;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 
-import java.util.List;
-
 /**
  * A simple and convenient {@link LogEventFormatter} which outputs
  * Time, Thread, Level, Logger as well as the log message and stack trace.
@@ -23,7 +21,7 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
     protected MessageFormatter messageFormatter = new MessageFormatter();
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
 
-    protected List<String> includedMdcKeys = null;
+    protected MdcFilter mdcFilter = null;
 
     @Override
     public String apply(LogEvent e) {
@@ -32,8 +30,8 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
                 e.getThreadName(),
                 LogEventFormatter.rightPad(e.getLevel(), 5, ' '),
                 e.getLoggerName(),
-                mdc(e, includedMdcKeys),
-                messageFormatter.format(e.getMessage(), e.getArgumentArray()))
+                mdc(e, mdcFilter),
+                e.getMessage(messageFormatter))
                 + exceptionFormatter.format(e.getThrowable());
     }
 
@@ -45,7 +43,7 @@ public final class TTLLEventLogFormatter implements LogEventFormatter {
     public void configure(Configuration configuration) {
         getExceptionFormatter().ifPresent(
                 exceptionFormatter -> exceptionFormatter.setPackageFilter(configuration.getPackageFilter()));
-        includedMdcKeys = configuration.getIncludedMdcKeys();
+        mdcFilter = configuration.getMdcFilter();
     }
 
 }

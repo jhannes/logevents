@@ -64,7 +64,7 @@ public class MicrosoftTeamsLogEventObserver extends AbstractHttpPostJsonLogEvent
         configureProxy(configuration);
 
         this.formatter = configuration.createInstanceWithDefault("formatter", MicrosoftTeamsMessageFormatter.class);
-        formatter.setIncludedMdcKeys(configuration.getIncludedMdcKeys());
+        formatter.setMdcFilter(configuration.getMdcFilter());
         formatter.setPackageFilter(configuration.getPackageFilter());
 
         configuration.checkForUnknownFields();

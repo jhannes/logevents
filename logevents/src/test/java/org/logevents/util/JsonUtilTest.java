@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.logevents.util.JsonUtil.toCompactJson;
 
 public class JsonUtilTest {
 
@@ -28,7 +29,7 @@ public class JsonUtilTest {
         assertJsonOutput("{\"firstName\": \"Darth\",\"lastName\": \"Vader\",\"age\": 29,\"sith\": true}", jsonObject);
 
         jsonObject.remove("weakness");
-        String s = new JsonUtil("", "").toJson(jsonObject);
+        String s = toCompactJson(jsonObject);
         assertEquals(JsonParser.parse(s), jsonObject);
     }
 
@@ -45,7 +46,7 @@ public class JsonUtilTest {
         jsonObject.put("numbers", Arrays.asList(1L, 2L, 3L));
         assertJsonOutput("{\"numbers\": [1,2,3]}", jsonObject);
 
-        String s = new JsonUtil("", "").toJson(jsonObject);
+        String s = toCompactJson(jsonObject);
         assertEquals(JsonParser.parse(s), new HashMap<>(jsonObject));
     }
 
@@ -81,13 +82,11 @@ public class JsonUtilTest {
         Map<String, Object> jsonObject = new HashMap<>();
         jsonObject.put("longNumber", 123L);
         jsonObject.put("floatNumber", 123.25);
-        Map<String, Object> stringifiedObject = JsonParser.parseObject(JsonUtil.toIndentedJson(jsonObject));
-
-        assertEquals(jsonObject, stringifiedObject);
+        assertEquals(jsonObject, JsonParser.parseObject(JsonUtil.toIndentedJson(jsonObject)));
     }
 
     private void assertJsonOutput(String expected, Map<String, Object> jsonObject) {
-        assertEquals(expected, new JsonUtil("", "").toJson(jsonObject));
+        assertEquals(expected, toCompactJson(jsonObject));
     }
 
 }

@@ -330,7 +330,7 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
                     eventStmt.setString(3, logEvent.getLevel().toString());
                     eventStmt.setInt(4, logEvent.getLevel().toInt());
                     eventStmt.setString(5, logEvent.getMessage());
-                    eventStmt.setString(6, messageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray()));
+                    eventStmt.setString(6, logEvent.getMessage(messageFormatter));
                     eventStmt.setString(7, JsonUtil.toIndentedJson(jsonMessageFormatter.format(logEvent.getMessage(), logEvent.getArgumentArray())));
                     eventStmt.setLong(8, logEvent.getTimeStamp());
                     eventStmt.setString(9, truncate(logEvent.getThreadName(), 100));

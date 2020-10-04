@@ -41,7 +41,7 @@ public class JsonLogEventFormatter implements Function<LogEvent, Map<String, Obj
         jsonEvent.put("abbreviatedLogger", event.getAbbreviatedLoggerName(0));
         jsonEvent.put("level", event.getLevel().name());
         jsonEvent.put("levelIcon", JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()));
-        jsonEvent.put("formattedMessage", messageFormatter.format(event.getMessage(), event.getArgumentArray()));
+        jsonEvent.put("formattedMessage", event.getMessage(messageFormatter));
         jsonEvent.put("messageTemplate", event.getMessage());
         jsonEvent.put("message", jsonFormatter.format(event.getMessage(), event.getArgumentArray()));
         jsonEvent.put("marker", Optional.ofNullable(event.getMarker()).map(Marker::getName).orElse(null));

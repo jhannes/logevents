@@ -2,16 +2,16 @@ package org.logevents.config;
 
 import junit.framework.TestCase;
 import org.junit.Test;
+import org.logevents.formatting.MdcFilter;
 
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -152,21 +152,35 @@ public class ConfigurationTest {
     }
 
     @Test
-    public void shouldCalculateIncludedMdcKeys() {
+    public void shouldCalculateMdcFilter() {
         properties.put("observer.test.includedMdcKeys", "username, operation");
-        properties.put("observer.other.includedMdcKeys", "");
-        properties.put("observer.*.includedMdcKeys", "ipAddress");
 
-        assertEquals(Arrays.asList("username", "operation"),
-                new Configuration(properties, "observer.test").getIncludedMdcKeys());
-        assertEquals(Arrays.asList("ipAddress"),
-                new Configuration(properties, "observer.random").getIncludedMdcKeys());
-        assertEquals(new ArrayList<>(),
-                new Configuration(properties, "observer.other").getIncludedMdcKeys());
-        assertNull(new Configuration(new Properties(), "observer.test").getIncludedMdcKeys());
-        properties.put("observer.*.includedMdcKeys", "");
-        assertEquals(new ArrayList<>(),
-                new Configuration(properties, "observer.random").getIncludedMdcKeys());
+        MdcFilter mdcFilterForObserver = new Configuration(properties, "observer.test").getMdcFilter();
+        assertTrue(mdcFilterForObserver.isKeyIncluded("username"));
+        assertFalse(mdcFilterForObserver.isKeyIncluded("anyOtherKey"));
+    }
+
+    @Test
+    public void shouldCalculcateEmptyMdcFilter() {
+        properties.put("observer.other.includedMdcKeys", "");
+        MdcFilter mdcFilterWithNone = new Configuration(properties, "observer.other").getMdcFilter();
+        assertFalse(mdcFilterWithNone.isKeyIncluded("anyKey"));
+    }
+
+    @Test
+    public void shouldCalculcateMdcFilterWithExclusions() {
+        properties.put("observer.other.excludedMdcKeys", "userName");
+        MdcFilter mdcFilterWithNone = new Configuration(properties, "observer.other").getMdcFilter();
+        assertFalse(mdcFilterWithNone.isKeyIncluded("userName"));
+        assertTrue(mdcFilterWithNone.isKeyIncluded("random"));
+    }
+
+    @Test
+    public void shouldUseDefaultMdcFilter() {
+        properties.put("observer.*.includedMdcKeys", "ipAddress");
+        MdcFilter mdcFilterWithDefault = new Configuration(properties, "observer.random").getMdcFilter();
+        assertTrue(mdcFilterWithDefault.isKeyIncluded("ipAddress"));
+        assertFalse(mdcFilterWithDefault.isKeyIncluded("anyKey"));
     }
 
     private static String currentWorkingDirectory() {

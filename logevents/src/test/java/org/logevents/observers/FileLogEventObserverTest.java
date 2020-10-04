@@ -208,7 +208,7 @@ public class FileLogEventObserverTest {
     }
 
     private String formatMessage(LogEvent event) {
-        return formatter.format(event.getMessage(), event.getArgumentArray());
+        return event.getMessage(formatter);
     }
 
 }

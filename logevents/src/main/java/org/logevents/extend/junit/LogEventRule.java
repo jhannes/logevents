@@ -74,7 +74,7 @@ public class LogEventRule implements TestRule, LogEventObserver {
     }
 
     public String formatMessage(LogEvent event) {
-        return new MessageFormatter().format(event.getMessage(), event.getArgumentArray());
+        return event.getMessage(new MessageFormatter());
     }
 
     public void assertContainsMessage(Level level, String message, Throwable throwable) {
