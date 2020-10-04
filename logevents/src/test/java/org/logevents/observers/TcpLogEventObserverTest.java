@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TcpLogEventObserverTest {
 
@@ -71,6 +72,6 @@ public class TcpLogEventObserverTest {
         observer.processBatch(new LogEventBatch().add(event));
 
         assertEquals("While sending to localhost/127.0.0.1:" + port, LogEventStatus.getInstance().lastMessage().getMessage());
-        assertEquals(SocketTimeoutException.class, LogEventStatus.getInstance().lastMessage().getThrowable().getClass());
+        assertTrue(LogEventStatus.getInstance().lastMessage().getThrowable() instanceof IOException);
     }
 }
