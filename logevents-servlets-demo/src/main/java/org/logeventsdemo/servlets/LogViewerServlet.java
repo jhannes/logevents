@@ -1,7 +1,7 @@
 package org.logeventsdemo.servlets;
 
 import org.logevents.extend.servlets.LogEventsServlet;
-import org.logevents.query.LogEventSource;
+import org.logevents.observers.LogEventSource;
 import org.logevents.util.openid.OpenIdConfiguration;
 import org.logevents.web.CryptoVault;
 
