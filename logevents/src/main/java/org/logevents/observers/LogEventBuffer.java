@@ -8,7 +8,6 @@ import org.logevents.extend.servlets.JsonMessageFormatter;
 import org.logevents.query.JsonLogEventFormatter;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventQueryResult;
-import org.logevents.query.LogEventSource;
 import org.logevents.query.LogEventSummary;
 import org.logevents.util.CircularBuffer;
 import org.slf4j.event.Level;

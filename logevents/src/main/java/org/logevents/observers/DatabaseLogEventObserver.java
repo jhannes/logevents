@@ -9,7 +9,6 @@ import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.query.LogEventFilter;
 import org.logevents.query.LogEventQueryResult;
-import org.logevents.query.LogEventSource;
 import org.logevents.query.LogEventSummary;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.ExceptionUtil;
