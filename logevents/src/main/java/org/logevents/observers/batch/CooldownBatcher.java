@@ -78,16 +78,16 @@ public class CooldownBatcher<T> implements Batcher<T> {
         this.maximumWaitTime = maximumWaitTime;
     }
 
-    public synchronized void accept(T o) {
+    public void accept(T o) {
         add(o, Instant.now());
     }
 
-    protected void add(T o, Instant now) {
+    protected synchronized void add(T o, Instant now) {
         batch.add(o);
         updateSchedule(now);
     }
 
-    private synchronized void updateSchedule(Instant now) {
+    private void updateSchedule(Instant now) {
         if (batchStartedTime == null) {
             this.batchStartedTime = Instant.now();
         }
@@ -121,7 +121,7 @@ public class CooldownBatcher<T> implements Batcher<T> {
     }
 
     @Override
-    public synchronized void flush() {
+    public void flush() {
         LogEventStatus.getInstance().addDebug(this, "Flushing");
         List<T> currentBatch = takeCurrentBatch();
         task = null;
@@ -137,7 +137,7 @@ public class CooldownBatcher<T> implements Batcher<T> {
         flush();
     }
 
-    protected List<T> takeCurrentBatch() {
+    protected synchronized List<T> takeCurrentBatch() {
         List<T> currentBatch = this.batch;
         batch = new ArrayList<>();
         batchStartedTime = null;
