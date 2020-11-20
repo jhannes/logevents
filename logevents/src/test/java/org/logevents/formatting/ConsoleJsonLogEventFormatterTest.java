@@ -32,7 +32,7 @@ public class ConsoleJsonLogEventFormatterTest {
                 .withLoggerName(loggerName)
                 .withFormat("Hello {}").withArgs("there")
                 .build());
-        assertEquals("{\"@timestamp\": \"2018-08-01T10:00:00Z\",\"messageFormat\": \"Hello {}\",\"level\": \"INFO\",\"level_value\": 20,\"marker\": \"AUDIT\",\"logger\": \"com.example.LoggerName\",\"thread\": \"main\",\"message\": \"Hello there\",\"class\": \"org.logevents.formatting.ConsoleJsonLogEventFormatterTest\"}\n",
+        assertEquals("{\"@timestamp\": \"2018-08-01T10:00:00Z\",\"messageFormat\": \"Hello {}\",\"level\": \"INFO\",\"marker\": \"AUDIT\",\"logger\": \"com.example.LoggerName\",\"levelInt\": 20,\"thread\": \"main\",\"message\": \"Hello there\",\"class\": \"org.logevents.formatting.ConsoleJsonLogEventFormatterTest\"}\n",
                 message);
     }
 
