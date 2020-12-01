@@ -40,7 +40,7 @@ public class LoggerDelegatorTest {
     public void shouldRecordEventLocation() {
         loggerDelegator.error("Some message");
         LogEvent event = observer.getEvents().get(0);
-        assertEquals(50, event.getCallerLocation().getLineNumber());
+        assertEquals(59, event.getCallerLocation().getLineNumber());
         assertEquals("FrameworkMethod.java", event.getCallerLocation().getFileName());
         assertEquals("org.junit.runners.model.FrameworkMethod$1", event.getCallerLocation().getClassName());
         assertEquals("runReflectiveCall", event.getCallerLocation().getMethodName());

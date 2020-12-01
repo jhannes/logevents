@@ -27,14 +27,14 @@ import static org.junit.Assert.assertTrue;
 
 public class PatternLogEventFormatterTest {
 
-    private Instant time = Instant.ofEpochMilli(1535056492088L);
-    private Properties properties = new Properties();
+    private final Instant time = Instant.ofEpochMilli(1535056492088L);
+    private final Properties properties = new Properties();
     {
         properties.put("observer.foo.formatter.pattern", "No pattern");
     }
-    private Configuration configuration = new Configuration(properties, "observer.foo.formatter");
+    private final Configuration configuration = new Configuration(properties, "observer.foo.formatter");
     private PatternLogEventFormatter formatter = new PatternLogEventFormatter(configuration);
-    private LogEvent event = new LogEventSampler()
+    private final LogEvent event = new LogEventSampler()
         .withLevel(Level.INFO)
         .withLoggerName("some.logger.name")
         .withTime(time)
@@ -42,7 +42,7 @@ public class PatternLogEventFormatterTest {
         .withFormat("A messages from {} to {}")
         .withArgs("A", "B")
         .build();
-    private ConsoleFormatting formatting = ConsoleFormatting.getInstance();
+    private final ConsoleFormatting formatting = ConsoleFormatting.getInstance();
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldRejectIllegalConversion() {
@@ -117,7 +117,7 @@ public class PatternLogEventFormatterTest {
         LogEvent event = buffer.getEvents().get(0);
 
         formatter.setPattern("%file:%line - %class#%method");
-        assertEquals("FrameworkMethod.java:50 - org.junit.runners.model.FrameworkMethod$1#runReflectiveCall\n",
+        assertEquals("FrameworkMethod.java:59 - org.junit.runners.model.FrameworkMethod$1#runReflectiveCall\n",
                 formatter.apply(event));
     }
 
