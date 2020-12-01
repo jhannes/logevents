@@ -25,7 +25,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
-            <version>9.4.34.v20201102</version>
+            <version>9.4.35.v20201120</version>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
@@ -40,7 +40,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.2.5</version>
+            <version>42.2.18</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
