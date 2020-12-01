@@ -67,7 +67,6 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         payload.put("level", event.getLevel().toString());
         payload.put("levelInt", event.getLevel().toInt());
         payload.put("logger", event.getLoggerName());
-        payload.put("class", event.getCallerLocation().getClassName());
         payload.put("marker", event.getMarker() == null ? null : event.getMarker().getName());
         payload.put("app", applicationName);
         payload.put("host", node);
