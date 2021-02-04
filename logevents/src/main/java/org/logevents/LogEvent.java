@@ -2,6 +2,7 @@ package org.logevents;
 
 import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.formatting.MessageFormatter;
+import org.logevents.impl.JavaUtilLoggingAdapter;
 import org.logevents.impl.LoggerDelegator;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
@@ -237,7 +238,16 @@ public class LogEvent implements LoggingEvent {
         if (this.threadId != Thread.currentThread().getId()) {
             throw new IllegalStateException("Can't find caller location from different thread");
         }
-        StackTraceElement[] stackTrace = getStackTrace();
+        this.callerLocation = extractCallerLocation(getStackTrace());
+        return callerLocation;
+    }
+
+    /**
+     * Returns the first non-logger element of the argument stackTrace.
+     * Will lock for a LogEvents entrypoint and then scan until first class
+     * that's not in a known logging package
+     */
+    StackTraceElement extractCallerLocation(StackTraceElement[] stackTrace) {
         for (int i = 0; i < stackTrace.length-1; i++) {
             StackTraceElement stackTraceElement = stackTrace[i];
             if (stackTraceElement.getClassName().equals(LoggerDelegator.class.getName())) {
@@ -247,11 +257,14 @@ public class LogEvent implements LoggingEvent {
                     i++;
                 }
 
-                this.callerLocation = stackTrace[i+1];
-                return callerLocation;
+                return stackTrace[i+1];
             } else if (stackTraceElement.getClassName().equals(LogEventSampler.class.getName())) {
-                this.callerLocation = stackTrace[i+1];
-                return callerLocation;
+                return stackTrace[i+1];
+            } else if (stackTraceElement.getClassName().equals(JavaUtilLoggingAdapter.class.getName())) {
+                while (isLoggingClass(stackTrace[i+1])) {
+                    i++;
+                }
+                return stackTrace[i+1];
             }
         }
         throw new RuntimeException("Could not find calling stack trace element!");
@@ -281,6 +294,7 @@ public class LogEvent implements LoggingEvent {
                 || className.startsWith("org.eclipse.jetty.util.log")
                 || className.startsWith("java.util.logging.")
                 || className.startsWith("sun.util.logging.")
+                || className.startsWith("sun.rmi.runtime.Log")
                 || className.startsWith("sun.security.ssl.SSLLogger")
                 || className.startsWith("org.log4j.");
     }
