@@ -69,13 +69,13 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         payload.put("logger", event.getLoggerName());
         payload.put("marker", event.getMarker() == null ? null : event.getMarker().getName());
         payload.put("app", applicationName);
-        payload.put("host", node);
+        payload.put("hostname", node);
         payload.put("mdc", getMdc(event));
 
         if (event.getThrowable() != null) {
             payload.put("exception.class", event.getThrowable().getClass().getName());
             payload.put("exception.message", event.getThrowable().getMessage());
-            payload.put("exception", exceptionFormatter.format(event.getThrowable()));
+            payload.put("exception.stackTrace", exceptionFormatter.format(event.getThrowable()));
         }
 
         return payload;

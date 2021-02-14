@@ -1,5 +1,6 @@
 package org.logevents.observers;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Rule;
@@ -81,7 +82,7 @@ public class ElasticsearchLogEventObserverTest {
 
         assertEquals(payload.get("exception.class"), event.getThrowable().getClass().getName());
         assertEquals(payload.get("exception.message"), event.getThrowable().getMessage());
-        Assert.assertThat(payload.get("exception").toString(),
+        MatcherAssert.assertThat(payload.get("exception.stackTrace").toString(),
                 containsString("at org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)"));
     }
 
