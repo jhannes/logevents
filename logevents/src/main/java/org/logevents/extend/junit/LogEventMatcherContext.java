@@ -83,7 +83,7 @@ public class LogEventMatcherContext {
 
     public LogEventMatcherContext formattedMessage(String formattedMessage) {
         String message = getEvent().getMessage(new MessageFormatter());
-        return compareFields("formattedMessage", message, formattedMessage, false);
+        return compareFields("formattedMessage", message, formattedMessage, true);
     }
 
     public LogEventMatcherContext args(Object... args) {
@@ -93,6 +93,17 @@ public class LogEventMatcherContext {
             differingExactFields.add("arguments");
         }
         return this;
+    }
+
+    public LogEventMatcherContext argument(int index, Object argument) {
+        if (getEvent().getArgumentArray().length <= index) {
+            differingExactFields.add("arguments[" + index + "]");
+            this.expected.put("arguments[" + index + "]", argument);
+            this.actual.put("arguments[" + index + "]", "<missing>");
+            return this;
+        } else {
+            return compareFields("arguments[" + index + "]", getEvent().getArgumentArray()[index], argument, false);
+        }
     }
 
     public LogEventMatcherContext exception(Class<? extends Throwable> throwableClass) {

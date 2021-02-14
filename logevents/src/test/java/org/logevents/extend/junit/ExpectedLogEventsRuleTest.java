@@ -1,6 +1,7 @@
 package org.logevents.extend.junit;
 
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,7 +26,11 @@ public class ExpectedLogEventsRuleTest {
     public void shouldSucceedWhenLoggingAsExpected() {
         rule.expectMatch(expect -> expect
                 .level(Level.WARN).logger(ExpectedLogEventsRuleTest.class)
-                .pattern("This is a {} test for {}").args("nice", "LogEvents"));
+                .pattern("This is a {} test for {}")
+                .args("nice", "LogEvents")
+                .argument(0, "nice")
+                .argument(1, "LogEvents")
+        );
 
         logger.warn("This is a {} test for {}", "nice", "LogEvents");
         rule.verifyCompletion();
@@ -45,7 +50,7 @@ public class ExpectedLogEventsRuleTest {
             rule.verifyCompletion();
             fail("Expected exception");
         } catch (AssertionError e) {
-            Assert.assertThat(e.getMessage(), CoreMatchers.containsString("Test message"));
+            MatcherAssert.assertThat(e.getMessage(), CoreMatchers.containsString("Test message"));
         }
     }
 
@@ -57,7 +62,39 @@ public class ExpectedLogEventsRuleTest {
             rule.verifyCompletion();
             fail("Expected exception");
         } catch (AssertionError e) {
-            Assert.assertThat(e.getMessage(), CoreMatchers.containsString("This is a nice test"));
+            MatcherAssert.assertThat(e.getMessage(), CoreMatchers.containsString("This is a nice test"));
+        }
+    }
+    
+    @Test
+    public void shouldFailWhenArgumentsNotMatched() {
+        rule.expectMatch(expect -> expect
+                .level(Level.WARN)
+                .logger(ExpectedLogEventsRuleTest.class)
+                .pattern("This is a {} test for {}")
+                .argument(1, "something else")
+        );
+        logger.warn("This is a {} test for {}", "nice", "LogEvents");
+        try {
+            rule.verifyCompletion();
+            fail("Expected exception");
+        } catch (AssertionError e) {
+            MatcherAssert.assertThat(e.getMessage(), CoreMatchers.containsString("something else"));
+        }
+    }
+
+    @Test
+    public void shouldFailWhenArgumentsOutOfBound() {
+        rule.expectMatch(expect -> expect
+                .level(Level.WARN)
+                .argument(10, "something else")
+        );
+        logger.warn("This is a {} test for {}", "nice", "LogEvents");
+        try {
+            rule.verifyCompletion();
+            fail("Expected exception");
+        } catch (AssertionError e) {
+            MatcherAssert.assertThat(e.getMessage(), CoreMatchers.containsString("something else"));
         }
     }
 
@@ -82,7 +119,7 @@ public class ExpectedLogEventsRuleTest {
             caughtException = e;
         }
         Assert.assertNotNull(caughtException);
-        Assert.assertThat(caughtException.getMessage(), CoreMatchers.containsString("Another message!"));
+        MatcherAssert.assertThat(caughtException.getMessage(), CoreMatchers.containsString("Another message!"));
     }
 
     @Test
@@ -98,8 +135,8 @@ public class ExpectedLogEventsRuleTest {
             caughtException = e;
         }
         Assert.assertNotNull(caughtException);
-        Assert.assertThat(caughtException.getMessage(), CoreMatchers.containsString(getClass().getName()));
-        Assert.assertThat(caughtException.getMessage(), CoreMatchers.containsString(""));
+        MatcherAssert.assertThat(caughtException.getMessage(), CoreMatchers.containsString(getClass().getName()));
+        MatcherAssert.assertThat(caughtException.getMessage(), CoreMatchers.containsString(""));
     }
 
     @Test
@@ -113,8 +150,8 @@ public class ExpectedLogEventsRuleTest {
             caughtException = e;
         }
         Assert.assertNotNull(caughtException);
-        Assert.assertThat(caughtException.getMessage(), CoreMatchers.containsString("Unexpected"));
-        Assert.assertThat(caughtException.getMessage(), CoreMatchers.containsString(getClass().getName()));
+        MatcherAssert.assertThat(caughtException.getMessage(), CoreMatchers.containsString("Unexpected"));
+        MatcherAssert.assertThat(caughtException.getMessage(), CoreMatchers.containsString(getClass().getName()));
     }
 
     @Test
