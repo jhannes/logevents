@@ -10,8 +10,8 @@ import java.time.temporal.ChronoUnit;
 import static org.junit.Assert.*;
 
 public class StatisticsLogEventsObserverTest {
-    private StatisticsLogEventsObserver observer = new StatisticsLogEventsObserver();
-    private Instant start = Instant.now().minusSeconds(60*60);
+    private final StatisticsLogEventsObserver observer = new StatisticsLogEventsObserver();
+    private final Instant start = Instant.now().minusSeconds(60*60);
 
     @Before
     public void resetStats() {
@@ -45,6 +45,21 @@ public class StatisticsLogEventsObserverTest {
         assertEquals("resolution is too high to distinguish between 110, 100 and 90 seconds ago",
                 3,
                 StatisticsLogEventsObserver.getCountSince(Level.INFO, now.minusSeconds(100)));
+    }
+    
+    @Test
+    public void shouldShowMostRecentTime() {
+        Instant errorTime = start.plusSeconds(30 * 10);
+        Instant infoTime = start.plusSeconds(50 * 20);
+        observer.addCount(Level.ERROR, errorTime);
+        observer.addCount(Level.INFO, infoTime);
+        
+        assertEquals(errorTime, StatisticsLogEventsObserver.getLastMessageTime(Level.ERROR));
+        assertEquals(infoTime, StatisticsLogEventsObserver.getLastMessageTime(Level.INFO));
+        assertNull(StatisticsLogEventsObserver.getLastMessageTime(Level.WARN));
+
+        observer.addCount(Level.ERROR, errorTime.plusSeconds(10));
+        assertEquals(errorTime.plusSeconds(10), StatisticsLogEventsObserver.getLastMessageTime(Level.ERROR));
     }
 
     @Test

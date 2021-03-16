@@ -24,8 +24,9 @@ import java.util.Map;
  */
 public class StatisticsLogEventsObserver extends AbstractFilteredLogEventObserver {
 
-    private static Map<Level, Counter> logEventsPerHour = Collections.synchronizedMap(new EnumMap<>(Level.class));
-    private static Map<Level, Counter> logEventsPerMinute = Collections.synchronizedMap(new EnumMap<>(Level.class));
+    private static final Map<Level, Counter> logEventsPerHour = Collections.synchronizedMap(new EnumMap<>(Level.class));
+    private static final Map<Level, Counter> logEventsPerMinute = Collections.synchronizedMap(new EnumMap<>(Level.class));
+    private static final Map<Level, Instant> lastEvent = Collections.synchronizedMap(new EnumMap<>(Level.class));
 
     @Override
     protected void doLogEvent(LogEvent logEvent) {
@@ -35,11 +36,13 @@ public class StatisticsLogEventsObserver extends AbstractFilteredLogEventObserve
     public void addCount(Level level, Instant now) {
         getRequestPerMinute(level).addCount(now);
         getRequestPerHour(level).addCount(now);
+        lastEvent.put(level, now);
     }
 
     public void reset() {
         logEventsPerHour.clear();
         logEventsPerMinute.clear();
+        lastEvent.clear();
     }
 
     private static Counter getRequestPerHour(Level level) {
@@ -58,4 +61,7 @@ public class StatisticsLogEventsObserver extends AbstractFilteredLogEventObserve
         return getRequestPerHour(level).getCountSince(since);
     }
 
+    public static Instant getLastMessageTime(Level level) {
+        return lastEvent.get(level);
+    }
 }
