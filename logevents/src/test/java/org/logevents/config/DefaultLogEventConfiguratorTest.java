@@ -13,6 +13,7 @@ import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FixedLevelThresholdConditionalObserver;
+import org.logevents.observers.LevelThresholdConditionalObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.slf4j.Logger;
@@ -187,7 +188,7 @@ public class DefaultLogEventConfiguratorTest {
         configurator.applyConfigurationProperties(factory, configuration);
         assertEquals("RootLoggerDelegator{ROOT,level=INFO,ownObserver=CompositeLogEventObserver{[" +
                         "ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, " +
-                        "FixedLevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0,capacity=200}}" +
+                        "LevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0,capacity=200}}" +
                         "]}}",
                 factory.getLogger(Logger.ROOT_LOGGER_NAME).toString());
 
@@ -195,7 +196,7 @@ public class DefaultLogEventConfiguratorTest {
         configurator.applyConfigurationProperties(factory, configuration);
         assertEquals("RootLoggerDelegator{ROOT,level=WARN,ownObserver=CompositeLogEventObserver{[" +
                         "ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, " +
-                        "FixedLevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0,capacity=200}}" +
+                        "LevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0,capacity=200}}" +
                         "]}}",
                 factory.getLogger(Logger.ROOT_LOGGER_NAME).toString());
     }
@@ -205,22 +206,22 @@ public class DefaultLogEventConfiguratorTest {
         configuration.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
         configuration.setProperty("observer.buffer2", "CircularBufferLogEventObserver");
         configuration.setProperty("observer.buffer3", "CircularBufferLogEventObserver");
-        configuration.setProperty("root", "ERROR buffer1");
+        configuration.setProperty("root", "DEBUG buffer1");
         configuration.setProperty("root.observer.buffer2", "INFO");
-        configuration.setProperty("root.observer.buffer3", "DEBUG");
+        configuration.setProperty("root.observer.buffer3", "WARN");
 
         configurator.applyConfigurationProperties(factory, configuration);
 
         LoggerConfiguration logger = factory.getLogger("org.example");
-        logger.debug("only to buffer3");
-        logger.info("to buffer2 and buffer3");
+        logger.debug("only to buffer1");
+        logger.info("to buffer1 and buffer2");
         logger.error("to buffer1, buffer2 and buffer3");
 
-        assertEquals(Arrays.asList("to buffer1, buffer2 and buffer3"),
+        assertEquals(Arrays.asList("only to buffer1", "to buffer1 and buffer2", "to buffer1, buffer2 and buffer3"),
                 ((CircularBufferLogEventObserver) factory.getObserver("buffer1")).getMessages());
-        assertEquals(Arrays.asList("to buffer2 and buffer3", "to buffer1, buffer2 and buffer3"),
+        assertEquals(Arrays.asList("to buffer1 and buffer2", "to buffer1, buffer2 and buffer3"),
                 ((CircularBufferLogEventObserver) factory.getObserver("buffer2")).getMessages());
-        assertEquals(Arrays.asList("only to buffer3", "to buffer2 and buffer3", "to buffer1, buffer2 and buffer3"),
+        assertEquals(Arrays.asList("to buffer1, buffer2 and buffer3"),
                 ((CircularBufferLogEventObserver) factory.getObserver("buffer3")).getMessages());
     }
 
@@ -235,7 +236,7 @@ public class DefaultLogEventConfiguratorTest {
         configurator.configureGlobalObserversFromEnvironment(globalObservers, factory, environment);
         assertEquals(Collections.singleton("buffer1"), globalObservers.keySet());
         assertEquals(Level.ERROR,
-                ((FixedLevelThresholdConditionalObserver) globalObservers.get("buffer1")).getThreshold());
+                ((LevelThresholdConditionalObserver) globalObservers.get("buffer1")).getThreshold());
     }
 
     @Test

@@ -9,6 +9,7 @@ import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
 import org.logevents.observers.FixedLevelThresholdConditionalObserver;
+import org.logevents.observers.LevelThresholdConditionalObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
 
@@ -490,7 +491,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     private void addGlobalObserver(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, String observerName, Level observerThreshold) {
         LogEventObserver observer = factory.getObserver(observerName);
         if (observer != null) {
-            globalObservers.put(observerName, new FixedLevelThresholdConditionalObserver(observerThreshold, observer));
+            globalObservers.put(observerName, new LevelThresholdConditionalObserver(observerThreshold, observer));
         }
         LogEventStatus.getInstance().addConfig(this, "Adding root observer " + observerName);
     }
