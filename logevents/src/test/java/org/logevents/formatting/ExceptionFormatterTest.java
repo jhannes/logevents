@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.logevents.config.Configuration;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Properties;
@@ -97,16 +98,13 @@ public class ExceptionFormatterTest {
 
         String[] lines = getFormatter().format(nested).split("\r?\n");
 
+        assertEquals(8, lines.length);
         assertEquals(nested.toString(), lines[0]);
         assertEquals("\tat " + nioInternalMethod, lines[1]);
 
         assertEquals("\tSuppressed: " + nestedSuppressed, lines[5]);
         assertEquals("\t\tat " + ioApiMethod, lines[6]);
         assertEquals("\t\t... 4 more", lines[7]);
-
-        assertEquals("\t\tSuppressed: " + suppressedSuppressed, lines[8]);
-        assertEquals("\t\t\tat " + ioInternalMethod, lines[9]);
-        assertEquals("\t\t\t... 5 more", lines[10]);
     }
 
     @Test
@@ -198,7 +196,38 @@ public class ExceptionFormatterTest {
         assertEquals("\tat " + ioApiMethod, lines[2]);
         assertEquals("\t[5 skipped]", lines[3]);
         assertEquals(4, lines.length);
+    }
+    
+    @Test
+    public void shouldNotFailOnExceptionCycles() throws Exception {
+        IOException exception = new IOException("Nested nested");
+        exception.setStackTrace(new StackTraceElement[] {
+                ioInternalMethod, ioApiMethod, nioInternalMethod
+        });
+        Field causeField = Throwable.class.getDeclaredField("cause");
+        causeField.setAccessible(true);
+        causeField.set(exception, exception);
 
+        String[] lines = getFormatter().format(exception).split("\r?\n");
+        assertEquals(Arrays.asList(exception.toString(),
+                "\tat " + ioInternalMethod, "\tat " + ioApiMethod, "\t[1 skipped]"),
+                Arrays.asList(lines));
+    }
+
+    @Test
+    public void shouldNotFailOnSuppressedExceptionCycles() {
+        IOException exception = new IOException("Nested nested");
+        exception.setStackTrace(new StackTraceElement[] {
+                ioInternalMethod, ioApiMethod
+        });
+        RuntimeException suppressed = new RuntimeException(exception);
+        suppressed.setStackTrace(new StackTraceElement[] { mainMethod });
+        exception.addSuppressed(suppressed);
+
+        String[] lines = getFormatter().format(exception).split("\r?\n");
+        assertEquals(Arrays.asList(exception.toString(),
+                "\tat " + ioInternalMethod, "\tat " + ioApiMethod, "\tSuppressed: " + suppressed, "\t\tat " + mainMethod),
+                Arrays.asList(lines));
     }
 
     @Test

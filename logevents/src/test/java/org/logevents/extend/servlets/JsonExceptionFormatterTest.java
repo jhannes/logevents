@@ -122,16 +122,13 @@ public class JsonExceptionFormatterTest {
 
         String[] lines = getFormatter().format(nested).split("\r?\n");
 
+        assertEquals(8, lines.length);
         assertEquals(nested.toString(), lines[0]);
         assertEquals("\tat " + nioInternalMethod, lines[1]);
 
         assertEquals("\tSuppressed: " + nestedSuppressed, lines[5]);
         assertEquals("\t\tat " + ioApiMethod, lines[6]);
         assertEquals("\t\t... 4 more", lines[7]);
-
-        assertEquals("\t\tSuppressed: " + suppressedSuppressed, lines[8]);
-        assertEquals("\t\t\tat " + ioInternalMethod, lines[9]);
-        assertEquals("\t\t\t... 5 more", lines[10]);
     }
 
     @Test

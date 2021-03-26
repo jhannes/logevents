@@ -53,11 +53,11 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
 
     protected void outputException(Throwable ex, Throwable enclosing, String prefix, String indent, StringBuilder builder) {
         outputExceptionHeader(ex, prefix, indent, builder);
-
         outputStack(ex, indent, enclosing, builder);
 
         for (Throwable suppressedException : ex.getSuppressed()) {
-            outputException(suppressedException, ex, "Suppressed: ", increaseIndent(indent), builder);
+            outputExceptionHeader(suppressedException, "Suppressed: " + prefix, increaseIndent(indent), builder);
+            outputStack(suppressedException, increaseIndent(indent), ex, builder);
         }
 
         Throwable cause = ex.getCause();
