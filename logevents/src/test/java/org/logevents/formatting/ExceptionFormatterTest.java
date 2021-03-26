@@ -253,8 +253,8 @@ public class ExceptionFormatterTest {
                 "\tat " + stackTrace[0] + " [rt.jar:" + javaVersion + "]",
                 "\tat " + stackTrace[1] + " [test-classes:na]",
                 "\tat " + stackTrace[2] + " [na:na]",
-                "\tat " + stackTrace[3] + " [junit-4.13.1.jar:4.13.1]",
-                "\tat " + stackTrace[4] + " [junit-4.13.1.jar:4.13.1]"),
+                "\tat " + stackTrace[3] + " [junit-4.13.2.jar:4.13.2]",
+                "\tat " + stackTrace[4] + " [junit-4.13.2.jar:4.13.2]"),
                 Arrays.asList(lines));
     }
 
