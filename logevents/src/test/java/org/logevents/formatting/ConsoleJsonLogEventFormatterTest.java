@@ -32,7 +32,7 @@ public class ConsoleJsonLogEventFormatterTest {
                 .withLoggerName(loggerName)
                 .withFormat("Hello {}").withArgs("there")
                 .build());
-        assertEquals("{\"@timestamp\": \"2018-08-01T10:00:00Z\",\"messageFormat\": \"Hello {}\",\"level\": \"INFO\",\"marker\": \"AUDIT\",\"logger\": \"com.example.LoggerName\",\"levelInt\": 20,\"thread\": \"main\",\"message\": \"Hello there\"}\n",
+        assertEquals("{\"@timestamp\": \"2018-08-01T10:00:00Z\",\"messageFormat\": \"Hello {}\",\"level\": \"INFO\",\"marker\": \"HTTP_ERROR\",\"logger\": \"com.example.LoggerName\",\"levelInt\": 20,\"thread\": \"main\",\"message\": \"Hello there\"}\n",
                 message);
     }
 
@@ -73,5 +73,4 @@ public class ConsoleJsonLogEventFormatterTest {
         assertEquals("userOne", mdc.get("user"));
         assertNull(mdc.get("secret"));
     }
-
 }
