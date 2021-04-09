@@ -22,14 +22,16 @@ public final class TTLLLogEventFormatter implements LogEventFormatter {
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
 
     protected MdcFilter mdcFilter = null;
+    private boolean showMarkers;
 
     @Override
     public String apply(LogEvent e) {
-        return String.format("%s [%s] [%s] [%s]%s: %s\n",
+        return String.format("%s [%s] [%s] [%s]%s%s: %s\n",
                 e.getLocalTime(),
                 e.getThreadName(),
                 LogEventFormatter.rightPad(e.getLevel(), 5, ' '),
                 e.getLoggerName(),
+                showMarkers && e.getMarker() != null ? " {" + e.getMarker() + "}" : "",
                 mdc(e, mdcFilter),
                 e.getMessage(messageFormatter))
                 + exceptionFormatter.format(e.getThrowable());
@@ -44,6 +46,7 @@ public final class TTLLLogEventFormatter implements LogEventFormatter {
         getExceptionFormatter().ifPresent(
                 exceptionFormatter -> exceptionFormatter.setPackageFilter(configuration.getPackageFilter()));
         mdcFilter = configuration.getMdcFilter();
+        showMarkers = configuration.getBoolean("showMarkers");
     }
 
 }

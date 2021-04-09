@@ -21,9 +21,10 @@ import java.util.Optional;
  * Example configuration
  *
  * <pre>
- * observer.console.includedMdcKeys=clientIp
  * observer.*.packageFilter=sun.www, com.example.uninteresting
- * observer.console.formatter.color=true
+ * observer.console.includedMdcKeys=clientIp
+ * observer.console.showMarkers=true
+ * observer.console.color=true
  * </pre>
  *
  * @author Johannes Brodwall
@@ -35,6 +36,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     protected final DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     protected MdcFilter mdcFilter;
+    private boolean showMarkers;
 
     @Override
     public Optional<ExceptionFormatter> getExceptionFormatter() {
@@ -44,11 +46,12 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     @Override
     public String apply(LogEvent e) {
         // TODO: MARKER
-        return String.format("%s [%s] [%s] [%s]%s: %s\n",
+        return String.format("%s [%s] [%s] [%s]%s%s: %s\n",
                 e.getZonedDateTime().format(timeOnlyFormatter),
                 e.getThreadName(),
                 colorizedLevel(e),
                 format.bold(e.getSimpleCallerLocation()),
+                showMarkers && e.getMarker() != null ? " {" + e.getMarker() + "}" : "",
                 mdc(e, mdcFilter),
                 e.getMessage(messageFormatter))
                 + exceptionFormatter.format(e.getThrowable());
@@ -79,6 +82,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 exceptionFormatter.setPackageFilter(configuration.getPackageFilter())
         );
         mdcFilter = configuration.getMdcFilter();
+        showMarkers = configuration.getBoolean("showMarkers");
 
         if (configuration.optionalString("color").isPresent()) {
             format = configuration.getBoolean("color") ? ConsoleFormatting.ANSI_FORMATTING : ConsoleFormatting.NULL_FORMATTING;

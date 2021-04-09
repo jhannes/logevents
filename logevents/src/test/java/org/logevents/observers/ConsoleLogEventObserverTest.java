@@ -5,6 +5,8 @@ import org.logevents.config.Configuration;
 import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.formatting.ConsoleFormatting;
 import org.logevents.formatting.ConsoleLogEventFormatter;
+import org.logevents.util.JsonParser;
+import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
 import java.io.ByteArrayOutputStream;
@@ -12,10 +14,12 @@ import java.io.PrintStream;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ConsoleLogEventObserverTest {
@@ -36,9 +40,8 @@ public class ConsoleLogEventObserverTest {
                 .withLoggerName(loggerName)
                 .withFormat("Hello {}").withArgs("there")
                 .build());
-        String message = new String(buffer.toByteArray());
-        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mConsoleLogEventObserverTest.shouldLogMessage(ConsoleLogEventObserverTest.java:38)\033[m]: Hello \033[4;mthere\033[m\n",
-                message);
+        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mConsoleLogEventObserverTest.shouldLogMessage(ConsoleLogEventObserverTest.java:42)\033[m]: Hello \033[4;mthere\033[m\n",
+                buffer.toString());
     }
 
     @Test
@@ -62,7 +65,7 @@ public class ConsoleLogEventObserverTest {
                 .withLoggerName(loggerName)
                 .withFormat("Test")
                 .build());
-        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:64)]: Test\n",
+        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:68)]: Test\n",
                 message);
     }
 
@@ -92,6 +95,18 @@ public class ConsoleLogEventObserverTest {
                 .withMdc("uid", "userFive")
                 .build());
         assertContains("{op=read, uid=userFive}", message);
+    }
+
+    @Test
+    public void shouldDisplayMarker() {
+        Properties properties = new Properties();
+        properties.put("observer.console.showMarkers", "true");
+        Configuration configuration = new Configuration(properties, "observer.console");
+        formatter.configure(configuration);
+        configuration.checkForUnknownFields();
+
+        String message = formatter.apply(new LogEventSampler().withMarker(LogEventSampler.HTTP_ASSET_REQUEST).build());
+        assertContains("{" + LogEventSampler.HTTP_ASSET_REQUEST + "}", message);
     }
 
     private void assertContains(String substring, String fullString) {
