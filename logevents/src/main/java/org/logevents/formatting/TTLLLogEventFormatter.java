@@ -32,7 +32,7 @@ public final class TTLLLogEventFormatter implements LogEventFormatter {
                 LogEventFormatter.rightPad(e.getLevel(), 5, ' '),
                 e.getLoggerName(),
                 showMarkers && e.getMarker() != null ? " {" + e.getMarker() + "}" : "",
-                mdc(e, mdcFilter),
+                LogEventFormatter.mdc(e, mdcFilter),
                 e.getMessage(messageFormatter))
                 + exceptionFormatter.format(e.getThrowable());
     }

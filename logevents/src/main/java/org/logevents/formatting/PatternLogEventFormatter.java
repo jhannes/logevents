@@ -68,9 +68,9 @@ import java.util.Properties;
  */
 public class PatternLogEventFormatter implements LogEventFormatter {
 
-    private static LogEventFormatterBuilderFactory factory = new LogEventFormatterBuilderFactory();
+    private static final LogEventFormatterBuilderFactory factory = new LogEventFormatterBuilderFactory();
 
-    private static ConsoleFormatting ansiFormat = ConsoleFormatting.getInstance();
+    private static final ConsoleFormatting ansiFormat = ConsoleFormatting.getInstance();
 
     static {
         factory.put("logger", spec -> {
@@ -128,7 +128,8 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
         factory.put("mdc", spec -> {
             if (spec.getParameters().isEmpty()) {
-                return LogEvent::getMdc;
+                MdcFilter mdcFilter = spec.getConfiguration().getMdcFilter();
+                return e -> LogEventFormatter.mdc(e, mdcFilter);
             } else {
                 String[] parts = spec.getParameters().get(0).split(":-");
                 String key = parts[0];
@@ -167,27 +168,27 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             return e -> ansiFormat.highlight(e.getLevel(), nestedFormatter.apply(e));
         });
 
-        factory.putTransformer("black", spec -> s -> ansiFormat.black(s));
-        factory.putTransformer("red", spec -> s -> ansiFormat.red(s));
-        factory.putTransformer("green", spec -> s -> ansiFormat.green(s));
-        factory.putTransformer("yellow", spec -> s -> ansiFormat.yellow(s));
-        factory.putTransformer("blue", spec -> s -> ansiFormat.blue(s));
-        factory.putTransformer("magenta", spec -> s -> ansiFormat.magenta(s));
-        factory.putTransformer("cyan", spec -> s -> ansiFormat.cyan(s));
-        factory.putTransformer("white", spec -> s -> ansiFormat.white(s));
+        factory.putTransformer("black", spec -> ansiFormat::black);
+        factory.putTransformer("red", spec -> ansiFormat::red);
+        factory.putTransformer("green", spec -> ansiFormat::green);
+        factory.putTransformer("yellow", spec -> ansiFormat::yellow);
+        factory.putTransformer("blue", spec -> ansiFormat::blue);
+        factory.putTransformer("magenta", spec -> ansiFormat::magenta);
+        factory.putTransformer("cyan", spec -> ansiFormat::cyan);
+        factory.putTransformer("white", spec -> ansiFormat::white);
 
-        factory.putTransformer("boldBlack", spec -> s -> ansiFormat.boldBlack(s));
-        factory.putTransformer("boldRed", spec -> s -> ansiFormat.boldRed(s));
-        factory.putTransformer("boldGreen", spec -> s -> ansiFormat.boldGreen(s));
-        factory.putTransformer("boldYellow", spec -> s -> ansiFormat.boldYellow(s));
-        factory.putTransformer("boldBlue", spec -> s -> ansiFormat.boldBlue(s));
-        factory.putTransformer("boldMagenta", spec -> s -> ansiFormat.boldMagenta(s));
-        factory.putTransformer("boldCyan", spec -> s -> ansiFormat.boldCyan(s));
-        factory.putTransformer("boldWhite", spec -> s -> ansiFormat.boldWhite(s));
+        factory.putTransformer("boldBlack", spec -> ansiFormat::boldBlack);
+        factory.putTransformer("boldRed", spec -> ansiFormat::boldRed);
+        factory.putTransformer("boldGreen", spec -> ansiFormat::boldGreen);
+        factory.putTransformer("boldYellow", spec -> ansiFormat::boldYellow);
+        factory.putTransformer("boldBlue", spec -> ansiFormat::boldBlue);
+        factory.putTransformer("boldMagenta", spec -> ansiFormat::boldMagenta);
+        factory.putTransformer("boldCyan", spec -> ansiFormat::boldCyan);
+        factory.putTransformer("boldWhite", spec -> ansiFormat::boldWhite);
 
-        factory.putTransformer("bold", spec -> s -> ansiFormat.bold(s));
-        factory.putTransformer("italic", spec -> s -> ansiFormat.italic(s));
-        factory.putTransformer("underline", spec -> s -> ansiFormat.underline(s));
+        factory.putTransformer("bold", spec -> ansiFormat::bold);
+        factory.putTransformer("italic", spec -> ansiFormat::italic);
+        factory.putTransformer("underline", spec -> ansiFormat::underline);
     }
 
     private final Configuration configuration;

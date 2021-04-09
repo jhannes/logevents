@@ -52,7 +52,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 colorizedLevel(e),
                 format.bold(e.getSimpleCallerLocation()),
                 showMarkers && e.getMarker() != null ? " {" + e.getMarker() + "}" : "",
-                mdc(e, mdcFilter),
+                LogEventFormatter.mdc(e, mdcFilter),
                 e.getMessage(messageFormatter))
                 + exceptionFormatter.format(e.getThrowable());
     }
