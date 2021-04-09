@@ -65,7 +65,7 @@ public class ConsoleLogEventObserverTest {
                 .withLoggerName(loggerName)
                 .withFormat("Test")
                 .build());
-        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:68)]: Test\n",
+        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:67)]: Test\n",
                 message);
     }
 
