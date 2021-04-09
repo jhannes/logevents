@@ -39,13 +39,13 @@ public abstract class AbstractFilteredLogEventObserver implements LogEventObserv
     protected boolean shouldLogEvent(LogEvent logEvent) {
         if (logEvent.isBelowThreshold(threshold)) return false;
         for (Marker suppressedMarker : suppressedMarkers) {
-            if (logEvent.getMarker() != null && suppressedMarker.contains(logEvent.getMarker())) {
+            if (logEvent.getMarker() != null && logEvent.getMarker().contains(suppressedMarker)) {
                 return false;
             }
         }
         if (!requireMarker.isEmpty()) {
             for (Marker requireMarker : requireMarker) {
-                if (logEvent.getMarker() != null && requireMarker.contains(logEvent.getMarker())) {
+                if (logEvent.getMarker() != null && logEvent.getMarker().contains(requireMarker)) {
                     return true;
                 }
             }

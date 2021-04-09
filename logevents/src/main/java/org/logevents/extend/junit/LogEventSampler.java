@@ -18,18 +18,19 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class LogEventSampler {
-    public static final Marker PERSONAL_DATA = MarkerFactory.getMarker("PERSONAL_DATA");
-    public static final Marker SECURITY = MarkerFactory.getMarker("SECURITY");
-    public static final Marker AUDIT = MarkerFactory.getMarker("AUDIT");
-    public static final Marker LIFECYCLE = MarkerFactory.getMarker("LIFECYCLE");
+    public static final Marker HTTP_REQUEST = MarkerFactory.getMarker("HTTP_REQUEST");
+    public static final Marker HTTP_ASSET_REQUEST = MarkerFactory.getMarker("HTTP_ASSET_REQUEST");
+    public static final Marker HTTP_ERROR = MarkerFactory.getMarker("HTTP_ERROR");
     public static final Marker OPS = MarkerFactory.getMarker("OPS");
+    public static final Marker LIFECYCLE = MarkerFactory.getMarker("LIFECYCLE");
     static {
-        SECURITY.add(AUDIT);
-        PERSONAL_DATA.add(AUDIT);
+        HTTP_ASSET_REQUEST.add(HTTP_REQUEST);
+        HTTP_ERROR.add(HTTP_REQUEST);
+        LIFECYCLE.add(OPS);
     }
 
     private static final Marker[] SAMPLE_MARKERS = new Marker[] {
-            AUDIT, SECURITY, PERSONAL_DATA, LIFECYCLE, OPS
+            HTTP_ERROR, HTTP_ASSET_REQUEST, HTTP_REQUEST, LIFECYCLE, OPS
     };
 
     private static Random random = new Random();

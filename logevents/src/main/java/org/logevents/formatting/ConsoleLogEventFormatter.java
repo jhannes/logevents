@@ -43,6 +43,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
 
     @Override
     public String apply(LogEvent e) {
+        // TODO: MARKER
         return String.format("%s [%s] [%s] [%s]%s: %s\n",
                 e.getZonedDateTime().format(timeOnlyFormatter),
                 e.getThreadName(),
