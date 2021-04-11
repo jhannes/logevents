@@ -6,7 +6,7 @@ import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.query.LogEventFilter;
+import org.logevents.query.LogEventQuery;
 import org.logevents.query.LogEventQueryResult;
 import org.logevents.query.LogEventSummary;
 import org.slf4j.Marker;
@@ -111,7 +111,7 @@ public class DatabaseLogEventObserverTest {
         observer.processBatch(new LogEventBatch().add(event));
 
         Map<String, Object> savedEvent = observer
-                .query(filter(Optional.of(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)))
+                .query(query(Optional.of(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)))
                 .getEventsAsJson()
                 .stream()
                 .filter(e -> e.get("formattedMessage").equals(event.getMessage()))
@@ -127,7 +127,7 @@ public class DatabaseLogEventObserverTest {
         observer.processBatch(new LogEventBatch().add(event));
 
         Map<String, Object> savedEvent = observer
-                .query(filter(Optional.of(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)))
+                .query(query(Optional.of(event.getLevel()), event.getZonedDateTime(), Duration.ofSeconds(1)))
                 .getEventsAsJson()
                 .stream()
                 .filter(e -> e.get("formattedMessage").equals(event.getMessage()))
@@ -252,13 +252,13 @@ public class DatabaseLogEventObserverTest {
 
         HashMap<String, String[]> parameters = parameters(Optional.of(Level.DEBUG), logTime, Duration.ofMinutes(1));
         parameters.put("limit", new String[]{"2"});
-        LogEventQueryResult result = observer.query(new LogEventFilter(parameters));
+        LogEventQueryResult result = observer.query(new LogEventQuery(parameters));
         assertEquals(2, listEvents(parameters).size());
         assertEquals(4, result.getSummary().getRowCount());
 
         properties.setProperty("observer.db.noFetchFirstSupport", "true");
         observer = new DatabaseLogEventObserver(properties, "observer.db");
-        result = observer.query(new LogEventFilter(parameters));
+        result = observer.query(new LogEventQuery(parameters));
         assertEquals(2, result.getEvents().size());
         assertEquals(4, result.getSummary().getRowCount());
 
@@ -375,7 +375,7 @@ public class DatabaseLogEventObserverTest {
         LogEvent event3 = sampler.withMarker(OTHER_MARKER).withLoggerName(logger2).build();
         observer.processBatch(new LogEventBatch().add(event1).add(event2).add(event3));
 
-        LogEventSummary summary = observer.getSummary(filter(Optional.empty(), logTime, Duration.ofHours(1)));
+        LogEventSummary summary = observer.getSummary(query(Optional.empty(), logTime, Duration.ofHours(1)));
         assertEquals(new HashSet<>(Arrays.asList(event1.getMarker().getName(), event3.getMarker().getName())),
                 summary.getMarkers());
         assertEquals(new HashSet<>(Arrays.asList(event1.getLoggerName(), event2.getLoggerName(), event3.getLoggerName())),
@@ -406,7 +406,7 @@ public class DatabaseLogEventObserverTest {
 
         HashMap<String, String[]> parameters = parameters(Optional.of(Level.WARN), time, interval);
         parameters.put("marker", new String[] { "MY_MARKER" });
-        LogEventSummary summary = observer.getSummary(new LogEventFilter(parameters));
+        LogEventSummary summary = observer.getSummary(new LogEventQuery(parameters));
         assertEquals(new HashSet<>(Arrays.asList("mdcKey")), summary.getMdcMap().keySet());
         assertEquals(new HashSet<>(Arrays.asList("just right")), summary.getMdcMap().get("mdcKey"));
         assertEquals(new HashSet<>(Arrays.asList(OTHER_MARKER.toString())), summary.getMarkers());
@@ -415,24 +415,24 @@ public class DatabaseLogEventObserverTest {
     }
 
     private Collection<LogEvent> listEvents(Level level, ZonedDateTime zonedDateTime, Duration duration) {
-        return observer.query(filter(Optional.of(level), zonedDateTime, duration)).getEvents();
+        return observer.query(query(Optional.of(level), zonedDateTime, duration)).getEvents();
     }
 
     private Collection<LogEvent> listEvents(HashMap<String, String[]> parameters) {
-        return observer.query(new LogEventFilter(parameters)).getEvents();
+        return observer.query(new LogEventQuery(parameters)).getEvents();
     }
 
     private Collection<LogEvent> listEvents(LogEvent event) {
         return listEvents(event.getLevel(), event.getZonedDateTime(), Duration.ofSeconds(1));
     }
 
-    private LogEventFilter listEvents(Optional<Level> empty, ZonedDateTime now, Duration duration) {
-        return filter(empty, now, duration);
+    private LogEventQuery listEvents(Optional<Level> empty, ZonedDateTime now, Duration duration) {
+        return query(empty, now, duration);
     }
 
-    private LogEventFilter filter(Optional<Level> level, ZonedDateTime time, Duration interval) {
+    private LogEventQuery query(Optional<Level> level, ZonedDateTime time, Duration interval) {
         HashMap<String, String[]> untypedParameters = parameters(level, time, interval);
-        return new LogEventFilter(untypedParameters);
+        return new LogEventQuery(untypedParameters);
     }
 
     private HashMap<String, String[]> parameters(Optional<Level> level, ZonedDateTime time, Duration interval) {

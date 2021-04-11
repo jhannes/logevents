@@ -5,7 +5,7 @@ import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.observers.LogEventSource;
 import org.logevents.observers.WebLogEventObserver;
-import org.logevents.query.LogEventFilter;
+import org.logevents.query.LogEventQuery;
 import org.logevents.query.LogEventQueryResult;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonParser;
@@ -110,7 +110,7 @@ import java.util.stream.Stream;
  *
  * @see WebLogEventObserver
  * @see OpenIdConfiguration
- * @see LogEventFilter
+ * @see LogEventQuery
  *
  */
 public class LogEventsServlet extends HttpServlet {
@@ -152,8 +152,8 @@ public class LogEventsServlet extends HttpServlet {
         } else if (!authenticated(resp, req.getCookies())) {
             resp.sendError(401, "Please log in");
         } else if (path.equals("/events")) {
-            LogEventFilter filter = new LogEventFilter(req.getParameterMap());
-            LogEventQueryResult queryResult = getLogEventSource().query(filter);
+            LogEventQuery query = new LogEventQuery(req.getParameterMap());
+            LogEventQueryResult queryResult = getLogEventSource().query(query);
 
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("facets", queryResult.getSummary().toJson());

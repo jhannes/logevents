@@ -6,7 +6,7 @@ import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.JsonExceptionFormatter;
 import org.logevents.extend.servlets.JsonMessageFormatter;
 import org.logevents.query.JsonLogEventFormatter;
-import org.logevents.query.LogEventFilter;
+import org.logevents.query.LogEventQuery;
 import org.logevents.query.LogEventQueryResult;
 import org.logevents.query.LogEventSummary;
 import org.logevents.util.CircularBuffer;
@@ -78,12 +78,12 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
         messages.get(logEvent.getLevel()).add(logEvent);
     }
 
-    public LogEventQueryResult query(LogEventFilter filter) {
-        Collection<LogEvent> allEvents = filter(filter.getThreshold(), filter.getStartTime(), filter.getEndTime());
+    public LogEventQueryResult query(LogEventQuery query) {
+        Collection<LogEvent> allEvents = filter(query.getThreshold(), query.getStartTime(), query.getEndTime());
         LogEventSummary summary = new LogEventSummary();
         allEvents.forEach(summary::add);
         List<Map<String, Object>> eventsAsJson = allEvents.stream()
-                .filter(filter).map(jsonFormatter).limit(filter.getLimit()).collect(Collectors.toList());
+                .filter(query).map(jsonFormatter).limit(query.getLimit()).collect(Collectors.toList());
         summary.setFilteredCount(eventsAsJson.size());
         return new LogEventQueryResult(summary, eventsAsJson);
     }

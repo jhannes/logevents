@@ -7,7 +7,7 @@ import com.sun.net.httpserver.HttpsExchange;
 import com.sun.net.httpserver.HttpsServer;
 import org.logevents.observers.LogEventSource;
 import org.logevents.observers.WebLogEventObserver;
-import org.logevents.query.LogEventFilter;
+import org.logevents.query.LogEventQuery;
 import org.logevents.query.LogEventQueryResult;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonParser;
@@ -250,8 +250,8 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
             } else if (!isAuthenticated(exchange)) {
                 sendResponse(exchange, "Please log in", 401);
             } else if (path.equals("/logs/events")) {
-                LogEventFilter filter = new LogEventFilter(parseParameters(exchange.getRequestURI().getQuery()));
-                LogEventQueryResult queryResult = logEventSource.query(filter);
+                LogEventQuery query = new LogEventQuery(parseParameters(exchange.getRequestURI().getQuery()));
+                LogEventQueryResult queryResult = logEventSource.query(query);
 
                 Map<String, Object> result = new LinkedHashMap<>();
                 result.put("facets", queryResult.getSummary().toJson());

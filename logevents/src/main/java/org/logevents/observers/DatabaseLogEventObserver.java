@@ -7,7 +7,7 @@ import org.logevents.extend.servlets.JsonMessageFormatter;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
 import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.query.LogEventFilter;
+import org.logevents.query.LogEventQuery;
 import org.logevents.query.LogEventQueryResult;
 import org.logevents.query.LogEventSummary;
 import org.logevents.status.LogEventStatus;
@@ -80,7 +80,7 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
     private final String logEventsMdcTable;
 
     /**
-     * Unless set to <em>true</em>, {@link LogEventFilter#getLimit()} will be added as
+     * Unless set to <em>true</em>, {@link LogEventQuery#getLimit()} will be added as
      * <code>SELECT ... FETCH FIRST ... ROWS</code>. FETCH FIRST was introduced in
      * <a href="https://en.wikipedia.org/wiki/Select_%28SQL%29#Limiting_result_rows">SQL:2008</a>
      * and is supported by Postgresql 8.4, Oracle 12c, IBM DB2, HSQLDB, H2, and SQL Server 2012.
@@ -189,21 +189,21 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
     }
 
     /**
-     * Retrieve log events from the database that matches the argument filter
+     * Retrieve log events from the database that matches the argument query
      */
-    private Collection<Map<String, Object>> list(LogEventFilter filter) {
+    private Collection<Map<String, Object>> list(LogEventQuery query) {
         Map<String, Map<String, Object>> idToJson = new LinkedHashMap<>();
         Map<String, List<Map<String, String>>> idToJsonMdc = new LinkedHashMap<>();
 
         try (Connection connection = getConnection()) {
             List<String> filters = new ArrayList<>();
             List<Object> parameters = new ArrayList<>();
-            buildFilter(filter, filters, parameters);
+            buildFilter(query, filters, parameters);
 
             String sql = "select * from " + logEventsTable + " e left outer join " + logEventsMdcTable + "  m on e.event_id = m.event_id " +
                     " where " + String.join(" AND ", filters) + " order by instant, m.name, m.value";
             if (!noFetchFirstSupport) {
-                sql += " FETCH FIRST " + filter.getLimit() + " ROWS ONLY";
+                sql += " FETCH FIRST " + query.getLimit() + " ROWS ONLY";
             }
 
             LogEventStatus.getInstance().addTrace(this, sql);
@@ -214,7 +214,7 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
                 }
                 long startTime = System.currentTimeMillis();
                 try (ResultSet rs = statement.executeQuery()) {
-                    while (rs.next() && idToJson.size() < filter.getLimit()) {
+                    while (rs.next() && idToJson.size() < query.getLimit()) {
                         String id = rs.getString("event_id");
                         if (!idToJson.containsKey(id)) {
                             Map<String, Object> jsonEvent = new HashMap<>();
@@ -259,34 +259,34 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
         return idToJson.values();
     }
 
-    private void buildFilter(LogEventFilter filter, List<String> filters, List<Object> parameters) {
+    private void buildFilter(LogEventQuery query, List<String> filters, List<Object> parameters) {
         filters.add("instant between ? and ?");
-        parameters.add(filter.getStartTime().toEpochMilli());
-        parameters.add(filter.getEndTime().toEpochMilli());
+        parameters.add(query.getStartTime().toEpochMilli());
+        parameters.add(query.getEndTime().toEpochMilli());
 
         filters.add("level_int >= ?");
-        parameters.add(filter.getThreshold().toInt());
-        filter.getMarkers().ifPresent(markers -> {
-            filters.add(filter.isIncludeMarkers() ? "marker in (" + questionMarks(markers.size()) + ")" : "(marker is null or marker not in (" + questionMarks(markers.size()) + "))");
+        parameters.add(query.getThreshold().toInt());
+        query.getMarkers().ifPresent(markers -> {
+            filters.add(query.isIncludeMarkers() ? "marker in (" + questionMarks(markers.size()) + ")" : "(marker is null or marker not in (" + questionMarks(markers.size()) + "))");
             markers.stream().map(Marker::getName).forEach(parameters::add);
         });
-        filter.getLoggers().ifPresent(loggers -> {
-            filters.add(filter.isIncludeLoggers() ? "logger in (" + questionMarks(loggers.size()) + ")" : "logger not in (" + questionMarks(loggers.size()) + ")");
+        query.getLoggers().ifPresent(loggers -> {
+            filters.add(query.isIncludeLoggers() ? "logger in (" + questionMarks(loggers.size()) + ")" : "logger not in (" + questionMarks(loggers.size()) + ")");
             parameters.addAll(loggers);
         });
-        filter.getThreadNames().ifPresent(threads -> {
+        query.getThreadNames().ifPresent(threads -> {
             filters.add("thread in (" + questionMarks(threads.size()) + ")");
             parameters.addAll(threads);
         });
-        filter.getNodes().ifPresent(nodes -> {
+        query.getNodes().ifPresent(nodes -> {
             filters.add("node_name in (" + questionMarks(nodes.size()) + ")");
             parameters.addAll(nodes);
         });
-        filter.getApplications().ifPresent(applications -> {
+        query.getApplications().ifPresent(applications -> {
             filters.add("application_name in (" + questionMarks(applications.size()) + ")");
             parameters.addAll(applications);
         });
-        filter.getMdcFilter().ifPresent(mdcFilter -> {
+        query.getMdcFilter().ifPresent(mdcFilter -> {
             List<String> mdcFilters = new ArrayList<>();
             mdcFilter.forEach((name, value) -> {
                 mdcFilters.add("e.event_id in (select event_id from " + logEventsMdcTable + " where name = ? and value in (" + questionMarks(value.size()) + "))");
@@ -371,9 +371,9 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
     private final JsonExceptionFormatter exceptionFormatter;
 
     @Override
-    public LogEventQueryResult query(LogEventFilter filter) {
+    public LogEventQueryResult query(LogEventQuery query) {
         try {
-            return new LogEventQueryResult(getSummary(filter), list(filter));
+            return new LogEventQueryResult(getSummary(query), list(query));
         } catch (SQLException e) {
             throw ExceptionUtil.softenException(e);
         }
@@ -382,26 +382,26 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
     /**
      * Retrieves a summary of log events within the specified interval above the threshold log level
      */
-    public LogEventSummary getSummary(LogEventFilter filter) throws SQLException {
+    public LogEventSummary getSummary(LogEventQuery query) throws SQLException {
         LogEventSummary summary = new LogEventSummary();
 
         try (Connection connection = getConnection()) {
-            summary.setRowCount(countRows(connection, filter));
-            summary.setFilteredCount(countFilteredRows(connection, filter));
-            summary.setMarkers(listDistinct(connection, filter, "marker"));
-            summary.setThreads(listDistinct(connection, filter, "thread"));
-            summary.setLoggers(listDistinct(connection, filter, "logger"));
-            summary.setNodes(listDistinct(connection, filter, "node_name"));
-            summary.setApplications(listDistinct(connection, filter, "application_name"));
-            summary.setMdcMap(getMdcMap(connection, filter));
+            summary.setRowCount(countRows(connection, query));
+            summary.setFilteredCount(countFilteredRows(connection, query));
+            summary.setMarkers(listDistinct(connection, query, "marker"));
+            summary.setThreads(listDistinct(connection, query, "thread"));
+            summary.setLoggers(listDistinct(connection, query, "logger"));
+            summary.setNodes(listDistinct(connection, query, "node_name"));
+            summary.setApplications(listDistinct(connection, query, "application_name"));
+            summary.setMdcMap(getMdcMap(connection, query));
         }
         return summary;
     }
 
-    private int countFilteredRows(Connection connection, LogEventFilter filter) throws SQLException {
+    private int countFilteredRows(Connection connection, LogEventQuery query) throws SQLException {
         List<String> filters = new ArrayList<>();
         List<Object> parameters = new ArrayList<>();
-        buildFilter(filter, filters, parameters);
+        buildFilter(query, filters, parameters);
         try (PreparedStatement statement = connection.prepareStatement("select count(*) from " + logEventsTable + " e where " + String.join(" AND ", filters))) {
             int parameterIndex = 1;
             for (Object parameter : parameters) {
@@ -418,11 +418,11 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
     }
 
 
-    private int countRows(Connection connection, LogEventFilter filter) throws SQLException {
+    private int countRows(Connection connection, LogEventQuery query) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("select count(*) from " + logEventsTable + " where instant between ? and ? and level_int >= ?")) {
-            statement.setLong(1, filter.getStartTime().toEpochMilli());
-            statement.setLong(2, filter.getEndTime().toEpochMilli());
-            statement.setLong(3, filter.getThreshold().toInt());
+            statement.setLong(1, query.getStartTime().toEpochMilli());
+            statement.setLong(2, query.getEndTime().toEpochMilli());
+            statement.setLong(3, query.getThreshold().toInt());
             try (ResultSet rs = statement.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt(1);
@@ -433,11 +433,11 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
         }
     }
 
-    private Set<String> listDistinct(Connection connection, LogEventFilter filter, String columnName) throws SQLException {
+    private Set<String> listDistinct(Connection connection, LogEventQuery query, String columnName) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("select distinct " + columnName + " from " + logEventsTable + " where instant between ? and ? and level_int >= ?")) {
-            statement.setLong(1, filter.getStartTime().toEpochMilli());
-            statement.setLong(2, filter.getEndTime().toEpochMilli());
-            statement.setLong(3, filter.getThreshold().toInt());
+            statement.setLong(1, query.getStartTime().toEpochMilli());
+            statement.setLong(2, query.getEndTime().toEpochMilli());
+            statement.setLong(3, query.getThreshold().toInt());
             try (ResultSet rs = statement.executeQuery()) {
                 Set<String> result = new TreeSet<>();
                 while (rs.next()) {
@@ -451,12 +451,12 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
         }
     }
 
-    private Map<String, Set<String>> getMdcMap(Connection connection, LogEventFilter filter) throws SQLException {
+    private Map<String, Set<String>> getMdcMap(Connection connection, LogEventQuery query) throws SQLException {
         Map<String, Set<String>> mdcMap = new LinkedHashMap<>();
         try (PreparedStatement statement = connection.prepareStatement("select distinct name, value from " + logEventsMdcTable + " m inner join "  + logEventsTable + " e on m.event_id = e.event_id where instant between ? and ? and level_int >= ? order by name, value")) {
-            statement.setLong(1, filter.getStartTime().toEpochMilli());
-            statement.setLong(2, filter.getEndTime().toEpochMilli());
-            statement.setLong(3, filter.getThreshold().toInt());
+            statement.setLong(1, query.getStartTime().toEpochMilli());
+            statement.setLong(2, query.getEndTime().toEpochMilli());
+            statement.setLong(3, query.getThreshold().toInt());
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
                     String name = rs.getString("name");

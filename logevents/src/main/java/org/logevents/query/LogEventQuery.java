@@ -32,7 +32,7 @@ import java.util.stream.Stream;
  * </p>
  *
  */
-public class LogEventFilter implements Predicate<LogEvent> {
+public class LogEventQuery implements Predicate<LogEvent> {
 
     private final Instant startTime;
     private final Instant endTime;
@@ -48,7 +48,7 @@ public class LogEventFilter implements Predicate<LogEvent> {
     private final int limit;
 
     @SuppressWarnings("unchecked")
-    public LogEventFilter(Map untypedParameters) {
+    public LogEventQuery(Map untypedParameters) {
         Map<String, String[]> parameters = untypedParameters;
         Optional<Instant> instant = Optional.ofNullable(parameters.get("instant"))
                 .map(t -> Instant.parse(t[0]));
