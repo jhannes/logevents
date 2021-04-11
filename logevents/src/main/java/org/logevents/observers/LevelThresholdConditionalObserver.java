@@ -47,8 +47,8 @@ public class LevelThresholdConditionalObserver implements LogEventObserver {
     }
 
     @Override
-    public LogEventObserver filteredOn(Level level, Level configuredThreshold) {
-        if (configuredThreshold == null || configuredThreshold.compareTo(level) < 0 || getThreshold().toInt() > level.toInt()) {
+    public LogEventObserver filteredOn(Level level, Level loggerThreshold) {
+        if (loggerThreshold == null || loggerThreshold.compareTo(level) < 0 || getThreshold().toInt() > level.toInt()) {
             return new NullLogEventObserver();
         }
         return delegate;

@@ -2,6 +2,7 @@ package org.logevents.config;
 
 import org.junit.After;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
@@ -17,6 +18,7 @@ import org.logevents.observers.LevelThresholdConditionalObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.slf4j.Logger;
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 import java.io.File;
@@ -254,6 +256,50 @@ public class DefaultLogEventConfiguratorTest {
 
         assertEquals(Arrays.asList("DEBUG to enabled logger"),
                 ((CircularBufferLogEventObserver) factory.getObserver("buffer")).getMessages());
+    }
+    
+    @Test
+    @Ignore("Not implemented yet")
+    public void shouldConfigureMdcThreshold() {
+        configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.setProperty("logger.org.example",
+                "INFO,DEBUG@mdc:user=johannes|skywalker,DEBUG@mdc:operation=important buffer");
+        configurator.applyConfigurationProperties(factory, configuration);
+
+        CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver) factory.getObserver("buffer");
+        Logger logger = factory.getLogger("org.example.sublevel");
+        MDC.put("user", "johannes");
+        logger.debug("should be included because of MDC");
+        logger.trace("should be excluded despite of MDC");
+        MDC.put("operation", "important");
+        logger.debug("should be included because of two MDCs");
+        MDC.put("user", "boring");
+        logger.debug("should be included because of second MDC");
+        MDC.put("operation", "boring");
+        logger.debug("should be excluded because no MDC");
+        logger.info("should be included because over threshold");
+        
+        assertEquals(
+                Arrays.asList("should be included because of MDC", "should be included because of two MDCs", "should be included because of second MDC", "should be included because over threshold"),
+                buffer.getMessages()
+        );
+    }
+    
+    @Test
+    @Ignore("Not implemented yet")
+    public void shouldConfigureMdcThresholdWithDefaultObserver() {
+        configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.setProperty("root", "WARN buffer");
+        configuration.setProperty("logger.org.example", "INFO,DEBUG@mdc:user=johannes");
+        configurator.applyConfigurationProperties(factory, configuration);
+
+        CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver) factory.getObserver("buffer");
+        Logger logger = factory.getLogger("org.example.sublevel");
+
+        logger.debug("Excluded");
+        MDC.put("user", "johannes");
+        logger.debug("Included");
+        assertEquals(Arrays.asList("Included"), buffer.getMessages());
     }
 
     @Test

@@ -128,6 +128,10 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
      */
     protected Level effectiveThreshold;
 
+    public LogEventObserver getOwnObserver() {
+        return ownObserver;
+    }
+
     @Override
     public Level getEffectiveThreshold() {
         return effectiveThreshold;

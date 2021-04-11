@@ -29,8 +29,8 @@ public interface LogEventGenerator {
 
     void log(Marker marker, String format, Object... args);
 
-    static LogEventGenerator create(String name, Level configuredThreshold, Level level, LogEventObserver observer) {
-        LogEventObserver combined = observer.filteredOn(level, configuredThreshold);
+    static LogEventGenerator create(String name, Level loggerThreshold, Level level, LogEventObserver observer) {
+        LogEventObserver combined = observer.filteredOn(level, loggerThreshold);
         if (combined instanceof NullLogEventObserver) {
             return new NullLoggingEventGenerator();
         } else {

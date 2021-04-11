@@ -1,24 +1,60 @@
 @startuml
 
-title Simple Object Diagram
+title Loggers wire the shortest way to an observer
 
-object MyLogger
-object CompositeObserver
-object ConditionalObserver
-object file
-object console
-object ConsoleObserver
-object FileObserver
+package loggers {
+    object "org.example" as ParentLogger {
+        threshold: INFO
+        ownObservers: console,file
+    }
+    object "org.example.foo" as Logger {
+        threshold: DEBUG
+        ownObservers: slack
+    }
+}
 
-MyLogger -- CompositeObserver
-CompositeObserver o-- ConditionalObserver
-CompositeObserver o-- file
-ConditionalObserver o-- console
-console o-- ConsoleObserver
-file o-- FileObserver
 
-FileObserver : filename = "application.log"
-ConditionalObserver : level = WARN
+package "composite observers" {
+    object "info\nwarn\nerror" as parentInfo
+    object "info" as loggerInfo
+    object "warn\nerror" as loggerWarn
+}
+
+package observers {
+
+    object nullObserver
+
+    object consoleObserver {
+        threshold: INFO
+    }
+    object fileObserver {
+        filename: "application.log""
+    }
+    object slackObserver {
+        threshold: WARN
+    }
+    
+}
+
+
+parentInfo -down- fileObserver
+parentInfo -down- consoleObserver
+
+ParentLogger -right- nullObserver: traceLogger, debugLogger
+ParentLogger -right- parentInfo
+
+
+loggerInfo -down- fileObserver
+loggerInfo -down- consoleObserver
+loggerWarn -down- fileObserver
+loggerWarn -down- consoleObserver
+loggerWarn -down- slackObserver
+
+ParentLogger -- Logger: parent
+Logger -right- nullObserver: traceLogger
+Logger -right- fileObserver: debugLogger
+Logger -right- loggerInfo
+Logger -right- loggerWarn
 
 
 @enduml

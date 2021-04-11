@@ -8,8 +8,8 @@ import org.logevents.jmx.LogEventsMBeanFactory;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
-import org.logevents.observers.FixedLevelThresholdConditionalObserver;
 import org.logevents.observers.LevelThresholdConditionalObserver;
+import org.logevents.observers.MdcThresholdConditionalObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
 
