@@ -50,7 +50,7 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
         public void refresh() {
             this.effectiveThreshold = this.levelThreshold;
             this.observer = this.ownObserver;
-            refreshEventGenerators(effectiveThreshold, observer);
+            refreshEventGenerators();
         }
 
         @Override
@@ -85,7 +85,7 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
                     ? CompositeLogEventObserver.combine(parentLogger.observer, ownObserver)
                     : ownObserver;
 
-            refreshEventGenerators(effectiveThreshold, observer);
+            refreshEventGenerators();
         }
 
         @Override
@@ -494,9 +494,7 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
     @Override
     public void log(Marker marker, String fqcn, int levelInt, String message, Object[] argArray, Throwable t) {
         if (levelInt >= effectiveThreshold.toInt()) {
-            Level level = Stream.of(Level.TRACE, Level.DEBUG, Level.INFO, Level.WARN, Level.ERROR)
-                    .filter(l -> l.toInt() >= levelInt)
-                    .findFirst().orElse(Level.ERROR);
+            Level level = getLevel(levelInt);
             String threadName = Thread.currentThread().getName();
             Map<String, String> mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
             observer.logEvent(new LogEvent(this.name, level, threadName, Instant.now(), marker, message, argArray, t, mdcProperties));
@@ -540,12 +538,16 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
 
     public abstract void refresh();
 
-    protected void refreshEventGenerators(Level effectiveThreshold, LogEventObserver observer) {
-        this.errorEventGenerator = LogEventGenerator.create(getName(), effectiveThreshold, Level.ERROR, observer);
-        this.warnEventGenerator  = LogEventGenerator.create(getName(), effectiveThreshold, Level.WARN, observer);
-        this.infoEventGenerator = LogEventGenerator.create(getName(), effectiveThreshold, Level.INFO, observer);
-        this.debugEventGenerator = LogEventGenerator.create(getName(), effectiveThreshold, Level.DEBUG, observer);
-        this.traceEventGenerator = LogEventGenerator.create(getName(), effectiveThreshold, Level.TRACE, observer);
+    protected void refreshEventGenerators() {
+        this.errorEventGenerator = LogEventGenerator.create(getName(), Level.ERROR, getObserverAtLevel(Level.ERROR));
+        this.warnEventGenerator  = LogEventGenerator.create(getName(), Level.WARN, getObserverAtLevel(Level.WARN));
+        this.infoEventGenerator = LogEventGenerator.create(getName(), Level.INFO, getObserverAtLevel(Level.INFO));
+        this.debugEventGenerator = LogEventGenerator.create(getName(), Level.DEBUG, getObserverAtLevel(Level.DEBUG));
+        this.traceEventGenerator = LogEventGenerator.create(getName(), Level.TRACE, getObserverAtLevel(Level.TRACE));
+    }
+
+    private LogEventObserver getObserverAtLevel(Level level) {
+        return observer.filteredOn(level, effectiveThreshold);
     }
 
     @Override

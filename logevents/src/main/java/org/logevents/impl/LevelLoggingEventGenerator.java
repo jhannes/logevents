@@ -8,9 +8,9 @@ import org.slf4j.event.Level;
 
 class LevelLoggingEventGenerator implements LogEventGenerator {
 
-    private LogEventObserver observer;
+    private final LogEventObserver observer;
     private final Level level;
-    private String loggerName;
+    private final String loggerName;
 
     LevelLoggingEventGenerator(String loggerName, Level level, LogEventObserver observer) {
         this.loggerName = loggerName;

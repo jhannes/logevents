@@ -29,12 +29,11 @@ public interface LogEventGenerator {
 
     void log(Marker marker, String format, Object... args);
 
-    static LogEventGenerator create(String name, Level loggerThreshold, Level level, LogEventObserver observer) {
-        LogEventObserver combined = observer.filteredOn(level, loggerThreshold);
-        if (combined instanceof NullLogEventObserver) {
+    static LogEventGenerator create(String name, Level level, LogEventObserver observer) {
+        if (observer instanceof NullLogEventObserver) {
             return new NullLoggingEventGenerator();
         } else {
-            return new LevelLoggingEventGenerator(name, level, combined);
+            return new LevelLoggingEventGenerator(name, level, observer);
         }
     }
 
