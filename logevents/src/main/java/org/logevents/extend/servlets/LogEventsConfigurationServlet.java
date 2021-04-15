@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.logevents.LogEventFactory;
 import org.logevents.LoggerConfiguration;
+import org.logevents.impl.LogEventFilter;
 import org.logevents.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,7 @@ import org.slf4j.event.Level;
 
 public class LogEventsConfigurationServlet extends HttpServlet {
 
-    private static Logger logger = LoggerFactory.getLogger(LogEventsConfigurationServlet.class);
+    private static final Logger logger = LoggerFactory.getLogger(LogEventsConfigurationServlet.class);
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -36,9 +37,10 @@ public class LogEventsConfigurationServlet extends HttpServlet {
         Collections.sort(loggerNames);
 
         Map<String, String> logLevels = new LinkedHashMap<>();
-        logLevels.put("/", logEventFactory.getRootLogger().getLevelThreshold().toString());
+        // TODO: null check?
+        logLevels.put("/", logEventFactory.getRootLogger().getOwnFilter().toString());
         for (String loggerName : loggerNames) {
-            Level threshold = logEventFactory.getLogger(loggerName).getLevelThreshold();
+            LogEventFilter threshold = logEventFactory.getLogger(loggerName).getOwnFilter();
             logLevels.put(loggerName, threshold != null ? threshold.toString() : "<inherited>");
         }
 

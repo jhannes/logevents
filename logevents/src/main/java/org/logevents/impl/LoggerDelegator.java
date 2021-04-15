@@ -7,21 +7,16 @@ import org.logevents.LoggerConfiguration;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Logger;
-import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
  * Internal implementation of SLF4J {@link Logger}. Uses
- * {@link #levelThreshold}, {@link #ownObserver} and {@link #inheritParentObserver}
- * as configuration state and calculates {@link #observer} and {@link #effectiveThreshold}
+ * {@link #ownFilter}, {@link #ownObserver} and {@link #inheritParentObserver}
+ * as configuration state and calculates {@link #observer} and {@link #effectiveFilter}
  * based on these. Uses {@link LogEventGenerator} internal class as strategy
  * pattern to either ignore everything at a given level or create a {@link LogEvent}.
  *
@@ -36,19 +31,19 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
         RootLoggerDelegator() {
             super("ROOT");
             ownObserver = new NullLogEventObserver();
-            levelThreshold = Level.INFO;
+            ownFilter = new LevelThresholdFilter(Level.INFO);
             refresh();
         }
 
         @Override
         public void reset() {
             super.reset();
-            levelThreshold = Level.INFO;
+            ownFilter = new LevelThresholdFilter(Level.INFO);
         }
 
         @Override
         public void refresh() {
-            this.effectiveThreshold = this.levelThreshold;
+            this.effectiveFilter = this.ownFilter;
             this.observer = this.ownObserver;
             refreshEventGenerators();
         }
@@ -72,14 +67,14 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
         @Override
         public void reset() {
             super.reset();
-            this.effectiveThreshold = null;
+            this.effectiveFilter = null;
         }
 
         @Override
         public void refresh() {
-            this.effectiveThreshold = this.levelThreshold;
-            if (effectiveThreshold == null) {
-                this.effectiveThreshold = parentLogger.effectiveThreshold;
+            this.effectiveFilter = this.ownFilter;
+            if (effectiveFilter == null) {
+                this.effectiveFilter = parentLogger.effectiveFilter;
             }
             observer = inheritParentObserver
                     ? CompositeLogEventObserver.combine(parentLogger.observer, ownObserver)
@@ -101,7 +96,7 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
     /**
      * Configuration value. Set from {@link LogEventFactory}
      */
-    protected Level levelThreshold;
+    protected LogEventFilter ownFilter;
     /**
      * Configuration value. Set from {@link LogEventFactory}
      */
@@ -113,7 +108,7 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
 
     @Override
     public boolean isConfigured() {
-        return levelThreshold != null || !(ownObserver instanceof NullLogEventObserver) || !inheritParentObserver;
+        return ownFilter != null || !(ownObserver instanceof NullLogEventObserver) || !inheritParentObserver;
     }
 
     /**
@@ -122,19 +117,20 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
      * otherwise set to {@link #ownObserver}.
      */
     protected LogEventObserver observer;
+    
     /**
-     * Calculated value. If {@link #levelThreshold} is set, uses this
-     * otherwise uses parent's {@link #effectiveThreshold}.
+     * Calculated value. If {@link #ownFilter} is set, uses this
+     * otherwise uses parent's {@link #effectiveFilter}.
      */
-    protected Level effectiveThreshold;
+    protected LogEventFilter effectiveFilter;
 
     public LogEventObserver getOwnObserver() {
         return ownObserver;
     }
 
     @Override
-    public Level getEffectiveThreshold() {
-        return effectiveThreshold;
+    public LogEventFilter getEffectiveFilter() {
+        return effectiveFilter;
     }
 
     @Override
@@ -482,8 +478,8 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
     }
 
     @Override
-    public Level getLevelThreshold() {
-        return levelThreshold;
+    public LogEventFilter getOwnFilter() {
+        return ownFilter;
     }
 
     @Override
@@ -493,12 +489,8 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
 
     @Override
     public void log(Marker marker, String fqcn, int levelInt, String message, Object[] argArray, Throwable t) {
-        if (levelInt >= effectiveThreshold.toInt()) {
-            Level level = getLevel(levelInt);
-            String threadName = Thread.currentThread().getName();
-            Map<String, String> mdcProperties = Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>());
-            observer.logEvent(new LogEvent(this.name, level, threadName, Instant.now(), marker, message, argArray, t, mdcProperties));
-        }
+        Level level = getLevel(levelInt);
+        getLogger(level).log(marker, message, argArray, t);
     }
 
     @Override
@@ -518,9 +510,13 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
                         .filter(l -> l.toInt() >= levelInt)
                         .findFirst().orElse(Level.ERROR);
     }
+    
+    public void setFilter(LogEventFilter filter) {
+        this.ownFilter = filter;
+    }
 
-    public void setLevelThreshold(Level levelThreshold) {
-        this.levelThreshold = levelThreshold;
+    public void setLevelThreshold(Level ownFilter) {
+        this.ownFilter = new LevelThresholdFilter(ownFilter);
     }
 
     public void setOwnObserver(LogEventObserver ownObserver, boolean inheritParentObserver) {
@@ -531,7 +527,7 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
     public void reset() {
         this.ownObserver = new NullLogEventObserver();
         this.inheritParentObserver = true;
-        this.levelThreshold = null;
+        this.ownFilter = null;
 
         this.observer = null;
     }
@@ -547,12 +543,12 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
     }
 
     private LogEventObserver getObserverAtLevel(Level level) {
-        return observer.filteredOn(level, effectiveThreshold);
+        return effectiveFilter.filterObserverOnLevel(level, observer);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + name + ",level=" + levelThreshold + ",ownObserver=" + ownObserver + "}";
+        return getClass().getSimpleName() + "{" + name + ",filter=" + ownFilter + ",ownObserver=" + ownObserver + "}";
     }
 
     public LogEventObserver setObserver(LogEventObserver observer, boolean inheritParentObserver) {

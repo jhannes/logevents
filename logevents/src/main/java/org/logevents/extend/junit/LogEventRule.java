@@ -7,6 +7,7 @@ import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.formatting.MessageFormatter;
+import org.logevents.impl.LogEventFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -115,12 +116,12 @@ public class LogEventRule implements TestRule, LogEventObserver {
             public void evaluate() throws Throwable {
                 LogEventFactory loggerFactory = (LogEventFactory) LoggerFactory.getILoggerFactory();
 
-                Level oldLevel = loggerFactory.setLevel(logger, level);
+                LogEventFilter oldFilter = loggerFactory.setLevel(logger, level);
                 LogEventObserver oldObserver = loggerFactory.setObserver(logger, LogEventRule.this, false);
                 try {
                     base.evaluate();
                 } finally {
-                    loggerFactory.setLevel(logger, oldLevel);
+                    loggerFactory.setFilter(logger, oldFilter);
                     loggerFactory.setObserver(logger, oldObserver, true);
                 }
             }

@@ -1,12 +1,13 @@
 package org.logevents.jmx;
 
+import org.logevents.impl.LogEventFilter;
 import org.slf4j.event.Level;
 
 import java.util.List;
 
 public interface LoggerMXBean {
 
-    Level getLevel();
+    LogEventFilter getFilter();
 
     void setLevel(Level level);
 

@@ -3,6 +3,7 @@ package org.logevents.jmx;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
+import org.logevents.impl.LogEventFilter;
 import org.slf4j.event.Level;
 
 import java.util.List;
@@ -18,8 +19,8 @@ public class LoggerMXBeanAdaptor implements LoggerMXBean {
     }
 
     @Override
-    public Level getLevel() {
-        return logger.getLevelThreshold();
+    public LogEventFilter getFilter() {
+        return logger.getOwnFilter();
     }
 
     @Override

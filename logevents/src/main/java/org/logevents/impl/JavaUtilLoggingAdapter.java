@@ -1,14 +1,8 @@
 package org.logevents.impl;
 
-import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
-import org.slf4j.MDC;
 import org.slf4j.spi.LocationAwareLogger;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -35,7 +29,7 @@ public class JavaUtilLoggingAdapter extends Handler {
         java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
         Stream.of(rootLogger.getHandlers()).forEach(rootLogger::removeHandler);
         rootLogger.addHandler(new JavaUtilLoggingAdapter(factory));
-        rootLogger.setLevel(toJavaUtilLoggingLevel(factory.getRootLogger().getLevelThreshold()));
+        rootLogger.setLevel(toJavaUtilLoggingLevel(factory.getRootLogger().getOwnFilter().getThreshold()));
     }
 
     private static Level toJavaUtilLoggingLevel(org.slf4j.event.Level level) {
