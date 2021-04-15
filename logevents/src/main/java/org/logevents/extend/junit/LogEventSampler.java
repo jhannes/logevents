@@ -23,6 +23,7 @@ public class LogEventSampler {
     public static final Marker HTTP_ERROR = MarkerFactory.getMarker("HTTP_ERROR");
     public static final Marker OPS = MarkerFactory.getMarker("OPS");
     public static final Marker LIFECYCLE = MarkerFactory.getMarker("LIFECYCLE");
+    public static final Marker PERFORMANCE = MarkerFactory.getMarker("PERFORMANCE");
     static {
         HTTP_ASSET_REQUEST.add(HTTP_REQUEST);
         HTTP_ERROR.add(HTTP_REQUEST);

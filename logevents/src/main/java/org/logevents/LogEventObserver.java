@@ -6,6 +6,7 @@ import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
+import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
 import java.util.Collections;
@@ -37,5 +38,13 @@ public interface LogEventObserver {
 
     default List<LogEventObserver> toList() {
         return Collections.singletonList(this);
+    }
+
+    default boolean isEnabled(Marker marker) {
+        return true;
+    }
+
+    default boolean isEnabled() {
+        return true;
     }
 }

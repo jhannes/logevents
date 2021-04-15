@@ -11,6 +11,7 @@ import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.junit.LogEventSampler;
+import org.logevents.impl.LoggerDelegator;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.LevelThresholdConditionalObserver;
@@ -258,11 +259,12 @@ public class DefaultLogEventConfiguratorTest {
     }
     
     @Test
-    @Ignore("Not implemented yet")
     public void shouldConfigureMdcThreshold() {
         configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
         configuration.setProperty("logger.org.example",
                 "INFO,DEBUG@mdc:user=johannes|skywalker,DEBUG@mdc:operation=important buffer");
+        configuration.setProperty("includeParent.org.example", "false");
+        
         configurator.applyConfigurationProperties(factory, configuration);
 
         CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver) factory.getObserver("buffer");
@@ -285,7 +287,6 @@ public class DefaultLogEventConfiguratorTest {
     }
     
     @Test
-    @Ignore("Not implemented yet")
     public void shouldConfigureMdcThresholdWithDefaultObserver() {
         configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
         configuration.setProperty("root", "WARN buffer");
@@ -293,7 +294,8 @@ public class DefaultLogEventConfiguratorTest {
         configurator.applyConfigurationProperties(factory, configuration);
 
         CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver) factory.getObserver("buffer");
-        Logger logger = factory.getLogger("org.example.sublevel");
+        LoggerDelegator logger = (LoggerDelegator) factory.getLogger("org.example.sublevel");
+        assertEquals("ConditionalLogEventFilter{INFO,ERROR=[MdcCondition{user in [johannes]}],WARN=[MdcCondition{user in [johannes]}]}", logger.getEffectiveFilter().toString());
 
         logger.debug("Excluded");
         MDC.put("user", "johannes");

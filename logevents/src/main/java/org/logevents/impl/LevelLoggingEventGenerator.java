@@ -20,12 +20,12 @@ class LevelLoggingEventGenerator implements LogEventGenerator {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return observer.isEnabled();
     }
 
     @Override
     public boolean isEnabled(Marker marker) {
-        return true;
+        return observer.isEnabled(marker);
     }
 
     @Override
