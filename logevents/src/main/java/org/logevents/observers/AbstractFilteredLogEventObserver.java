@@ -37,22 +37,7 @@ public abstract class AbstractFilteredLogEventObserver implements LogEventObserv
     protected abstract void doLogEvent(LogEvent logEvent);
 
     protected boolean shouldLogEvent(LogEvent logEvent) {
-        if (logEvent.isBelowThreshold(threshold)) return false;
-        for (Marker suppressedMarker : suppressedMarkers) {
-            if (logEvent.getMarker() != null && logEvent.getMarker().contains(suppressedMarker)) {
-                return false;
-            }
-        }
-        if (!requireMarker.isEmpty()) {
-            for (Marker requireMarker : requireMarker) {
-                if (logEvent.getMarker() != null && logEvent.getMarker().contains(requireMarker)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        return true;
+        return !logEvent.isBelowThreshold(threshold) && isEnabled(logEvent.getMarker());
     }
 
     public void setThreshold(Level threshold) {
@@ -69,6 +54,17 @@ public abstract class AbstractFilteredLogEventObserver implements LogEventObserv
             return new NullLogEventObserver();
         }
         return this;
+    }
+
+    @Override
+    public boolean isEnabled(Marker marker) {
+        if (marker != null && suppressedMarkers.stream().anyMatch(marker::contains)) {
+            return false;
+        }
+        if (requireMarker.isEmpty()) {
+            return true;
+        }
+        return marker != null && requireMarker.stream().anyMatch(marker::contains);
     }
 
     public void setSuppressMarkerStrings(List<String> markerNames) {

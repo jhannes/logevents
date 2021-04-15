@@ -1,4 +1,4 @@
-package org.logevents.impl;
+package org.logevents.observers;
 
 import org.logevents.LogEventObserver;
 import org.slf4j.event.Level;

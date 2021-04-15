@@ -2,7 +2,7 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
-import org.logevents.impl.LogEventFilter;
+import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -41,34 +41,48 @@ import java.util.stream.Collectors;
  */
 public class ConditionalLogEventFilter implements LogEventFilter {
 
+    /**
+     * A test to check whether a log message fulfills some condition
+     */
     private interface LogEventPredicate extends Predicate<LogEvent> {
+
+        /**
+         * Called from {@link Logger#isDebugEnabled()}, {@link Logger#isInfoEnabled()}
+         * etc. Can be used to short circuit logging based on MDC values in addition
+         * to log level.
+         */
         boolean test();
 
+        /**
+         * Called from {@link Logger#isDebugEnabled(Marker)}
+         * {@link Logger#isInfoEnabled(Marker)} etc. Can be used to short circuit
+         * logging based on Markers and MDC values in addition to log level.
+         */
         boolean test(Marker marker);
     }
-    
+
     /**
-     * A rule specifying that if the given MDC has one of the allowedValues,
-     * it should be logged
+     * A rule specifying that any log message will be logged if they they have an
+     * MDC value with the key where the value matches one of the accepted values
      */
     private static class MdcCondition implements LogEventPredicate {
-        private final String mdcVariable;
+        private final String mdcKey;
         private final Set<String> acceptedValues;
 
         public MdcCondition(String ruleString) {
             String[] parts = ruleString.split("=", 2);
-            this.mdcVariable = parts[0].substring("mdc:".length());
+            this.mdcKey = parts[0].substring("mdc:".length());
             this.acceptedValues = new HashSet<>(Arrays.asList(parts[1].split("\\|")));
         }
 
         @Override
         public boolean test(LogEvent event) {
-            return event.getMdcProperties().containsKey(mdcVariable) && acceptedValues.contains(event.getMdcProperties().get(mdcVariable));
+            return event.getMdcProperties().containsKey(mdcKey) && acceptedValues.contains(event.getMdcProperties().get(mdcKey));
         }
 
         @Override
         public boolean test() {
-            return MDC.get(mdcVariable) != null && acceptedValues.contains(MDC.get(mdcVariable));
+            return MDC.get(mdcKey) != null && acceptedValues.contains(MDC.get(mdcKey));
         }
 
         @Override
@@ -78,10 +92,13 @@ public class ConditionalLogEventFilter implements LogEventFilter {
 
         @Override
         public String toString() {
-            return "MdcCondition{" + mdcVariable + " in " + acceptedValues + '}';
+            return "MdcCondition{" + mdcKey + " in " + acceptedValues + '}';
         }
     }
-    
+
+    /**
+     * Abstract superclass for rules about markers
+     */
     private abstract static class MarkerCondition implements LogEventPredicate {
 
         public List<Marker> markerAlternatives;
@@ -104,7 +121,11 @@ public class ConditionalLogEventFilter implements LogEventFilter {
             "}";
         }
     }
-    
+
+    /**
+     * A rule specifying that any log message will be logged if they must have one of
+     * the required markers or a marker that contains one of the required markers.
+     */
     public static class RequiredMarkerCondition extends MarkerCondition {
 
         public RequiredMarkerCondition(String ruleString) {
@@ -126,6 +147,10 @@ public class ConditionalLogEventFilter implements LogEventFilter {
 
     }
 
+    /**
+     * A rule specifying that log message will be logged if they don't have one
+     * of the suppressed markers or a marker containing any of the suppressed markers 
+     */
     public static class SuppressedMarkerCondition extends MarkerCondition {
 
         public SuppressedMarkerCondition(String ruleString) {
@@ -145,8 +170,12 @@ public class ConditionalLogEventFilter implements LogEventFilter {
             return true;
         }
     }
-    
-    
+
+    /**
+     * A rule specifying that any log message will be logged if they must fulfill
+     * at least one of the specified conditions. This is used when there are multiple
+     * conditions that all should allow a message to be loaded
+     */
     private static class AnyCondition implements LogEventPredicate {
         private final Collection<LogEventPredicate> predicates;
 
@@ -168,8 +197,13 @@ public class ConditionalLogEventFilter implements LogEventFilter {
         public boolean test(LogEvent event) {
             return predicates.stream().anyMatch(p -> p.test(event));
         }
-    }    
-    
+    }
+
+    /**
+     * A rule specifying that any log message will be logged if they must fulfill
+     * all of the specified conditions. This is used to specify for example that you
+     * only want to log messages with a get of MDC variables to be logged 
+     */
     private static class AllConditions implements LogEventPredicate {
         private final Collection<LogEventPredicate> predicates;
 
@@ -197,10 +231,14 @@ public class ConditionalLogEventFilter implements LogEventFilter {
             return predicates.stream().map(Object::toString).collect(Collectors.joining(" & "));
         }
     }
-    
+
+    /**
+     * An observer that filters log messages by a given conditions, forwarding those
+     * that match the condition to a delegate observer
+     */
     private static class ConditionalLogEventObserver implements LogEventObserver {
-        private final LogEventObserver delegate;
         
+        private final LogEventObserver delegate;
         private final LogEventPredicate condition;
 
         private ConditionalLogEventObserver(LogEventObserver delegate, List<LogEventPredicate> mdcConditions) {
@@ -268,7 +306,8 @@ public class ConditionalLogEventFilter implements LogEventFilter {
     }
 
     /**
-     * Parse a string like INFO@mdc:key=value2|value2&mdc:key2=value
+     * Parse a string like <code>INFO@mdc:key=value2|value2&mdc:key2=value</code>
+     * and add the conditions to the logging rules
      */
     private void addLoggingCondition(String ruleString) {
         int atPos = ruleString.indexOf('@');
@@ -276,6 +315,10 @@ public class ConditionalLogEventFilter implements LogEventFilter {
         addLoggingCondition(level, ruleString.substring(atPos+1));
     }
 
+    /**
+     * Parse a string like <code>mdc:key=value2|value2&mdc:key2=value</code> and add the
+     * conditions to the logging rules at the given level
+     */
     public void addLoggingCondition(Level level, String allRules) {
         List<LogEventPredicate> allConditions = new ArrayList<>();
         for (String ruleString : allRules.split("&")) {
@@ -300,13 +343,17 @@ public class ConditionalLogEventFilter implements LogEventFilter {
         }
     }
 
+    /**
+     * Add a sufficient condition to log at the given level
+     */
     public void addLoggingCondition(Level level, LogEventPredicate condition) {
         if (level.toInt() < minimumThreshold.toInt()) {
             minimumThreshold = level;
         }
         for (Level value : Level.values()) {
             if (value.toInt() >= level.toInt()) {
-                conditions.computeIfAbsent(value, v -> new ArrayList<>()).add(condition);
+                conditions.computeIfAbsent(value, v -> new ArrayList<>())
+                        .add(condition);
             }
         }
     }

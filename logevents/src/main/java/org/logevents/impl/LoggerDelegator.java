@@ -5,6 +5,8 @@ import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.observers.LevelThresholdFilter;
+import org.logevents.observers.LogEventFilter;
 import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
@@ -535,17 +537,17 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
     public abstract void refresh();
 
     protected void refreshEventGenerators() {
-        this.errorEventGenerator = LogEventGenerator.create(getName(), Level.ERROR, getObserverAtLevel(Level.ERROR));
-        this.warnEventGenerator  = LogEventGenerator.create(getName(), Level.WARN, getObserverAtLevel(Level.WARN));
-        this.infoEventGenerator = LogEventGenerator.create(getName(), Level.INFO, getObserverAtLevel(Level.INFO));
-        this.debugEventGenerator = LogEventGenerator.create(getName(), Level.DEBUG, getObserverAtLevel(Level.DEBUG));
-        this.traceEventGenerator = LogEventGenerator.create(getName(), Level.TRACE, getObserverAtLevel(Level.TRACE));
+        this.errorEventGenerator = createEventGenerator(Level.ERROR);
+        this.warnEventGenerator  = createEventGenerator(Level.WARN);
+        this.infoEventGenerator = createEventGenerator(Level.INFO);
+        this.debugEventGenerator = createEventGenerator(Level.DEBUG);
+        this.traceEventGenerator = createEventGenerator(Level.TRACE);
     }
 
-    private LogEventObserver getObserverAtLevel(Level level) {
-        return effectiveFilter.filterObserverOnLevel(level, observer);
+    private LogEventGenerator createEventGenerator(Level level) {
+        return LogEventGenerator.create(getName(), level, effectiveFilter.filterObserverOnLevel(level, observer));
     }
-
+    
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" + name + ",filter=" + ownFilter + ",ownObserver=" + ownObserver + "}";

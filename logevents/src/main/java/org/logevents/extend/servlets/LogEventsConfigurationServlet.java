@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.logevents.LogEventFactory;
 import org.logevents.LoggerConfiguration;
-import org.logevents.impl.LogEventFilter;
+import org.logevents.observers.LogEventFilter;
 import org.logevents.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
