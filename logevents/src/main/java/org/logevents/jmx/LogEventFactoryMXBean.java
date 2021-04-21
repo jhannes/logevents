@@ -1,6 +1,6 @@
 package org.logevents.jmx;
 
-import org.slf4j.event.Level;
+import org.logevents.impl.LogEventFilter;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ public interface LogEventFactoryMXBean {
 
     List<String> getObservers();
 
-    Level getEffectiveLevel(String logger);
+    LogEventFilter getEffectiveFilter(String logger);
 
     String getObserver(String logger);
 

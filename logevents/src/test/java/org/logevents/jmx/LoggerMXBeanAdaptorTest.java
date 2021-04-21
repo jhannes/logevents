@@ -26,12 +26,12 @@ public class LoggerMXBeanAdaptorTest {
     @Test
     public void shouldManipulateLogger() {
         factory.setLevel(factory.getLogger("org"), Level.INFO);
-        assertNull(mbean.getLevel());
+        assertNull(mbean.getFilter());
 
         mbean.setLevel(Level.WARN);
-        assertEquals(Level.WARN, mbean.getLevel());
-        assertEquals(Level.WARN, logger.getLevelThreshold());
-        assertEquals(Level.INFO, factory.getLogger("org").getLevelThreshold());
+        assertEquals("LevelThresholdFilter{WARN}", mbean.getFilter().toString());
+        assertEquals("LevelThresholdFilter{WARN}", logger.getOwnFilter().toString());
+        assertEquals("LevelThresholdFilter{INFO}", factory.getLogger("org").getOwnFilter().toString());
     }
 
     @Test

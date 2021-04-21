@@ -23,9 +23,9 @@ public class LogEventsConfigurationServletTest {
         Map<String, Object> json = servlet.logConfigurationToJson(factory);
         Map<String, Object> levels = JsonUtil.getObject(json, "logLevels");
 
-        assertEquals(factory.getRootLogger().getLevelThreshold().toString(),
+        assertEquals(factory.getRootLogger().getOwnFilter().toString(),
                 JsonUtil.getField(levels, "/"));
-        assertEquals("TRACE", JsonUtil.getField(levels, "org.example"));
+        assertEquals("LevelThresholdFilter{TRACE}", JsonUtil.getField(levels, "org.example"));
         assertEquals("<inherited>", JsonUtil.getField(levels, "org"));
     }
 
@@ -33,7 +33,7 @@ public class LogEventsConfigurationServletTest {
     public void shouldResetLogLevel() {
         servlet.setLogLevel("org.example", "TRACE");
 
-        assertEquals("TRACE",
+        assertEquals("LevelThresholdFilter{TRACE}",
                 getField(getObject(servlet.logConfigurationToJson(factory), "logLevels"), "org.example"));
 
         servlet.setLogLevel("org.example", "null");

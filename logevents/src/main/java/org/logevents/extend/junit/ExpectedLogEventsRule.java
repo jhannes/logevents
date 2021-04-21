@@ -7,6 +7,7 @@ import org.junit.runners.model.Statement;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
+import org.logevents.impl.LogEventFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -97,14 +98,14 @@ public class ExpectedLogEventsRule implements TestRule, LogEventObserver {
             public void evaluate() throws Throwable {
                 Logger logger = loggerFactory.getRootLogger();
 
-                Level oldLevel = loggerFactory.setLevel(logger, Level.TRACE);
+                LogEventFilter oldFilter = loggerFactory.setLevel(logger, Level.TRACE);
                 LogEventObserver oldObserver = loggerFactory.setObserver(logger, ExpectedLogEventsRule.this, false);
                 fallbackObserver = oldObserver;
                 try {
                     base.evaluate();
                     verifyCompletion();
                 } finally {
-                    loggerFactory.setLevel(logger, oldLevel);
+                    loggerFactory.setFilter(logger, oldFilter);
                     loggerFactory.setObserver(logger, oldObserver, true);
                 }
             }
@@ -168,7 +169,7 @@ public class ExpectedLogEventsRule implements TestRule, LogEventObserver {
                 event -> this.matchers.stream().anyMatch(filter -> exactMatch(filter, event))
         );
         if (!unexpectedEvents.isEmpty()) {
-            Assert.fail("Unexpected log message: " + unexpectedEvents.toString());
+            Assert.fail("Unexpected log message: " + unexpectedEvents);
         }
     }
 

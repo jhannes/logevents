@@ -15,8 +15,8 @@ import java.util.Properties;
  */
 public class LevelThresholdConditionalObserver implements LogEventObserver {
 
-    private Level threshold;
-    private LogEventObserver delegate;
+    private final Level threshold;
+    private final LogEventObserver delegate;
 
     public LevelThresholdConditionalObserver(Level threshold, LogEventObserver delegate) {
         this.threshold = threshold;

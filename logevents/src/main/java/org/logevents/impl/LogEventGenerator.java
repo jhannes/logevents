@@ -1,6 +1,8 @@
 package org.logevents.impl;
 
 import org.logevents.LogEventObserver;
+import org.logevents.observers.AbstractFilteredLogEventObserver;
+import org.logevents.observers.ConditionalLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
@@ -32,6 +34,11 @@ public interface LogEventGenerator {
     static LogEventGenerator create(String name, Level level, LogEventObserver observer) {
         if (observer instanceof NullLogEventObserver) {
             return new NullLoggingEventGenerator();
+        } else if (observer instanceof AbstractFilteredLogEventObserver) {
+            return new ConditionalLogEventGenerator(name, level, ((AbstractFilteredLogEventObserver)observer).getCondition(), observer);
+        } else if (observer instanceof ConditionalLogEventObserver) {
+            ConditionalLogEventObserver conditionalObserver = (ConditionalLogEventObserver) observer;
+            return new ConditionalLogEventGenerator(name, level, conditionalObserver.getCondition(), conditionalObserver.getObserver());
         } else {
             return new LevelLoggingEventGenerator(name, level, observer);
         }

@@ -11,9 +11,9 @@ import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.junit.LogEventSampler;
+import org.logevents.impl.LoggerDelegator;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
-import org.logevents.observers.FixedLevelThresholdConditionalObserver;
 import org.logevents.observers.LevelThresholdConditionalObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
@@ -77,7 +77,7 @@ public class DefaultLogEventConfiguratorTest {
         configurator.applyConfigurationProperties(factory, configuration);
 
         assertTrue(factory.getLoggers() + " should be empty", factory.getLoggers().isEmpty());
-        assertEquals(Level.TRACE, factory.getRootLogger().getLevelThreshold());
+        assertEquals("LevelThresholdFilter{TRACE}", factory.getRootLogger().getOwnFilter().toString());
         assertEquals(oldObserver, factory.getRootLogger().getObserver());
     }
 
@@ -90,7 +90,7 @@ public class DefaultLogEventConfiguratorTest {
         Map<String, String> environment = new HashMap<>();
         environment.put("LOGEVENTS_ROOT", "DEBUG console");
         configurator.configureRootLogger(factory, configuration, environment);
-        assertEquals(Level.DEBUG, factory.getRootLogger().getLevelThreshold());
+        assertEquals("LevelThresholdFilter{DEBUG}", factory.getRootLogger().getOwnFilter().toString());
         assertEquals(observer.toString(), factory.getRootLogger().getObserver());
     }
 
@@ -102,7 +102,7 @@ public class DefaultLogEventConfiguratorTest {
         configuration.setProperty("observer.file.filename", logFile.toString());
 
         configurator.applyConfigurationProperties(factory, configuration);
-        assertEquals(Level.DEBUG, factory.getRootLogger().getLevelThreshold());
+        assertEquals("LevelThresholdFilter{DEBUG}", factory.getRootLogger().getOwnFilter().toString());
         assertEquals(
                 "DateRollingLogEventObserver{"
                 + "filename=FilenameFormatter{logs/application.log},"
@@ -151,7 +151,7 @@ public class DefaultLogEventConfiguratorTest {
         configuration.setProperty("observer.buffer2", "CircularBufferLogEventObserver");
 
         configurator.applyConfigurationProperties(factory, configuration);
-        assertEquals(Level.ERROR, factory.getLogger("org.example").getLevelThreshold());
+        assertEquals("LevelThresholdFilter{ERROR}", factory.getLogger("org.example").getOwnFilter().toString());
         assertEquals(
                 "CompositeLogEventObserver{"
                 + "[CircularBufferLogEventObserver{size=0,capacity=200}, CircularBufferLogEventObserver{size=0,capacity=200}]}",
@@ -165,7 +165,7 @@ public class DefaultLogEventConfiguratorTest {
         environment.put("LOGEVENTS_LOGGER_ORG_EXAMPLE_DEMO", "DEBUG console");
         environment.put("LOGEVENTS_INCLUDEPARENT_ORG_EXAMPLE_DEMO", "false");
         configurator.applyConfigurationProperties(factory, configuration, environment);
-        assertEquals(Level.DEBUG, factory.getLogger("org.example.demo").getLevelThreshold());
+        assertEquals("LevelThresholdFilter{DEBUG}", factory.getLogger("org.example.demo").getOwnFilter().toString());
         assertEquals("ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}",
                 factory.getLogger("org.example.demo").getObserver());
     }
@@ -182,13 +182,13 @@ public class DefaultLogEventConfiguratorTest {
     @Test
     public void shouldKeepDefaultLoggersWithAdditionalRootLoggers() {
         configurator.applyConfigurationProperties(factory, configuration);
-        assertEquals("RootLoggerDelegator{ROOT,level=INFO,ownObserver=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}}",
+        assertEquals("RootLoggerDelegator{ROOT,filter=LevelThresholdFilter{INFO},ownObserver=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}}",
                 factory.getLogger(Logger.ROOT_LOGGER_NAME).toString());
 
         configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
         configuration.setProperty("root.observer.buffer", "DEBUG");
         configurator.applyConfigurationProperties(factory, configuration);
-        assertEquals("RootLoggerDelegator{ROOT,level=INFO,ownObserver=CompositeLogEventObserver{[" +
+        assertEquals("RootLoggerDelegator{ROOT,filter=LevelThresholdFilter{INFO},ownObserver=CompositeLogEventObserver{[" +
                         "ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, " +
                         "LevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0,capacity=200}}" +
                         "]}}",
@@ -196,7 +196,7 @@ public class DefaultLogEventConfiguratorTest {
 
         configuration.setProperty("root", "WARN");
         configurator.applyConfigurationProperties(factory, configuration);
-        assertEquals("RootLoggerDelegator{ROOT,level=WARN,ownObserver=CompositeLogEventObserver{[" +
+        assertEquals("RootLoggerDelegator{ROOT,filter=LevelThresholdFilter{WARN},ownObserver=CompositeLogEventObserver{[" +
                         "ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, " +
                         "LevelThresholdConditionalObserver{DEBUG -> CircularBufferLogEventObserver{size=0,capacity=200}}" +
                         "]}}",
@@ -259,11 +259,12 @@ public class DefaultLogEventConfiguratorTest {
     }
     
     @Test
-    @Ignore("Not implemented yet")
     public void shouldConfigureMdcThreshold() {
         configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
         configuration.setProperty("logger.org.example",
                 "INFO,DEBUG@mdc:user=johannes|skywalker,DEBUG@mdc:operation=important buffer");
+        configuration.setProperty("includeParent.org.example", "false");
+        
         configurator.applyConfigurationProperties(factory, configuration);
 
         CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver) factory.getObserver("buffer");
@@ -286,7 +287,6 @@ public class DefaultLogEventConfiguratorTest {
     }
     
     @Test
-    @Ignore("Not implemented yet")
     public void shouldConfigureMdcThresholdWithDefaultObserver() {
         configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
         configuration.setProperty("root", "WARN buffer");
@@ -294,7 +294,8 @@ public class DefaultLogEventConfiguratorTest {
         configurator.applyConfigurationProperties(factory, configuration);
 
         CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver) factory.getObserver("buffer");
-        Logger logger = factory.getLogger("org.example.sublevel");
+        LoggerDelegator logger = (LoggerDelegator) factory.getLogger("org.example.sublevel");
+        assertEquals("ConditionalLogEventFilter{INFO,ERROR=[RequiredMdcCondition{user in [johannes]}],WARN=[RequiredMdcCondition{user in [johannes]}]}", logger.getEffectiveFilter().toString());
 
         logger.debug("Excluded");
         MDC.put("user", "johannes");
@@ -340,7 +341,7 @@ public class DefaultLogEventConfiguratorTest {
         configurator.configure(factory);
 
         assertEquals(
-                "RootLoggerDelegator{ROOT,level=INFO,ownObserver=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}}",
+                "RootLoggerDelegator{ROOT,filter=LevelThresholdFilter{INFO},ownObserver=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}}",
                 factory.getRootLogger().toString());
         assertEquals("Failed to load [logevents.properties, logevents-test.properties]", LogEventStatus.getInstance().lastMessage().getMessage());
         assertEquals("Unknown configuration options: [what] for logevents. Expected options: [installExceptionHandler, jmx, status]",
@@ -419,14 +420,14 @@ public class DefaultLogEventConfiguratorTest {
         configurator = new DefaultLogEventConfigurator(propertiesDir);
         configurator.configure(factory);
 
-        assertEquals("ERROR", factory.getRootLogger().getLevelThreshold().toString());
+        assertEquals("LevelThresholdFilter{ERROR}", factory.getRootLogger().getOwnFilter().toString());
         assertEquals("ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}", factory.getRootLogger().getObserver());
 
         firstProfileProperty.setProperty("root", "TRACE null");
         writeProps(propertiesDir.resolve("logevents-profile1.properties"), firstProfileProperty);
         Thread.sleep(70);
 
-        assertEquals("TRACE", factory.getRootLogger().getLevelThreshold().toString());
+        assertEquals("LevelThresholdFilter{TRACE}", factory.getRootLogger().getOwnFilter().toString());
         assertEquals("NullLogEventObserver", factory.getRootLogger().getObserver());
     }
 
@@ -487,13 +488,13 @@ public class DefaultLogEventConfiguratorTest {
         configurator = new DefaultLogEventConfigurator(propertiesDir);
         configurator.configure(factory);
 
-        assertEquals("DEBUG", factory.getRootLogger().getLevelThreshold().toString());
+        assertEquals("LevelThresholdFilter{DEBUG}", factory.getRootLogger().getOwnFilter().toString());
         Properties newPropertiesFile = new Properties();
         newPropertiesFile.setProperty("root", "INFO");
         writeProps(propertiesDir.resolve("logevents-production.properties"), newPropertiesFile);
 
         Thread.sleep(70);
-        assertEquals("INFO", factory.getRootLogger().getLevelThreshold().toString());
+        assertEquals("LevelThresholdFilter{INFO}", factory.getRootLogger().getOwnFilter().toString());
     }
 
     @Test

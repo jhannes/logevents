@@ -2,6 +2,7 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.slf4j.Marker;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,5 +32,15 @@ public class NullLogEventObserver implements LogEventObserver {
     @Override
     public List<LogEventObserver> toList() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return false;
+    }
+
+    @Override
+    public boolean isEnabled(Marker marker) {
+        return false;
     }
 }

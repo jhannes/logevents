@@ -1,5 +1,6 @@
 package org.logevents;
 
+ import org.logevents.impl.LogEventFilter;
  import org.logevents.impl.LogEventGenerator;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
@@ -14,7 +15,7 @@ import org.slf4j.spi.LocationAwareLogger;
  */
 public interface LoggerConfiguration extends Logger, LocationAwareLogger {
 
-    Level getLevelThreshold();
+    LogEventFilter getOwnFilter();
 
     /**
      * Calls toString on the observer for this Logger.
@@ -25,7 +26,7 @@ public interface LoggerConfiguration extends Logger, LocationAwareLogger {
 
     boolean isConfigured();
 
-    Level getEffectiveThreshold();
+    LogEventFilter getEffectiveFilter();
 
     LogEventGenerator getLogger(Level level);
 

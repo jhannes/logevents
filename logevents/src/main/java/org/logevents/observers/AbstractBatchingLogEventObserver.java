@@ -138,7 +138,9 @@ public abstract class AbstractBatchingLogEventObserver extends AbstractFilteredL
     }
 
     protected void processBatch(List<LogEvent> batch) {
-        processBatch(new LogEventBatch(batch));
+        if (!batch.isEmpty()) {
+            processBatch(new LogEventBatch(batch));
+        }
     }
 
     protected abstract void processBatch(LogEventBatch batch);

@@ -1,7 +1,7 @@
 package org.logevents.jmx;
 
 import org.logevents.LogEventFactory;
-import org.slf4j.event.Level;
+import org.logevents.impl.LogEventFilter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +35,8 @@ public class LogEventFactoryMXBeanAdaptor implements LogEventFactoryMXBean {
     }
 
     @Override
-    public Level getEffectiveLevel(String logger) {
-        return factory.getLogger(logger).getEffectiveThreshold();
+    public LogEventFilter getEffectiveFilter(String logger) {
+        return factory.getLogger(logger).getEffectiveFilter();
     }
 
     @Override
