@@ -7,8 +7,11 @@ import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.event.Level;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -18,7 +21,8 @@ import java.util.stream.Collectors;
  * configured logging rule. There are four types of rules supported:
  * 
  * <ul>
- *     <li>MDC rules, eg. <code>mdc:user=admin|super</code>. Separate alternatives by |</li>
+ *     <li>Required MDC rules, eg. <code>mdc:user=admin|super</code>. Separate alternatives by |</li>
+ *     <li>Suppressed MDC rules, eg. <code>mdc:user!=admin|super</code>. Separate alternatives by |</li>
  *     <li>Required marker rules, eg. <code>marker=HTTP|PERFORMANCE</code>. Separate alternatives by |</li>
  *     <li>Suppressed marker rules, eg. <code>marker!=HTTP|PERFORMANCE</code>. Separate alternatives by |</li>
  *     <li>All conditions, eg. <code>mdc:user=admin&mdc:requestPath=/healthcheck</code>. Separate conditions by &</li>
@@ -26,8 +30,8 @@ import java.util.stream.Collectors;
  * 
  * <h2>Example configuration</h2>
  * <pre>
- *     logger.org.example.app=INFO,DEBUG@mdc:user=superuser,admin,tester fileObserver
- *     logger.org.example.app.database=INFO,DEBUG@mdc:user=tester&marker=PERFORMANCE
+ *     logger.org.example.app=INFO,DEBUG@mdc:user=superuser|admin|tester fileObserver
+ *     logger.org.example.app.database=INFO,DEBUG@mdc:user=tester&mdc:requestPath!=/healthCheck&marker=PERFORMANCE
  * </pre>
  *
  * @author Johannes Brodwall
@@ -99,13 +103,32 @@ public class ConditionalLogEventFilter implements LogEventFilter {
 
     private LogEventPredicate createLoggingCondition(String ruleString) {
         if (ruleString.startsWith("mdc:")) {
-            return new LogEventPredicate.RequiredMdcCondition(ruleString);
+            return createMdcCondition(ruleString);
         } else if (ruleString.startsWith("marker=")) {
-            return new LogEventPredicate.RequiredMarkerCondition(ruleString);
+            return createRequiredMarkerCondition(ruleString);
         } else if (ruleString.startsWith("marker!=")) {
-            return new LogEventPredicate.SuppressedMarkerCondition(ruleString);
+            return createSuppressedMarkerCondition(ruleString);
         } else {
             throw new IllegalArgumentException("Unexpected rule " + ruleString);
+        }
+    }
+
+    private LogEventPredicate createSuppressedMarkerCondition(String ruleString) {
+        return new LogEventPredicate.SuppressedMarkerCondition(ruleString);
+    }
+
+    private LogEventPredicate createRequiredMarkerCondition(String ruleString) {
+        return new LogEventPredicate.RequiredMarkerCondition(ruleString);
+    }
+
+    private LogEventPredicate createMdcCondition(String ruleString) {
+        String[] parts = ruleString.split("=", 2);
+        String mdcKey = parts[0].substring("mdc:".length());
+        Set<String> mdcValues = new HashSet<>(Arrays.asList(parts[1].split("\\|")));
+        if (mdcKey.endsWith("!")) {
+            return new LogEventPredicate.SuppressedMdcCondition(mdcKey.substring(0, mdcKey.length()-1), mdcValues);
+        } else {
+            return new LogEventPredicate.RequiredMdcCondition(mdcKey, mdcValues);
         }
     }
 

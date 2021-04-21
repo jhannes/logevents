@@ -65,15 +65,13 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
         private final String mdcKey;
         private final Set<String> acceptedValues;
 
-        public RequiredMdcCondition(String ruleString) {
-            String[] parts = ruleString.split("=", 2);
-            this.mdcKey = parts[0].substring("mdc:".length());
-            this.acceptedValues = new HashSet<>(Arrays.asList(parts[1].split("\\|")));
+        public RequiredMdcCondition(String mdcKey, String values) {
+            this(mdcKey, new HashSet<>(Arrays.asList(values.split("\\|\\s*"))));
         }
 
-        public RequiredMdcCondition(String mdcKey, String values) {
+        public RequiredMdcCondition(String mdcKey, Set<String> acceptedValues) {
             this.mdcKey = mdcKey;
-            this.acceptedValues = new HashSet<>(Arrays.asList(values.split("\\|")));
+            this.acceptedValues = acceptedValues;
         }
 
         @Override
@@ -97,8 +95,12 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
         private final Set<String> rejectedValues;
 
         public SuppressedMdcCondition(String mdcKey, String values) {
+            this(mdcKey, new HashSet<>(Arrays.asList(values.split("\\|\\s*"))));
+        }
+
+        public SuppressedMdcCondition(String mdcKey, Set<String> acceptedValues) {
             this.mdcKey = mdcKey;
-            this.rejectedValues = new HashSet<>(Arrays.asList(values.split("\\|")));
+            this.rejectedValues = acceptedValues;
         }
 
         @Override
@@ -155,9 +157,6 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
 
         public RequiredMarkerCondition(String ruleString) {
             super(ruleString.substring("marker=".length()));
-            if (!ruleString.startsWith("marker=")) {
-                throw new IllegalArgumentException("Unexpected rule " + ruleString);
-            }
         }
 
         public RequiredMarkerCondition(List<Marker> requireMarkers) {
@@ -184,9 +183,6 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
 
         public SuppressedMarkerCondition(String ruleString) {
             super(ruleString.substring("marker!=".length()));
-            if (!ruleString.startsWith("marker!=")) {
-                throw new IllegalArgumentException("Unexpected rule " + ruleString);
-            }
         }
 
         public SuppressedMarkerCondition(List<Marker> suppressedMarkers) {

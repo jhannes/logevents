@@ -14,7 +14,17 @@ import java.util.stream.Collectors;
 /**
  * Abstract superclass of LogEventObservers to filter which messages are logged. Supports
  * <code>threshold</code> on {@link Level}, <code>suppressMarkers</code> (don't log messages with any
- * of the given markers) and <code>requiredMarker</code> (only log messages with one of the given markers)
+ * of the given markers), <code>requiredMarker</code> (only log messages with one of the given markers),
+ * 
+ * <h2>Example configuration</h2>
+ * 
+ * <pre>
+ * observer.foo.threshold=WARN
+ * observer.foo.suppressMarkers=HTTP_NOT_MODIFIED
+ * observer.foo.requireMarker=HTTP
+ * observer.foo.requireMdc.user=tester1|tester2
+ * observer.foo.suppressMdc.requestPath=/status
+ * </pre>
  */
 public abstract class AbstractFilteredLogEventObserver implements LogEventObserver {
     private Level threshold = Level.TRACE;

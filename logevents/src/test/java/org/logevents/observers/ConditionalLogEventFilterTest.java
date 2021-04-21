@@ -106,6 +106,22 @@ public class ConditionalLogEventFilterTest {
     }
     
     @Test
+    public void shouldSupportSuppressedMdcVariables() {
+        factory.setFilter(logger, new ConditionalLogEventFilter("ERROR@mdc:user!=admin|super&mdc:operation=important"));
+        assertEquals(
+                "ConditionalLogEventFilter{ERROR=[SuppressedMdcCondition{user NOT in [super, admin]} AND RequiredMdcCondition{operation in [important]}]}",
+                logger.getEffectiveFilter().toString()
+        );
+
+        MDC.clear();
+        assertFalse(logger.isErrorEnabled());
+        MDC.put("operation", "important");
+        assertTrue(logger.isErrorEnabled());
+        MDC.put("user", "admin");
+        assertFalse(logger.isErrorEnabled());
+    }
+    
+    @Test
     public void shouldSupportMarkerAndMdcFilters() {
         factory.setFilter(logger, new ConditionalLogEventFilter("WARN@mdc:user=admin&marker=HTTP_REQUEST"));
         assertEquals(
