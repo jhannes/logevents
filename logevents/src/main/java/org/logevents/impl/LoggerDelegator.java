@@ -5,8 +5,6 @@ import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.observers.CompositeLogEventObserver;
-import org.logevents.observers.LevelThresholdFilter;
-import org.logevents.observers.LogEventFilter;
 import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.Marker;

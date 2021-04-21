@@ -2,75 +2,95 @@ package org.logevents.impl;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.observers.LogEventPredicate;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
-class LevelLoggingEventGenerator implements LogEventGenerator {
-
-    private final LogEventObserver observer;
-    private final Level level;
+public class ConditionalLogEventGenerator implements LogEventGenerator {
     private final String loggerName;
+    private final Level level;
+    private final LogEventPredicate condition;
+    private final LogEventObserver observer;
 
-    LevelLoggingEventGenerator(String loggerName, Level level, LogEventObserver observer) {
+    public ConditionalLogEventGenerator(String loggerName, Level level, LogEventPredicate condition, LogEventObserver observer) {
         this.loggerName = loggerName;
         this.level = level;
+        this.condition = condition;
         this.observer = observer;
     }
 
     @Override
     public boolean isEnabled() {
-        return observer.isEnabled();
+        return condition.test() && observer.isEnabled();
     }
 
     @Override
     public boolean isEnabled(Marker marker) {
-        return observer.isEnabled(marker);
+        return condition.test(marker) && observer.isEnabled(marker);
     }
 
     @Override
     public void log(String msg) {
-        log(createEvent(msg, null, new Object[0]));
+        if (isEnabled()) {
+            log(createEvent(msg, null, new Object[0]));
+        }
     }
 
     @Override
     public void log(String format, Object arg) {
-        log(createEvent(format, null, new Object[]{arg}));
+        if (isEnabled()) {
+            log(createEvent(format, null, new Object[]{arg}));
+        }
     }
 
     @Override
     public void log(String format, Throwable t) {
-        log(createEvent(format, null, new Object[]{t}));
+        if (isEnabled()) {
+            log(createEvent(format, null, new Object[]{t}));
+        }
     }
 
     @Override
     public void log(String format, Object arg1, Object arg2) {
-        log(createEvent(format, null, new Object[]{arg1, arg2}));
+        if (isEnabled()) {
+            log(createEvent(format, null, new Object[]{arg1, arg2}));
+        }
     }
 
     @Override
     public void log(String format, Object... arg) {
-        log(createEvent(format, null, arg));
+        if (isEnabled()) {
+            log(createEvent(format, null, arg));
+        }
     }
 
     @Override
     public void log(Marker marker, String msg) {
-        log(createEvent(msg, marker, new Object[0]));
+        if (isEnabled(marker)) {
+            log(createEvent(msg, marker, new Object[0]));
+        }
     }
 
     @Override
     public void log(Marker marker, String format, Object arg) {
-        log(createEvent(format, marker, new Object[] { arg }));
+        if (isEnabled(marker)) {
+            log(createEvent(format, marker, new Object[]{arg}));
+        }
     }
 
     @Override
     public void log(Marker marker, String format, Object arg1, Object arg2) {
-        log(createEvent(format, marker, new Object[] { arg1, arg2 }));
+        if (isEnabled(marker)) {
+            log(createEvent(format, marker, new Object[]{arg1, arg2}));
+        }
     }
 
     @Override
     public void log(Marker marker, String format, Object... args) {
-        log(createEvent(format, marker, args));
+        if (isEnabled(marker)) {
+            log(createEvent(format, marker, args));
+        }
     }
 
     @Override

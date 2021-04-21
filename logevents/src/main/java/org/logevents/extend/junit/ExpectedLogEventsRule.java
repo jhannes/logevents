@@ -7,7 +7,7 @@ import org.junit.runners.model.Statement;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
-import org.logevents.observers.LogEventFilter;
+import org.logevents.impl.LogEventFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;

@@ -1,6 +1,6 @@
 package org.logevents.jmx;
 
-import org.logevents.observers.LogEventFilter;
+import org.logevents.impl.LogEventFilter;
 import org.slf4j.event.Level;
 
 import java.util.List;

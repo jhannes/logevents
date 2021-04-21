@@ -3,7 +3,7 @@ package org.logevents.jmx;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
-import org.logevents.observers.LogEventFilter;
+import org.logevents.impl.LogEventFilter;
 import org.slf4j.event.Level;
 
 import java.util.List;

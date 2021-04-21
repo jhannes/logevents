@@ -1,6 +1,6 @@
 package org.logevents;
 
- import org.logevents.observers.LogEventFilter;
+ import org.logevents.impl.LogEventFilter;
  import org.logevents.impl.LogEventGenerator;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;

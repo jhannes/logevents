@@ -18,8 +18,7 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractFilteredLogEventObserver implements LogEventObserver {
     private Level threshold = Level.TRACE;
-    private List<Marker> suppressedMarkers = new ArrayList<>();
-    private List<Marker> requireMarker = new ArrayList<>();
+    private LogEventPredicate condition = new LogEventPredicate.NullCondition();
 
     @Override
     public final void logEvent(LogEvent logEvent) {
@@ -30,8 +29,28 @@ public abstract class AbstractFilteredLogEventObserver implements LogEventObserv
 
     protected void configureFilter(Configuration configuration) {
         this.threshold = configuration.getLevel("threshold", Level.TRACE);
-        this.setSuppressMarkerStrings(configuration.getStringList("suppressMarkers"));
-        this.setRequireMarkerName(configuration.getStringList("requireMarker"));
+
+        List<LogEventPredicate> allConditions = new ArrayList<>();
+        if (!configuration.getStringList("suppressMarkers").isEmpty()) {
+            allConditions.add(new LogEventPredicate.SuppressedMarkerCondition(markers(configuration.getStringList("suppressMarkers"))));
+        }
+        if (!configuration.getStringList("requireMarker").isEmpty()) {
+            allConditions.add(new LogEventPredicate.RequiredMarkerCondition(markers(configuration.getStringList("requireMarker"))));
+        }
+
+        for (String mdc : configuration.listProperties("requireMdc")) {
+            allConditions.add(new LogEventPredicate.RequiredMdcCondition(mdc, configuration.getString("requireMdc." + mdc)));
+        }
+        for (String mdc : configuration.listProperties("suppressMdc")) {
+            allConditions.add(new LogEventPredicate.SuppressedMdcCondition(mdc, configuration.getString("suppressMdc." + mdc)));
+        }
+
+
+        this.condition = LogEventPredicate.allConditions(allConditions);
+    }
+
+    private List<Marker> markers(List<String> markers) {
+        return markers.stream().map(MarkerFactory::getMarker).collect(Collectors.toList());
     }
 
     protected abstract void doLogEvent(LogEvent logEvent);
@@ -58,29 +77,18 @@ public abstract class AbstractFilteredLogEventObserver implements LogEventObserv
 
     @Override
     public boolean isEnabled(Marker marker) {
-        if (marker != null && suppressedMarkers.stream().anyMatch(marker::contains)) {
-            return false;
-        }
-        if (requireMarker.isEmpty()) {
-            return true;
-        }
-        return marker != null && requireMarker.stream().anyMatch(marker::contains);
-    }
-
-    public void setSuppressMarkerStrings(List<String> markerNames) {
-        setSuppressMarkers(markerNames.stream().map(MarkerFactory::getMarker).collect(Collectors.toList()));
+        return condition.test(marker);
     }
 
     public void setSuppressMarkers(List<Marker> markers) {
-        this.suppressedMarkers = markers;
+        this.condition = new LogEventPredicate.SuppressedMarkerCondition(markers);
     }
 
-    public void setRequireMarkerName(List<String> markerNames) {
-        setRequireMarker(markerNames.stream().map(MarkerFactory::getMarker).collect(Collectors.toList()));
+    public void setRequireMarker(List<Marker> markers) {
+        this.condition = new LogEventPredicate.RequiredMarkerCondition(markers);
     }
 
-    public void setRequireMarker(List<Marker> requireMarker) {
-        this.requireMarker = requireMarker;
+    public LogEventPredicate getCondition() {
+        return condition;
     }
-
 }

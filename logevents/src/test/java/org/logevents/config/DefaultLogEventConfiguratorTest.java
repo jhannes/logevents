@@ -295,7 +295,7 @@ public class DefaultLogEventConfiguratorTest {
 
         CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver) factory.getObserver("buffer");
         LoggerDelegator logger = (LoggerDelegator) factory.getLogger("org.example.sublevel");
-        assertEquals("ConditionalLogEventFilter{INFO,ERROR=[MdcCondition{user in [johannes]}],WARN=[MdcCondition{user in [johannes]}]}", logger.getEffectiveFilter().toString());
+        assertEquals("ConditionalLogEventFilter{INFO,ERROR=[RequiredMdcCondition{user in [johannes]}],WARN=[RequiredMdcCondition{user in [johannes]}]}", logger.getEffectiveFilter().toString());
 
         logger.debug("Excluded");
         MDC.put("user", "johannes");

@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.logevents.LogEventFactory;
 import org.logevents.LoggerConfiguration;
+import org.logevents.impl.ConditionalLogEventFilter;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
@@ -92,7 +93,7 @@ public class ConditionalLogEventFilterTest {
     public void shouldSupportMultipleRequiredMdcVariables() {
         factory.setFilter(logger, new ConditionalLogEventFilter("WARN@mdc:user=admin|super&mdc:operation=important"));
         assertEquals(
-                "ConditionalLogEventFilter{ERROR=[MdcCondition{user in [super, admin]} & MdcCondition{operation in [important]}],WARN=[MdcCondition{user in [super, admin]} & MdcCondition{operation in [important]}]}",
+                "ConditionalLogEventFilter{ERROR=[RequiredMdcCondition{user in [super, admin]} AND RequiredMdcCondition{operation in [important]}],WARN=[RequiredMdcCondition{user in [super, admin]} AND RequiredMdcCondition{operation in [important]}]}",
                 logger.getEffectiveFilter().toString()
         );
 
@@ -108,7 +109,7 @@ public class ConditionalLogEventFilterTest {
     public void shouldSupportMarkerAndMdcFilters() {
         factory.setFilter(logger, new ConditionalLogEventFilter("WARN@mdc:user=admin&marker=HTTP_REQUEST"));
         assertEquals(
-                "ConditionalLogEventFilter{ERROR=[MdcCondition{user in [admin]} & RequiredMarkerCondition{HTTP_REQUEST}],WARN=[MdcCondition{user in [admin]} & RequiredMarkerCondition{HTTP_REQUEST}]}",
+                "ConditionalLogEventFilter{ERROR=[RequiredMdcCondition{user in [admin]} AND RequiredMarkerCondition{HTTP_REQUEST}],WARN=[RequiredMdcCondition{user in [admin]} AND RequiredMarkerCondition{HTTP_REQUEST}]}",
                 logger.getEffectiveFilter().toString()
         );
         factory.setObserver(logger, output);
