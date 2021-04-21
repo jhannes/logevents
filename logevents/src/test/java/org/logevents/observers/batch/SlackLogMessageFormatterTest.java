@@ -1,6 +1,5 @@
 package org.logevents.observers.batch;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
@@ -8,7 +7,10 @@ import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -109,8 +111,14 @@ public class SlackLogMessageFormatterTest {
     }
 
     @Test
-    @Ignore("How do we reliably find a pom.xml-file in classpath?")
-    public void shouldCreateSourceLinkInStackTrace() {
+    public void shouldCreateSourceLinkInStackTrace() throws IOException {
+        if (new File("../pom.xml").exists()) {
+            Files.createDirectories(new File("target/classes/META-INF/maven/org.logevents/logevents").toPath());
+            Files.copy(new File("../pom.xml").toPath(), new File("target/classes/META-INF/maven/org.logevents/logevents/pom.xml").toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } else if (new File("pom.xml").exists()) {
+            Files.createDirectories(new File("logevents/target/classes/META-INF/maven/org.logevents/logevents").toPath());
+            Files.copy(new File("pom.xml").toPath(), new File("logevents/target/classes/META-INF/maven/org.logevents/logevents/pom.xml").toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } 
         Properties properties = new Properties();
         properties.put("formatter.sourceCode.1.package", "org.logevents");
         properties.put("formatter.sourceCode.1.maven", "org.logevents/logevents");
