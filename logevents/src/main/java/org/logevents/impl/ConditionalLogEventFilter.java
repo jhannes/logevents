@@ -25,13 +25,13 @@ import java.util.stream.Collectors;
  *     <li>Suppressed MDC rules, eg. <code>mdc:user!=admin|super</code>. Separate alternatives by |</li>
  *     <li>Required marker rules, eg. <code>marker=HTTP|PERFORMANCE</code>. Separate alternatives by |</li>
  *     <li>Suppressed marker rules, eg. <code>marker!=HTTP|PERFORMANCE</code>. Separate alternatives by |</li>
- *     <li>All conditions, eg. <code>mdc:user=admin&mdc:requestPath=/healthcheck</code>. Separate conditions by &</li>
+ *     <li>All conditions, eg. <code>mdc:user=admin&amp;mdc:requestPath=/healthcheck</code>. Separate conditions by &amp;</li>
  * </ul>
  * 
  * <h2>Example configuration</h2>
  * <pre>
  *     logger.org.example.app=INFO,DEBUG@mdc:user=superuser|admin|tester fileObserver
- *     logger.org.example.app.database=INFO,DEBUG@mdc:user=tester&mdc:requestPath!=/healthCheck&marker=PERFORMANCE
+ *     logger.org.example.app.database=INFO,DEBUG@mdc:user=tester&amp;mdc:requestPath!=/healthCheck&amp;marker=PERFORMANCE
  * </pre>
  *
  * @author Johannes Brodwall
@@ -90,7 +90,7 @@ public class ConditionalLogEventFilter implements LogEventFilter {
     }
 
     /**
-     * Parse a string like <code>mdc:key=value2|value2&mdc:key2=value</code> and add the
+     * Parse a string like <code>mdc:key=value2|value2&amp;mdc:key2=value</code> and add the
      * conditions to the logging rules at the given level
      */
     public void addLoggingCondition(Level level, String allRules) {
