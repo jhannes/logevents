@@ -186,7 +186,13 @@ public class Configuration {
     }
 
     public Optional<String> optionalGlobalString(String key) {
-        return getProperty(globalKey(key)).filter(s -> !s.isEmpty());
+        Optional<String> result = Optional.ofNullable(properties.getProperty(globalKey(key)));
+        return (result.isPresent() ? result : getGlobalEnvironmentVariable(key)).filter(s -> !s.isEmpty());
+    }
+
+    private Optional<String> getGlobalEnvironmentVariable(String key) {
+        String environmentKey = (key.startsWith("LOGEVENTS_") ? "" : "LOGEVENTS_") + key.toUpperCase().replace('.', '_');
+        return getEnvironmentVariable(environmentKey, environment);
     }
 
     private Optional<String> getProperty(String fullKey) {

@@ -6,6 +6,7 @@ import org.logevents.formatting.MdcFilter;
 
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Properties;
@@ -181,6 +182,15 @@ public class ConfigurationTest {
         MdcFilter mdcFilterWithDefault = new Configuration(properties, "observer.random").getMdcFilter();
         assertTrue(mdcFilterWithDefault.isKeyIncluded("ipAddress"));
         assertFalse(mdcFilterWithDefault.isKeyIncluded("anyKey"));
+    }
+
+    @Test
+    public void shouldConfigureApplicationNameEnvironment() {
+        HashMap<String, String> environment = new HashMap<>();
+        String appName = "my-application";
+        environment.put("LOGEVENTS_APPLICATIONNAME", appName);
+        Configuration configuration = new Configuration(new Properties(), "observer.buffer", environment);
+        assertEquals(configuration.getApplicationName(), appName);
     }
 
     private static String currentWorkingDirectory() {
