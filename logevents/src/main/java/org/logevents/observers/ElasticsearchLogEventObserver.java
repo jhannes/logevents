@@ -8,6 +8,7 @@ import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.NetUtils;
+import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -50,7 +51,7 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
         this.index = configuration.getString("index");
         this.formatter = configuration.createInstanceWithDefault("formatter", JsonLogEventFormatter.class);
         this.configureBatching(configuration);
-        this.configureFilter(configuration);
+        this.configureFilter(configuration, Level.TRACE);
         configuration.checkForUnknownFields();
     }
 

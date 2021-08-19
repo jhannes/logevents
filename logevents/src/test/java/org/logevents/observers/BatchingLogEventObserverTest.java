@@ -9,6 +9,7 @@ import org.logevents.observers.batch.LogEventBatcher;
 import org.logevents.observers.batch.LogEventBatcherWithMdc;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
+import org.slf4j.event.Level;
 
 import java.util.Arrays;
 import java.util.Properties;
@@ -23,7 +24,7 @@ public class BatchingLogEventObserverTest {
             Configuration config = new Configuration(properties, prefix);
             configureBatching(config);
             configureMarkers(config);
-            configureFilter(config);
+            configureFilter(config, Level.TRACE);
         }
 
         @Override

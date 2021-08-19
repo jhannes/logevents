@@ -5,6 +5,7 @@ import org.logevents.formatting.JsonLogEventFormatter;
 import org.logevents.formatting.LogEventFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
+import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -48,7 +49,7 @@ public class TcpLogEventObserver extends AbstractBatchingLogEventObserver {
                 configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, JsonLogEventFormatter.class)
         );
         this.configureBatching(configuration);
-        this.configureFilter(configuration);
+        this.configureFilter(configuration, Level.TRACE);
         this.timeout = configuration.optionalDuration("timeout").map(Duration::toMillis).orElse(0L).intValue();
         configuration.checkForUnknownFields();
     }

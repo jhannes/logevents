@@ -37,7 +37,7 @@ public class ApplicationInsightsLogEventObserver extends AbstractFilteredLogEven
     public ApplicationInsightsLogEventObserver(Configuration configuration) {
         this(configuration.optionalString("instrumentationKey")
                 .orElseGet(() -> System.getenv("APPINSIGHTS_INSTRUMENTATIONKEY")));
-        configureFilter(configuration);
+        configureFilter(configuration, Level.TRACE);
         configuration.checkForUnknownFields();
     }
 

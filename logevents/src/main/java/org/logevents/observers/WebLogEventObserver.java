@@ -7,6 +7,7 @@ import org.logevents.formatting.MessageFormatter;
 import org.logevents.util.openid.OpenIdConfiguration;
 import org.logevents.web.CryptoVault;
 import org.logevents.web.LogEventHttpServer;
+import org.slf4j.event.Level;
 
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
@@ -71,7 +72,7 @@ public class WebLogEventObserver extends AbstractFilteredLogEventObserver {
                 configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class),
                 configuration.createInstanceWithDefault("source", LogEventSource.class, LogEventBuffer.class)
         );
-        configureFilter(configuration);
+        configureFilter(configuration, Level.TRACE);
         this.logEventsHtml = configuration.optionalString("logEventsHtml")
                 .orElse("/org/logevents/logevents.html");
         cookieVault = new CryptoVault(configuration.optionalString("cookieEncryptionKey")

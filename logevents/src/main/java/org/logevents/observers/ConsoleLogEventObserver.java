@@ -4,6 +4,7 @@ import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.formatting.ConsoleLogEventFormatter;
 import org.logevents.formatting.LogEventFormatter;
+import org.slf4j.event.Level;
 
 import java.io.PrintStream;
 import java.util.Properties;
@@ -58,7 +59,7 @@ public class ConsoleLogEventObserver extends AbstractFilteredLogEventObserver {
                 ),
                 configuration.getBoolean("outputToSyserr") ? System.err : System.out
         );
-        configureFilter(configuration);
+        configureFilter(configuration, Level.TRACE);
         formatter.configure(configuration);
         configuration.checkForUnknownFields();
     }

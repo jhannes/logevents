@@ -37,8 +37,8 @@ public abstract class AbstractFilteredLogEventObserver implements LogEventObserv
         }
     }
 
-    protected void configureFilter(Configuration configuration) {
-        this.threshold = configuration.getLevel("threshold", Level.TRACE);
+    protected void configureFilter(Configuration configuration, Level defaultThreshold) {
+        this.threshold = configuration.getLevel("threshold", defaultThreshold);
 
         List<LogEventPredicate> allConditions = new ArrayList<>();
         if (!configuration.getStringList("suppressMarkers").isEmpty()) {

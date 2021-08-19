@@ -43,7 +43,7 @@ public class SystemTrayLogEventObserver extends AbstractBatchingLogEventObserver
 
     public SystemTrayLogEventObserver(Configuration configuration) {
         configureBatching(configuration);
-        configureFilter(configuration);
+        configureFilter(configuration, Level.ERROR);
         configureMarkers(configuration);
         image = createImageFromResource(configuration.optionalString("icon").orElse("logevents-icon.png"));
         tooltip = configuration.optionalString("tooltip").orElse("Log Events");

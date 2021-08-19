@@ -6,6 +6,7 @@ import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.MicrosoftTeamsMessageFormatter;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.observers.batch.ThrottlingBatcher;
+import org.slf4j.event.Level;
 
 import java.util.Map;
 import java.util.Properties;
@@ -58,7 +59,7 @@ public class MicrosoftTeamsLogEventObserver extends AbstractHttpPostJsonLogEvent
 
     public MicrosoftTeamsLogEventObserver(Configuration configuration) {
         super(configuration.getUrl("url"));
-        configureFilter(configuration);
+        configureFilter(configuration, Level.WARN);
         configureBatching(configuration);
         configureMarkers(configuration);
         configureProxy(configuration);

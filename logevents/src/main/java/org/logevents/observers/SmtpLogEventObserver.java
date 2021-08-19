@@ -6,6 +6,7 @@ import org.logevents.config.LogEventConfigurationException;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventGroup;
+import org.slf4j.event.Level;
 
 import javax.mail.Authenticator;
 import javax.mail.Message;
@@ -58,7 +59,7 @@ public class SmtpLogEventObserver extends AbstractBatchingLogEventObserver {
         this.messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
         this.nodeName = configuration.getNodeName();
 
-        configureFilter(configuration);
+        configureFilter(configuration, Level.WARN);
 
         props = new Properties();
         props.put("mail.smtp.starttls.enable", "true");

@@ -9,6 +9,7 @@ import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatcherWithMdc;
 import org.logevents.observers.batch.SlackLogEventsFormatter;
 import org.logevents.observers.batch.ThrottlingBatcher;
+import org.slf4j.event.Level;
 
 import java.net.URL;
 import java.util.List;
@@ -62,7 +63,7 @@ public class SlackLogEventObserver extends AbstractHttpPostJsonLogEventObserver 
         super(configuration.optionalUrl("slackUrl").orElse(null));
         this.formatter = setupFormatter(configuration);
 
-        configureFilter(configuration);
+        configureFilter(configuration, Level.WARN);
         configureBatching(configuration);
         configureMarkers(configuration);
         configureProxy(configuration);

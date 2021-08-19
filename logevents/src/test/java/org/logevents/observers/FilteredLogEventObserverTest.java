@@ -88,7 +88,7 @@ public class FilteredLogEventObserverTest {
         properties.put("observer.foo.requireMdc.user", "tester1|tester2");
         properties.put("observer.foo.requireMdc.requestPath", "/test/target|/index.html");
         Configuration configuration = new Configuration(properties, "observer.foo");
-        observer.configureFilter(configuration);
+        observer.configureFilter(configuration, Level.TRACE);
         configuration.checkForUnknownFields();
         LogEventFactory.getInstance().setObserver((LoggerConfiguration) logger, observer);
 
@@ -115,7 +115,7 @@ public class FilteredLogEventObserverTest {
         properties.put("observer.foo.suppressMdc.privileged", "true");
         properties.put("observer.foo.requireMdc.requestPath", "/test/target|/index.html");
         Configuration configuration = new Configuration(properties, "observer.foo");
-        observer.configureFilter(configuration);
+        observer.configureFilter(configuration, Level.TRACE);
         configuration.checkForUnknownFields();
         LogEventFactory.getInstance().setObserver((LoggerConfiguration) logger, observer);
 
