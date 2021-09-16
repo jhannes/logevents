@@ -88,6 +88,25 @@ public class ConsoleLogEventObserverTest {
     }
 
     @Test
+    public void shouldConfigurePatternFormatter() {
+        Properties properties = new Properties();
+        properties.put("observer.console.includedMdcKeys", "operation,user");
+        properties.put("observer.console.pattern", "DEBUG%mdc %msg");
+        Configuration configuration = new Configuration(properties, "observer.console");
+        ConsoleLogEventObserver observer = new ConsoleLogEventObserver(configuration);
+
+        assertEquals("DEBUG {user=userOne} test message\n", observer.getFormatter().apply(new LogEventSampler()
+                .withMdc("user", "userOne")
+                .withMdc("secret", "secret value")
+                .withFormat("test message")
+                .build()));
+        assertEquals("DEBUG test message\n", observer.getFormatter().apply(new LogEventSampler()
+                .withMdc("secret", "secret value")
+                .withFormat("test message")
+                .build()));
+    }
+
+    @Test
     public void shouldIncludeAllMdcKeysByDefault() {
         formatter.configure(new Configuration(new Properties(), "observer.console"));
         String message = formatter.apply(new LogEventSampler()

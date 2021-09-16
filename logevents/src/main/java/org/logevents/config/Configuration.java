@@ -336,6 +336,12 @@ public class Configuration {
         }
     }
 
+    /**
+     * Returns a filter to determine which MDC variables to include in input. These are set either
+     * with <code>observer.&lt;name&gt;.includedMdcKeys</code>, <code>observer.&lt;name&gt;.excludedMdcKeys</code>,
+     * <code>observer.*.includedMdcKeys</code>, <code>observer.*.excludedMdcKeys</code>. Only one of the options
+     * is used and inclusion is preferred over exclusion.
+     */
     public MdcFilter getMdcFilter() {
         List<String> includedMdcKeys = getStringListOrGlobal("includedMdcKeys");
         List<String> excludedMdcKeys = getStringListOrGlobal("excludedMdcKeys");

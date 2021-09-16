@@ -41,7 +41,8 @@ import java.util.Properties;
  *     <li><code>%marker</code>: {@link Marker} (if any)</li>
  *     <li>
  *         <code>%mdc</code>: will print all {@link org.slf4j.MDC} variables.
- *          Use %mdc{key:-default} to display a single mdc variable (or default if not set)
+ *          Use %mdc{key:-default} to display a single mdc variable, or with {@link Configuration#getMdcFilter()}.
+ *          <strong>If MDC values are printed, the MDC string is prefixed with a space</strong>
  *     </li>
  *     <li><code>%application</code>: The value of {@link Configuration#getApplicationName()}</li>
  *     <li><code>%node</code>: The value of {@link Configuration#getNodeName()} ()}</li>
