@@ -84,7 +84,11 @@ public class SlackLogMessageFormatterTest {
     @SuppressWarnings("unchecked")
     public void shouldShowMdcInformation() {
         LogEventBatch batch = new LogEventBatch();
-        batch.add(new LogEventSampler().withMdc("operation", "DELETE").withMdc("clientIp", "127.0.0.1").build());
+        batch.add(new LogEventSampler()
+                .withMdc("operation", "DELETE")
+                .withMdc("clientIp", "127.0.0.1")
+                .withMdc("nothingness", null)
+                .build());
 
         Map<String, Object> slackMessage = new SlackLogEventsFormatter(Optional.empty(), Optional.empty())
                 .createMessage(batch);
@@ -95,6 +99,8 @@ public class SlackLogMessageFormatterTest {
         assertEquals("DELETE", mdcFields.get(0).get("value"));
         assertEquals("clientIp", mdcFields.get(1).get("title"));
         assertEquals("127.0.0.1", mdcFields.get(1).get("value"));
+        assertEquals("nothingness", mdcFields.get(2).get("title"));
+        assertEquals("", mdcFields.get(2).get("value"));
     }
 
     @Test

@@ -116,7 +116,9 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         int longestMdc = 0;
         for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
             if (mdcFilter == null || mdcFilter.isKeyIncluded(entry.getKey())) {
-                longestMdc = Math.max(longestMdc, entry.getValue().length());
+                if (entry.getValue() != null) {
+                    longestMdc = Math.max(longestMdc, entry.getValue().length());
+                }
             }
         }
         for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
@@ -216,7 +218,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     protected Map<String, Object> slackMessageField(String title, String value, boolean isShort) {
         Map<String, Object> field = new HashMap<>();
         field.put("title", title);
-        field.put("value", value);
+        field.put("value", value != null ? value : "");
         field.put("short", isShort);
         return field;
     }
