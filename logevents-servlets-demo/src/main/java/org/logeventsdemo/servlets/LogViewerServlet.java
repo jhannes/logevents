@@ -3,7 +3,7 @@ package org.logeventsdemo.servlets;
 import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.observers.LogEventSource;
 import org.logevents.util.openid.OpenIdConfiguration;
-import org.logevents.web.CryptoVault;
+import org.logevents.observers.web.CryptoVault;
 
 import java.util.Optional;
 

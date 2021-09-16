@@ -1,4 +1,4 @@
-package org.logevents.web;
+package org.logevents.observers.web;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;

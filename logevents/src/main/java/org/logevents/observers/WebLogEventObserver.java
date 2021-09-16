@@ -5,8 +5,8 @@ import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.formatting.MessageFormatter;
 import org.logevents.util.openid.OpenIdConfiguration;
-import org.logevents.web.CryptoVault;
-import org.logevents.web.LogEventHttpServer;
+import org.logevents.observers.web.CryptoVault;
+import org.logevents.observers.web.LogEventHttpServer;
 import org.slf4j.event.Level;
 
 import java.security.cert.X509Certificate;

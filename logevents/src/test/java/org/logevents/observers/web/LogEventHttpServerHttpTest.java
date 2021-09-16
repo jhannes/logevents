@@ -1,4 +1,4 @@
-package org.logevents.web;
+package org.logevents.observers.web;
 
 import org.junit.Before;
 import org.junit.Test;

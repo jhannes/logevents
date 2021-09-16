@@ -1,4 +1,4 @@
-package org.logevents.web;
+package org.logevents.observers.web;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -8,7 +8,7 @@ import java.security.GeneralSecurityException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.logevents.web.CryptoVault.randomString;
+import static org.logevents.observers.web.CryptoVault.randomString;
 
 public class CryptoVaultTest {
 

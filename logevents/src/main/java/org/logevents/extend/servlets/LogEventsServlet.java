@@ -11,7 +11,7 @@ import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.openid.OpenIdConfiguration;
-import org.logevents.web.CryptoVault;
+import org.logevents.observers.web.CryptoVault;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;

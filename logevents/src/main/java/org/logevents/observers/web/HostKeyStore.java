@@ -1,4 +1,4 @@
-package org.logevents.web;
+package org.logevents.observers.web;
 
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.CertificateAlgorithmId;
