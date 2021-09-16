@@ -9,8 +9,9 @@ import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The main interface of the Log Event framework. Implement this
@@ -37,7 +38,11 @@ public interface LogEventObserver {
     }
 
     default List<LogEventObserver> toList() {
-        return Collections.singletonList(this);
+        return stream().collect(Collectors.toList());
+    }
+
+    default Stream<LogEventObserver> stream() {
+        return Stream.of(this);
     }
 
     default boolean isEnabled(Marker marker) {

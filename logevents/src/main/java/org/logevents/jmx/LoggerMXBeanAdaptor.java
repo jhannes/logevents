@@ -59,6 +59,6 @@ public class LoggerMXBeanAdaptor implements LoggerMXBean {
     }
 
     private List<String> stringList(LogEventObserver observer) {
-        return observer.toList().stream().map(Object::toString).collect(Collectors.toList());
+        return observer.stream().map(Object::toString).collect(Collectors.toList());
     }
 }

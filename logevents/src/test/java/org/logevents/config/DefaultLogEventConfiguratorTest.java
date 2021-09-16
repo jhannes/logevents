@@ -257,7 +257,21 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals(Arrays.asList("DEBUG to enabled logger"),
                 ((CircularBufferLogEventObserver) factory.getObserver("buffer")).getMessages());
     }
-    
+
+    @Test
+    public void shouldAvoidDuplicateObserversForLogger() {
+        configuration.setProperty("observer.testObserver", "CircularBufferLogEventObserver");
+        configuration.setProperty("observer.ignored", "CircularBufferLogEventObserver");
+        configuration.setProperty("root", "INFO testObserver");
+        configuration.setProperty("logger.org", "DEBUG testObserver,ignored");
+        configuration.setProperty("logger.org.example", "DEBUG testObserver");
+        
+        configurator.applyConfigurationProperties(factory, configuration);
+        
+        factory.getLogger("org.example").info("Hello");
+        assertEquals(Arrays.asList("Hello"), ((CircularBufferLogEventObserver)factory.getObserver("testObserver")).getMessages());
+    }
+
     @Test
     public void shouldConfigureMdcThreshold() {
         configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");

@@ -4,8 +4,7 @@ import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.slf4j.Marker;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * A {@link LogEventObserver} that does nothing. Useful to avoid null
@@ -30,8 +29,8 @@ public class NullLogEventObserver implements LogEventObserver {
     }
 
     @Override
-    public List<LogEventObserver> toList() {
-        return Collections.emptyList();
+    public Stream<LogEventObserver> stream() {
+        return Stream.empty();
     }
 
     @Override

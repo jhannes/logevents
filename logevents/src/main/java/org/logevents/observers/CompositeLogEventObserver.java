@@ -5,11 +5,12 @@ import org.logevents.LogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Delegates log events to a list of observers. Used to deal with configurations
@@ -20,9 +21,9 @@ import java.util.stream.Collectors;
  */
 public class CompositeLogEventObserver implements LogEventObserver {
 
-    private List<LogEventObserver> observers;
+    private Collection<LogEventObserver> observers;
 
-    private CompositeLogEventObserver(List<LogEventObserver> observers) {
+    private CompositeLogEventObserver(Collection<LogEventObserver> observers) {
         this.observers = observers;
     }
 
@@ -47,7 +48,7 @@ public class CompositeLogEventObserver implements LogEventObserver {
     }
 
     public static LogEventObserver combineList(Collection<LogEventObserver> args) {
-        List<LogEventObserver> observers = new ArrayList<>();
+        Collection<LogEventObserver> observers = new LinkedHashSet<>();
         for (LogEventObserver o : args) {
             if (o instanceof CompositeLogEventObserver) {
                 observers.addAll(((CompositeLogEventObserver)o).observers);
@@ -58,7 +59,7 @@ public class CompositeLogEventObserver implements LogEventObserver {
         if (observers.isEmpty()) {
             return new NullLogEventObserver();
         } else if (observers.size() == 1) {
-            return observers.get(0);
+            return observers.iterator().next();
         } else {
             return new CompositeLogEventObserver(observers);
         }
@@ -76,7 +77,7 @@ public class CompositeLogEventObserver implements LogEventObserver {
     }
 
     @Override
-    public List<LogEventObserver> toList() {
-        return observers;
+    public Stream<LogEventObserver> stream() {
+        return observers.stream();
     }
 }

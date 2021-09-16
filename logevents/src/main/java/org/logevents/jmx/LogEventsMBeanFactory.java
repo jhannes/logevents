@@ -66,6 +66,6 @@ public class LogEventsMBeanFactory {
     }
 
     private boolean isStatisticsInstalled(LogEventFactory factory) {
-        return factory.getRootLogger().getInfoObservers().toList().stream().anyMatch(o -> o instanceof StatisticsLogEventsObserver);
+        return factory.getRootLogger().getInfoObservers().stream().anyMatch(o -> o instanceof StatisticsLogEventsObserver);
     }
 }

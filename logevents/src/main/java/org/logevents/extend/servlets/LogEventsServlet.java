@@ -203,7 +203,7 @@ public class LogEventsServlet extends HttpServlet {
     }
 
     private List<Map<String, Object>> observersAsJson(LogEventObserver observers) {
-        return observers.toList().stream()
+        return observers.stream()
                 .map(o -> {
                     Map<String, Object> observer = new HashMap<>();
                     observer.put("observerClass", o.getClass().getName());
