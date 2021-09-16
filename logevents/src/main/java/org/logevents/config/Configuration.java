@@ -187,25 +187,17 @@ public class Configuration {
 
     public Optional<String> optionalGlobalString(String key) {
         Optional<String> result = Optional.ofNullable(properties.getProperty(globalKey(key)));
-        return (result.isPresent() ? result : getGlobalEnvironmentVariable(key)).filter(s -> !s.isEmpty());
+        return (result.isPresent() ? result : getPropertyFromEnvironment(key)).filter(s -> !s.isEmpty());
     }
 
-    private Optional<String> getGlobalEnvironmentVariable(String key) {
-        String environmentKey = (key.startsWith("LOGEVENTS_") ? "" : "LOGEVENTS_") + key.toUpperCase().replace('.', '_');
-        return getEnvironmentVariable(environmentKey, environment);
+    private Optional<String> getProperty(String key) {
+        Optional<String> result = Optional.ofNullable(properties.getProperty(key));
+        return result.isPresent() ? result : getPropertyFromEnvironment(key);
     }
 
-    private Optional<String> getProperty(String fullKey) {
-        Optional<String> result = Optional.ofNullable(properties.getProperty(fullKey));
-        return result.isPresent() ? result : getEnvironmentVariable(getEnvironmentVariableName(fullKey), environment);
-    }
-
-    private String getEnvironmentVariableName(String fullKey) {
-        return (!fullKey.startsWith("LOGEVENTS_") ? "LOGEVENTS_" : "") + fullKey.toUpperCase().replace('.', '_');
-    }
-
-    private static Optional<String> getEnvironmentVariable(String name, Map<String, String> environment) {
-        return Optional.ofNullable(environment.get(name));
+    private Optional<String> getPropertyFromEnvironment(String key) {
+        String environmentVariable = (key.startsWith("logevents.") ? "" : "LOGEVENTS_") + key.toUpperCase().replace('.', '_');
+        return Optional.ofNullable(environment.get(environmentVariable));
     }
 
     private String globalKey(String key) {
@@ -325,10 +317,9 @@ public class Configuration {
 
     private static String calculateNodeName() {
         try {
-            Map<String, String> environment = System.getenv();
-            return getEnvironmentVariable("HOSTNAME", environment)
-                    .orElse(getEnvironmentVariable("HTTP_HOST", environment)
-                            .orElse(getEnvironmentVariable("COMPUTERNAME", environment)
+            return Optional.ofNullable(System.getenv("HOSTNAME"))
+                    .orElse(Optional.ofNullable(System.getenv("HTTP_HOST"))
+                            .orElse(Optional.ofNullable(System.getenv("COMPUTERNAME"))
                                     .orElse(InetAddress.getLocalHost().getHostName())));
         } catch (UnknownHostException ignored) {
             return "unknown host";

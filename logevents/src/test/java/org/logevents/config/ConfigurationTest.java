@@ -17,9 +17,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ConfigurationTest {
-    private Properties properties = new Properties();
-    private String prefix = "observer.foo";
-    private Configuration configuration = new Configuration(properties, prefix);
+    private final Properties properties = new Properties();
+    private final String prefix = "observer.foo";
+    private final Configuration configuration = new Configuration(properties, prefix);
 
     @Test
     public void shouldGiveGoodErrorForMalformedUrl() {
@@ -182,6 +182,14 @@ public class ConfigurationTest {
         MdcFilter mdcFilterWithDefault = new Configuration(properties, "observer.random").getMdcFilter();
         assertTrue(mdcFilterWithDefault.isKeyIncluded("ipAddress"));
         assertFalse(mdcFilterWithDefault.isKeyIncluded("anyKey"));
+    }
+
+    @Test
+    public void shouldUseDefaultMdcFilterForEnvironment() {
+        HashMap<String, String> environment = new HashMap<>();
+        environment.put("LOGEVENTS_INCLUDEDMDCKEYS", "ipAddress");
+        MdcFilter mdcFilterWithDefault = new Configuration(new Properties(), "observer.random", environment).getMdcFilter();
+        assertTrue(mdcFilterWithDefault.isKeyIncluded("ipAddress"));
     }
 
     @Test

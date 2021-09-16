@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.logevents.config.Configuration;
 import org.logevents.extend.junit.LogEventStatusRule;
 
+import java.util.HashMap;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -12,7 +13,7 @@ import static org.junit.Assert.assertNull;
 
 public class LogEventStatusTest {
 
-    private LogEventStatus instance = LogEventStatus.getInstance();
+    private final LogEventStatus instance = LogEventStatus.getInstance();
 
     @Rule
     public LogEventStatusRule statusRule = new LogEventStatusRule();
@@ -27,6 +28,14 @@ public class LogEventStatusTest {
         properties.setProperty("logevents.status.LogEventStatusTest", "DEBUG");
         instance.configure(new Configuration(properties, "logevents"));
         assertEquals(StatusEvent.StatusLevel.DEBUG, instance.getThreshold(this));
+    }
+
+    @Test
+    public void shouldConfigureStatusFromEnvironment() {
+        HashMap<String, String> environment = new HashMap<>();
+        environment.put("LOGEVENTS_STATUS", "CONFIG");
+        instance.configure(new Configuration(new Properties(), "logevents", environment));
+        assertEquals(StatusEvent.StatusLevel.CONFIG, instance.getThreshold(this));
     }
 
     @Test
