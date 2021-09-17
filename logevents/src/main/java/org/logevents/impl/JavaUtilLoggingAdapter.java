@@ -11,7 +11,7 @@ import java.util.logging.SimpleFormatter;
 import java.util.stream.Stream;
 
 /**
- * An adapter from java.util.logging to LogEvents. Install by calling {@link #install(LogEventFactory)}
+ * An adapter from java.util.logging to LogEvents. Automatically installed by {@link LogEventFactory}
  */
 public class JavaUtilLoggingAdapter extends Handler {
     private final LogEventFactory factory;

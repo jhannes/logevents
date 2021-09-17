@@ -7,6 +7,13 @@ import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
+/**
+ * Internal interface that is used by all calls to {@link org.slf4j.Logger#error}, {@link org.slf4j.Logger#warn},
+ *  {@link org.slf4j.Logger#info},  {@link org.slf4j.Logger#debug} and {@link org.slf4j.Logger#trace}.
+ *  There are three implementations: {@link NullLoggingEventGenerator} is used for all log events that are
+ *  below the logger threshold, {@link LevelLoggingEventGenerator} is used for all log events that are
+ *  to be logged and {@link ConditionalLogEventGenerator}
+ */
 public interface LogEventGenerator {
 
     boolean isEnabled();
