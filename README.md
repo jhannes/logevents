@@ -13,7 +13,7 @@ built on top of SLF4J - the logging lingua franka for Java.
 
 ### Features:
 
-* [Console logging](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html) with good default colors (also on Windows)
+* [Console logging](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html) with good default colors (also on Windows). Use `observer.console.format=ConsoleJsonLogEventFormatter` to output single-line JSON logs, suitable for log parsing
 * [File logging](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) with reasonable defaults
 * [JUnit support](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/junit/ExpectedLogEventsRule.html) to easy assert on what is logged
 * [Email logging](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SmtpLogEventObserver.html), including throttling to reduce spamming when get lots of log messages
@@ -29,15 +29,15 @@ built on top of SLF4J - the logging lingua franka for Java.
 
 ## Quick start:
 
-1. Add `org.logevents:logevents:0.2.0` to your `pom.xml`. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
-2. Add `logevents.properties` to your current working directory or `src/main/resources` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` (notice the **logger.** prefix) to log a particular package at DEBUG level. Read more about [logevents.properties](https://jhannes.github.io/logevents/apidocs/org/logevents/config/DefaultLogEventConfigurator.html). If you want to get messages from the internals of LogEvents, add `logevents.status=DEBUG`.
-3. Add `observer.console.threshold=WARN` and set `root=DEBUG file,console` to write debug log events to [the file](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) `logs/<your-app-name>-%date.log` and warning events to [console](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html).
-4. Add the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt` to change the file location and message format. See <a href="https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html">PatternLogEventFormatter</a> for more details.
-5. You can add a [Slack observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html) with little effort. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`. If you prefer Microsoft Teams, you can use [MicrosoftTeamsLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html) instead.
+1. **Add `org.logevents:logevents:0.2.2` to your `pom.xml`**. Right away, you will by default get logged event at INFO and higher to the console with a reasonable format, including color coding if your environment supports it. Your tests will log at WARN and the format will include which test method caused the log event.
+2. **Add `logevents.properties` to your current working directory** or `src/main/resources` with the line `root=WARN` to only log warning and higher. You can also add for example `logger.my.package.name=DEBUG` (notice the **logger.** prefix) to log a particular package at DEBUG level. Read more about [logevents.properties](https://jhannes.github.io/logevents/apidocs/org/logevents/config/DefaultLogEventConfigurator.html). If you want to get messages from the internals of LogEvents, add `logevents.status=DEBUG`.
+3. **Reduce the logging to console with `observer.console.threshold=WARN` and output to file with `root=DEBUG file,console`**. Debug level events will be written to [the file](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) `logs/<your-app-name>-%date.log` and warning events to [console](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html).
+4. **Change the file location and message format** by adding the lines `observer.file.formatter=PatternLogEventFormatter`, `observer.file.formatter.pattern=%logger{20}: %message` and `observer.file.filename=logs/mylog-%date.txt`. See [PatternLogEventFormatter](https://jhannes.github.io/logevents/apidocs/org/logevents/formatting/PatternLogEventFormatter.html) for more details.
+5. **You can add a [Slack observer](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SlackLogEventObserver.html)** with little effort. [Get a slack webhook URL](https://www.slack.com/apps/) and add `observer.slack=SlackLogEventObserver`, `observer.slack.threshold=WARN` and `observer.slack.slackUrl=<your slack webhook url>`, then set `root=DEBUG file,console,slack`. If you prefer Microsoft Teams, you can use [MicrosoftTeamsLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/MicrosoftTeamsLogEventObserver.html) instead.
 6. If your application is running in a servlet container, you can add the `observer.servlet=WebLogEventObserver` (see [WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)) and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/LogEventsServlet.html) to your servlet container. Add `root.observer.servlet=DEBUG` to log debug and higher to the web console. See [OpenIdConfiguration](https://jhannes.github.io/logevents/apidocs/org/logevents/util/openid/OpenIdConfiguration.html) to learn how to secure your LogEventServlet. Alternatively, you can run the dashboard on an [embedded web server](https://jhannes.github.io/logevents/apidocs/org/logevents/web/LogEventHttpServer.html) by adding `observer.servlet.httpPort=8080`.
 7. To make link to the Log Events dashboard in Slack messages, configure `observer.slack.formatter.detailUrl=<where you exposed your LogEventsServlet>`. In order to decrease the amount of potentially sensitive information logged to Slack, configure `observer.slack.formatter=SlackAlertOnlyFormatter` (similarly with MicrosoftTeamsAlertOnlyFormatter).
 8. To save log message in a database between restarts and so load balanced nodes can view each others log messages, configure `observer.servlet.source=[WebLogEventObserver](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)` and add the [LogEventsServlet](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/servlets/LogEventsServlet.html) to your servlet container. Set `root=DEBUG file,console,slack,servlet` to enable.
-9. To ensure that all uncaught exceptions in your application are logged, add `installExceptionHandler=true` to logevents.properties`
+9. To ensure that all uncaught exceptions in your application are logged, add `installExceptionHandler=true` to `logevents.properties`
 
 Here is a simple, but powerful [`logevent.properties`](https://jhannes.github.io/logevents/apidocs/org/logevents/config/DefaultLogEventConfigurator.html):
 
@@ -69,7 +69,7 @@ observer.servlet.keyStore=my-ssl-keys.p12
 observer.servlet.keyStorePassword=.....
 
 observer.*.packageFilter=sun.reflect
-observer.*.includeMdcKeys=clientIp, request
+observer.*.includedMdcKeys=clientIp, request
 
 root=INFO file,console
 root.observer.servlet=DEBUG
@@ -78,7 +78,26 @@ logger.org.example=DEBUG
 logger.org.otherapp=WARN,DEBUG@marker=HTTP_REQUEST&mdc:user!=admin
 ```
 
-Properties can also be read from environment variables, LOGEVENTS_OBSERVER_CONSOLE_THRESHOLD=ERROR or LOGEVENTS_OBSERVER_SERVLET_CLIENT_SECRET=abc123
+Properties can also be read from environment variables. Here are environment variables suited for running in a containerized environment:
+
+```
+LOGEVENTS_STATUS=CONFIG
+LOGEVENTS_PACKAGEFILTER=sun.reflect
+
+LOGEVENTS_ROOT=DEBUG console
+
+LOGEVENTS_OBSERVER_CONSOLE_THRESHOLD=DEBUG
+LOGEVENTS_OBSERVER_CONSOLE_FORMATTER=ConsoleJsonLogEventFormatter
+
+LOGEVENTS_OBSERVER_TEAMS=MicrosoftTeamsLogEventObserver
+LOGEVENTS_OBSERVER_TEAMS_URL=https://example.webhook.office.com/webhookb2/...
+LOGEVENTS_OBSERVER_EXCLUDED_MDC_KEYS=requestId
+LOGEVENTS_ROOT_OBSERVER_TEAMS=WARN
+
+LOGEVENTS_LOGGER_ORG_ECLIPSE_JETTY=WARN
+LOGEVENTS_LOGGER_COM_EXAMPLE_HTTP=DEBUG,TRACE@mdc:user=superuser|admin|tester
+```
+
 
 ![cmd screenshot](doc/cmd-with-bash-cropped.png)
 ![Slack screenshot](doc/slack-notification-tray-cropped.jpg)
@@ -159,7 +178,7 @@ public class DemoClass {
 
     private static Logger logger = LoggerFactory.getLogger(DemoClass.class);
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         logger.warn("Something went wrong");
     }
 }
@@ -211,6 +230,8 @@ another request.
 Example of usage:
 
 ```java
+import javax.servlet.*;
+
 public class LoggingFilter implements javax.servlet.Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse resp, FilterChain chain)
@@ -260,7 +281,7 @@ Include Logevents maven dependency:
 <dependency>
     <groupId>org.logevents</groupId>
     <artifactId>logevents</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.2</version>
 </dependency>
 ```
 
@@ -566,18 +587,4 @@ If you're using logback today and would like to check out logevents, here's a si
    * If you have appenders built with Logback that may have general interest, feel free to <a href="https://github.com/jhannes/logevents/issues">submit an issue</a> to have me create a Log Events observer for the appender
 2. Check your `logback.xml` files (and possibly `logback-spring.xml`). This will let you know what appenders you use. Setting up the equivalent in Logevents should be considerably less configuration.
    * If you have using appenders from Logback that you miss in Logevents or if the configuration is simpler in Logback, feel free to <a href="https://github.com/jhannes/logevents/issues">submit an issue</a> to have me create a Log Events observer for the appender
-
-
-
-### TODO
-
-* [ ] logevent.html:
-   * [ ] Test for multiple MDCs/mdc sorting
-   * [ ] pagination
-   * [ ] Show LogEventStatus in logevents.html
-   * [ ] negative marker and category filter
-   * [ ] large number of categories?
-* [ ] Performance
-   * [ ] 100 parallel threads logging to database and file
-* [ ] Standard statistics root logger
 
