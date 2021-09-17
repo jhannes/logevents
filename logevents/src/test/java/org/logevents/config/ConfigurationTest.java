@@ -104,8 +104,14 @@ public class ConfigurationTest {
         configuration.getStringList("value");
         configuration.optionalString("amount");
 
-        assertConfigurationError(() -> configuration.checkForUnknownFields(),
+        assertConfigurationError(configuration::checkForUnknownFields,
                 "Unknown configuration options: [also, unknown] for observer.foo. Expected options: [amount, name, value]");
+    }
+    
+    @Test
+    public void shouldAcceptUnusedEmptyProperties() {
+        properties.put("observer.foo.name", "");
+        configuration.checkForUnknownFields();
     }
 
     @Test
