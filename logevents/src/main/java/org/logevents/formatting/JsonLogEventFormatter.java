@@ -17,6 +17,7 @@ import java.util.Properties;
  * <pre>
  * observer.foo.formatter=JsonLogEventFormatter
  * observer.foo.formatter.excludedMdcKeys=secret,ipAddress
+ * observer.foo.formatter.properties.environment=staging
  * </pre>
  *
  * @author Johannes Brodwall
@@ -27,8 +28,9 @@ public class JsonLogEventFormatter implements LogEventFormatter {
     protected ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     protected MdcFilter mdcFilter;
     private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_INSTANT;
-    private String node;
+    private String hostname;
     private String applicationName;
+    private Map<String, String> additionalProperties = new HashMap<>();
 
     public JsonLogEventFormatter() {
     }
@@ -42,15 +44,22 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         configuration.checkForUnknownFields();
     }
 
+    /**
+     * reads applicationName, nodeName, messageFormatter, mdcFilter, dateTimeFormat and
+     * properties
+     */
     @Override
     public void configure(Configuration configuration) {
         applicationName = configuration.getApplicationName();
-        node = configuration.getApplicationNode();
+        hostname = configuration.getNodeName();
         messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
         mdcFilter = configuration.getMdcFilter();
         dateTimeFormatter = configuration
                 .optionalString("dateTimeFormat").map(DateTimeFormatter::ofPattern)
                 .orElse(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        for (String name : configuration.listProperties("properties")) {
+            additionalProperties.put(name, configuration.getString("properties." + name));
+        }
     }
 
     public String apply(LogEvent e) {
@@ -58,7 +67,7 @@ public class JsonLogEventFormatter implements LogEventFormatter {
     }
 
     public Map<String, Object> toJsonObject(LogEvent event) {
-        Map<String, Object> payload = new HashMap<>();
+        Map<String, Object> payload = new HashMap<>(additionalProperties);
 
         payload.put("@timestamp", event.getZonedDateTime().format(dateTimeFormatter));
         payload.put("message", event.getMessage(messageFormatter));
@@ -69,7 +78,7 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         payload.put("logger", event.getLoggerName());
         payload.put("marker", event.getMarker() == null ? null : event.getMarker().getName());
         payload.put("app", applicationName);
-        payload.put("hostname", node);
+        payload.put("hostname", hostname);
         payload.put("mdc", getMdc(event));
 
         if (event.getThrowable() != null) {
@@ -90,5 +99,10 @@ public class JsonLogEventFormatter implements LogEventFormatter {
             }
         }
         return mdc.isEmpty() ? null : mdc;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
     }
 }

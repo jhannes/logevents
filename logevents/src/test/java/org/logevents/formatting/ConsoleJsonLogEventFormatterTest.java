@@ -73,4 +73,18 @@ public class ConsoleJsonLogEventFormatterTest {
         assertEquals("userOne", mdc.get("user"));
         assertNull(mdc.get("secret"));
     }
+    
+    @Test
+    public void shouldIncludeBaseProperties() {
+        Properties properties = new Properties();
+        properties.put("observer.console.formatter.properties.environment", "staging");
+        properties.put("observer.console.formatter.properties.dataCenter", "norway-east");
+        Configuration configuration = new Configuration(properties, "observer.console.formatter");
+        formatter.configure(configuration);
+        configuration.checkForUnknownFields();
+
+        Map<String, Object> json = JsonParser.parseObject(formatter.apply(new LogEventSampler().build()));
+       assertEquals("staging", json.get("environment")); 
+       assertEquals("norway-east", json.get("dataCenter")); 
+    }
 }
