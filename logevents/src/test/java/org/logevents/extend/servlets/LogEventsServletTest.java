@@ -41,7 +41,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -159,7 +158,7 @@ public class LogEventsServletTest extends LogEventsServlet {
     @Test
     public void shouldGenerateAuthenticationUrl() throws IOException {
         String openIdIssuer = "https://login.microsoftonline.com/common";
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.servlet.clientId", "my-application");
         properties.put("observer.servlet.clientSecret", "abc123");
         properties.put("observer.servlet.openIdIssuer", openIdIssuer);
@@ -227,7 +226,7 @@ public class LogEventsServletTest extends LogEventsServlet {
 
     @Test
     public void shouldRejectIdTokensWithoutRequiredClaims() throws IOException {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.servlet.clientId", "my-application");
         properties.put("observer.servlet.clientSecret", "abc123");
         properties.put("observer.servlet.openIdIssuer", "https://login.microsoftonline.com/common");

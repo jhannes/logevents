@@ -6,23 +6,23 @@ import org.logevents.config.Configuration;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 public class ExceptionFormatterTest {
 
-    private StackTraceElement mainMethod = new StackTraceElement("org.logeventsdemo.MyApplication", "main", "MyApplication.java", 20);
-    private StackTraceElement publicMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "publicMethod", "MyClassName.java", 31);
-    private StackTraceElement internalMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "internalMethod", "MyClassName.java", 311);
-    private StackTraceElement nioApiMethod = new StackTraceElement("java.nio.file.Files", "write", "Files.java", 3292);
-    private StackTraceElement nioInternalMethod = new StackTraceElement("sun.nio.fs.WindowsException", "translateToIOException", "WindowsException.java", 79);
-    private StackTraceElement ioApiMethod = new StackTraceElement("java.io.FilterOutputStream", "close", "FilterOutputStream.java", 180);
-    private StackTraceElement ioInternalMethod = new StackTraceElement("java.io.FileOutputStream", "close", "FileOutputStream.java", 323);
-    private Properties properties = new Properties();
+    private final StackTraceElement mainMethod = new StackTraceElement("org.logeventsdemo.MyApplication", "main", "MyApplication.java", 20);
+    private final StackTraceElement publicMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "publicMethod", "MyClassName.java", 31);
+    private final StackTraceElement internalMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "internalMethod", "MyClassName.java", 311);
+    private final StackTraceElement nioApiMethod = new StackTraceElement("java.nio.file.Files", "write", "Files.java", 3292);
+    private final StackTraceElement nioInternalMethod = new StackTraceElement("sun.nio.fs.WindowsException", "translateToIOException", "WindowsException.java", 79);
+    private final StackTraceElement ioApiMethod = new StackTraceElement("java.io.FilterOutputStream", "close", "FilterOutputStream.java", 180);
+    private final StackTraceElement ioInternalMethod = new StackTraceElement("java.io.FileOutputStream", "close", "FileOutputStream.java", 323);
+    private final Map<String, String> properties = new HashMap<>();
     {
-        properties.setProperty("observer.file.formatter.exceptionFormatter",
+        properties.put("observer.file.formatter.exceptionFormatter",
                 ExceptionFormatter.class.getName());
     }
 
@@ -122,7 +122,7 @@ public class ExceptionFormatterTest {
                 internalMethod, publicMethod, mainMethod
         });
 
-        properties.setProperty("observer.file.formatter.exceptionFormatter.maxLength", "2");
+        properties.put("observer.file.formatter.exceptionFormatter.maxLength", "2");
         String[] lines = getFormatter().format(exception).split("\r?\n");
 
         assertEquals(exception.toString(), lines[0]);
@@ -146,9 +146,9 @@ public class ExceptionFormatterTest {
                 internalMethod, publicMethod, mainMethod
         });
 
-        properties.setProperty("observer.file.formatter.exceptionFormatter.packageFilter",
+        properties.put("observer.file.formatter.exceptionFormatter.packageFilter",
                 "sun.nio.fs, java.nio");
-        properties.setProperty("observer.file.formatter.exceptionFormatter.maxLength",
+        properties.put("observer.file.formatter.exceptionFormatter.maxLength",
                 "4");
         String[] lines = getFormatter().format(exceptions).split("\r?\n");
 
@@ -169,7 +169,7 @@ public class ExceptionFormatterTest {
                 internalMethod
         });
 
-        properties.setProperty("observer.*.packageFilter", "sun.nio.fs, java.nio");
+        properties.put("observer.*.packageFilter", "sun.nio.fs, java.nio");
         String[] lines = getFormatter().format(exceptions).split("\r?\n");
 
         assertEquals(exceptions.toString(), lines[0]);
@@ -187,7 +187,7 @@ public class ExceptionFormatterTest {
                 nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod
         });
 
-        properties.setProperty("observer.file.formatter.exceptionFormatter.packageFilter",
+        properties.put("observer.file.formatter.exceptionFormatter.packageFilter",
                 "sun.nio.fs, java.nio");
         String[] lines = getFormatter().format(exceptions).split("\r?\n");
 
@@ -197,7 +197,7 @@ public class ExceptionFormatterTest {
         assertEquals("\t[5 skipped]", lines[3]);
         assertEquals(4, lines.length);
     }
-    
+
     @Test
     public void shouldNotFailOnExceptionCycles() throws Exception {
         IOException exception = new IOException("Nested nested");
@@ -242,8 +242,8 @@ public class ExceptionFormatterTest {
         };
         exception.setStackTrace(stackTrace);
 
-        properties.setProperty("observer.file.formatter.exceptionFormatter.packageFilter", "none");
-        properties.setProperty("observer.file.formatter.exceptionFormatter.includePackagingData", "true");
+        properties.put("observer.file.formatter.exceptionFormatter.packageFilter", "none");
+        properties.put("observer.file.formatter.exceptionFormatter.includePackagingData", "true");
 
         String[] lines = getFormatter().format(exception).split("\r?\n");
 

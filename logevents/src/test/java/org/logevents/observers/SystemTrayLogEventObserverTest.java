@@ -6,14 +6,14 @@ import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.observers.batch.LogEventBatch;
 import org.slf4j.event.Level;
 
-import java.awt.*;
-import java.util.Properties;
+import java.awt.TrayIcon;
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 
 public class SystemTrayLogEventObserverTest {
 
-    private final SystemTrayLogEventObserver systemTrayObserver = new SystemTrayLogEventObserver(new Properties(), "systray");
+    private final SystemTrayLogEventObserver systemTrayObserver = new SystemTrayLogEventObserver(new HashMap<>(), "systray");
 
     @Test
     public void shouldAbbreviateLongCaption() {

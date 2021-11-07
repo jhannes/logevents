@@ -9,8 +9,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 /**
  * Presents the exception of a Log Event. Supports filtering stack traces by package and
@@ -45,7 +45,7 @@ public abstract class AbstractExceptionFormatter {
         sourceCodeLookup = new SourceCodeLookup();
     }
 
-    public AbstractExceptionFormatter(Properties properties, String prefix) {
+    public AbstractExceptionFormatter(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

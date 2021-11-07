@@ -12,15 +12,16 @@ import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
 import java.util.Arrays;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 public class BatchingLogEventObserverTest {
 
-    private class Observer extends AbstractBatchingLogEventObserver {
+    private static class Observer extends AbstractBatchingLogEventObserver {
 
-        public Observer(Properties properties, String prefix) {
+        public Observer(Map<String, String> properties, String prefix) {
             Configuration config = new Configuration(properties, prefix);
             configureBatching(config);
             configureMarkers(config);
@@ -40,7 +41,7 @@ public class BatchingLogEventObserverTest {
         Marker groupMarker = MarkerFactory.getMarker("MDC_GROUP_MARKER");
         groupMarker.add(myMarker);
 
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.test.markers.MY_MARKER_123.idleThreshold", "PT2S");
         properties.put("observer.test.markers.OTHER_MARKER.idleThreshold", "PT2S");
         Observer observer = new Observer(properties, "observer.test");
@@ -70,7 +71,7 @@ public class BatchingLogEventObserverTest {
         Marker myMarker = MarkerFactory.getMarker("MDC_MARKER");
         Marker otherMarker = MarkerFactory.getMarker("OTHER_MARKER");
 
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.test.markers.MDC_MARKER.idleThreshold", "PT2S");
         properties.put("observer.test.markers.MDC_MARKER.mdc", "userId");
         Observer observer = new Observer(properties, "observer.test");

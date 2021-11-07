@@ -8,16 +8,17 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class SourceCodeLookupTest {
 
-    private final Properties properties = new Properties();
+    private final Map<String, String> properties = new HashMap<>();
 
     @Test
     public void shouldLinkToSourceCode() {
@@ -58,7 +59,7 @@ public class SourceCodeLookupTest {
     public static class MySourceCode extends SourceCodeLookup {
         private final List<String> packages;
 
-        public MySourceCode(Properties properties, String prefix) {
+        public MySourceCode(Map<String, String> properties, String prefix) {
             super(properties, prefix);
             this.packages = new Configuration(properties, prefix).getStringList("packages");
         }

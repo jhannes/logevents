@@ -4,12 +4,12 @@ import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.formatting.ExceptionFormatter;
 
-import java.util.Properties;
+import java.util.Map;
 
 public class MicrosoftTeamsExceptionFormatter extends ExceptionFormatter {
     private final int frameClassLength;
 
-    public MicrosoftTeamsExceptionFormatter(Properties properties, String prefix) {
+    public MicrosoftTeamsExceptionFormatter(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

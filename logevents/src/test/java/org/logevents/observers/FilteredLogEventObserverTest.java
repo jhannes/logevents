@@ -13,20 +13,21 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 import java.util.Arrays;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
+import static org.logevents.extend.junit.LogEventSampler.HTTP_ASSET_REQUEST;
 import static org.logevents.extend.junit.LogEventSampler.HTTP_ERROR;
 import static org.logevents.extend.junit.LogEventSampler.HTTP_REQUEST;
-import static org.logevents.extend.junit.LogEventSampler.HTTP_ASSET_REQUEST;
 import static org.logevents.extend.junit.LogEventSampler.LIFECYCLE;
 import static org.logevents.extend.junit.LogEventSampler.OPS;
 
 public class FilteredLogEventObserverTest {
 
-    private LogEventRule logEventRule = new LogEventRule(Level.INFO, FilteredLogEventObserverTest.class);
+    private final LogEventRule logEventRule = new LogEventRule(Level.INFO, FilteredLogEventObserverTest.class);
 
     private static final Logger logger = LoggerFactory.getLogger(FilteredLogEventObserverTest.class);
-    private AbstractFilteredLogEventObserver observer = new AbstractFilteredLogEventObserver() {
+    private final AbstractFilteredLogEventObserver observer = new AbstractFilteredLogEventObserver() {
         @Override
         protected void doLogEvent(LogEvent logEvent) {
             logEventRule.logEvent(logEvent);
@@ -80,11 +81,11 @@ public class FilteredLogEventObserverTest {
         logEventRule.assertContainsMessage(Level.WARN, "Log if mentioned markers");
         logEventRule.assertContainsMessage(Level.WARN, "Log if contained markers");
     }
-    
-    
+
+
     @Test
     public void shouldRequireMdcValues() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.foo.requireMdc.user", "tester1|tester2");
         properties.put("observer.foo.requireMdc.requestPath", "/test/target|/index.html");
         Configuration configuration = new Configuration(properties, "observer.foo");
@@ -101,16 +102,16 @@ public class FilteredLogEventObserverTest {
         logger.info("Excluded - partial MDC");
         MDC.put("requestPath", "/test/target");
         logger.info("Included");
-        
+
         logEventRule.assertDoesNotContainMessage("Excluded - no MDC");
         logEventRule.assertDoesNotContainMessage("Excluded - wrong MDC");
         logEventRule.assertDoesNotContainMessage("Excluded - partial MDC");
         logEventRule.assertContainsMessage(Level.INFO, "Included");
     }
-    
+
     @Test
     public void shouldSuppressMdcValues() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.foo.suppressMdc.user", "admin|operator");
         properties.put("observer.foo.suppressMdc.privileged", "true");
         properties.put("observer.foo.requireMdc.requestPath", "/test/target|/index.html");
@@ -128,12 +129,12 @@ public class FilteredLogEventObserverTest {
         logger.info("Included - non-suppressed MDC");
         MDC.put("privileged", "true");
         logger.info("Excluded - wrong MDC privileged");
-        
+
         logEventRule.assertDoesNotContainMessage("Excluded - wrong MDC user");
         logEventRule.assertDoesNotContainMessage("Excluded - wrong MDC privileged");
         logEventRule.assertContainsMessage(Level.INFO, "Included");
         logEventRule.assertContainsMessage(Level.INFO, "Included - non-suppressed MDC");
     }
-    
+
 
 }

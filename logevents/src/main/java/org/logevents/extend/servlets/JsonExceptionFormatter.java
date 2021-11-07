@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Presents the exception of a Log Event as a JSON representation.
@@ -36,7 +35,7 @@ import java.util.Properties;
  */
 public class JsonExceptionFormatter extends AbstractExceptionFormatter {
 
-    public JsonExceptionFormatter(Properties properties, String prefix) {
+    public JsonExceptionFormatter(Map<String, String> properties, String prefix) {
         super(properties, prefix);
     }
 

@@ -8,8 +8,8 @@ import org.logevents.formatting.TTLLLogEventFormatter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 /**
  * Log events to a file with the date appended to the fileName pattern.
@@ -21,7 +21,7 @@ public class DateRollingLogEventObserver extends FileLogEventObserver {
     private final String filename;
 
     public DateRollingLogEventObserver(String filename, LogEventFormatter formatter) {
-        super(new Configuration(new Properties(), ""), filename, Optional.of(formatter));
+        super(new Configuration(), filename, Optional.of(formatter));
         this.filename = filename;
     }
 
@@ -39,12 +39,12 @@ public class DateRollingLogEventObserver extends FileLogEventObserver {
         configuration.checkForUnknownFields();
     }
 
-    public DateRollingLogEventObserver(Properties properties, String prefix) {
+    public DateRollingLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 
     @Override
     protected Path getFilename(LogEvent logEvent) {
-        return Paths.get(filename + LocalDate.now().toString());
+        return Paths.get(filename + LocalDate.now());
     }
 }

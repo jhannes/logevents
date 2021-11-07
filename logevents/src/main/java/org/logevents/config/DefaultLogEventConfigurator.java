@@ -202,7 +202,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @return A merged Properties object with all relevant files merged together
      */
     public Map<String, String> loadConfigurationProperties() {
-        return loadPropertiesFromFiles(getConfigurationFileNames(), new HashMap<>());
+        return loadPropertiesFromFiles(getConfigurationFileNames());
     }
 
     /**
@@ -240,14 +240,16 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * from classpath and current working directory.
      *
      * @param configurationFileNames the file names to load
-     * @param properties the Properties object to load into
      * @return Properties with the configuration of all files merged together
      */
-    protected Map<String, String> loadPropertiesFromFiles(List<String> configurationFileNames, Map<String, String> properties) {
+    protected Map<String, String> loadPropertiesFromFiles(List<String> configurationFileNames) {
+        Map<String, String> properties = new HashMap<>();
         LogEventStatus.getInstance().addConfig(this, "Loading configuration from " + configurationFileNames);
         for (String filename : configurationFileNames) {
-            loadConfigResource(properties, filename);
-            loadConfigFile(properties, filename);
+            loadConfigResource(filename)
+                    .forEach((k, v) -> properties.put(k.toString(), v.toString()));
+            loadConfigFile(filename)
+                    .forEach((k, v) -> properties.put(k.toString(), v.toString()));
         }
         return properties;
     }
@@ -269,44 +271,42 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     }
 
     /**
-     * Inserts properties from the file into the properties if it exists in
+     * Reads properties from the file into a properties object if it exists in
      * {@link DefaultLogEventConfigurator#propertiesDir}
      *
-     * @param properties The destination to read the configuration into
      * @param fileName The filename to load from disk
      */
-    protected void loadConfigFile(Map<String, String> properties, String fileName) {
+    protected Properties loadConfigFile(String fileName) {
+        Properties props = new Properties();
         if (Files.isRegularFile(this.propertiesDir.resolve(fileName))) {
             try (InputStream propertiesFile = new FileInputStream(this.propertiesDir.resolve(fileName).toFile())) {
                 LogEventStatus.getInstance().addDebug(this, "Loading file:" + propertiesDir.resolve(fileName));
-                Properties props = new Properties();
                 props.load(propertiesFile);
-                props.forEach((k, v) -> properties.put(k.toString(), v.toString()));
             } catch (FileNotFoundException ignored) {
                 // Can happen if the file is deleted after the if-check
             } catch (IOException e) {
                 LogEventStatus.getInstance().addError(this, "Can't load " + fileName, e);
             }
         }
+        return props;
     }
 
     /**
-     * Inserts properties from the resource name on the classpath into the properties.
+     * Reads properties from the resource name into a properties object.
      *
-     * @param properties The destination to read the configuration into
      * @param resourceName The resource to load from classpath
      */
-    protected void loadConfigResource(Map<String, String> properties, String resourceName) {
+    protected Properties loadConfigResource(String resourceName) {
+        Properties props = new Properties();
         try (InputStream propertiesFile = getClass().getClassLoader().getResourceAsStream(resourceName)) {
             if (propertiesFile != null) {
                 LogEventStatus.getInstance().addDebug(this, "Loading classpath:" + resourceName);
-                Properties props = new Properties();
                 props.load(propertiesFile);
-                props.forEach((k, v) -> properties.put(k.toString(), v.toString()));
             }
         } catch (IOException e) {
             LogEventStatus.getInstance().addError(this, "Can't load " + resourceName, e);
         }
+        return props;
     }
 
     /**

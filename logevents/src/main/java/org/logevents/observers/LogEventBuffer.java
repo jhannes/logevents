@@ -19,7 +19,6 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
@@ -46,7 +45,7 @@ public class LogEventBuffer implements LogEventObserver, LogEventSource {
         this(new Configuration());
     }
 
-    public LogEventBuffer(Properties properties, String prefix) {
+    public LogEventBuffer(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

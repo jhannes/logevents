@@ -20,7 +20,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Arrays;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -31,9 +32,9 @@ public class FileLogEventObserverTest {
 
     private static final String CWD = Paths.get("").toAbsolutePath().getFileName().toString();
 
-    private LogEventFactory factory = new LogEventFactory();
-    private LoggerConfiguration logger = factory.getLogger(getClass().getName());
-    private MessageFormatter formatter = new MessageFormatter();
+    private final LogEventFactory factory = new LogEventFactory();
+    private final LoggerConfiguration logger = factory.getLogger(getClass().getName());
+    private final MessageFormatter formatter = new MessageFormatter();
 
     @Rule
     public TemporaryFolder logDirectoryRule = new TemporaryFolder();
@@ -50,10 +51,10 @@ public class FileLogEventObserverTest {
         Path path = Paths.get("test-log-file.log");
         Files.deleteIfExists(path);
 
-        Properties properties = new Properties();
-        properties.setProperty("observer.file.filename", path.toString());
-        properties.setProperty("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
-        properties.setProperty("observer.file.formatter.pattern", "%message");
+        Map<String, String> properties = new HashMap<>();
+        properties.put("observer.file.filename", path.toString());
+        properties.put("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
+        properties.put("observer.file.formatter.pattern", "%message");
         LogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
 
         assertEquals("FileLogEventObserver{filename=FilenameFormatter{test-log-file.log},formatter=PatternLogEventFormatter{%message},fileRotationWorker=null}", observer.toString());
@@ -61,7 +62,7 @@ public class FileLogEventObserverTest {
 
     @Test
     public void shouldCreateDefaultFilename() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         FileLogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
 
         assertEquals(CWD + "-test.log", observer.getFilename(new LogEventSampler().build()).getFileName().toString());
@@ -72,10 +73,10 @@ public class FileLogEventObserverTest {
         Path path = Paths.get("target", "test", "log", getClass().getSimpleName() + ".log");
         Files.deleteIfExists(path);
 
-        Properties properties = new Properties();
-        properties.setProperty("observer.file.filename", path.toString());
-        properties.setProperty("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
-        properties.setProperty("observer.file.formatter.pattern", "%message");
+        Map<String, String> properties = new HashMap<>();
+        properties.put("observer.file.filename", path.toString());
+        properties.put("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
+        properties.put("observer.file.formatter.pattern", "%message");
         LogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
 
         factory.setObserver(logger, observer, false);
@@ -87,7 +88,7 @@ public class FileLogEventObserverTest {
 
     @Test
     public void shouldRotateLogs() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.file.filename", "logs/%application.log");
         properties.put("observer.file.archivedFilename", "logs/old/%application-%date.log");
         properties.put("observer.file.retention", "P2M");
@@ -121,11 +122,11 @@ public class FileLogEventObserverTest {
 
     @Test
     public void shouldLogToFileWithPattern() throws IOException {
-        Properties properties = new Properties();
-        properties.setProperty("observer.*.applicationName", "myApp");
-        properties.setProperty("observer.file.filename", logDirectory.toString() + "/%application-%node-%date.log");
-        properties.setProperty("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
-        properties.setProperty("observer.file.formatter.pattern", "%message");
+        Map<String, String> properties = new HashMap<>();
+        properties.put("observer.*.applicationName", "myApp");
+        properties.put("observer.file.filename", logDirectory.toString() + "/%application-%node-%date.log");
+        properties.put("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
+        properties.put("observer.file.formatter.pattern", "%message");
         LogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
 
         factory.setObserver(logger, observer, false);
@@ -140,10 +141,10 @@ public class FileLogEventObserverTest {
 
     @Test
     public void shouldIncludeMarkerInFilename() throws IOException {
-        Properties properties = new Properties();
-        properties.setProperty("observer.file.filename", logDirectory.toString() + "/log-%marker.log");
-        properties.setProperty("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
-        properties.setProperty("observer.file.formatter.pattern", "%message");
+        Map<String, String> properties = new HashMap<>();
+        properties.put("observer.file.filename", logDirectory.toString() + "/log-%marker.log");
+        properties.put("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
+        properties.put("observer.file.formatter.pattern", "%message");
         LogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
 
         LogEvent markerEvent = new LogEventSampler().withMarker().build();

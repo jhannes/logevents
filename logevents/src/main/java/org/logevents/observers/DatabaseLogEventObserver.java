@@ -32,7 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -92,7 +91,7 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
     /** Calls DriverManager::setLoginTimeout with this value (if present) at startup <strong>NB: This is a global value for the JVM</strong> */
     private final Optional<Integer> loginTimeout;
 
-    public DatabaseLogEventObserver(Properties properties, String prefix) {
+    public DatabaseLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

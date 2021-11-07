@@ -24,9 +24,9 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -99,7 +99,7 @@ public class ElasticsearchLogEventObserverTest {
     public void shouldLogConnectionError() {
         Duration maximumWaitTime = Duration.ofMinutes(2);
 
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.elastic.elasticsearchUrl", "http://localhost:-1");
         properties.put("observer.elastic.index", "my-test-index");
         properties.put("observer.elastic.formatter.excludedMdcKeys", "excludedKey");

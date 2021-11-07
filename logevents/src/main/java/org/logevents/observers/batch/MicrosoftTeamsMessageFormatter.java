@@ -12,7 +12,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 /**
  * Format log events to Microsoft Teams. See <a href="https://messagecardplayground.azurewebsites.net/">to
@@ -30,7 +29,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         return colors.get(level);
     }
 
-    public MicrosoftTeamsMessageFormatter(Properties properties, String prefix) {
+    public MicrosoftTeamsMessageFormatter(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

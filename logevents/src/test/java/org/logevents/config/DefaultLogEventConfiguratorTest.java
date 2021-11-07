@@ -459,7 +459,7 @@ public class DefaultLogEventConfiguratorTest {
         try(RandomAccessFile file = new RandomAccessFile(propsFile.toFile(), "rw")) {
             try (FileLock ignored = file.getChannel().lock()) {
                 DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
-                configurator.loadPropertiesFromFiles(Arrays.asList("logevents-faultyconfig.properties"), new HashMap<>());
+                configurator.loadPropertiesFromFiles(Arrays.asList("logevents-faultyconfig.properties"));
             }
             assertEquals("Can't load logevents-faultyconfig.properties",
                     LogEventStatus.getInstance().lastMessage().getMessage());
@@ -480,7 +480,7 @@ public class DefaultLogEventConfiguratorTest {
         try(RandomAccessFile file = new RandomAccessFile(propsFile.toFile(), "rw")) {
             try (FileLock ignored = file.getChannel().lock()) {
                 DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
-                configurator.loadPropertiesFromFiles(Arrays.asList(filename), new HashMap<>());
+                configurator.loadPropertiesFromFiles(Arrays.asList(filename));
             }
             assertEquals("Can't load " + filename,
                     LogEventStatus.getInstance().lastMessage().getMessage());

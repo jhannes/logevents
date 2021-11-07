@@ -12,7 +12,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 import static java.util.Collections.singletonList;
 
@@ -43,7 +42,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         this.channel = channel;
     }
 
-    public SlackLogEventsFormatter(Properties properties, String prefix) {
+    public SlackLogEventsFormatter(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

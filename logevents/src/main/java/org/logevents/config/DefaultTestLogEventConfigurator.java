@@ -8,13 +8,13 @@ import org.slf4j.event.Level;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator {
 
     private static class ConsoleLogEventTestFormatter extends ConsoleLogEventFormatter {
 
-        public ConsoleLogEventTestFormatter(Properties properties, String prefix) {
+        public ConsoleLogEventTestFormatter(Map<String, String> properties, String prefix) {
             this(new Configuration(properties, prefix));
         }
 

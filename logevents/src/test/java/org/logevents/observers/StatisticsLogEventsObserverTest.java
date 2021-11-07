@@ -7,7 +7,8 @@ import org.slf4j.event.Level;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class StatisticsLogEventsObserverTest {
     private final StatisticsLogEventsObserver observer = new StatisticsLogEventsObserver();
@@ -46,14 +47,14 @@ public class StatisticsLogEventsObserverTest {
                 3,
                 StatisticsLogEventsObserver.getCountSince(Level.INFO, now.minusSeconds(100)));
     }
-    
+
     @Test
     public void shouldShowMostRecentTime() {
         Instant errorTime = start.plusSeconds(30 * 10);
         Instant infoTime = start.plusSeconds(50 * 20);
         observer.addCount(Level.ERROR, errorTime);
         observer.addCount(Level.INFO, infoTime);
-        
+
         assertEquals(errorTime, StatisticsLogEventsObserver.getLastMessageTime(Level.ERROR));
         assertEquals(infoTime, StatisticsLogEventsObserver.getLastMessageTime(Level.INFO));
         assertNull(StatisticsLogEventsObserver.getLastMessageTime(Level.WARN));

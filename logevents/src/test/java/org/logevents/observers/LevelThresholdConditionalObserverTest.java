@@ -9,14 +9,15 @@ import org.slf4j.event.Level;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 public class LevelThresholdConditionalObserverTest {
 
-    private static List<String> events = new ArrayList<>();
+    private static final List<String> events = new ArrayList<>();
 
     public static class Observer implements LogEventObserver {
         @Override
@@ -29,9 +30,9 @@ public class LevelThresholdConditionalObserverTest {
     @Test
     public void shouldOutputAtSpecifiedLevels() {
         events.clear();
-        Properties configuration = new Properties();
-        configuration.setProperty("observer.level.threshold", Level.WARN.toString());
-        configuration.setProperty("observer.level.delegate", Observer.class.getName());
+        Map<String, String> configuration = new HashMap<>();
+        configuration.put("observer.level.threshold", Level.WARN.toString());
+        configuration.put("observer.level.delegate", Observer.class.getName());
         LevelThresholdConditionalObserver observer = new LevelThresholdConditionalObserver(configuration, "observer.level");
 
         LogEventFactory factory = LogEventFactory.getInstance();

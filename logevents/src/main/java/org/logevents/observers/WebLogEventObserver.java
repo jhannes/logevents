@@ -4,15 +4,15 @@ import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.extend.servlets.LogEventsServlet;
 import org.logevents.formatting.MessageFormatter;
-import org.logevents.util.openid.OpenIdConfiguration;
 import org.logevents.observers.web.CryptoVault;
 import org.logevents.observers.web.LogEventHttpServer;
+import org.logevents.util.openid.OpenIdConfiguration;
 import org.slf4j.event.Level;
 
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 
 /**
@@ -62,7 +62,7 @@ public class WebLogEventObserver extends AbstractFilteredLogEventObserver {
     private final OpenIdConfiguration openIdConfiguration;
     private String logEventsHtml = "/org/logevents/logevents.html";
 
-    public WebLogEventObserver(Properties properties, String prefix) {
+    public WebLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

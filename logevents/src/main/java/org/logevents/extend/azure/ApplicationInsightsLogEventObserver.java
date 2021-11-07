@@ -15,7 +15,6 @@ import org.slf4j.event.Level;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Log to Application Insights on Azure. Will read APPINSIGHTS_INSTRUMENTATIONKEY environment variable
@@ -30,7 +29,7 @@ public class ApplicationInsightsLogEventObserver extends AbstractFilteredLogEven
 
     private TelemetryClient telemetryClient;
 
-    public ApplicationInsightsLogEventObserver(Properties properties, String prefix) {
+    public ApplicationInsightsLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

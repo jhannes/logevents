@@ -8,24 +8,24 @@ import org.logevents.util.JsonUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class JsonExceptionFormatterTest {
 
-    private StackTraceElement mainMethod = new StackTraceElement("org.logeventsdemo.MyApplication", "main", "MyApplication.java", 20);
-    private StackTraceElement publicMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "publicMethod", "MyClassName.java", 31);
-    private StackTraceElement internalMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "internalMethod", "MyClassName.java", 311);
-    private StackTraceElement nioApiMethod = new StackTraceElement("java.nio.file.Files", "write", "Files.java", 3292);
-    private StackTraceElement nioInternalMethod = new StackTraceElement("sun.nio.fs.WindowsException", "translateToIOException", "WindowsException.java", 79);
-    private StackTraceElement ioApiMethod = new StackTraceElement("java.io.FilterOutputStream", "close", "FilterOutputStream.java", 180);
-    private StackTraceElement ioInternalMethod = new StackTraceElement("java.io.FileOutputStream", "close", "FileOutputStream.java", 323);
-    private JsonExceptionFormatter formatter = new JsonExceptionFormatter(new Properties(), "formatter");
-    private Properties properties = new Properties();
+    private final StackTraceElement mainMethod = new StackTraceElement("org.logeventsdemo.MyApplication", "main", "MyApplication.java", 20);
+    private final StackTraceElement publicMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "publicMethod", "MyClassName.java", 31);
+    private final StackTraceElement internalMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "internalMethod", "MyClassName.java", 311);
+    private final StackTraceElement nioApiMethod = new StackTraceElement("java.nio.file.Files", "write", "Files.java", 3292);
+    private final StackTraceElement nioInternalMethod = new StackTraceElement("sun.nio.fs.WindowsException", "translateToIOException", "WindowsException.java", 79);
+    private final StackTraceElement ioApiMethod = new StackTraceElement("java.io.FilterOutputStream", "close", "FilterOutputStream.java", 180);
+    private final StackTraceElement ioInternalMethod = new StackTraceElement("java.io.FileOutputStream", "close", "FileOutputStream.java", 323);
+    private final JsonExceptionFormatter formatter = new JsonExceptionFormatter(new HashMap<>(), "formatter");
+    private final Map<String, String> properties = new HashMap<>();
 
     @Test
     public void shouldFormatSimpleException() {
@@ -146,7 +146,7 @@ public class JsonExceptionFormatterTest {
                 internalMethod, publicMethod, mainMethod
         });
 
-        properties.setProperty("observer.file.formatter.exceptionFormatter.maxLength", "2");
+        properties.put("observer.file.formatter.exceptionFormatter.maxLength", "2");
         String[] lines = getFormatter().format(exception).split("\r?\n");
 
         assertEquals(exception.toString(), lines[0]);
@@ -170,7 +170,7 @@ public class JsonExceptionFormatterTest {
                 nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod
         });
 
-        properties.setProperty("observer.file.formatter.exceptionFormatter.packageFilter",
+        properties.put("observer.file.formatter.exceptionFormatter.packageFilter",
                 "sun.nio.fs, java.nio");
         String[] lines = getFormatter().format(exceptions).split("\r?\n");
 

@@ -2,11 +2,11 @@ package org.logevents.formatting;
 
 import org.logevents.config.Configuration;
 
-import java.util.Properties;
+import java.util.Map;
 
 public class CauseFirstExceptionFormatter extends ExceptionFormatter {
 
-    public CauseFirstExceptionFormatter(Properties properties, String prefix) {
+    public CauseFirstExceptionFormatter(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

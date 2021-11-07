@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -39,13 +38,12 @@ public class DatabaseLogEventObserverTest {
     private final Marker MY_MARKER = MarkerFactory.getMarker("MY_MARKER");
     private final Marker OTHER_MARKER = MarkerFactory.getMarker("OTHER_MARKER");
 
-    private Properties properties = new Properties();
+    private final Map<String, String> properties = new HashMap<>();
     {
-        properties.setProperty("observer.db.jdbcUrl", "jdbc:h2:mem:logevents-test;DB_CLOSE_DELAY=-1");
-        properties.setProperty("observer.db.jdbcUsername", "sa");
-        properties.setProperty("observer.db.jdbcPassword", "sa");
-        properties.setProperty("observer.db.logEventsTable", "test_log_events");
-        properties.setProperty("observer.db.logEventsTable", "test_log_mdc");
+        properties.put("observer.db.jdbcUrl", "jdbc:h2:mem:logevents-test;DB_CLOSE_DELAY=-1");
+        properties.put("observer.db.jdbcUsername", "sa");
+        properties.put("observer.db.jdbcPassword", "sa");
+        properties.put("observer.db.logEventsTable", "test_log_events");
     }
     private DatabaseLogEventObserver observer = new DatabaseLogEventObserver(properties, "observer.db");
 
@@ -256,7 +254,7 @@ public class DatabaseLogEventObserverTest {
         assertEquals(2, listEvents(parameters).size());
         assertEquals(4, result.getSummary().getRowCount());
 
-        properties.setProperty("observer.db.noFetchFirstSupport", "true");
+        properties.put("observer.db.noFetchFirstSupport", "true");
         observer = new DatabaseLogEventObserver(properties, "observer.db");
         result = observer.query(new LogEventQuery(parameters));
         assertEquals(2, result.getEvents().size());

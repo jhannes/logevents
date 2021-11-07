@@ -1,7 +1,6 @@
 package org.logevents.benchmark.logevents;
 
 import org.logevents.LogEventFactory;
-import org.logevents.benchmark.logback.LogbackFileBenchmark;
 import org.logevents.config.Configuration;
 import org.logevents.formatting.PatternLogEventFormatter;
 import org.logevents.observers.FileLogEventObserver;
@@ -18,7 +17,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 @State(Scope.Thread)
 public class LogeventsFileBenchmark {
@@ -33,7 +32,7 @@ public class LogeventsFileBenchmark {
 
     @Setup
     public void setup() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.file.lockOnWrite", "false");
         Configuration configuration = new Configuration(properties, "observer.file");
         FileLogEventObserver observer = new FileLogEventObserver(

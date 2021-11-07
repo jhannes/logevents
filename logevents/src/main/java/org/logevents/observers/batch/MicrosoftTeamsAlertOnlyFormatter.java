@@ -2,7 +2,7 @@ package org.logevents.observers.batch;
 
 import org.logevents.LogEvent;
 
-import java.util.Properties;
+import java.util.Map;
 
 /**
  * Use with MicrosoftTeamEventObserver. Only send alerting information to Teams,
@@ -10,7 +10,7 @@ import java.util.Properties;
  * for further exploration
  */
 public class MicrosoftTeamsAlertOnlyFormatter extends MicrosoftTeamsMessageFormatter {
-    public MicrosoftTeamsAlertOnlyFormatter(Properties properties, String prefix) {
+    public MicrosoftTeamsAlertOnlyFormatter(Map<String, String> properties, String prefix) {
         super(properties, prefix);
     }
 

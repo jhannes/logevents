@@ -2,7 +2,7 @@ package org.logevents.formatting;
 
 import org.logevents.config.Configuration;
 
-import java.util.Properties;
+import java.util.Map;
 
 /**
  * Presents the exception of a Log Event as a nicely formatted textual
@@ -30,7 +30,7 @@ public class ExceptionFormatter extends AbstractExceptionFormatter {
     public ExceptionFormatter() {
     }
 
-    public ExceptionFormatter(Properties properties, String prefix) {
+    public ExceptionFormatter(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

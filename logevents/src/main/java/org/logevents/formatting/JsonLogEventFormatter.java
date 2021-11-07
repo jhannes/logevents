@@ -7,7 +7,6 @@ import org.logevents.util.JsonUtil;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Used to format a LogEvent as JSON for stdout or network observers.
@@ -30,12 +29,12 @@ public class JsonLogEventFormatter implements LogEventFormatter {
     private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_INSTANT;
     private String hostname;
     private String applicationName;
-    private Map<String, String> additionalProperties = new HashMap<>();
+    private final Map<String, String> additionalProperties = new HashMap<>();
 
     public JsonLogEventFormatter() {
     }
 
-    public JsonLogEventFormatter(Properties properties, String prefix) {
+    public JsonLogEventFormatter(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

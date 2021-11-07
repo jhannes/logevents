@@ -5,7 +5,7 @@ import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.slf4j.event.Level;
 
-import java.util.Properties;
+import java.util.Map;
 
 /**
  * A {@link LogEventObserver} that forwards all log events to a delegate observer
@@ -31,7 +31,7 @@ public class LevelThresholdConditionalObserver implements LogEventObserver {
         configuration.checkForUnknownFields();
     }
 
-    public LevelThresholdConditionalObserver(Properties configuration, String prefix) {
+    public LevelThresholdConditionalObserver(Map<String, String> configuration, String prefix) {
         this(new Configuration(configuration, prefix));
     }
 

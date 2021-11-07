@@ -15,9 +15,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -28,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 public class PatternLogEventFormatterTest {
 
     private final Instant time = Instant.ofEpochMilli(1535056492088L);
-    private final Properties properties = new Properties();
+    private final Map<String, String> properties = new HashMap<>();
     {
         properties.put("observer.foo.formatter.pattern", "No pattern");
     }
@@ -154,7 +155,7 @@ public class PatternLogEventFormatterTest {
         formatter.setPattern("%mdc");
         assertEquals(" {user=Super User, role=admin}\n", formatter.apply(event));
     }
-    
+
     @Test
     public void shouldFilterMdc() {
         properties.put("observer.console.formatter.includedMdcKeys", "user, operation");
@@ -237,9 +238,9 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(event.getMessage(), lines[0]);
         assertEquals(ex.toString(), lines[1]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:228)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:229)",
                 lines[2]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:234)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.shouldIncludeExceptionByDefault(PatternLogEventFormatterTest.java:235)",
                 lines[3]);
     }
 
@@ -252,7 +253,7 @@ public class PatternLogEventFormatterTest {
         String[] lines = formatter.apply(event).split("\r?\n");
         assertEquals(2+2, lines.length);
         assertEquals(event.getMessage(), lines[0]);
-        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:228)",
+        assertEquals("\tat org.logevents.formatting.PatternLogEventFormatterTest.createException(PatternLogEventFormatterTest.java:229)",
                 lines[2]);
     }
 
@@ -266,9 +267,9 @@ public class PatternLogEventFormatterTest {
 
     @Test
     public void shouldOverrideApplicationAndNodeInformation() {
-        properties.setProperty("observer.console.formatter.pattern", "%application@%node");
-        properties.setProperty("observer.*.nodeName", "my-node");
-        properties.setProperty("observer.*.applicationName", "my-app");
+        properties.put("observer.console.formatter.pattern", "%application@%node");
+        properties.put("observer.*.nodeName", "my-node");
+        properties.put("observer.*.applicationName", "my-app");
 
         formatter = new PatternLogEventFormatter(properties, "observer.console.formatter");
         assertEquals("my-app@my-node\n", formatter.apply(new LogEventSampler().build()));

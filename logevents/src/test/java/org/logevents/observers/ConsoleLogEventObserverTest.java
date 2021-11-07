@@ -5,8 +5,6 @@ import org.logevents.config.Configuration;
 import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.formatting.ConsoleFormatting;
 import org.logevents.formatting.ConsoleLogEventFormatter;
-import org.logevents.util.JsonParser;
-import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
 import java.io.ByteArrayOutputStream;
@@ -14,12 +12,11 @@ import java.io.PrintStream;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ConsoleLogEventObserverTest {
@@ -40,7 +37,7 @@ public class ConsoleLogEventObserverTest {
                 .withLoggerName(loggerName)
                 .withFormat("Hello {}").withArgs("there")
                 .build());
-        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mConsoleLogEventObserverTest.shouldLogMessage(ConsoleLogEventObserverTest.java:42)\033[m]: Hello \033[4;mthere\033[m\n",
+        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mConsoleLogEventObserverTest.shouldLogMessage(ConsoleLogEventObserverTest.java:39)\033[m]: Hello \033[4;mthere\033[m\n",
                 buffer.toString());
     }
 
@@ -54,7 +51,7 @@ public class ConsoleLogEventObserverTest {
 
     @Test
     public void shouldTurnOffAnsiLogging() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.console.color", "false");
         formatter.configure(new Configuration(properties, "observer.console"));
 
@@ -65,13 +62,13 @@ public class ConsoleLogEventObserverTest {
                 .withLoggerName(loggerName)
                 .withFormat("Test")
                 .build());
-        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:67)]: Test\n",
+        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:64)]: Test\n",
                 message);
     }
 
     @Test
     public void shouldDisplayMdc() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.console.includedMdcKeys", "operation,user");
         Configuration configuration = new Configuration(properties, "observer.console");
         formatter.configure(configuration);
@@ -89,7 +86,7 @@ public class ConsoleLogEventObserverTest {
 
     @Test
     public void shouldConfigurePatternFormatter() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.console.includedMdcKeys", "operation,user");
         properties.put("observer.console.pattern", "DEBUG%mdc %msg");
         Configuration configuration = new Configuration(properties, "observer.console");
@@ -108,7 +105,7 @@ public class ConsoleLogEventObserverTest {
 
     @Test
     public void shouldIncludeAllMdcKeysByDefault() {
-        formatter.configure(new Configuration(new Properties(), "observer.console"));
+        formatter.configure(new Configuration(new HashMap<>(), "observer.console"));
         String message = formatter.apply(new LogEventSampler()
                 .withMdc("op", "read")
                 .withMdc("uid", "userFive")
@@ -118,7 +115,7 @@ public class ConsoleLogEventObserverTest {
 
     @Test
     public void shouldDisplayMarker() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.console.showMarkers", "true");
         Configuration configuration = new Configuration(properties, "observer.console");
         formatter.configure(configuration);

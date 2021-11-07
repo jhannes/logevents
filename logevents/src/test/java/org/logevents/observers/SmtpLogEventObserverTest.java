@@ -10,7 +10,8 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
@@ -20,7 +21,6 @@ public class SmtpLogEventObserverTest {
 
     @Test
     public void shouldConfigureSmtpLogEventObserver() {
-        Properties properties = createConfig();
         SmtpLogEventObserver observer = new SmtpLogEventObserver(createConfiguration());
         assertEquals("SmtpLogEventObserver{smtpHost=smtp.example.com}", observer.toString());
     }
@@ -48,12 +48,12 @@ public class SmtpLogEventObserverTest {
         return new Configuration(createConfig(), "observer.smtp");
     }
 
-    private Properties createConfig() {
-        Properties properties = new Properties();
-        properties.setProperty("observer.smtp.fromAddress", "jhannes@example.com");
-        properties.setProperty("observer.smtp.recipients", "operations@example.com");
-        properties.setProperty("observer.smtp.host", "smtp.example.com");
-        properties.setProperty("observer.smtp.password", "xxxxx");
+    private Map<String, String> createConfig() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("observer.smtp.fromAddress", "jhannes@example.com");
+        properties.put("observer.smtp.recipients", "operations@example.com");
+        properties.put("observer.smtp.host", "smtp.example.com");
+        properties.put("observer.smtp.password", "xxxxx");
         return properties;
     }
 }

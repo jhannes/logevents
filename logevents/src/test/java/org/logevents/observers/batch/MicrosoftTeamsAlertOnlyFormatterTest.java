@@ -4,8 +4,8 @@ import org.junit.Test;
 import org.logevents.extend.junit.LogEventSampler;
 import org.slf4j.event.Level;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.junit.Assert.assertTrue;
 
@@ -13,7 +13,7 @@ public class MicrosoftTeamsAlertOnlyFormatterTest {
 
     @Test
     public void shouldCreateMessageWithUnformattedMessage() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         String detailsUrl = "http://localhost/foo/bar";
         properties.put("observer.teams.formatter.detailUrl", detailsUrl);
         MicrosoftTeamsAlertOnlyFormatter formatter = new MicrosoftTeamsAlertOnlyFormatter(

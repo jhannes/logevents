@@ -5,8 +5,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.junit.LogEventSampler;
+import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.observers.MicrosoftTeamsLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
@@ -16,7 +16,6 @@ import org.slf4j.event.Level;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -38,7 +37,7 @@ public class MicrosoftTeamsMessageFormatterTest {
         batch.add(new LogEventSampler().build());
 
         Map<String, Object> teamsMessage = new MicrosoftTeamsMessageFormatter(
-                new Properties(), "observer.teams.formatter"
+                new HashMap<>(), "observer.teams.formatter"
         ).createMessage(batch);
 
         assertEquals(MicrosoftTeamsMessageFormatter.getLevelColor(Level.ERROR), teamsMessage.get("themeColor"));
@@ -53,7 +52,7 @@ public class MicrosoftTeamsMessageFormatterTest {
         LogEvent event = new LogEventSampler().withThrowable(exception).build();
 
         Map<String, Object> teamsMessage = new MicrosoftTeamsMessageFormatter(
-                new Properties(), "observer.teams.formatter"
+                new HashMap<>(), "observer.teams.formatter"
         ).createMessage(new LogEventBatch().add(event));
 
         Map<String, Object> exceptionSection = JsonUtil.getObject(JsonUtil.getList(teamsMessage, "sections"), 1);

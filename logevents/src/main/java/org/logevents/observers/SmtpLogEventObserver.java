@@ -15,6 +15,7 @@ import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.MimeMessage;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -41,13 +42,13 @@ import java.util.Properties;
 public class SmtpLogEventObserver extends AbstractBatchingLogEventObserver {
     private final MessageFormatter messageFormatter;
     private final String nodeName;
-    private String fromAddress;
-    private String recipients;
-    private String smtpUsername;
-    private String smtpPassword;
-    private Properties props;
+    private final String fromAddress;
+    private final String recipients;
+    private final String smtpUsername;
+    private final String smtpPassword;
+    private final Properties props;
 
-    public SmtpLogEventObserver(Properties properties, String prefix) {
+    public SmtpLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

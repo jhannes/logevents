@@ -15,7 +15,6 @@ import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.function.Function;
 
 /**
@@ -52,7 +51,7 @@ import java.util.function.Function;
 public class SourceCodeLookup {
     protected final Map<String, Function<StackTraceElement, String>> sourcePackagePatterns = new LinkedHashMap<>();
 
-    public SourceCodeLookup(Properties properties, String prefix) {
+    public SourceCodeLookup(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

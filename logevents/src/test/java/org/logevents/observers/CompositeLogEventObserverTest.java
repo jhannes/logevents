@@ -10,7 +10,7 @@ import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.slf4j.event.Level;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class CompositeLogEventObserverTest {
 

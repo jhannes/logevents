@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -129,8 +128,6 @@ public class ConfigurationTest {
 
     @Test
     public void shouldDetermineJarName() {
-        Properties properties = new Properties();
-
         assertEquals("junit", Configuration.determineJarName(TestCase.class.getName()));
         assertEquals(currentWorkingDirectory(), Configuration.determineJarName(String.class.getName()));
         assertEquals(currentWorkingDirectory(), Configuration.determineJarName(getClass().getName()));
@@ -156,7 +153,7 @@ public class ConfigurationTest {
         assertEquals(Arrays.asList("junit"),
                 new Configuration(properties, "observer.random").getPackageFilter());
         assertEquals(Arrays.asList(Configuration.DEFAULT_PACKAGE_FILTER),
-                new Configuration(new Properties(), "observer.test").getPackageFilter());
+                new Configuration(new HashMap<>(), "observer.test").getPackageFilter());
     }
 
     @Test

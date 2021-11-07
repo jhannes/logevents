@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -49,8 +50,12 @@ public class Configuration {
     private final Set<String> expectedFields = new TreeSet<>();
     private final Map<String, String> environment;
 
-    public Configuration(Map<?, ?> properties, String prefix) {
-        this((Map<String, String>)properties, prefix, System.getenv());
+    public Configuration(Map<String, String> properties, String prefix) {
+        this(properties, prefix, System.getenv());
+    }
+
+    public Configuration(Properties properties, String prefix) {
+        this((Map<String, String>)(Map<?, ?>)properties, prefix, System.getenv());
     }
 
     public Configuration(Map<String, String> properties, String prefix, Map<String, String> environment) {

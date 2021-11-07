@@ -8,7 +8,7 @@ import org.logevents.formatting.PatternLogEventFormatter;
 import org.slf4j.event.Level;
 
 import java.io.PrintStream;
-import java.util.Properties;
+import java.util.Map;
 
 /**
  * Log messages to the system out with suitable formatter.
@@ -28,11 +28,11 @@ import java.util.Properties;
  *
  * To add custom pattern format to the observer (shorthand for ...formatter=PatternLogEventFormatter
  * and ...formatter.pattern=...):
- * 
+ *
  * <pre>
  * observer.console.pattern=%time [%thread] [%coloredLevel] [%bold(%location)]%mdc: %message
  * </pre>
- * 
+ *
  * To override ANSI formatting in {@link ConsoleLogEventFormatter}, use:
  *
  * <pre>
@@ -73,7 +73,7 @@ public class ConsoleLogEventObserver extends AbstractFilteredLogEventObserver {
         return configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, ConsoleLogEventFormatter.class);
     }
 
-    public ConsoleLogEventObserver(Properties properties, String prefix) {
+    public ConsoleLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

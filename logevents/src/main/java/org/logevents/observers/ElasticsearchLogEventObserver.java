@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
@@ -42,7 +41,7 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
     private final String index;
     private final JsonLogEventFormatter formatter;
 
-    public ElasticsearchLogEventObserver(Properties properties, String prefix) {
+    public ElasticsearchLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

@@ -9,8 +9,12 @@ import org.logevents.observers.batch.LogEventGroup;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
 
-import java.awt.*;
-import java.util.Properties;
+import java.awt.AWTException;
+import java.awt.Image;
+import java.awt.SystemTray;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
+import java.util.Map;
 
 /**
  * Displays messages in the system tray notification area of the operating system. Intended
@@ -33,11 +37,11 @@ import java.util.Properties;
  */
 public class SystemTrayLogEventObserver extends AbstractBatchingLogEventObserver {
 
-    private Image image;
-    private String tooltip;
-    private MessageFormatter messageFormatter = new MessageFormatter();
+    private final Image image;
+    private final String tooltip;
+    private final MessageFormatter messageFormatter = new MessageFormatter();
 
-    public SystemTrayLogEventObserver(Properties properties, String prefix) {
+    public SystemTrayLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

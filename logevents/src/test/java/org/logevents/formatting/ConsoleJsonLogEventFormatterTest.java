@@ -10,8 +10,8 @@ import org.slf4j.event.Level;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -38,7 +38,7 @@ public class ConsoleJsonLogEventFormatterTest {
 
     @Test
     public void shouldDisplayMdc() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.console.includedMdcKeys", "operation,user");
         Configuration configuration = new Configuration(properties, "observer.console");
         formatter.configure(configuration);
@@ -57,7 +57,7 @@ public class ConsoleJsonLogEventFormatterTest {
 
     @Test
     public void shouldExcludeMdc() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.console.excludedMdcKeys", "secret");
         Configuration configuration = new Configuration(properties, "observer.console");
         formatter.configure(configuration);
@@ -73,10 +73,10 @@ public class ConsoleJsonLogEventFormatterTest {
         assertEquals("userOne", mdc.get("user"));
         assertNull(mdc.get("secret"));
     }
-    
+
     @Test
     public void shouldIncludeBaseProperties() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.console.formatter.properties.environment", "staging");
         properties.put("observer.console.formatter.properties.dataCenter", "norway-east");
         Configuration configuration = new Configuration(properties, "observer.console.formatter");
@@ -84,7 +84,7 @@ public class ConsoleJsonLogEventFormatterTest {
         configuration.checkForUnknownFields();
 
         Map<String, Object> json = JsonParser.parseObject(formatter.apply(new LogEventSampler().build()));
-       assertEquals("staging", json.get("environment")); 
-       assertEquals("norway-east", json.get("dataCenter")); 
+       assertEquals("staging", json.get("environment"));
+       assertEquals("norway-east", json.get("dataCenter"));
     }
 }

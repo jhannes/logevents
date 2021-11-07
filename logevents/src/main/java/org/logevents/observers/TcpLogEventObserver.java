@@ -12,7 +12,7 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.Duration;
-import java.util.Properties;
+import java.util.Map;
 
 /**
  * Writes LogEvents to a TCP address. To avoid exceptions and network slowness interrupting main
@@ -54,7 +54,7 @@ public class TcpLogEventObserver extends AbstractBatchingLogEventObserver {
         configuration.checkForUnknownFields();
     }
 
-    public TcpLogEventObserver(Properties properties, String prefix){
+    public TcpLogEventObserver(Map<String, String> properties, String prefix){
         this(new Configuration(properties, prefix));
     }
 

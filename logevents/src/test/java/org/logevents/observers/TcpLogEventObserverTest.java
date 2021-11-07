@@ -16,9 +16,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.time.Duration;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -45,7 +45,7 @@ public class TcpLogEventObserverTest {
         LogEvent event = new LogEventSampler().build();
         observer.processBatch(new LogEventBatch().add(event));
         thread.join(100);
-        assertEquals(event.getMessage(new MessageFormatter()) + System.lineSeparator(), new String(buffer.toByteArray()));
+        assertEquals(event.getMessage(new MessageFormatter()) + System.lineSeparator(), buffer.toString());
 
         assertEquals(
                 "Sent message to localhost/127.0.0.1:" + serverSocket.getLocalPort(),
@@ -62,7 +62,7 @@ public class TcpLogEventObserverTest {
         int port = serverSocket.getLocalPort();
         serverSocket.close();
 
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.tcp.address", "localhost:" + port);
         properties.put("observer.tcp.timeout", Duration.ofMillis(100).toString());
         TcpLogEventObserver observer = new TcpLogEventObserver(properties, "observer.tcp");

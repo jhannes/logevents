@@ -3,8 +3,8 @@ package org.logevents.observers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
-import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.junit.LogEventSampler;
+import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.status.StatusEvent;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
@@ -21,8 +21,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
@@ -34,12 +34,12 @@ public class WebLogEventObserverTest {
     @Test
     public void shouldFetchLogEvents() throws IOException, GeneralSecurityException {
         LogEventBuffer.clear();
-        Properties properties = new Properties();
-        properties.setProperty("observer.web.httpsPort", "0");
-        properties.setProperty("observer.web.openIdIssuer", "https://accounts.google.com");
-        properties.setProperty("observer.web.clientId", "dummy");
-        properties.setProperty("observer.web.clientSecret", "dummy");
-        properties.setProperty("observer.web.requiredClaim.email", "my@example.com");
+        Map<String, String> properties = new HashMap<>();
+        properties.put("observer.web.httpsPort", "0");
+        properties.put("observer.web.openIdIssuer", "https://accounts.google.com");
+        properties.put("observer.web.clientId", "dummy");
+        properties.put("observer.web.clientSecret", "dummy");
+        properties.put("observer.web.requiredClaim.email", "my@example.com");
 
         WebLogEventObserver observer = new WebLogEventObserver(properties, "observer.web");
         LogEvent logEvent = new LogEventSampler().build();
@@ -56,12 +56,12 @@ public class WebLogEventObserverTest {
 
     @Test
     public void shouldRejectFakeSessionCookie() throws Exception {
-        Properties properties = new Properties();
-        properties.setProperty("observer.web.httpsPort", "0");
-        properties.setProperty("observer.web.openIdIssuer", "https://accounts.google.com");
-        properties.setProperty("observer.web.clientId", "dummy");
-        properties.setProperty("observer.web.clientSecret", "dummy");
-        properties.setProperty("observer.web.requiredClaim.email", "my@example.com");
+        Map<String, String> properties = new HashMap<>();
+        properties.put("observer.web.httpsPort", "0");
+        properties.put("observer.web.openIdIssuer", "https://accounts.google.com");
+        properties.put("observer.web.clientId", "dummy");
+        properties.put("observer.web.clientSecret", "dummy");
+        properties.put("observer.web.requiredClaim.email", "my@example.com");
 
         WebLogEventObserver observer = new WebLogEventObserver(properties, "observer.web");
         LogEvent logEvent = new LogEventSampler().build();

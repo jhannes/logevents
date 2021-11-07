@@ -17,7 +17,7 @@ import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Properties;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -28,14 +28,14 @@ import static org.junit.Assert.assertTrue;
 
 public class LogEventsMBeanFactoryTest {
 
-    private MBeanServer mbeanServer = ManagementFactory.getPlatformMBeanServer();
-    private LogEventFactory factory = new LogEventFactory();
-    private LogEventsMBeanFactory logEventsMBeanFactory = new LogEventsMBeanFactory();
-    private Properties properties = new Properties();
+    private final MBeanServer mbeanServer = ManagementFactory.getPlatformMBeanServer();
+    private final LogEventFactory factory = new LogEventFactory();
+    private final LogEventsMBeanFactory logEventsMBeanFactory = new LogEventsMBeanFactory();
+    private final Map<String, String> properties = new HashMap<>();
     {
         properties.put("logevents.jmx", "true");
     }
-    private Configuration config = new Configuration(properties, "logevents");
+    private final Configuration config = new Configuration(properties, "logevents");
 
     @Test
     public void shouldRegisterConfiguredLoggersAsMBeans() throws MalformedObjectNameException {

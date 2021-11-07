@@ -9,8 +9,8 @@ import org.slf4j.Marker;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 /**
  * This class represents a {@link LogEventFormatter} which outputs the
@@ -203,7 +203,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         this(pattern, new Configuration());
     }
 
-    public PatternLogEventFormatter(Properties properties, String prefix) {
+    public PatternLogEventFormatter(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

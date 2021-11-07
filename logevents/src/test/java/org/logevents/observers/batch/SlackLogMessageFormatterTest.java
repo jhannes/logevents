@@ -11,10 +11,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -22,8 +22,8 @@ import static org.junit.Assert.assertTrue;
 
 public class SlackLogMessageFormatterTest {
 
-    private String loggerName = getClass().getName();
-    private Random random = new Random();
+    private final String loggerName = getClass().getName();
+    private final Random random = new Random();
 
     @Test
     public void shouldCreateSlackMessage() {
@@ -124,8 +124,8 @@ public class SlackLogMessageFormatterTest {
         } else if (new File("pom.xml").exists()) {
             Files.createDirectories(new File("logevents/target/classes/META-INF/maven/org.logevents/logevents").toPath());
             Files.copy(new File("pom.xml").toPath(), new File("logevents/target/classes/META-INF/maven/org.logevents/logevents/pom.xml").toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } 
-        Properties properties = new Properties();
+        }
+        Map<String, String> properties = new HashMap<>();
         properties.put("formatter.sourceCode.1.package", "org.logevents");
         properties.put("formatter.sourceCode.1.maven", "org.logevents/logevents");
         SlackExceptionFormatter formatter = new SlackExceptionFormatter(new Configuration(properties, "formatter"));
@@ -143,7 +143,7 @@ public class SlackLogMessageFormatterTest {
 
     @Test
     public void shouldCreateSourceLinkInBitbucket() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("formatter.sourceCode.1.package", "com.atlassian.labs.hipchat");
         properties.put("formatter.sourceCode.1.bitbucket", "https://bitbucket.org/atlassian/hipchat-for-jira/src/51fead28c419edae0aa120e0f03c78d043cc81a5/");
         properties.put("formatter.sourceCode.1.tag", "hipchat-for-jira-plugin-1.3.7");
@@ -167,10 +167,6 @@ public class SlackLogMessageFormatterTest {
 
     private String randomString() {
         return Long.toString(random.nextLong () & Long.MAX_VALUE, 36);
-    }
-
-    private <T> T pickOne(T[] options) {
-        return options[new Random().nextInt(options.length)];
     }
 
 }

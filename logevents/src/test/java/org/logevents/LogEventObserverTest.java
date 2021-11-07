@@ -1,23 +1,21 @@
 package org.logevents;
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.event.Level;
+
+import static org.junit.Assert.assertEquals;
 
 public class LogEventObserverTest {
 
-    private LogEventFactory factory = new LogEventFactory();
+    private final LogEventFactory factory = new LogEventFactory();
 
-    private Logger childLogger = factory.getLogger("org.logevents.testing.parent.Child");
+    private final Logger childLogger = factory.getLogger("org.logevents.testing.parent.Child");
 
-    private Logger parentLogger = factory.getLogger("org.logevents.testing.parent");
+    private final Logger parentLogger = factory.getLogger("org.logevents.testing.parent");
 
-    private Logger grandParentLogger = factory.getLogger("org.logevents.testing");
+    private final Logger grandParentLogger = factory.getLogger("org.logevents.testing");
 
     @Test
     public void shouldSendEventToObserver() {

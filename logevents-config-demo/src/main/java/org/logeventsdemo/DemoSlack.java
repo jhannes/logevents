@@ -13,7 +13,6 @@ import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Properties;
 import java.util.UUID;
 
 public class DemoSlack {

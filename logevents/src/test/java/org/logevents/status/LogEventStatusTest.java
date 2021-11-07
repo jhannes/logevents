@@ -6,7 +6,7 @@ import org.logevents.config.Configuration;
 import org.logevents.extend.junit.LogEventStatusRule;
 
 import java.util.HashMap;
-import java.util.Properties;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -20,12 +20,12 @@ public class LogEventStatusTest {
 
     @Test
     public void shouldConfigureLogEventStatusLevelForClass() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         statusRule.setStatusLevel(StatusEvent.StatusLevel.INFO);
         instance.configure(new Configuration(properties, "logevents"));
         assertEquals(StatusEvent.StatusLevel.INFO, instance.getThreshold(this));
 
-        properties.setProperty("logevents.status.LogEventStatusTest", "DEBUG");
+        properties.put("logevents.status.LogEventStatusTest", "DEBUG");
         instance.configure(new Configuration(properties, "logevents"));
         assertEquals(StatusEvent.StatusLevel.DEBUG, instance.getThreshold(this));
     }
