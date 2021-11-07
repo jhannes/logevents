@@ -6,14 +6,19 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.logevents.config.Configuration;
 import org.logevents.observers.DatabaseLogEventObserver;
 import org.logevents.util.openid.OpenIdConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
 public class LogViewerServer {
+
+    private static final Logger logger = LoggerFactory.getLogger(LogViewerServer.class);
 
     private final Server server = new Server();
     private final ServerConnector connector = new ServerConnector(server);
@@ -21,6 +26,7 @@ public class LogViewerServer {
 
     public LogViewerServer() {
         server.setHandler(createWebAppContext(listener));
+        server.addConnector(connector);
     }
 
     public static void main(String[] args) throws Exception {
@@ -28,7 +34,9 @@ public class LogViewerServer {
 
         LogViewerServer server = new LogViewerServer();
         server.setConfiguration(properties);
-        server.start();
+        server.start(8080);
+
+        logger.info("Started server {}", server.getURI());
     }
 
     private static Map<String, String> loadProperties(String filename) throws IOException {
@@ -42,15 +50,15 @@ public class LogViewerServer {
         return properties;
     }
 
-    private void setConfiguration(Map<String, String> properties) {
+    public void setConfiguration(Map<String, String> properties) {
         listener.setOpenIdConfiguration(new OpenIdConfiguration(new Configuration(properties, "openid")));
         listener.setLogEventSource(new DatabaseLogEventObserver(properties, "database"));
         listener.setCookieEncryptionKey(properties.get("cookie.secret"));
     }
 
-    private void start() throws Exception {
+    public void start(int port) throws Exception {
         server.start();
-        setPort(8080);
+        setPort(port);
     }
 
     private void setPort(int port) throws Exception {
@@ -65,5 +73,7 @@ public class LogViewerServer {
         return webApp;
     }
 
-
+    public URI getURI() {
+        return server.getURI();
+    }
 }
