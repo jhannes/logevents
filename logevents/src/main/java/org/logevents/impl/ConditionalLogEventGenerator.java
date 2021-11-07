@@ -11,7 +11,7 @@ import org.slf4j.event.Level;
  * Forwards the log event to it's {@link #observer} if {@link LogEventPredicate#test()} returns true.
  * If the event is logged with a marker, {@link LogEventPredicate#test(Marker)} is used to check if
  * the message should be logged. MDC and Markers are the most likely things to test for.
- * 
+ *
  * @see ConditionalLogEventFilter
  */
 public class ConditionalLogEventGenerator implements LogEventGenerator {
@@ -119,8 +119,6 @@ public class ConditionalLogEventGenerator implements LogEventGenerator {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" +
-                "observer=" + observer +
-                '}';
+        return getClass().getSimpleName() + "{observer=" + observer + '}';
     }
 }

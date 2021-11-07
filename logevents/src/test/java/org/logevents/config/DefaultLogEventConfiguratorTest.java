@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -323,19 +324,26 @@ public class DefaultLogEventConfiguratorTest {
         Logger logger = factory.getLogger("org.example.sublevel");
         MDC.put("user", "johannes");
         logger.debug("should be included because of MDC");
-        logger.trace("should be excluded despite of MDC");
+        logger.debug("should be included because of MDC: arg={}", "argvalue");
+        logger.debug("should be included because of MDC (with exception)", new Exception());
+        logger.trace("should be excluded despite of MDC: arg={}", "argvalue");
         MDC.put("operation", "important");
-        logger.debug("should be included because of two MDCs");
+        logger.debug("should be included because of two MDCs: arg1={}, arg2={}", "one", "two");
         MDC.put("user", "boring");
-        logger.debug("should be included because of second MDC");
+        logger.debug("should be included because of second MDC: arg1={}, arg2={}, arg3={}", "one", "two", "three");
         MDC.put("operation", "boring");
         logger.debug("should be excluded because no MDC");
         logger.info("should be included because over threshold");
 
-        assertEquals(
-                Arrays.asList("should be included because of MDC", "should be included because of two MDCs", "should be included because of second MDC", "should be included because over threshold"),
-                buffer.getMessages()
+        List<String> expected = Arrays.asList(
+                "should be included because of MDC",
+                "should be included because of MDC: arg={}",
+                "should be included because of MDC (with exception)",
+                "should be included because of two MDCs: arg1={}, arg2={}",
+                "should be included because of second MDC: arg1={}, arg2={}, arg3={}",
+                "should be included because over threshold"
         );
+        assertEquals(expected, buffer.getMessages());
     }
 
     @Test

@@ -9,6 +9,7 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -24,7 +25,7 @@ public class ConditionalLogEventFilterTest {
     public LogEventFactory factory = LogEventFactory.getInstance();
     public LoggerConfiguration logger = factory.getLogger("org.example.MdcThreshold");
     public CircularBufferLogEventObserver output = new CircularBufferLogEventObserver();
-    
+
     @Before
     public void setUp() {
         factory.setLevel(logger, Level.TRACE);
@@ -37,15 +38,15 @@ public class ConditionalLogEventFilterTest {
 
         logger.trace("Excluded");
         logger.debug("Included");
-        
+
         assertEquals(Arrays.asList("Included"), output.getMessages());
     }
-    
+
     @Test
     public void shouldOverrideOnSingleMdcValue() {
         ConditionalLogEventFilter filter = new ConditionalLogEventFilter(Level.INFO);
         filter.addLoggingCondition(Level.DEBUG, "mdc:user=admin|super");
-        
+
         factory.setObserver(logger, output, false);
         factory.setFilter(logger, filter);
 
@@ -56,7 +57,7 @@ public class ConditionalLogEventFilterTest {
 
         assertEquals(Arrays.asList("Included"), output.getMessages());
     }
-    
+
     @Test
     public void shouldOnlyLogOnceOnMultipleMdcMatches() {
         factory.setFilter(logger, new ConditionalLogEventFilter("WARN,INFO@mdc:user=admin|super,DEBUG@mdc:operation=important"));
@@ -73,7 +74,7 @@ public class ConditionalLogEventFilterTest {
 
         assertEquals(Arrays.asList("Included 1", "Included 2", "Included 3"), output.getMessages());
     }
-    
+
     @Test
     public void shouldReturnIfLoggingIsTurnedOn() {
         ConditionalLogEventFilter filter = new ConditionalLogEventFilter(Level.INFO);
@@ -88,7 +89,7 @@ public class ConditionalLogEventFilterTest {
         MDC.put("user", "nadmin");
         assertFalse(logger.isDebugEnabled());
     }
-    
+
     @Test
     public void shouldSupportMultipleRequiredMdcVariables() {
         factory.setFilter(logger, new ConditionalLogEventFilter("WARN@mdc:user=admin|super&mdc:operation=important"));
@@ -104,7 +105,7 @@ public class ConditionalLogEventFilterTest {
         MDC.put("operation", "important");
         assertTrue(logger.isWarnEnabled());
     }
-    
+
     @Test
     public void shouldSupportSuppressedMdcVariables() {
         factory.setFilter(logger, new ConditionalLogEventFilter("ERROR@mdc:user!=admin|super&mdc:operation=important"));
@@ -120,7 +121,7 @@ public class ConditionalLogEventFilterTest {
         MDC.put("user", "admin");
         assertFalse(logger.isErrorEnabled());
     }
-    
+
     @Test
     public void shouldSupportMarkerAndMdcFilters() {
         factory.setFilter(logger, new ConditionalLogEventFilter("WARN@mdc:user=admin&marker=HTTP_REQUEST"));
@@ -129,7 +130,7 @@ public class ConditionalLogEventFilterTest {
                 logger.getEffectiveFilter().toString()
         );
         factory.setObserver(logger, output);
-        
+
         MDC.clear();
         assertFalse(logger.isWarnEnabled());
         assertFalse(logger.isWarnEnabled(HTTP_ERROR));
@@ -144,7 +145,27 @@ public class ConditionalLogEventFilterTest {
         logger.warn(HTTP_ERROR, "Included");
         assertEquals(Arrays.asList("Included"), output.getMessages());
     }
-    
+
+    @Test
+    public void shouldLogWithMarkers() {
+        factory.setFilter(logger, new ConditionalLogEventFilter("DEBUG@marker=PERFORMANCE"));
+        factory.setObserver(logger, output, false);
+        logger.debug(PERFORMANCE, "With no args");
+        logger.debug(PERFORMANCE, "With one arg={}", "one");
+        logger.debug(PERFORMANCE, "With two args: {} and {}", "one", "two");
+        logger.debug(PERFORMANCE, "With more args: {}, {} and {}", "one", "two", "three");
+        logger.debug(PERFORMANCE, "With exception", new Exception());
+
+        List<String> expected = Arrays.asList(
+                "With no args",
+                "With one arg={}",
+                "With two args: {} and {}",
+                "With more args: {}, {} and {}",
+                "With exception"
+        );
+        assertEquals(expected, output.getMessages());
+    }
+
     @Test
     public void shouldSupportAlternativeMarkers() {
         factory.setFilter(logger, new ConditionalLogEventFilter("DEBUG@marker=HTTP_REQUEST|PERFORMANCE"));
@@ -154,7 +175,7 @@ public class ConditionalLogEventFilterTest {
         assertTrue(logger.isDebugEnabled(HTTP_ASSET_REQUEST));
         assertTrue(logger.isDebugEnabled(PERFORMANCE));
     }
-    
+
     @Test
     public void shouldSupportSuppressedMarkers() {
         factory.setFilter(logger, new ConditionalLogEventFilter("DEBUG@marker!=HTTP_REQUEST|PERFORMANCE"));
