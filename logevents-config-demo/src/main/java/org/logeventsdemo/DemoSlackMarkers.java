@@ -12,7 +12,7 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
-import java.util.Properties;
+import java.util.Map;
 
 public class DemoSlackMarkers {
 
@@ -34,7 +34,7 @@ public class DemoSlackMarkers {
         //  and put in logevents.properties as observers.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
 
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
-        Properties properties = configurator.loadConfigurationProperties();
+        Map<String, String> properties = configurator.loadConfigurationProperties();
         properties.put("observer.slack.threshold", "INFO");
         //properties.put("observer.slack.showRepeatsIndividually", "true");
         properties.put("observer.slack.markers.LOGIN.throttle", "PT3S PT5S");

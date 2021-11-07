@@ -12,6 +12,7 @@ import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -26,7 +27,7 @@ public class DemoSlack {
         //  and put in logevents.properties as observer.slack.slackUrl=https://hooks.slack.com/services/XXXX/XXX/XXX
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
 
-        Properties properties = configurator.loadConfigurationProperties();
+        Map<String, String> properties = configurator.loadConfigurationProperties();
         properties.put("observer.slack", SlackLogEventObserver.class.getName());
         properties.put("observer.slack.threshold", Level.WARN.name());
         properties.put("observer.slack.cooldownTime", "PT5S");

@@ -34,7 +34,7 @@ public class LogEventStatusTest {
     public void shouldConfigureStatusFromEnvironment() {
         HashMap<String, String> environment = new HashMap<>();
         environment.put("LOGEVENTS_STATUS", "CONFIG");
-        instance.configure(new Configuration(new Properties(), "logevents", environment));
+        instance.configure(new Configuration(new HashMap<>(), "logevents", environment));
         assertEquals(StatusEvent.StatusLevel.CONFIG, instance.getThreshold(this));
     }
 

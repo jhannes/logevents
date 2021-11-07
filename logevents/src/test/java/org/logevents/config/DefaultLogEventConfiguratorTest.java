@@ -2,15 +2,14 @@ package org.logevents.config;
 
 import org.junit.After;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
-import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.extend.junit.LogEventSampler;
+import org.logevents.extend.junit.LogEventStatusRule;
 import org.logevents.impl.LoggerDelegator;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
@@ -35,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -47,13 +47,13 @@ public class DefaultLogEventConfiguratorTest {
 
     private final LogEventFactory factory = new LogEventFactory();
     private DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
-    private final Properties configuration = new Properties();
+    private final Map<String, String> configuration = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private Path propertiesDir = Paths.get("target", "test-data", "properties");
 
     @Test
     public void shouldPrintWelcomeMessageIfNoConfiguration() {
         LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.ERROR);
-        configurator.applyConfigurationProperties(factory, new Properties());
+        configurator.applyConfigurationProperties(factory, new HashMap<>());
 
         assertEquals(
                 Arrays.asList("Logging by LogEvents (http://logevents.org). Create a file logevents.properties with the line logevents.status=INFO to suppress this message"),
@@ -62,17 +62,17 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldNotPrintWelcomeMessageIfConfiguration() {
-        configuration.setProperty("root", "WARN");
+        configuration.put("root", "WARN");
         configurator.applyConfigurationProperties(factory, configuration);
         assertEquals(Collections.emptyList(), LogEventStatus.getInstance().getHeadMessageTexts(configurator, StatusEvent.StatusLevel.INFO));
     }
 
     @Test
     public void shouldSetRootLevelFromProperties() {
-        configuration.setProperty("logevents.status", "ERROR");
+        configuration.put("logevents.status", "ERROR");
         configurator.applyConfigurationProperties(factory, configuration);
         String oldObserver = factory.getRootLogger().getObserver();
-        configuration.setProperty("root", "TRACE");
+        configuration.put("root", "TRACE");
 
         configurator.applyConfigurationProperties(factory, configuration);
 
@@ -97,9 +97,9 @@ public class DefaultLogEventConfiguratorTest {
     @Test
     public void shouldSetRootObserverFromProperties() {
         Path logFile = Paths.get("logs", "application.log");
-        configuration.setProperty("root", "DEBUG file");
-        configuration.setProperty("observer.file", "DateRollingLogEventObserver");
-        configuration.setProperty("observer.file.filename", logFile.toString());
+        configuration.put("root", "DEBUG file");
+        configuration.put("observer.file", "DateRollingLogEventObserver");
+        configuration.put("observer.file.filename", logFile.toString());
 
         configurator.applyConfigurationProperties(factory, configuration);
         assertEquals("LevelThresholdFilter{DEBUG}", factory.getRootLogger().getOwnFilter().toString());
@@ -112,7 +112,7 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldIncludeDefaultObservers() {
-        configuration.setProperty("root", "DEBUG console,file");
+        configuration.put("root", "DEBUG console,file");
 
         configurator.applyConfigurationProperties(factory, configuration);
 
@@ -127,9 +127,9 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldPartiallyConfigureDefaultObserver() {
-        configuration.setProperty("observer.file.formatter", "ConsoleLogEventFormatter");
-        configuration.setProperty("observer.console.threshold", "WARN");
-        configuration.setProperty("root", "DEBUG console,file");
+        configuration.put("observer.file.formatter", "ConsoleLogEventFormatter");
+        configuration.put("observer.console.threshold", "WARN");
+        configuration.put("root", "DEBUG console,file");
 
         configurator.applyConfigurationProperties(factory, configuration);
 
@@ -143,12 +143,12 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldSetLoggerObserverFromProperties() {
-        configuration.setProperty("root", "ERROR null");
-        configuration.setProperty("logger.org", "ERROR buffer1");
-        configuration.setProperty("logger.org.example", "ERROR buffer2");
-        configuration.setProperty("observer.null", "NullLogEventObserver");
-        configuration.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
-        configuration.setProperty("observer.buffer2", "CircularBufferLogEventObserver");
+        configuration.put("root", "ERROR null");
+        configuration.put("logger.org", "ERROR buffer1");
+        configuration.put("logger.org.example", "ERROR buffer2");
+        configuration.put("observer.null", "NullLogEventObserver");
+        configuration.put("observer.buffer1", "CircularBufferLogEventObserver");
+        configuration.put("observer.buffer2", "CircularBufferLogEventObserver");
 
         configurator.applyConfigurationProperties(factory, configuration);
         assertEquals("LevelThresholdFilter{ERROR}", factory.getLogger("org.example").getOwnFilter().toString());
@@ -174,7 +174,7 @@ public class DefaultLogEventConfiguratorTest {
     public void shouldConfigureObserverFromEnvironment() {
         HashMap<String, String> environment = new HashMap<>();
         environment.put("LOGEVENTS_OBSERVER_BUFFER_CAPACITY", "666");
-        Configuration configuration = new Configuration(new Properties(), "observer.buffer", environment);
+        Configuration configuration = new Configuration(new HashMap<>(), "observer.buffer", environment);
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver(configuration);
         assertEquals("CircularBufferLogEventObserver{size=0,capacity=666}", observer.toString());
     }
@@ -185,8 +185,8 @@ public class DefaultLogEventConfiguratorTest {
         assertEquals("RootLoggerDelegator{ROOT,filter=LevelThresholdFilter{INFO},ownObserver=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}}",
                 factory.getLogger(Logger.ROOT_LOGGER_NAME).toString());
 
-        configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
-        configuration.setProperty("root.observer.buffer", "DEBUG");
+        configuration.put("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.put("root.observer.buffer", "DEBUG");
         configurator.applyConfigurationProperties(factory, configuration);
         assertEquals("RootLoggerDelegator{ROOT,filter=LevelThresholdFilter{INFO},ownObserver=CompositeLogEventObserver{[" +
                         "ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, " +
@@ -194,7 +194,7 @@ public class DefaultLogEventConfiguratorTest {
                         "]}}",
                 factory.getLogger(Logger.ROOT_LOGGER_NAME).toString());
 
-        configuration.setProperty("root", "WARN");
+        configuration.put("root", "WARN");
         configurator.applyConfigurationProperties(factory, configuration);
         assertEquals("RootLoggerDelegator{ROOT,filter=LevelThresholdFilter{WARN},ownObserver=CompositeLogEventObserver{[" +
                         "ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, " +
@@ -205,12 +205,12 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldInstallMultipleRootLoggers() {
-        configuration.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
-        configuration.setProperty("observer.buffer2", "CircularBufferLogEventObserver");
-        configuration.setProperty("observer.buffer3", "CircularBufferLogEventObserver");
-        configuration.setProperty("root", "DEBUG buffer1");
-        configuration.setProperty("root.observer.buffer2", "INFO");
-        configuration.setProperty("root.observer.buffer3", "WARN");
+        configuration.put("observer.buffer1", "CircularBufferLogEventObserver");
+        configuration.put("observer.buffer2", "CircularBufferLogEventObserver");
+        configuration.put("observer.buffer3", "CircularBufferLogEventObserver");
+        configuration.put("root", "DEBUG buffer1");
+        configuration.put("root.observer.buffer2", "INFO");
+        configuration.put("root.observer.buffer3", "WARN");
 
         configurator.applyConfigurationProperties(factory, configuration);
 
@@ -229,7 +229,7 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldInstallRootObserverFromEnvironment() {
-        configuration.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
+        configuration.put("observer.buffer1", "CircularBufferLogEventObserver");
         configurator.applyConfigurationProperties(factory, configuration);
 
         HashMap<String, LogEventObserver> globalObservers = new HashMap<>();
@@ -243,11 +243,11 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldIncreaseLoggingWithMultipleRootObservers() {
-        configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
-        configuration.setProperty("observer.ignored", "CircularBufferLogEventObserver");
-        configuration.setProperty("root", "ERROR buffer");
-        configuration.setProperty("root.observer.ignored", "INFO");
-        configuration.setProperty("logger.org.example", "DEBUG");
+        configuration.put("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.put("observer.ignored", "CircularBufferLogEventObserver");
+        configuration.put("root", "ERROR buffer");
+        configuration.put("root.observer.ignored", "INFO");
+        configuration.put("logger.org.example", "DEBUG");
 
         configurator.applyConfigurationProperties(factory, configuration);
 
@@ -260,25 +260,25 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldAvoidDuplicateObserversForLogger() {
-        configuration.setProperty("observer.testObserver", "CircularBufferLogEventObserver");
-        configuration.setProperty("observer.ignored", "CircularBufferLogEventObserver");
-        configuration.setProperty("root", "INFO testObserver");
-        configuration.setProperty("logger.org", "DEBUG testObserver,ignored");
-        configuration.setProperty("logger.org.example", "DEBUG testObserver");
-        
+        configuration.put("observer.testObserver", "CircularBufferLogEventObserver");
+        configuration.put("observer.ignored", "CircularBufferLogEventObserver");
+        configuration.put("root", "INFO testObserver");
+        configuration.put("logger.org", "DEBUG testObserver,ignored");
+        configuration.put("logger.org.example", "DEBUG testObserver");
+
         configurator.applyConfigurationProperties(factory, configuration);
-        
+
         factory.getLogger("org.example").info("Hello");
         assertEquals(Arrays.asList("Hello"), ((CircularBufferLogEventObserver)factory.getObserver("testObserver")).getMessages());
     }
 
     @Test
     public void shouldConfigureMdcThreshold() {
-        configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
-        configuration.setProperty("logger.org.example",
+        configuration.put("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.put("logger.org.example",
                 "INFO,DEBUG@mdc:user=johannes|skywalker,DEBUG@mdc:operation=important buffer");
-        configuration.setProperty("includeParent.org.example", "false");
-        
+        configuration.put("includeParent.org.example", "false");
+
         configurator.applyConfigurationProperties(factory, configuration);
 
         CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver) factory.getObserver("buffer");
@@ -293,18 +293,18 @@ public class DefaultLogEventConfiguratorTest {
         MDC.put("operation", "boring");
         logger.debug("should be excluded because no MDC");
         logger.info("should be included because over threshold");
-        
+
         assertEquals(
                 Arrays.asList("should be included because of MDC", "should be included because of two MDCs", "should be included because of second MDC", "should be included because over threshold"),
                 buffer.getMessages()
         );
     }
-    
+
     @Test
     public void shouldConfigureMdcThresholdWithDefaultObserver() {
-        configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
-        configuration.setProperty("root", "WARN buffer");
-        configuration.setProperty("logger.org.example", "INFO,DEBUG@mdc:user=johannes");
+        configuration.put("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.put("root", "WARN buffer");
+        configuration.put("logger.org.example", "INFO,DEBUG@mdc:user=johannes");
         configurator.applyConfigurationProperties(factory, configuration);
 
         CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver) factory.getObserver("buffer");
@@ -319,13 +319,13 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldSetNonInheritingLoggerObserverFromProperties() {
-        configuration.setProperty("root", "ERROR null");
-        configuration.setProperty("logger.org", "ERROR buffer1");
-        configuration.setProperty("logger.org.example", "ERROR buffer2");
-        configuration.setProperty("includeParent.org.example", "false");
-        configuration.setProperty("observer.null", "NullLogEventObserver");
-        configuration.setProperty("observer.buffer1", "CircularBufferLogEventObserver");
-        configuration.setProperty("observer.buffer2", "CircularBufferLogEventObserver");
+        configuration.put("root", "ERROR null");
+        configuration.put("logger.org", "ERROR buffer1");
+        configuration.put("logger.org.example", "ERROR buffer2");
+        configuration.put("includeParent.org.example", "false");
+        configuration.put("observer.null", "NullLogEventObserver");
+        configuration.put("observer.buffer1", "CircularBufferLogEventObserver");
+        configuration.put("observer.buffer2", "CircularBufferLogEventObserver");
 
         configurator.applyConfigurationProperties(factory, configuration);
 
@@ -366,9 +366,9 @@ public class DefaultLogEventConfiguratorTest {
     public void shouldWarnOnMisconfiguredObserver() {
         LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
 
-        configuration.setProperty("logger.org.example", "ERROR faulty");
-        configuration.setProperty("observer.faulty", "ConsoleLogEventObserver");
-        configuration.setProperty("observer.faulty.nonExistingProperty", "Non existing property value");
+        configuration.put("logger.org.example", "ERROR faulty");
+        configuration.put("observer.faulty", "ConsoleLogEventObserver");
+        configuration.put("observer.faulty.nonExistingProperty", "Non existing property value");
 
         configurator.applyConfigurationProperties(factory, configuration);
 
@@ -381,11 +381,11 @@ public class DefaultLogEventConfiguratorTest {
     public void shouldUseOtherObserversOnMisconfiguredObserver() {
         LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
 
-        configuration.setProperty("logger.org.example", "DEBUG console2,buffer");
-        configuration.setProperty("includeParent.org.example", "false");
-        configuration.setProperty("observer.buffer", "CircularBufferLogEventObserver");
-        configuration.setProperty("observer.console2", "ConsoleLogEventObserver");
-        configuration.setProperty("observer.console2.formatter", "PatternLogEventFormatter");
+        configuration.put("logger.org.example", "DEBUG console2,buffer");
+        configuration.put("includeParent.org.example", "false");
+        configuration.put("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.put("observer.console2", "ConsoleLogEventObserver");
+        configuration.put("observer.console2.formatter", "PatternLogEventFormatter");
 
         configurator.applyConfigurationProperties(factory, configuration);
         assertEquals(Collections.singletonList(new StatusEvent(
@@ -403,9 +403,9 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldNotFailOnUnusedMisconfiguredObserver() {
-        configuration.setProperty("logger.org.example", "ERROR console");
-        configuration.setProperty("observer.faulty", "ConsoleLogEventFormatter");
-        configuration.setProperty("observer.faulty.nonExistingProperty", "Non existing property value");
+        configuration.put("logger.org.example", "ERROR console");
+        configuration.put("observer.faulty", "ConsoleLogEventFormatter");
+        configuration.put("observer.faulty.nonExistingProperty", "Non existing property value");
 
         configurator.applyConfigurationProperties(factory, configuration);
 
@@ -459,7 +459,7 @@ public class DefaultLogEventConfiguratorTest {
         try(RandomAccessFile file = new RandomAccessFile(propsFile.toFile(), "rw")) {
             try (FileLock ignored = file.getChannel().lock()) {
                 DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
-                configurator.loadPropertiesFromFiles(Arrays.asList("logevents-faultyconfig.properties"), new Properties());
+                configurator.loadPropertiesFromFiles(Arrays.asList("logevents-faultyconfig.properties"), new HashMap<>());
             }
             assertEquals("Can't load logevents-faultyconfig.properties",
                     LogEventStatus.getInstance().lastMessage().getMessage());
@@ -480,7 +480,7 @@ public class DefaultLogEventConfiguratorTest {
         try(RandomAccessFile file = new RandomAccessFile(propsFile.toFile(), "rw")) {
             try (FileLock ignored = file.getChannel().lock()) {
                 DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator(propertiesDir);
-                configurator.loadPropertiesFromFiles(Arrays.asList(filename), new Properties());
+                configurator.loadPropertiesFromFiles(Arrays.asList(filename), new HashMap<>());
             }
             assertEquals("Can't load " + filename,
                     LogEventStatus.getInstance().lastMessage().getMessage());

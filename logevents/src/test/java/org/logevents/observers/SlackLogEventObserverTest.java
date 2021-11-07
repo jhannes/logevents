@@ -22,10 +22,10 @@ import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
@@ -47,7 +47,7 @@ public class SlackLogEventObserverTest {
         }
     }
 
-    private List<String> buffer = new ArrayList<>();
+    private final List<String> buffer = new ArrayList<>();
 
     @Test
     public void shouldSendSlackMessage() throws IOException {
@@ -58,11 +58,11 @@ public class SlackLogEventObserverTest {
                 });
         int port = server.getAddress().getPort();
 
-        Properties properties = new Properties();
-        properties.setProperty("observer.slack.slackUrl", "http://localhost:" + port);
-        properties.setProperty("observer.slack.formatter", Formatter.class.getName());
-        properties.setProperty("observer.slack.username", "loguser");
-        properties.setProperty("observer.slack.channel", "general");
+        Map<String, String> properties = new HashMap<>();
+        properties.put("observer.slack.slackUrl", "http://localhost:" + port);
+        properties.put("observer.slack.formatter", Formatter.class.getName());
+        properties.put("observer.slack.username", "loguser");
+        properties.put("observer.slack.channel", "general");
 
         SlackLogEventObserver observer = new SlackLogEventObserver(properties, "observer.slack");
 
@@ -107,7 +107,7 @@ public class SlackLogEventObserverTest {
 
     @Test
     public void shouldConfigureSlackObserver() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.slack.slackUrl", "http://localhost:1234");
         properties.put("observer.slack.channel", "general");
         properties.put("observer.slack.username", "MyTestApp");
@@ -124,7 +124,7 @@ public class SlackLogEventObserverTest {
 
     @Test
     public void shouldConfigureMarkerBatcher() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.slack.slackUrl", "http://localhost:1234");
         properties.put("observer.slack.markers.FOO.throttle", "PT30S");
         properties.put("observer.slack.markers.FOO.channel", "fooMessages");
@@ -144,7 +144,7 @@ public class SlackLogEventObserverTest {
 
     @Test
     public void shouldConfigureProxy() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.slack.slackUrl", "http://localhost:1234");
         properties.put("observer.slack.proxy", "proxy.example.org:8888");
 

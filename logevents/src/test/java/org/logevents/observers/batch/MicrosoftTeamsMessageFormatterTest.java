@@ -14,6 +14,7 @@ import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -66,7 +67,7 @@ public class MicrosoftTeamsMessageFormatterTest {
 
     @Test
     public void shouldCreateObserver() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.teams.url", "http://example.com/webhook");
         MicrosoftTeamsLogEventObserver observer = new MicrosoftTeamsLogEventObserver(properties, "observer.teams") {
             @Override
@@ -83,7 +84,7 @@ public class MicrosoftTeamsMessageFormatterTest {
 
     @Test
     public void shouldLogErrorOnFormatting() {
-        Properties properties = new Properties();
+        Map<String, String> properties = new HashMap<>();
         properties.put("observer.teams.url", "http://example.com/webhook");
         MicrosoftTeamsLogEventObserver observer = new MicrosoftTeamsLogEventObserver(properties, "observer.teams") {
             @Override

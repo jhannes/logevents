@@ -201,8 +201,8 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      *
      * @return A merged Properties object with all relevant files merged together
      */
-    public Properties loadConfigurationProperties() {
-        return loadPropertiesFromFiles(getConfigurationFileNames(), new Properties());
+    public Map<String, String> loadConfigurationProperties() {
+        return loadPropertiesFromFiles(getConfigurationFileNames(), new HashMap<>());
     }
 
     /**
@@ -243,7 +243,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @param properties the Properties object to load into
      * @return Properties with the configuration of all files merged together
      */
-    protected Properties loadPropertiesFromFiles(List<String> configurationFileNames, Properties properties) {
+    protected Map<String, String> loadPropertiesFromFiles(List<String> configurationFileNames, Map<String, String> properties) {
         LogEventStatus.getInstance().addConfig(this, "Loading configuration from " + configurationFileNames);
         for (String filename : configurationFileNames) {
             loadConfigResource(properties, filename);
@@ -275,11 +275,13 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @param properties The destination to read the configuration into
      * @param fileName The filename to load from disk
      */
-    protected void loadConfigFile(Properties properties, String fileName) {
+    protected void loadConfigFile(Map<String, String> properties, String fileName) {
         if (Files.isRegularFile(this.propertiesDir.resolve(fileName))) {
             try (InputStream propertiesFile = new FileInputStream(this.propertiesDir.resolve(fileName).toFile())) {
                 LogEventStatus.getInstance().addDebug(this, "Loading file:" + propertiesDir.resolve(fileName));
-                properties.load(propertiesFile);
+                Properties props = new Properties();
+                props.load(propertiesFile);
+                props.forEach((k, v) -> properties.put(k.toString(), v.toString()));
             } catch (FileNotFoundException ignored) {
                 // Can happen if the file is deleted after the if-check
             } catch (IOException e) {
@@ -294,11 +296,13 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @param properties The destination to read the configuration into
      * @param resourceName The resource to load from classpath
      */
-    protected void loadConfigResource(Properties properties, String resourceName) {
+    protected void loadConfigResource(Map<String, String> properties, String resourceName) {
         try (InputStream propertiesFile = getClass().getClassLoader().getResourceAsStream(resourceName)) {
             if (propertiesFile != null) {
                 LogEventStatus.getInstance().addDebug(this, "Loading classpath:" + resourceName);
-                properties.load(propertiesFile);
+                Properties props = new Properties();
+                props.load(propertiesFile);
+                props.forEach((k, v) -> properties.put(k.toString(), v.toString()));
             }
         } catch (IOException e) {
             LogEventStatus.getInstance().addError(this, "Can't load " + resourceName, e);
@@ -317,11 +321,11 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @param factory The LogEventFactory that this configurator should configure
      * @param properties The merged configuration that should be applied to the factory
      */
-    public void applyConfigurationProperties(LogEventFactory factory, Properties properties) {
+    public void applyConfigurationProperties(LogEventFactory factory, Map<String, String> properties) {
         applyConfigurationProperties(factory, properties, System.getenv());
     }
 
-    protected void applyConfigurationProperties(LogEventFactory factory, Properties properties, Map<String, String> environment) {
+    protected void applyConfigurationProperties(LogEventFactory factory, Map<String, String> properties, Map<String, String> environment) {
         Configuration logeventsConfig = new Configuration(properties, "logevents", environment);
         LogEventStatus.getInstance().configure(logeventsConfig);
         showWelcomeMessage(properties);
@@ -345,7 +349,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         mbeanFactory.setup(factory, this, config);
     }
 
-    private Map<String, Supplier<? extends LogEventObserver>> configureObservers(Properties configuration, Map<String, String> environment) {
+    private Map<String, Supplier<? extends LogEventObserver>> configureObservers(Map<String, String> configuration, Map<String, String> environment) {
         Map<String, Supplier<? extends LogEventObserver>> observers = new HashMap<>();
         readObservers(configuration, observers, environment);
         installDefaultObservers(configuration, observers, environment);
@@ -364,11 +368,11 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    private void readObservers(Properties properties, Map<String, Supplier<? extends LogEventObserver>> observers, Map<String, String> environment) {
+    private void readObservers(Map<String, String> properties, Map<String, Supplier<? extends LogEventObserver>> observers, Map<String, String> environment) {
         for (Object key : properties.keySet()) {
             if (key.toString().matches("observer\\.\\w+")) {
                 String name = key.toString().substring("observer.".length());
-                configureObserver(observers, name, properties.getProperty(key.toString()), properties);
+                configureObserver(observers, name, properties.get(key.toString()), properties);
             }
         }
         for (String key : environment.keySet()) {
@@ -379,12 +383,12 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    protected void configureLoggers(LogEventFactory factory, Properties configuration, Map<String, String> environment) {
+    protected void configureLoggers(LogEventFactory factory, Map<String, String> configuration, Map<String, String> environment) {
         for (Object key : configuration.keySet()) {
             if (key.toString().startsWith("logger.")) {
                 String loggerName = key.toString().substring("logger.".length());
-                boolean includeParent = !"false".equalsIgnoreCase(configuration.getProperty("includeParent." + loggerName));
-                String loggerConfig = configuration.getProperty(key.toString());
+                boolean includeParent = !"false".equalsIgnoreCase(configuration.get("includeParent." + loggerName));
+                String loggerConfig = configuration.get(key.toString());
                 if (loggerConfig != null) {
                     configureLogger(factory, factory.getLogger(loggerName), loggerConfig, includeParent);
                 }
@@ -402,7 +406,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    protected void installDefaultObservers(Properties configuration, Map<String, Supplier<? extends LogEventObserver>> observers, Map<String, String> environment) {
+    protected void installDefaultObservers(Map<String, String> configuration, Map<String, Supplier<? extends LogEventObserver>> observers, Map<String, String> environment) {
         observers.putIfAbsent(
                 "console",
                 () -> createConsoleLogEventObserver(new Configuration(configuration, "observer.console", environment))
@@ -413,7 +417,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         );
     }
 
-    protected void showWelcomeMessage(Properties configuration) {
+    protected void showWelcomeMessage(Map<String, String> configuration) {
         if (configuration.isEmpty()) {
             LogEventStatus.getInstance().addInfo(this, WELCOME_MESSAGE);
         }
@@ -433,10 +437,10 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         return observer;
     }
 
-    protected void configureRootLogger(LogEventFactory factory, Properties properties, Map<String, String> environment) {
+    protected void configureRootLogger(LogEventFactory factory, Map<String, String> properties, Map<String, String> environment) {
         LinkedHashSet<LogEventObserver> observerSet = new LinkedHashSet<>();
 
-        String rootConfiguration = properties.getProperty("root");
+        String rootConfiguration = properties.get("root");
         if (rootConfiguration != null) {
             configureRootLogger(factory, observerSet, rootConfiguration);
         } else if (environment.containsKey("LOGEVENTS_ROOT")) {
@@ -469,11 +473,11 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    protected void configureGlobalObserversFromProperties(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Properties configuration) {
+    protected void configureGlobalObserversFromProperties(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Map<String, String> configuration) {
         for (Object key : configuration.keySet()) {
             if (key.toString().startsWith("root.observer.")) {
                 String observerName = key.toString().substring("root.observer.".length());
-                Level observerThreshold = Level.valueOf(configuration.getProperty(key.toString()));
+                Level observerThreshold = Level.valueOf(configuration.get(key.toString()));
                 addGlobalObserver(globalObservers, factory, observerName, observerThreshold);
             }
         }
@@ -527,7 +531,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    private void configureObserver(Map<String, Supplier<? extends LogEventObserver>> observers, String name, String className, Properties properties) {
+    private void configureObserver(Map<String, Supplier<? extends LogEventObserver>> observers, String name, String className, Map<String, String> properties) {
         if (!observers.containsKey(name)) {
             observers.put(name, () -> {
                 String prefix = "observer." + name;

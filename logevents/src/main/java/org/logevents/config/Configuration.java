@@ -2,7 +2,6 @@ package org.logevents.config;
 
 import org.logevents.formatting.MdcFilter;
 import org.logevents.status.LogEventStatus;
-import org.slf4j.event.Level;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -13,11 +12,11 @@ import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -25,7 +24,7 @@ import java.util.stream.Stream;
 
 /**
  * Used to configure {@link org.logevents.LogEventObserver} instances. Instantiate {@link Configuration}
- * with {@link Properties} and a String prefix and get values with {@link #getString}
+ * with {@link Map} and a String prefix and get values with {@link #getString}
  * and {@link #optionalString}. Values are read using the prefix + the key given to {@link #getString},
  * or from environment variables. E.g. if prefix is "observer.console", <code>getString("threshold")</code>
  * looks for property "observer.console.threshold" or environment variable "LOGEVENTS_OBSERVER_CONSOLE_THRESHOLD".
@@ -45,23 +44,23 @@ public class Configuration {
             "com.intellij.junit", "com.intellij.rt"
     };
 
-    private final Properties properties;
+    private final Map<String, String> properties;
     private final String prefix;
     private final Set<String> expectedFields = new TreeSet<>();
     private final Map<String, String> environment;
 
-    public Configuration(Properties properties, String prefix) {
-        this(properties, prefix, System.getenv());
+    public Configuration(Map<?, ?> properties, String prefix) {
+        this((Map<String, String>)properties, prefix, System.getenv());
     }
 
-    public Configuration(Properties properties, String prefix, Map<String, String> environment) {
+    public Configuration(Map<String, String> properties, String prefix, Map<String, String> environment) {
         this.properties = properties;
         this.prefix = prefix;
         this.environment = environment;
     }
 
     public Configuration() {
-        this(new Properties(), "");
+        this(new HashMap<>(), "");
     }
 
     /**
@@ -71,9 +70,9 @@ public class Configuration {
      * the whole configuration to alert the user of misconfiguration
      */
     public void checkForUnknownFields() {
-        Set<String> remainingFields = properties.stringPropertyNames().stream()
+        Set<String> remainingFields = properties.keySet().stream()
                 .filter(n -> n.startsWith(prefix + "."))
-                .filter(n -> !properties.getProperty(n).trim().isEmpty())
+                .filter(n -> !properties.get(n).trim().isEmpty())
                 .map(n -> n.substring(prefix.length() + 1))
                 .map(n -> n.replaceAll("(\\w+)*.*", "$1"))
                 .collect(Collectors.toCollection(TreeSet::new));
@@ -95,7 +94,7 @@ public class Configuration {
     public Set<String> listProperties(String key) {
         expectedFields.add(key);
         String keyPrefix = prefix + "." + key + ".";
-        return properties.stringPropertyNames().stream()
+        return properties.keySet().stream()
                 .filter(n -> n.startsWith(keyPrefix))
                 .map(n -> n.substring(keyPrefix.length()))
                 .map(n -> n.split("\\.")[0])
@@ -117,7 +116,7 @@ public class Configuration {
      * will check property value "observer.*.threshold" and environment variable "LOGEVENTS_THRESHOLD"
      */
     public Optional<String> optionalGlobalString(String key) {
-        Optional<String> result = Optional.ofNullable(properties.getProperty(globalKey(key)));
+        Optional<String> result = Optional.ofNullable(properties.get(globalKey(key)));
         return (result.isPresent() ? result : getPropertyFromEnvironment(key)).filter(s -> !s.isEmpty());
     }
 
@@ -186,7 +185,7 @@ public class Configuration {
     }
 
     private Optional<String> getProperty(String key) {
-        Optional<String> result = Optional.ofNullable(properties.getProperty(key));
+        Optional<String> result = Optional.ofNullable(properties.get(key));
         return result.isPresent() ? result : getPropertyFromEnvironment(key);
     }
 
@@ -219,8 +218,8 @@ public class Configuration {
     /**
      * Instantiates a class with the name in the provided property name. If the configured class name doesn't have
      * a package name, defaultPackage.
-     * 
-     * @see #createInstance(String, Class) 
+     *
+     * @see #createInstance(String, Class)
      */
     public <T> T createInstance(String key, Class<T> clazz, String defaultPackage) {
         optionalString(key)
@@ -232,8 +231,8 @@ public class Configuration {
     /**
      * Instantiates a class with the name in the provided property name and verifies that it's
      * a subclass of the defaultClass. If no property is configured, the defaultClass is used instead
-     * 
-     * @see #createInstance(String, Class) 
+     *
+     * @see #createInstance(String, Class)
      */
     @SuppressWarnings("unchecked")
     public <T> T createInstanceWithDefault(String key, Class<T> defaultClass) {
@@ -407,7 +406,7 @@ public class Configuration {
         }
     }
 
-    private List<String> sorted(Set<Object> strings) {
+    private List<String> sorted(Set<?> strings) {
         return strings.stream().map(Object::toString).sorted().collect(Collectors.toList());
     }
 

@@ -1,6 +1,8 @@
 package org.logevents.config;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -17,7 +19,7 @@ public class ConfigUtil {
         }
     }
 
-    public static <T> T create(String key, String defaultPackage, Optional<String> className, Properties properties) {
+    public static <T> T create(String key, String defaultPackage, Optional<String> className, Map<String, String> properties) {
         Class<?> clazz = getClass(
                 key,
                 defaultPackage,
@@ -27,12 +29,20 @@ public class ConfigUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T create(String key, Class<?> clazz, Properties properties) {
+    public static <T> T create(String key, Class<?> clazz, Map<String, String> properties) {
         try {
             try {
-                return (T) clazz.getConstructor(Properties.class, String.class).newInstance(properties, key);
+                return (T) clazz.getConstructor(Map.class, String.class).newInstance(properties, key);
             } catch (NoSuchMethodException e) {
-                return (T) clazz.getConstructor().newInstance();
+                // For backwards compatibility
+                try {
+                    Constructor<?> constructor = clazz.getConstructor(Properties.class, String.class);
+                    Properties props = new Properties();
+                    props.putAll(properties);
+                    return (T) constructor.newInstance(props, key);
+                } catch (NoSuchMethodException e2) {
+                    return (T) clazz.getConstructor().newInstance();
+                }
             }
         } catch (LogEventConfigurationException e) {
             throw new LogEventConfigurationException(e.getMessage());

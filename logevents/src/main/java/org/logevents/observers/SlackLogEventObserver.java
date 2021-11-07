@@ -15,7 +15,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.function.Consumer;
 
 /**
@@ -55,7 +54,7 @@ public class SlackLogEventObserver extends AbstractHttpPostJsonLogEventObserver 
 
     private final SlackLogEventsFormatter formatter;
 
-    public SlackLogEventObserver(Properties properties, String prefix) {
+    public SlackLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

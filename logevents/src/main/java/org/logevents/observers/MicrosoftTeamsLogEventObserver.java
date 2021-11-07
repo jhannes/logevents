@@ -9,7 +9,6 @@ import org.logevents.observers.batch.ThrottlingBatcher;
 import org.slf4j.event.Level;
 
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Sends log messages to Microsoft Teams through a webhook extension. Must be configured
@@ -53,7 +52,7 @@ public class MicrosoftTeamsLogEventObserver extends AbstractHttpPostJsonLogEvent
 
     private final MicrosoftTeamsMessageFormatter formatter;
 
-    public MicrosoftTeamsLogEventObserver(Properties properties, String prefix) {
+    public MicrosoftTeamsLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 

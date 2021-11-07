@@ -12,7 +12,7 @@ import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Properties;
+import java.util.Map;
 
 public class DemoTeams {
 
@@ -24,12 +24,12 @@ public class DemoTeams {
         //  or run with environement variable LOGEVENTS_OBSERVER_TEAMS_URL=https://outlook.office.com/webhook/.../IncomingWebHook/...
 
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
-        Properties properties = configurator.loadConfigurationProperties();
-        properties.setProperty("observer.teams.idleThreshold", Duration.ofSeconds(1).toString());
-        properties.setProperty("observer.teams.cooldownTime", Duration.ofSeconds(2).toString());
-        properties.setProperty("observer.teams.maximumWaitTime", Duration.ofMinutes(3).toString());
-        properties.setProperty("observer.teams.formatter.detailUrl", "http://www.google.com");
-        properties.setProperty("observer.teams.formatter.exceptionFormatter.frameClassLength", "20");
+        Map<String, String> properties = configurator.loadConfigurationProperties();
+        properties.put("observer.teams.idleThreshold", Duration.ofSeconds(1).toString());
+        properties.put("observer.teams.cooldownTime", Duration.ofSeconds(2).toString());
+        properties.put("observer.teams.maximumWaitTime", Duration.ofMinutes(3).toString());
+        properties.put("observer.teams.formatter.detailUrl", "http://www.google.com");
+        properties.put("observer.teams.formatter.exceptionFormatter.frameClassLength", "20");
 
         MicrosoftTeamsLogEventObserver teamsObserver = new MicrosoftTeamsLogEventObserver(
                 properties, "observer.teams"

@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -17,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ConfigurationTest {
-    private final Properties properties = new Properties();
+    private final Map<String, String> properties = new HashMap<>();
     private final String prefix = "observer.foo";
     private final Configuration configuration = new Configuration(properties, prefix);
 
@@ -107,7 +108,7 @@ public class ConfigurationTest {
         assertConfigurationError(configuration::checkForUnknownFields,
                 "Unknown configuration options: [also, unknown] for observer.foo. Expected options: [amount, name, value]");
     }
-    
+
     @Test
     public void shouldAcceptUnusedEmptyProperties() {
         properties.put("observer.foo.name", "");
@@ -194,7 +195,7 @@ public class ConfigurationTest {
     public void shouldUseDefaultMdcFilterForEnvironment() {
         HashMap<String, String> environment = new HashMap<>();
         environment.put("LOGEVENTS_INCLUDEDMDCKEYS", "ipAddress");
-        MdcFilter mdcFilterWithDefault = new Configuration(new Properties(), "observer.random", environment).getMdcFilter();
+        MdcFilter mdcFilterWithDefault = new Configuration(new HashMap<>(), "observer.random", environment).getMdcFilter();
         assertTrue(mdcFilterWithDefault.isKeyIncluded("ipAddress"));
     }
 
@@ -203,7 +204,7 @@ public class ConfigurationTest {
         HashMap<String, String> environment = new HashMap<>();
         String appName = "my-application";
         environment.put("LOGEVENTS_APPLICATIONNAME", appName);
-        Configuration configuration = new Configuration(new Properties(), "observer.buffer", environment);
+        Configuration configuration = new Configuration(new HashMap<>(), "observer.buffer", environment);
         assertEquals(configuration.getApplicationName(), appName);
     }
 

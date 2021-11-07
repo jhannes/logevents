@@ -7,7 +7,7 @@ import org.logevents.extend.junit.LogEventRule;
 import org.logevents.util.CircularBuffer;
 
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -34,7 +34,7 @@ public class CircularBufferLogEventObserver implements LogEventObserver {
         this(configuration.optionalInt("capacity").orElse(200));
     }
 
-    public CircularBufferLogEventObserver(Properties properties, String prefix) {
+    public CircularBufferLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 
