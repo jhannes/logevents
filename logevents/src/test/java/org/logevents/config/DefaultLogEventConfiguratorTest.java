@@ -10,6 +10,7 @@ import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.extend.junit.LogEventSampler;
 import org.logevents.extend.junit.LogEventStatusRule;
+import org.logevents.impl.JavaUtilLoggingAdapter;
 import org.logevents.impl.LoggerDelegator;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
@@ -139,6 +140,28 @@ public class DefaultLogEventConfiguratorTest {
                 +"FileLogEventObserver{filename=FilenameFormatter{logs/" + CWD + "-test.log}," +
                         "formatter=ConsoleLogEventFormatter,fileRotationWorker=null}]}",
                 factory.getRootLogger().getObserver());
+    }
+
+    @Test
+    public void shouldSupportNonLogging() {
+        configuration.put("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.put("root", "NONE buffer");
+        configuration.put("logger.org.example", "DEBUG");
+        configuration.put("logger.org.example.hush", "NONE");
+
+        configurator.applyConfigurationProperties(factory, configuration);
+
+        factory.getLogger("org").error("This should NOT be logged");
+        factory.getLogger("org.example").error("This SHOULD be logged");
+        factory.getLogger("org.example.hush").error("This should also NOT be logged");
+
+        JavaUtilLoggingAdapter.install(factory);
+        java.util.logging.Logger.getLogger("org")
+                .severe("This message to java.util.logging should NOT be logged");
+
+
+        CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver) factory.getObserver("buffer");
+        assertEquals("This SHOULD be logged", buffer.singleMessage());
     }
 
     @Test

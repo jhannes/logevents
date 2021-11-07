@@ -45,7 +45,7 @@ logevents.status=CONFIG
 
 By default, the [`file`](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) observer will log to a file named `logs/your-app-name-%date.log` and [`console`](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ConsoleLogEventObserver.html) logs ANSI-colored logs to the console.
 
-The default level for loggers with this configuration will be `WARN`, by `org.example` will log at `INFO` and `org.example.myapp` will log at `DEBUG`, or trace for HTTP_REQUEST when the `user` is `admin`. See [ConditionalLogEventFilter](https://jhannes.github.io/logevents/apidocs/org/logevents/impl/ConditionalLogEventFilter.html) for details.
+The default level for loggers with this configuration will be `WARN`, by `org.example` will log at `INFO` and `org.example.myapp` will log at `DEBUG`, or trace for HTTP_REQUEST when the `user` is `admin`. See [ConditionalLogEventFilter](https://jhannes.github.io/logevents/apidocs/org/logevents/impl/ConditionalLogEventFilter.html) for details. Use level `NONE` to turn off logging.
 
 Logevents will output [configuration information](https://jhannes.github.io/logevents/apidocs/org/logevents/status/package-summary.html) to system err.
 

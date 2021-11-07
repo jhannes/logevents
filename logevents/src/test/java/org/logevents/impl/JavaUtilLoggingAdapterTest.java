@@ -1,7 +1,9 @@
 package org.logevents.impl;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.logevents.LogEventFactory;
 import org.logevents.extend.junit.LogEventRule;
 import org.slf4j.event.Level;
 
@@ -14,6 +16,11 @@ public class JavaUtilLoggingAdapterTest {
     public LogEventRule rule = new LogEventRule(Level.TRACE, getClass());
 
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+    @Before
+    public void setUp() {
+        JavaUtilLoggingAdapter.install(LogEventFactory.getInstance());
+    }
 
     @Test
     public void shouldLogFinestLevelToTrace() {

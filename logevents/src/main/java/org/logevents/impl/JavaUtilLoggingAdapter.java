@@ -33,6 +33,9 @@ public class JavaUtilLoggingAdapter extends Handler {
     }
 
     private static Level toJavaUtilLoggingLevel(org.slf4j.event.Level level) {
+        if (level==null) {
+            return Level.OFF;
+        }
         switch (level) {
             case ERROR: return Level.SEVERE;
             case WARN: return Level.WARNING;

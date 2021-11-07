@@ -6,6 +6,7 @@ import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
 import org.logevents.impl.LevelThresholdFilter;
 import org.logevents.impl.LogEventFilter;
+import org.logevents.impl.NeverLogEventFilter;
 import org.logevents.jmx.LogEventsMBeanFactory;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.impl.ConditionalLogEventFilter;
@@ -58,7 +59,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * <code>logevents.properties</code> files. Files in configuration directory takes
  * precedence over files in classpath and are automatically scanned for changes.
  * <p>
- * <code>logevents.properties</code> should look like this ({@link #applyConfigurationProperties}):
+ * <code>logevents.properties</code> could look like this ({@link #applyConfigurationProperties}):
  *
  * <pre>
  * root=LEVEL [observer1,observer2]
@@ -67,12 +68,14 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * logger.com.example=LEVEL [observer]
  * includeParent.com.example=true|false
  *
+ * logger.com.noisy=NONE
+ *
  * observer.name=ObserverClass
  * observer.name.property=value
  * </pre>
  * <p>By default, observers named <code>observer.console</code> {@link ConsoleLogEventObserver} and
  * <code>observer.file</code> {@link FileLogEventObserver} are created. By default, the <code>root</code>
- * root logger is set to <code>INFO console</code>.</p>
+ * root logger is set to <code>INFO console</code>. Use LEVEL `NONE` to turn off logging for a logger</p>
  *
  * <h3>Log configuration can also be loaded from environment variables:</h3>
  *
@@ -529,6 +532,8 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     private LogEventFilter getFilter(String part) {
         if (part.contains(",")) {
             return new ConditionalLogEventFilter(part);
+        } else if (part.trim().equals("NONE")) {
+            return new NeverLogEventFilter();
         } else {
             return new LevelThresholdFilter(Level.valueOf(part.trim()));
         }
