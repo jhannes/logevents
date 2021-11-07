@@ -78,7 +78,7 @@ public class LogEventFactory implements ILoggerFactory {
             loggerCache.put(name, parent.getChildLogger(name));
         }
 
-        return loggerCache.get(name);
+        return loggerCache.get(name).withName(name);
     }
 
     /**

@@ -161,13 +161,18 @@ public class DefaultLogEventConfiguratorTest {
     @Test
     public void shouldSetLoggerAndObserverFromEnvironment() {
         Map<String, String> environment = new HashMap<>();
-        environment.put("LOGEVENTS_OBSERVER_CONSOLE", "ConsoleLogEventObserver");
-        environment.put("LOGEVENTS_LOGGER_ORG_EXAMPLE_DEMO", "DEBUG console");
+        environment.put("LOGEVENTS_OBSERVER_BUFFER", "CircularBufferLogEventObserver");
+        environment.put("LOGEVENTS_LOGGER_ORG_EXAMPLE_DEMO", "DEBUG buffer");
         environment.put("LOGEVENTS_INCLUDEPARENT_ORG_EXAMPLE_DEMO", "false");
         configurator.applyConfigurationProperties(factory, configuration, environment);
-        assertEquals("LevelThresholdFilter{DEBUG}", factory.getLogger("org.example.demo").getOwnFilter().toString());
-        assertEquals("ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}",
-                factory.getLogger("org.example.demo").getObserver());
+
+        CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver)factory.getObserver("buffer");
+
+        LoggerConfiguration logger = factory.getLogger("org.example.demo");
+
+        logger.info("Hello");
+        assertEquals("Hello", buffer.singleMessage());
+        assertEquals("org.example.demo", buffer.getEvents().get(0).getLoggerName());
     }
 
     @Test

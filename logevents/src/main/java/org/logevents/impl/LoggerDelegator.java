@@ -65,6 +65,19 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
         }
 
         @Override
+        public LoggerDelegator withName(String name) {
+            if (name.equals(getName())) {
+                return this;
+            }
+            CategoryLoggerDelegator delegator = new CategoryLoggerDelegator(name, this.parentLogger);
+            delegator.ownObserver = this.ownObserver;
+            delegator.ownFilter = this.ownFilter;
+            delegator.inheritParentObserver = this.inheritParentObserver;
+            delegator.refresh();
+            return delegator;
+        }
+
+        @Override
         public void reset() {
             super.reset();
             this.effectiveFilter = null;
@@ -88,8 +101,6 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
             return this.parentLogger == parent;
         }
     }
-
-
 
     private final String name;
 
@@ -533,6 +544,10 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
     }
 
     public abstract void refresh();
+    
+    public LoggerDelegator withName(String name) {
+        return this;
+    }
 
     protected void refreshEventGenerators() {
         this.errorEventGenerator = createEventGenerator(Level.ERROR);
