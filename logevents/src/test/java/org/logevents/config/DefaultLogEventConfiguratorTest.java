@@ -159,16 +159,26 @@ public class DefaultLogEventConfiguratorTest {
     }
 
     @Test
-    public void shouldSetLoggerAndObserverFromEnvironment() {
+    public void shouldSetLoggerAndObserverFromEnvironment() throws IOException {
         Map<String, String> environment = new HashMap<>();
         environment.put("LOGEVENTS_OBSERVER_BUFFER", "CircularBufferLogEventObserver");
         environment.put("LOGEVENTS_LOGGER_ORG_EXAMPLE_DEMO", "DEBUG buffer");
         environment.put("LOGEVENTS_INCLUDEPARENT_ORG_EXAMPLE_DEMO", "false");
-        configurator.applyConfigurationProperties(factory, configuration, environment);
+
+        Properties properties = new Properties();
+        properties.put("observer.buffer.capacity", "15");
+        deleteConfigFiles();
+        writeProps(propertiesDir.resolve("logevents.properties"), properties);
+
+        configurator = new DefaultLogEventConfigurator(propertiesDir, environment);
+        configurator.configure(factory);
 
         CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver)factory.getObserver("buffer");
+        assertEquals("CircularBufferLogEventObserver{size=0,capacity=15}", buffer.toString());
 
         LoggerConfiguration logger = factory.getLogger("org.example.demo");
+        assertEquals("LevelThresholdFilter{DEBUG}", logger.getOwnFilter().toString());
+        assertEquals("CircularBufferLogEventObserver{size=0,capacity=15}", logger.getObserver());
 
         logger.info("Hello");
         assertEquals("Hello", buffer.singleMessage());
@@ -350,7 +360,6 @@ public class DefaultLogEventConfiguratorTest {
         LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
         propertiesDir = Paths.get("target", "test-data", "invalid", "properties");
         deleteConfigFiles();
-        Files.createDirectories(propertiesDir);
 
         Properties defaultProperties = new Properties();
         defaultProperties.setProperty("logevents.what", "This should throw an error");
@@ -423,7 +432,6 @@ public class DefaultLogEventConfiguratorTest {
         LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
         propertiesDir = Paths.get("target", "test-data", "scan-change", "properties");
         deleteConfigFiles();
-        Files.createDirectories(propertiesDir);
 
         Properties defaultProperties = new Properties();
         defaultProperties.setProperty("root", "DEBUG");
@@ -457,7 +465,6 @@ public class DefaultLogEventConfiguratorTest {
 
         propertiesDir = Paths.get("target", "test-data", "faulty" + System.currentTimeMillis());
         deleteConfigFiles();
-        Files.createDirectories(propertiesDir);
         Path propsFile = propertiesDir.resolve("logevents-faultyconfig.properties");
         writeProps(propsFile, new Properties());
 
@@ -497,7 +504,6 @@ public class DefaultLogEventConfiguratorTest {
         LogEventStatus.getInstance().setThreshold(StatusEvent.StatusLevel.NONE);
         propertiesDir = Paths.get("target", "test-data", "scan-new", "properties");
         deleteConfigFiles();
-        Files.createDirectories(propertiesDir);
 
         Properties defaultProperties = new Properties();
         defaultProperties.setProperty("root", "DEBUG");
@@ -550,6 +556,7 @@ public class DefaultLogEventConfiguratorTest {
 
 
     public static void writeProps(Path file, Properties defaultProperties) throws IOException {
+        Files.createDirectories(file.getParent());
         try (FileWriter writer = new FileWriter(file.toFile())) {
             defaultProperties.store(writer, "Default configuration file");
         }

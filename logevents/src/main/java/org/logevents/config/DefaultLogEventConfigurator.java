@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -102,9 +103,15 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     private final Path propertiesDir;
     private Thread configurationWatcher;
     private boolean runningInsideJunit;
+    private final Map<String, String> environment;
 
     public DefaultLogEventConfigurator(Path propertiesDir) {
+        this(propertiesDir, System.getenv());
+    }
+
+    public DefaultLogEventConfigurator(Path propertiesDir, Map<String, String> environment) {
         this.propertiesDir = propertiesDir;
+        this.environment = environment;
     }
 
     public DefaultLogEventConfigurator() {
@@ -243,7 +250,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @return Properties with the configuration of all files merged together
      */
     protected Map<String, String> loadPropertiesFromFiles(List<String> configurationFileNames) {
-        Map<String, String> properties = new HashMap<>();
+        Map<String, String> properties = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         LogEventStatus.getInstance().addConfig(this, "Loading configuration from " + configurationFileNames);
         for (String filename : configurationFileNames) {
             loadConfigResource(filename)
@@ -322,10 +329,6 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * @param properties The merged configuration that should be applied to the factory
      */
     public void applyConfigurationProperties(LogEventFactory factory, Map<String, String> properties) {
-        applyConfigurationProperties(factory, properties, System.getenv());
-    }
-
-    protected void applyConfigurationProperties(LogEventFactory factory, Map<String, String> properties, Map<String, String> environment) {
         Configuration logeventsConfig = new Configuration(properties, "logevents", environment);
         LogEventStatus.getInstance().configure(logeventsConfig);
         showWelcomeMessage(properties);
