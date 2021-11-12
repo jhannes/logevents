@@ -177,9 +177,7 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
             proxy,
             elasticsearchAuthorizationHeaderValue);
 
-        Map<String, Object> response = JsonParser.parseObject(connection);
-
-        return parseBulkApiResponse(response);
+        return parseBulkApiResponse(JsonParser.parseObject(connection));
     }
 
     protected List<String> parseBulkApiResponse(Map<String, Object> response) throws IOException {
