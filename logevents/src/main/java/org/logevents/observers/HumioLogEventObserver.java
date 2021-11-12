@@ -5,7 +5,6 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.logevents.config.Configuration;
 import org.logevents.util.JsonUtil;
 
 /**
@@ -51,10 +50,6 @@ public class HumioLogEventObserver extends ElasticsearchLogEventObserver {
 
     public HumioLogEventObserver(Map<String, String> properties, String prefix) {
         super(properties, prefix);
-    }
-
-    public HumioLogEventObserver(Configuration configuration) {
-        super(configuration);
     }
 
     public HumioLogEventObserver(URL elasticsearchUrl, String index) {

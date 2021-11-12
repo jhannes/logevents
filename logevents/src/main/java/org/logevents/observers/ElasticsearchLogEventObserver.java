@@ -86,8 +86,15 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
         configuration.checkForUnknownFields();
     }
 
-    protected String getDefaultPath() {
-        return DEFAULT_ELASTICSEARCH_BULK_API_PATH;
+    public ElasticsearchLogEventObserver(URL elasticsearchUrl,
+                                         String elasticsearchAuthorizationHeader,
+                                         String index) {
+        this(new ElasticsearchPropertiesConfigurationBuilder(elasticsearchUrl, index).addAuthorization(elasticsearchAuthorizationHeader).build(), "observer.humio");
+    }
+
+    public ElasticsearchLogEventObserver(URL elasticsearchUrl,
+                                         String index) {
+        this(new ElasticsearchPropertiesConfigurationBuilder(elasticsearchUrl, index).build(), "observer.humio");
     }
 
     protected static class ElasticsearchPropertiesConfigurationBuilder {
@@ -114,16 +121,10 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
         }
     }
 
-    public ElasticsearchLogEventObserver(URL elasticsearchUrl,
-                                         String elasticsearchAuthorizationHeader,
-                                         String index) {
-        this(new ElasticsearchPropertiesConfigurationBuilder(elasticsearchUrl, index).addAuthorization(elasticsearchAuthorizationHeader).build(), "observer.humio");
+    protected String getDefaultPath() {
+        return DEFAULT_ELASTICSEARCH_BULK_API_PATH;
     }
 
-    public ElasticsearchLogEventObserver(URL elasticsearchUrl,
-                                         String index) {
-        this(new ElasticsearchPropertiesConfigurationBuilder(elasticsearchUrl, index).build(), "observer.humio");
-    }
 
     public void configureProxy(Configuration configuration) {
         configuration.optionalString("proxy").ifPresent(proxyHost -> {
