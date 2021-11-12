@@ -13,24 +13,33 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class NetUtils {
+    public static final String NO_AUTHORIZATION_HEADER = null;
+
 
     public static HttpURLConnection post(URL url, String contentBody, String contentType) throws IOException {
-        return post(url, contentBody, contentType, Proxy.NO_PROXY);
+        return post(url, contentBody, contentType, Proxy.NO_PROXY, NO_AUTHORIZATION_HEADER);
     }
 
-    public static HttpURLConnection post(URL url, String contentBody, String contentType, Proxy proxy) throws IOException {
+    public static HttpURLConnection post(URL url, String contentBody, String contentType, Proxy proxy, String authorizationHeaderValue) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection(proxy);
         connection.setRequestMethod("POST");
         connection.setDoInput(true);
         connection.setDoOutput(true);
         connection.setRequestProperty("Content-Type", contentType);
+        if (authorizationHeaderValue != null && !authorizationHeaderValue.trim().isEmpty()) {
+            connection.setRequestProperty("Authorization", authorizationHeaderValue);
+        }
         connection.getOutputStream().write(contentBody.getBytes());
         connection.getOutputStream().flush();
         return connection;
     }
 
     public static String postJson(URL url, String json, Proxy proxy) throws IOException {
-        HttpURLConnection connection = post(url, json, "application/json", proxy);
+        return postJson(url, json, proxy, NO_AUTHORIZATION_HEADER);
+    }
+
+    public static String postJson(URL url, String json, Proxy proxy, String authorizationHeaderValue) throws IOException {
+        HttpURLConnection connection = post(url, json, "application/json", proxy, authorizationHeaderValue);
 
         int statusCode = connection.getResponseCode();
         if (statusCode >= 400) {

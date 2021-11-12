@@ -1,10 +1,14 @@
 package org.logevents.observers;
 
+import static org.logevents.util.NetUtils.NO_AUTHORIZATION_HEADER;
+
+import java.util.Properties;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.formatting.JsonLogEventFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
+import org.logevents.util.ContentType;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.NetUtils;
@@ -12,6 +16,8 @@ import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,12 +40,25 @@ import java.util.stream.Collectors;
  * observer.elastic.suppressMarkers=PERSONAL_DATA
  * observer.elastic.formatter.excludedMdcKeys=secret
  * </pre>
+ * Optional configuration shown below, but with their defaults
+ * <pre>
+ * observer.elastic.elasticsearchUrlPath=_bulk
+ * </pre>
+ * And you can provide Authorization header with
+ * <pre>
+ * observer.elastic.elasticsearchAuthorizationHeader
+ * </pre>
  */
 public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObserver {
 
+    public static final String DEFAULT_ELASTICSEARCH_BULK_API_PATH = "_bulk";
     private final URL elasticsearchUrl;
+    protected final String elasticsearchUrlPath;
+    private final String elasticsearchAuthorizationHeaderValue;
     private final String index;
     private final JsonLogEventFormatter formatter;
+
+    private Proxy proxy = Proxy.NO_PROXY;
 
     public ElasticsearchLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
@@ -47,21 +66,67 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
 
     public ElasticsearchLogEventObserver(Configuration configuration) {
         this.elasticsearchUrl = configuration.getUrl("elasticsearchUrl");
+        this.elasticsearchUrlPath = configuration.optionalString("elasticsearchUrlPath").orElse(getDefaultPath());
+        this.elasticsearchAuthorizationHeaderValue = configuration.optionalString("elasticsearchAuthorizationHeader").orElse(NO_AUTHORIZATION_HEADER);
         this.index = configuration.getString("index");
         this.formatter = configuration.createInstanceWithDefault("formatter", JsonLogEventFormatter.class);
         this.configureBatching(configuration);
         this.configureFilter(configuration, Level.TRACE);
+        this.configureMarkers(configuration);
+        this.configureProxy(configuration);
         configuration.checkForUnknownFields();
     }
 
-    public ElasticsearchLogEventObserver(URL elasticsearchUrl, String index) {
-        this.elasticsearchUrl = elasticsearchUrl;
-        this.index = index;
-        this.formatter = new JsonLogEventFormatter();
+    protected String getDefaultPath() {
+        return DEFAULT_ELASTICSEARCH_BULK_API_PATH;
+    }
+
+    protected static class ElasticsearchPropertiesConfigurationBuilder {
+        private final URL elasticsearchUrl;
+        private String elasticsearchAuthorizationHeader;
+        private final String index;
+
+        public ElasticsearchPropertiesConfigurationBuilder(URL elasticsearchUrl, String index) {
+            this.elasticsearchUrl = elasticsearchUrl;
+            this.index = index;
+        }
+
+        public ElasticsearchPropertiesConfigurationBuilder addAuthorization(String elasticsearchAuthorizationHeader) {
+            this.elasticsearchAuthorizationHeader = elasticsearchAuthorizationHeader;
+            return this;
+        }
+
+        public Map<String, String> build() {
+            Map<String, String> config = new HashMap<>();
+            config.put("observer.humio.elasticsearchUrl", elasticsearchUrl.toString());
+            config.put("observer.humio.index", index);
+            if (elasticsearchAuthorizationHeader != null) config.put("observer.humio.elasticsearchAuthorizationHeader", elasticsearchAuthorizationHeader);
+            return config;
+        }
+    }
+
+    public ElasticsearchLogEventObserver(URL elasticsearchUrl,
+                                         String elasticsearchAuthorizationHeader,
+                                         String index) {
+        this(new ElasticsearchPropertiesConfigurationBuilder(elasticsearchUrl, index).addAuthorization(elasticsearchAuthorizationHeader).build(), "observer.humio");
+    }
+
+    public ElasticsearchLogEventObserver(URL elasticsearchUrl,
+                                         String index) {
+        this(new ElasticsearchPropertiesConfigurationBuilder(elasticsearchUrl, index).build(), "observer.humio");
+    }
+
+    public void configureProxy(Configuration configuration) {
+        configuration.optionalString("proxy").ifPresent(proxyHost -> {
+            int colonPos = proxyHost.lastIndexOf(':');
+            String hostname = colonPos != -1 ? proxyHost.substring(0, colonPos) : proxyHost;
+            int proxyPort = colonPos != -1 ? Integer.parseInt(proxyHost.substring(colonPos+1)) : 80;
+            this.proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(hostname, proxyPort));
+        });
     }
 
     @Override
-    protected void processBatch(LogEventBatch batch) {
+    public void processBatch(LogEventBatch batch) {
         try {
             LogEventStatus.getInstance().addTrace(this, "Flushing " + batch.size() + " messages to " + getUrl());
             indexDocuments(batch);
@@ -95,12 +160,20 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
         }
         jsons.add("");
 
-        URL url = new URL(this.elasticsearchUrl, "_bulk");
-        HttpURLConnection connection = NetUtils.post(url,
-                String.join("\n", jsons), "application/x-ndjson");
+        URL url = new URL(elasticsearchUrl, elasticsearchUrlPath);
+        HttpURLConnection connection = NetUtils.post(
+            url,
+            String.join("\n", jsons),
+            ContentType.APPLICATION_X_NDJSON,
+            proxy,
+            elasticsearchAuthorizationHeaderValue);
 
         Map<String, Object> response = JsonParser.parseObject(connection);
 
+        return parseBulkApiResponse(response);
+    }
+
+    protected List<String> parseBulkApiResponse(Map<String, Object> response) throws IOException {
         List<Map<String, Object>> items = JsonUtil.getObjectList(response, "items");
         return items.stream()
                 .map(o -> JsonUtil.getObject(o, "index"))
