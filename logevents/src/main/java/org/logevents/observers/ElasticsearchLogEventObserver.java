@@ -8,7 +8,6 @@ import org.logevents.config.Configuration;
 import org.logevents.formatting.JsonLogEventFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.ContentType;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.logevents.util.NetUtils;
@@ -164,7 +163,7 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
         HttpURLConnection connection = NetUtils.post(
             url,
             String.join("\n", jsons),
-            ContentType.APPLICATION_X_NDJSON,
+            "application/x-ndjson",
             proxy,
             elasticsearchAuthorizationHeaderValue);
 
