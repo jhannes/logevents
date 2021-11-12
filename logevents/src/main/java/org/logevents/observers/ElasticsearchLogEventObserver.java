@@ -60,9 +60,9 @@ import java.util.stream.Collectors;
  */
 public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObserver {
 
-    public static final String DEFAULT_ELASTICSEARCH_BULK_API_PATH = "_bulk";
+    private static final String DEFAULT_ELASTICSEARCH_BULK_API_PATH = "_bulk";
     private final URL elasticsearchUrl;
-    protected final String elasticsearchUrlPath;
+    private final String elasticsearchUrlPath;
     private final String elasticsearchAuthorizationHeaderValue;
     private final String index;
     private final JsonLogEventFormatter formatter;

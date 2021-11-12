@@ -45,8 +45,8 @@ import org.logevents.util.JsonUtil;
  */
 public class HumioLogEventObserver extends ElasticsearchLogEventObserver {
 
-    public static final String DEFAULT_HUMIO_BULK_API_PATH = "api/v1/ingest/elastic-bulk";
-    public static final List<String> HUMIO_API_HAS_NO_SANE_BULK_API_RESPONSE_CONTAINING_DOCUMENT_IDS_FROM_INSERT =
+    private static final String DEFAULT_HUMIO_BULK_API_PATH = "api/v1/ingest/elastic-bulk";
+    private static final List<String> HUMIO_API_HAS_NO_SANE_BULK_API_RESPONSE_CONTAINING_DOCUMENT_IDS_FROM_INSERT =
         Collections.emptyList();
 
     public HumioLogEventObserver(Map<String, String> properties, String prefix) {
