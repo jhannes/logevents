@@ -1,6 +1,26 @@
 package org.logevents.observers;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
@@ -13,29 +33,15 @@ import org.logevents.status.StatusEvent;
 import org.logevents.util.ExceptionUtil;
 import org.logevents.util.JsonUtil;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class HumioLogEventObserverTest {
 
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(9200);
+    private final List<String> requestBodyBuffer = new ArrayList<>();
+    private final List<String> requestPathBuffer = new ArrayList<>();
+    private final List<Headers> requestHeaderBuffer = new ArrayList<>();
 
     private HumioLogEventObserver observer = new HumioLogEventObserver(toURL("http://localhost:9200"), "logevents-unit-test");
 
@@ -119,8 +125,8 @@ public class HumioLogEventObserverTest {
 
 
     @Test
-    public void shouldPostTohumio() throws IOException {
-        givenHumioServerRespondsSuccessfully();
+    public void shouldPostToHumio() throws IOException {
+        observer = setupMockServerAndSystemUnderTest(successfulHumioResponse());
 
         LogEvent logEvent1 = new LogEventSampler().withRandomTime().build();
         LogEvent logEvent2 = new LogEventSampler().withRandomTime().build();
@@ -131,20 +137,30 @@ public class HumioLogEventObserverTest {
 
     @Test
     public void indexDocumentsDoesIncludeAuthroizationIfProvided() throws IOException {
-        observer = new HumioLogEventObserver(toURL("http://localhost:9200"), "foo bar", "logevents-unit-test");
-        givenHumioServerRespondsSuccessfullyWithCredentials();
+        observer = setupMockServerAndSystemUnderTest(successfulHumioResponse());
 
         LogEvent logEvent1 = new LogEventSampler().withRandomTime().build();
         LogEvent logEvent2 = new LogEventSampler().withRandomTime().build();
 
-        List<String> insertedDocuments = observer.indexDocuments(new LogEventBatch().add(logEvent1).add(logEvent2));
-        assertEquals("Because Humio API does not return document ids we can fetch from humiosearch..", insertedDocuments.size(), 0);
+        observer.indexDocuments(new LogEventBatch().add(logEvent1).add(logEvent2));
+
+        Optional<String> expectedAuthorizationHeader = requestHeaderBuffer.stream()
+            .filter(h -> h.containsKey("Authorization"))
+            .map(h -> h.getFirst("Authorization"))
+            .findFirst();
+        assertTrue("Authorization header to be present in the request", expectedAuthorizationHeader.isPresent());
+        assertEquals("foo bar", expectedAuthorizationHeader.get());
     }
 
+    private HumioLogEventObserver setupMockServerAndSystemUnderTest(byte[] response) throws IOException {
+        return new HumioLogEventObserver(
+            toURL("http://localhost:" + extractPortNumberForMockHumioServer(response)), "foo bar",
+            "logevents-unit-test");
+    }
 
     @Test
     public void indexDocumentShouldLogErrorsWhenHumioResponseContainingErrors() throws IOException {
-        givenHumioServerRespondsWithErrors();
+        observer = setupMockServerAndSystemUnderTest(partlyErronousHumioResponse());
 
         LogEvent logEvent1 = new LogEventSampler().withRandomTime().build();
         LogEvent logEvent2 = new LogEventSampler().withRandomTime().build();
@@ -159,14 +175,28 @@ public class HumioLogEventObserverTest {
             actual.contains(expected));
     }
 
-    private void givenHumioServerRespondsSuccessfully() {
-        Map<String, Object> humioResponse = successfulHumioResponse();
-
-        wireMockRule.givenThat(post(urlEqualTo("/api/v1/ingest/elastic-bulk"))
-                .willReturn(aResponse().withStatus(200).withBody(JsonUtil.toIndentedJson(humioResponse))));
+    private int extractPortNumberForMockHumioServer(byte[] response) throws IOException {
+        HttpServer server = startServer(t -> {
+            requestBodyBuffer.add(toString(t.getRequestBody()));
+            requestPathBuffer.add(t.getHttpContext().getPath());
+            requestHeaderBuffer.add(t.getRequestHeaders());
+            t.sendResponseHeaders(200, 0);
+            t.getResponseBody().write(response);
+            t.getResponseBody().flush();
+            t.close();
+        });
+        return server.getAddress().getPort();
     }
 
-    private Map<String, Object> successfulHumioResponse() {
+    private Object expectIndexObject() {
+        Map<String, Object> indexObjectRoot = new HashMap<>();
+        Map<String, Object> indexEntry = new HashMap<>();
+        indexEntry.put("_index", "logevents-unit-test");
+        indexEntry.put("index", indexEntry);
+        return indexObjectRoot;
+    }
+
+    private byte[] successfulHumioResponse() {
         Map<String, Object> humioResponse = new HashMap<>();
 
         List<Map<String, Object>> items = new ArrayList<>();
@@ -176,18 +206,12 @@ public class HumioLogEventObserverTest {
         items.add(createItem(200));
         humioResponse.put("items", items);
         humioResponse.put("errors", "false");
-        return humioResponse;
+        return JsonUtil.toIndentedJson(humioResponse).getBytes(StandardCharsets.UTF_8);
     }
 
-    private void givenHumioServerRespondsSuccessfullyWithCredentials() {
-        Map<String, Object> humioResponse = successfulHumioResponse();
 
-        wireMockRule.givenThat(post(urlEqualTo("/api/v1/ingest/elastic-bulk"))
-            .withHeader("Authorization", equalTo("foo bar"))
-            .willReturn(aResponse().withStatus(200).withBody(JsonUtil.toIndentedJson(humioResponse))));
-    }
 
-    private void givenHumioServerRespondsWithErrors() {
+    private byte[] partlyErronousHumioResponse() {
         Map<String, Object> humioResponse = new HashMap<>();
 
         List<Map<String, Object>> items = new ArrayList<>();
@@ -198,12 +222,23 @@ public class HumioLogEventObserverTest {
         humioResponse.put("items", items);
         humioResponse.put("errors", "true");
 
-        wireMockRule.givenThat(post(urlEqualTo("/api/v1/ingest/elastic-bulk"))
-            .willReturn(aResponse().withStatus(200).withBody(JsonUtil.toIndentedJson(humioResponse))));
+        return JsonUtil.toIndentedJson(humioResponse).getBytes(StandardCharsets.UTF_8);
     }
 
     private Map<String, Object> createItem(int httpStatusCode) {
         return Collections.singletonMap("create", Collections.singletonMap("status", httpStatusCode));
+    }
+
+    private HttpServer startServer(HttpHandler httpHandler) throws IOException {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", httpHandler);
+        server.start();
+        return server;
+    }
+
+    private String toString(InputStream input) {
+        return new BufferedReader(new InputStreamReader(input))
+            .lines().collect(Collectors.joining("\n"));
     }
 
 
