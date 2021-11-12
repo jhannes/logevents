@@ -2,7 +2,6 @@ package org.logevents.observers;
 
 import static org.logevents.util.NetUtils.NO_AUTHORIZATION_HEADER;
 
-import java.util.Properties;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.formatting.JsonLogEventFormatter;

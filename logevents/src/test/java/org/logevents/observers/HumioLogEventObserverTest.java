@@ -1,27 +1,6 @@
 package org.logevents.observers;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import org.hamcrest.MatcherAssert;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
@@ -33,6 +12,25 @@ import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.logevents.util.ExceptionUtil;
 import org.logevents.util.JsonUtil;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class HumioLogEventObserverTest {
 
@@ -86,8 +84,8 @@ public class HumioLogEventObserverTest {
 
         assertEquals(payload.get("exception.class"), event.getThrowable().getClass().getName());
         assertEquals(payload.get("exception.message"), event.getThrowable().getMessage());
-        MatcherAssert.assertThat(payload.get("exception.stackTrace").toString(),
-            containsString("at org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)"));
+        assertContains("at org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)",
+            payload.get("exception.stackTrace").toString());
     }
 
     @Test
@@ -154,6 +152,11 @@ public class HumioLogEventObserverTest {
         IOException e = assertThrows(IOException.class, () ->
             observer.indexDocuments(new LogEventBatch().add(logEvent1).add(logEvent2)));
         assertEquals(e.getMessage(), "Failed sending 1 out of 4 entries");
+    }
+
+    private void assertContains(String expected, String actual) {
+        assertTrue("Expected <" + actual + "> to contain <" + expected + ">",
+            actual.contains(expected));
     }
 
     private void givenHumioServerRespondsSuccessfully() {

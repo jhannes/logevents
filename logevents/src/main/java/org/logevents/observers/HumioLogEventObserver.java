@@ -1,27 +1,12 @@
 package org.logevents.observers;
 
-import static org.logevents.util.NetUtils.NO_AUTHORIZATION_HEADER;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.stream.Collectors;
-import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.formatting.JsonLogEventFormatter;
-import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.status.LogEventStatus;
-import org.logevents.util.ContentType;
-import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
-import org.logevents.util.NetUtils;
 
 /**
  * Publishes asynchronously to Humio

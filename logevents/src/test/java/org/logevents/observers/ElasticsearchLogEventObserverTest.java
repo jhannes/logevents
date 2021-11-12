@@ -1,7 +1,5 @@
 package org.logevents.observers;
 
-import org.hamcrest.MatcherAssert;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -82,8 +79,8 @@ public class ElasticsearchLogEventObserverTest {
 
         assertEquals(payload.get("exception.class"), event.getThrowable().getClass().getName());
         assertEquals(payload.get("exception.message"), event.getThrowable().getMessage());
-        MatcherAssert.assertThat(payload.get("exception.stackTrace").toString(),
-                containsString("at org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)"));
+        assertContains("at org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)",
+            payload.get("exception.stackTrace").toString());
     }
 
     @Test
@@ -146,6 +143,11 @@ public class ElasticsearchLogEventObserverTest {
         } catch (ConnectException e) {
             Assume.assumeNoException("Elasticsearch is not running - try 'docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e \"discovery.type=single-node\" elasticsearch:7.2.0'", e);
         }
+    }
+
+    private void assertContains(String expected, String actual) {
+        assertTrue("Expected <" + actual + "> to contain <" + expected + ">",
+            actual.contains(expected));
     }
 
 }
