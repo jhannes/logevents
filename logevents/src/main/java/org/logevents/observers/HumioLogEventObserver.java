@@ -31,6 +31,8 @@ import org.logevents.util.NetUtils;
  * <pre>
  * observer.humio=HumioLogEventObserver
  * observer.humio.elasticsearchUrl=http://localhost:9200
+ * observer.humio.elasticsearchUrlPath=api/v1/ingest/elastic-bulk
+ * observer.humio.elasticsearchAuthorizationHeader=repositoryId injectApiToken
  * observer.humio.index=my-test-index
  * observer.humio.idleThreshold=PT2S
  * observer.humio.cooldownTime=PT1S
@@ -38,14 +40,23 @@ import org.logevents.util.NetUtils;
  * observer.humio.suppressMarkers=PERSONAL_DATA
  * observer.humio.formatter.excludedMdcKeys=secret
  * </pre>
- * Optional configuration shown below, but with their defaults
- * <pre>
- * observer.humio.elasticsearchUrlPath=api/v1/ingest/elastic-bulk
- * </pre>
- * And you can provide Authorization header with
- * <pre>
- * observer.humio.elasticsearchAuthorizationHeader
- * </pre>
+ *
+ * <h3>Elasticsearch configuration</h3>
+ *
+ * <ul>
+ *     <li><code>elasticsearchUrl</code> should point to where the elasticsearch API lives. It should contain an URI scheme and authority.</li>
+ *     <li><code>elasticsearchUrlPath</code> should point to the http path where the Elasticsearch Bulk API lives.</li>
+ * </ul>
+ *
+ * <h4>Authorization</h4>
+ *
+ * The configurable <code>elasitcsearchAuthorizationHeader</code> is the value the client will include as
+ * Authorization header
+ * when communicating with <code>elasticsearchUrl</code>. It is not to be confused by Basic authentication. If you
+ * need basic authentication you need to remember to provide its configuration value as '<code>Basic
+ * base64encodeValueHere</code>'.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc3986#section-3">RFC3986 #section3 about URI syntax</a>
  */
 public class HumioLogEventObserver extends ElasticsearchLogEventObserver {
 
