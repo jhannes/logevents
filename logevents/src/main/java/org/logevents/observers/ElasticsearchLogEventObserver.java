@@ -137,7 +137,7 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
     }
 
     @Override
-    public void processBatch(LogEventBatch batch) {
+    protected void processBatch(LogEventBatch batch) {
         try {
             LogEventStatus.getInstance().addTrace(this, "Flushing " + batch.size() + " messages to " + getUrl());
             indexDocuments(batch);
