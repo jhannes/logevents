@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -20,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
@@ -30,7 +27,6 @@ import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
-import org.logevents.util.ExceptionUtil;
 import org.logevents.util.JsonUtil;
 
 import static org.junit.Assert.assertEquals;
@@ -39,18 +35,29 @@ import static org.junit.Assert.assertTrue;
 
 public class HumioLogEventObserverTest {
 
+    private static final String EXAMPLE_AUTHORIZATION_HEADER_VALUE = "foo bar";
+    private static final String EXAMPLE_CONFIG_PREFIX = "observer.humio";
     private final List<String> requestBodyBuffer = new ArrayList<>();
     private final List<String> requestPathBuffer = new ArrayList<>();
     private final List<Headers> requestHeaderBuffer = new ArrayList<>();
 
-    private HumioLogEventObserver observer = new HumioLogEventObserver(toURL("http://localhost:9200"), "logevents-unit-test");
+    private HumioLogEventObserver observer = new HumioLogEventObserver(defaultConfigurationMap(
+        extractPortNumberForMockHumioServer(successfulHumioResponse())), EXAMPLE_CONFIG_PREFIX);
 
-    private URL toURL(String s) {
-        try {
-            return new URL(s);
-        } catch (MalformedURLException e) {
-            throw ExceptionUtil.softenException(e);
-        }
+    public HumioLogEventObserverTest() throws IOException {
+    }
+
+    private Map<String, String> defaultConfigurationMap(int portNumberForElasticsearchUrl) {
+        Map<String, String> config = new HashMap<>();
+        config.put(EXAMPLE_CONFIG_PREFIX + ".elasticsearchUrl", "http://localhost:" + portNumberForElasticsearchUrl);
+        config.put(EXAMPLE_CONFIG_PREFIX + ".index", "logevents-unit-test");
+        return config;
+    }
+
+    private Map<String, String> defaultConfigurationWithAuthorization(int portNumberForElasticsearchurl, String headerValue) {
+        Map<String, String> config = defaultConfigurationMap(portNumberForElasticsearchurl);
+        config.put(EXAMPLE_CONFIG_PREFIX + ".elasticsearchAuthorizationHeader", headerValue);
+        return config;
     }
 
     @Test
@@ -108,11 +115,11 @@ public class HumioLogEventObserverTest {
         Duration maximumWaitTime = Duration.ofMinutes(2);
 
         Map<String, String> properties = new HashMap<>();
-        properties.put("observer.humio.elasticsearchUrl", "http://localhost:-1");
-        properties.put("observer.humio.index", "my-test-index");
-        properties.put("observer.humio.formatter.excludedMdcKeys", "excludedKey");
-        properties.put("observer.humio.maximumWaitTime", maximumWaitTime.toString());
-        observer = new HumioLogEventObserver(properties, "observer.humio");
+        properties.put(EXAMPLE_CONFIG_PREFIX + ".elasticsearchUrl", "http://localhost:-1");
+        properties.put(EXAMPLE_CONFIG_PREFIX + ".index", "my-test-index");
+        properties.put(EXAMPLE_CONFIG_PREFIX + ".formatter.excludedMdcKeys", "excludedKey");
+        properties.put(EXAMPLE_CONFIG_PREFIX + ".maximumWaitTime", maximumWaitTime.toString());
+        observer = new HumioLogEventObserver(properties, EXAMPLE_CONFIG_PREFIX);
 
         logEventStatusRule.setStatusLevel(StatusEvent.StatusLevel.NONE);
         observer.processBatch(new LogEventBatch().add(new LogEventSampler().build()));
@@ -149,13 +156,13 @@ public class HumioLogEventObserverTest {
             .map(h -> h.getFirst("Authorization"))
             .findFirst();
         assertTrue("Authorization header to be present in the request", expectedAuthorizationHeader.isPresent());
-        assertEquals("foo bar", expectedAuthorizationHeader.get());
+        assertEquals(EXAMPLE_AUTHORIZATION_HEADER_VALUE, expectedAuthorizationHeader.get());
     }
 
     private HumioLogEventObserver setupMockServerAndSystemUnderTest(byte[] response) throws IOException {
         return new HumioLogEventObserver(
-            toURL("http://localhost:" + extractPortNumberForMockHumioServer(response)), "foo bar",
-            "logevents-unit-test");
+            defaultConfigurationWithAuthorization(extractPortNumberForMockHumioServer(response),
+                EXAMPLE_AUTHORIZATION_HEADER_VALUE), EXAMPLE_CONFIG_PREFIX);
     }
 
     @Test

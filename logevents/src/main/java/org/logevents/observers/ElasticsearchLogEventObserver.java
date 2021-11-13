@@ -87,41 +87,6 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
         configuration.checkForUnknownFields();
     }
 
-    public ElasticsearchLogEventObserver(URL elasticsearchUrl,
-                                         String elasticsearchAuthorizationHeader,
-                                         String index) {
-        this(new ElasticsearchPropertiesConfigurationBuilder(elasticsearchUrl, index).addAuthorization(elasticsearchAuthorizationHeader).build(), "observer.humio");
-    }
-
-    public ElasticsearchLogEventObserver(URL elasticsearchUrl,
-                                         String index) {
-        this(new ElasticsearchPropertiesConfigurationBuilder(elasticsearchUrl, index).build(), "observer.humio");
-    }
-
-    protected static class ElasticsearchPropertiesConfigurationBuilder {
-        private final URL elasticsearchUrl;
-        private String elasticsearchAuthorizationHeader;
-        private final String index;
-
-        public ElasticsearchPropertiesConfigurationBuilder(URL elasticsearchUrl, String index) {
-            this.elasticsearchUrl = elasticsearchUrl;
-            this.index = index;
-        }
-
-        public ElasticsearchPropertiesConfigurationBuilder addAuthorization(String elasticsearchAuthorizationHeader) {
-            this.elasticsearchAuthorizationHeader = elasticsearchAuthorizationHeader;
-            return this;
-        }
-
-        public Map<String, String> build() {
-            Map<String, String> config = new HashMap<>();
-            config.put("observer.humio.elasticsearchUrl", elasticsearchUrl.toString());
-            config.put("observer.humio.index", index);
-            if (elasticsearchAuthorizationHeader != null) config.put("observer.humio.elasticsearchAuthorizationHeader", elasticsearchAuthorizationHeader);
-            return config;
-        }
-    }
-
     protected String getDefaultPath() {
         return DEFAULT_ELASTICSEARCH_BULK_API_PATH;
     }

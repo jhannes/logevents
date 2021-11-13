@@ -17,7 +17,6 @@ import org.logevents.util.JsonUtil;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -32,14 +31,13 @@ import static org.junit.Assert.assertTrue;
 
 public class ElasticsearchLogEventObserverTest {
 
-    private ElasticsearchLogEventObserver observer = new ElasticsearchLogEventObserver(toURL("http://localhost:9200"), "logevents-unit-test");
+    private ElasticsearchLogEventObserver observer = new ElasticsearchLogEventObserver(defaultConfigurationMap(), "observer.elasticsearch");
 
-    private URL toURL(String s) {
-        try {
-            return new URL(s);
-        } catch (MalformedURLException e) {
-            throw ExceptionUtil.softenException(e);
-        }
+    private Map<String, String> defaultConfigurationMap() {
+        Map<String, String> config = new HashMap<>();
+        config.put("observer.elasticsearch.elasticsearchUrl", "http://localhost:9200");
+        config.put("observer.elasticsearch.index", "logevents-unit-test");
+        return config;
     }
 
     @Test

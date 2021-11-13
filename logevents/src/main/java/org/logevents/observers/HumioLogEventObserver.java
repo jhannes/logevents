@@ -1,7 +1,6 @@
 package org.logevents.observers;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -50,14 +49,6 @@ public class HumioLogEventObserver extends ElasticsearchLogEventObserver {
 
     public HumioLogEventObserver(Map<String, String> properties, String prefix) {
         super(properties, prefix);
-    }
-
-    public HumioLogEventObserver(URL elasticsearchUrl, String index) {
-        super(elasticsearchUrl, index);
-    }
-
-    public HumioLogEventObserver(URL elasticsearchUrl, String elasticsearchAuthorizationHeader, String index) {
-        super(elasticsearchUrl, elasticsearchAuthorizationHeader, index);
     }
 
     @Override
