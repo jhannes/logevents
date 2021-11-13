@@ -38,7 +38,7 @@ import org.logevents.util.JsonUtil;
  * Authorization header
  * when communicating with <code>elasticsearchUrl</code>. It is not to be confused by Basic authentication. If you
  * need basic authentication you need to remember to provide its configuration value as '<code>Basic
- * base64encodeValueHere</code>'.
+ * base64encodedValueHere</code>'.
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc3986#section-3">RFC3986 #section3 about URI syntax</a>
  */
