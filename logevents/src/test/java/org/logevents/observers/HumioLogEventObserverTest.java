@@ -1,5 +1,8 @@
 package org.logevents.observers;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -27,25 +30,20 @@ import org.logevents.formatting.MessageFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
+import org.logevents.util.ExceptionUtil;
 import org.logevents.util.JsonUtil;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 public class HumioLogEventObserverTest {
 
     private static final String EXAMPLE_AUTHORIZATION_HEADER_VALUE = "foo bar";
     private static final String EXAMPLE_CONFIG_PREFIX = "observer.humio";
+    private static final int INVALID_PORT = -1;
     private final List<String> requestBodyBuffer = new ArrayList<>();
     private final List<String> requestPathBuffer = new ArrayList<>();
     private final List<Headers> requestHeaderBuffer = new ArrayList<>();
 
     private HumioLogEventObserver observer = new HumioLogEventObserver(defaultConfigurationMap(
         extractPortNumberForMockHumioServer(successfulHumioResponse())), EXAMPLE_CONFIG_PREFIX);
-
-    public HumioLogEventObserverTest() throws IOException {
-    }
 
     private Map<String, String> defaultConfigurationMap(int portNumberForElasticsearchUrl) {
         Map<String, String> config = new HashMap<>();
@@ -182,17 +180,22 @@ public class HumioLogEventObserverTest {
             actual.contains(expected));
     }
 
-    private int extractPortNumberForMockHumioServer(byte[] response) throws IOException {
-        HttpServer server = startServer(t -> {
-            requestBodyBuffer.add(toString(t.getRequestBody()));
-            requestPathBuffer.add(t.getHttpContext().getPath());
-            requestHeaderBuffer.add(t.getRequestHeaders());
-            t.sendResponseHeaders(200, 0);
-            t.getResponseBody().write(response);
-            t.getResponseBody().flush();
-            t.close();
-        });
-        return server.getAddress().getPort();
+    private int extractPortNumberForMockHumioServer(byte[] response) {
+        try {
+            HttpServer server = startServer(t -> {
+                requestBodyBuffer.add(toString(t.getRequestBody()));
+                requestPathBuffer.add(t.getHttpContext().getPath());
+                requestHeaderBuffer.add(t.getRequestHeaders());
+                t.sendResponseHeaders(200, 0);
+                t.getResponseBody().write(response);
+                t.getResponseBody().flush();
+                t.close();
+            });
+            return server.getAddress().getPort();
+        } catch (IOException e) {
+            ExceptionUtil.softenException(e);
+        }
+        return INVALID_PORT;
     }
 
     private Object expectIndexObject() {
