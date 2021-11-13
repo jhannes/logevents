@@ -247,7 +247,4 @@ public class HumioLogEventObserverTest {
         return new BufferedReader(new InputStreamReader(input))
             .lines().collect(Collectors.joining("\n"));
     }
-
-
-
 }
