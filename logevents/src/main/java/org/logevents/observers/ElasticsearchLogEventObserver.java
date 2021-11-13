@@ -61,6 +61,7 @@ import java.util.stream.Collectors;
 public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObserver {
 
     private static final String DEFAULT_ELASTICSEARCH_BULK_API_PATH = "_bulk";
+    private static final String APPLICATION_X_NDJSON = "application/x-ndjson";
     private final URL elasticsearchUrl;
     private final String elasticsearchUrlPath;
     private final String elasticsearchAuthorizationHeaderValue;
@@ -174,7 +175,7 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
         HttpURLConnection connection = NetUtils.post(
             url,
             String.join("\n", jsons),
-            "application/x-ndjson",
+            APPLICATION_X_NDJSON,
             proxy,
             elasticsearchAuthorizationHeaderValue);
 
