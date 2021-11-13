@@ -95,6 +95,8 @@ LOGEVENTS_LOGGER_COM_EXAMPLE=DEBUG,TRACE@mdc:user=superuser|admin|tester
 * [Display logs on a web dashboard](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/WebLogEventObserver.html)
 * [Elasticsearch](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ElasticsearchLogEventObserver.html)
   . Logging directly to Elastic search Index API avoids edge cases when writing and parsing log files
+* [Humio](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/HumioLogEventObserver.html)
+    . Logging directly to Humio via their [Elastic search Bulk API](https://library.humio.com/stable/docs/ingesting-data/log-shippers/other-log-shippers/#elasticsearch-bulk-api).
 * [Azure Application Insights](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/azure/ApplicationInsightsLogEventObserver.html) (
   requires optional com.microsoft.azure:applicationinsights-core dependency)
 * [JMX integration](https://jhannes.github.io/logevents/apidocs/org/logevents/jmx/LogEventsMBeanFactory.html) to view
