@@ -10,10 +10,12 @@ import org.logevents.extend.junit.LogEventRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import static org.logevents.extend.junit.LogEventSampler.HTTP_ASSET_REQUEST;
@@ -53,7 +55,7 @@ public class FilteredLogEventObserverTest {
 
     @Test
     public void shouldSuppressUnwantedMarkers() {
-        observer.setSuppressMarkers(Arrays.asList(HTTP_REQUEST));
+        observer.setCondition(new LogEventPredicate.SuppressedMarkerCondition(new HashSet<>(Arrays.asList(HTTP_REQUEST))));
 
         logger.warn(HTTP_REQUEST, "Don't log my http requests data");
         logger.warn(HTTP_ASSET_REQUEST, "Don't log markers that contain the marker");
@@ -68,7 +70,7 @@ public class FilteredLogEventObserverTest {
 
     @Test
     public void shouldRequireDesiredMarkers() {
-        observer.setRequireMarker(Arrays.asList(HTTP_REQUEST));
+        observer.setCondition(new LogEventPredicate.RequiredMarkerCondition(new HashSet<>(Arrays.asList(HTTP_REQUEST))));
 
         logger.warn(LIFECYCLE, "Don't log my unrelated markers");
         logger.warn("Don't log if no markers");

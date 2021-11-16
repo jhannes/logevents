@@ -65,10 +65,10 @@ public class CompositeLogEventObserverTest {
         CompositeLogEventObserver combined = (CompositeLogEventObserver) CompositeLogEventObserver.combine(
                 debugObserver, warnObserver, infoObserver
         );
-        assertEquals(debug, combined.filteredOn(Level.DEBUG, Level.DEBUG));
+        assertEquals(debug, combined.filteredOn(Level.DEBUG, true));
         CircularBufferLogEventObserver observer = new CircularBufferLogEventObserver();
         assertEquals(observer,
-                CompositeLogEventObserver.combine(observer, infoObserver).filteredOn(Level.DEBUG, Level.DEBUG));
+                CompositeLogEventObserver.combine(observer, infoObserver).filteredOn(Level.DEBUG, true));
     }
 
 }

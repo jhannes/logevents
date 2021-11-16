@@ -24,7 +24,7 @@ built on top of SLF4J - the logging lingua franka for Java.
 * [Elasticsearch](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/ElasticsearchLogEventObserver.html). Logging directly to Elastic search Index API avoids edge cases when writing and parsing log files
 * [Azure Application Insights](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/azure/ApplicationInsightsLogEventObserver.html) (requires optional com.microsoft.azure:applicationinsights-core dependency)
 * [JMX integration](https://jhannes.github.io/logevents/apidocs/org/logevents/jmx/LogEventsMBeanFactory.html) to view the configuration and tweak log levels
-* [Filter loggers](https://jhannes.github.io/logevents/apidocs/org/logevents/impl/ConditionalLogEventFilter.html) on markers and MDC values (e.g. `logger.org.example.app=INFO,DEBUG@mdc:user=superuser|admin`)
+* [Filter loggers](https://jhannes.github.io/logevents/apidocs/org/logevents/impl/LogEventFilter.html) on markers and MDC values (e.g. `logger.org.example.app=INFO,DEBUG@mdc:user=superuser|admin`)
 * [Filter observers](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/AbstractFilteredLogEventObserver.html) on markers and MDC values
 
 ## Quick start:

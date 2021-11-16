@@ -26,8 +26,8 @@ public class LogEventConfiguratorTest {
     }
 
     private static boolean configurator2Called = false;
-    private Path serviceLoaderDir = Paths.get("target", "test-classes", "META-INF", "services");
-    private Path serviceLoaderDir2 = Paths.get("target", "classes", "META-INF", "services");
+    private final Path serviceLoaderDir = Paths.get("target", "test-classes", "META-INF", "services");
+    private final Path serviceLoaderDir2 = Paths.get("target", "classes", "META-INF", "services");
 
     public static class Configurator2 implements LogEventConfigurator {
         @Override
@@ -67,7 +67,7 @@ public class LogEventConfiguratorTest {
         LogEventFactory.getInstance().setRootLevel(Level.DEBUG);
         LogEventFactory.getInstance().configure();
 
-        assertEquals("LevelThresholdFilter{WARN}", LogEventFactory.getInstance().getRootLogger().getOwnFilter().toString());
+        assertEquals("LogEventFilter{ERROR,WARN}", LogEventFactory.getInstance().getRootLogger().getOwnFilter().toString());
     }
 
     @After

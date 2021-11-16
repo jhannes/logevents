@@ -25,7 +25,7 @@ public class LogEventsConfigurationServletTest {
 
         assertEquals(factory.getRootLogger().getOwnFilter().toString(),
                 JsonUtil.getField(levels, "/"));
-        assertEquals("LevelThresholdFilter{TRACE}", JsonUtil.getField(levels, "org.example"));
+        assertEquals("LogEventFilter{ERROR,WARN,INFO,DEBUG,TRACE}", JsonUtil.getField(levels, "org.example"));
         assertEquals("<inherited>", JsonUtil.getField(levels, "org"));
     }
 
@@ -33,7 +33,7 @@ public class LogEventsConfigurationServletTest {
     public void shouldResetLogLevel() {
         servlet.setLogLevel("org.example", "TRACE");
 
-        assertEquals("LevelThresholdFilter{TRACE}",
+        assertEquals("LogEventFilter{ERROR,WARN,INFO,DEBUG,TRACE}",
                 getField(getObject(servlet.logConfigurationToJson(factory), "logLevels"), "org.example"));
 
         servlet.setLogLevel("org.example", "null");

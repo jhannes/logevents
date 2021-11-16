@@ -3,9 +3,8 @@ package org.logevents;
 import org.logevents.config.DefaultLogEventConfigurator;
 import org.logevents.config.DefaultTestLogEventConfigurator;
 import org.logevents.config.LogEventConfigurationException;
-import org.logevents.impl.JavaUtilLoggingAdapter;
-import org.logevents.impl.LevelThresholdFilter;
 import org.logevents.impl.LogEventFilter;
+import org.logevents.impl.JavaUtilLoggingAdapter;
 import org.logevents.impl.LoggerDelegator;
 import org.logevents.observers.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
@@ -103,7 +102,7 @@ public class LogEventFactory implements ILoggerFactory {
      * @param level The nullable name of the threshold. If null, inherit from parent
      */
     public LogEventFilter setLevel(Logger logger, Level level) {
-        return setFilter(logger, level != null ? new LevelThresholdFilter(level) : null);
+        return setFilter(logger, level != null ? new LogEventFilter(level) : null);
     }
 
     public LogEventFilter setFilter(Logger logger, LogEventFilter filter) {

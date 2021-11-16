@@ -15,9 +15,9 @@ public class ConditionalLogEventObserver implements LogEventObserver {
     private final LogEventObserver delegate;
     private final LogEventPredicate condition;
 
-    public ConditionalLogEventObserver(LogEventObserver delegate, List<LogEventPredicate> mdcConditions) {
+    public ConditionalLogEventObserver(LogEventObserver delegate, LogEventPredicate predicate) {
         this.delegate = delegate;
-        this.condition = mdcConditions.size() > 1 ? new LogEventPredicate.AnyCondition(mdcConditions) : mdcConditions.get(0);
+        this.condition = predicate;
     }
 
     @Override

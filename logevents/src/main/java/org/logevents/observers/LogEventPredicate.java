@@ -6,6 +6,7 @@ import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -23,7 +24,7 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
         if (allConditions.size() > 1) {
             return new AllConditions(allConditions);
         } else if (allConditions.isEmpty()) {
-            return new NullCondition();
+            return new AlwaysCondition();
         } else {
             return allConditions.get(0);
         }
@@ -45,15 +46,84 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
         return test();
     }
 
-    class NullCondition implements LogEventPredicate {
+    /**
+     * Called from {@link Logger#error}, {@link Logger#warn}, {@link Logger#info}
+     * {@link Logger#debug} and {@link Logger#trace}. Can be used to short circuit
+     * logging based on event-specific values in addition to log level.
+     */
+    @Override
+    default boolean test(LogEvent logEvent) {
+        return test();
+    }
+
+    LogEventPredicate negate();
+
+    @Override
+    default LogEventPredicate or(Predicate<? super LogEvent> other) {
+        return new AnyCondition(Arrays.asList(this, (LogEventPredicate) other));
+    }
+
+    @Override
+    default LogEventPredicate and(Predicate<? super LogEvent> other) {
+        return new AllConditions(Arrays.asList(this, (LogEventPredicate) other));
+    }
+
+    default LogEventPredicate withParent(LogEventPredicate parent) {
+        return this;
+    }
+
+    class AlwaysCondition implements LogEventPredicate {
         @Override
         public boolean test() {
             return true;
         }
 
         @Override
-        public boolean test(LogEvent logEvent) {
-            return true;
+        public LogEventPredicate negate() {
+            return new NeverCondition();
+        }
+
+        @Override
+        public AlwaysCondition or(Predicate<? super LogEvent> other) {
+            return this;
+        }
+
+        @Override
+        public LogEventPredicate and(Predicate<? super LogEvent> other) {
+            return (LogEventPredicate) other;
+        }
+
+        @Override
+        public String toString() {
+            return "Always";
+        }
+    }
+
+    class NeverCondition implements LogEventPredicate {
+
+        @Override
+        public boolean test() {
+            return false;
+        }
+
+        @Override
+        public LogEventPredicate negate() {
+            return new AlwaysCondition();
+        }
+
+        @Override
+        public LogEventPredicate and(Predicate<? super LogEvent> other) {
+            return this;
+        }
+
+        @Override
+        public LogEventPredicate or(Predicate<? super LogEvent> other) {
+            return (LogEventPredicate) other;
+        }
+
+        @Override
+        public String toString() {
+            return "Never";
         }
     }
 
@@ -82,6 +152,11 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
         @Override
         public boolean test() {
             return MDC.get(mdcKey) != null && acceptedValues.contains(MDC.get(mdcKey));
+        }
+
+        @Override
+        public LogEventPredicate negate() {
+            return new SuppressedMdcCondition(mdcKey, acceptedValues);
         }
 
         @Override
@@ -114,6 +189,11 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
         }
 
         @Override
+        public LogEventPredicate negate() {
+            return new RequiredMdcCondition(mdcKey, rejectedValues);
+        }
+
+        @Override
         public String toString() {
             return getClass().getSimpleName() + "{" + mdcKey + " NOT in " + rejectedValues + '}';
         }
@@ -124,16 +204,16 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
      */
     abstract class MarkerCondition implements LogEventPredicate {
 
-        public List<Marker> markerAlternatives;
+        public Set<Marker> markerAlternatives;
 
-        public MarkerCondition(List<Marker> markers) {
+        public MarkerCondition(Set<Marker> markers) {
             this.markerAlternatives = markers;
         }
 
         public MarkerCondition(String markers) {
             this(Arrays.stream(markers.split("\\|"))
                     .map(MarkerFactory::getMarker)
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toSet()));
         }
 
         @Override
@@ -144,7 +224,7 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
         @Override
         public String toString() {
             return getClass().getSimpleName() + "{" +
-                    markerAlternatives.stream().map(Object::toString).collect(Collectors.joining("|")) + 
+                    markerAlternatives.stream().map(Object::toString).collect(Collectors.joining("|")) +
             "}";
         }
     }
@@ -159,7 +239,7 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
             super(ruleString.substring("marker=".length()));
         }
 
-        public RequiredMarkerCondition(List<Marker> requireMarkers) {
+        public RequiredMarkerCondition(Set<Marker> requireMarkers) {
             super(requireMarkers);
         }
 
@@ -173,11 +253,33 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
             return false;
         }
 
+        @Override
+        public LogEventPredicate negate() {
+            return new SuppressedMarkerCondition(markerAlternatives);
+        }
+
+        @Override
+        public LogEventPredicate and(Predicate<? super LogEvent> other) {
+            if (other instanceof RequiredMarkerCondition) {
+                Set<Marker> overlap = new HashSet<>();
+                Set<Marker> otherMarkers = ((RequiredMarkerCondition) other).markerAlternatives;
+                otherMarkers.stream()
+                        .filter(m -> markerAlternatives.stream().anyMatch(m::contains))
+                        .forEach(overlap::add);
+                markerAlternatives.stream()
+                        .filter(m -> otherMarkers.stream().anyMatch(m::contains))
+                        .forEach(overlap::add);
+                return overlap.isEmpty() ? new NeverCondition() : new RequiredMarkerCondition(overlap);
+            } else if (other instanceof SuppressedMarkerCondition) {
+                return this;
+            }
+            return super.and(other);
+        }
     }
 
     /**
      * A rule specifying that log message will be logged if they don't have one
-     * of the suppressed markers or a marker containing any of the suppressed markers 
+     * of the suppressed markers or a marker containing any of the suppressed markers
      */
     class SuppressedMarkerCondition extends MarkerCondition {
 
@@ -185,7 +287,7 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
             super(ruleString.substring("marker!=".length()));
         }
 
-        public SuppressedMarkerCondition(List<Marker> suppressedMarkers) {
+        public SuppressedMarkerCondition(Set<Marker> suppressedMarkers) {
             super(suppressedMarkers);
         }
 
@@ -197,6 +299,33 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
         @Override
         public boolean test() {
             return true;
+        }
+
+        @Override
+        public LogEventPredicate negate() {
+            return new RequiredMarkerCondition(markerAlternatives);
+        }
+
+        @Override
+        public LogEventPredicate and(Predicate<? super LogEvent> other) {
+            if (other instanceof SuppressedMarkerCondition) {
+                Set<Marker> suppressedMarkers = new HashSet<>(this.markerAlternatives);
+                suppressedMarkers.addAll(((SuppressedMarkerCondition)other).markerAlternatives);
+                return new SuppressedMarkerCondition(suppressedMarkers);
+            }
+            return super.and(other);
+        }
+
+        @Override
+        public LogEventPredicate or(Predicate<? super LogEvent> other) {
+            if (other instanceof RequiredMarkerCondition) {
+                return this;
+            } else if (other instanceof SuppressedMarkerCondition) {
+                Set<Marker> suppressedMarkers = new HashSet<>(this.markerAlternatives);
+                suppressedMarkers.addAll(((SuppressedMarkerCondition)other).markerAlternatives);
+                return new SuppressedMarkerCondition(suppressedMarkers);
+            }
+            return super.or(other);
         }
     }
 
@@ -228,15 +357,32 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
         }
 
         @Override
+        public LogEventPredicate withParent(LogEventPredicate parent) {
+            return predicates.stream().reduce(new NeverCondition(), (a, b) -> a.withParent(parent).or(b.withParent(parent)));
+        }
+
+        @Override
         public String toString() {
             return predicates.stream().map(Object::toString).collect(Collectors.joining(" OR "));
+        }
+
+        @Override
+        public LogEventPredicate negate() {
+            throw new IllegalArgumentException();
+        }
+
+        @Override
+        public LogEventPredicate or(Predicate<? super LogEvent> other) {
+            List<LogEventPredicate> predicates = new ArrayList<>(this.predicates);
+            predicates.add((LogEventPredicate) other);
+            return new AnyCondition(predicates);
         }
     }
 
     /**
      * A rule specifying that any log message will be logged if they must fulfill
      * all of the specified conditions. This is used to specify for example that you
-     * only want to log messages with a get of MDC variables to be logged 
+     * only want to log messages with a get of MDC variables to be logged
      */
     class AllConditions implements LogEventPredicate {
         private final Collection<LogEventPredicate> predicates;
@@ -263,6 +409,77 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
         @Override
         public String toString() {
             return predicates.stream().map(Object::toString).collect(Collectors.joining(" AND "));
+        }
+
+        @Override
+        public LogEventPredicate withParent(LogEventPredicate parent) {
+            return predicates.stream().reduce(new AlwaysCondition(), (a, b) -> a.withParent(parent).and(b.withParent(parent)));
+        }
+
+        @Override
+        public LogEventPredicate negate() {
+            return new NotAllCondition(predicates);
+        }
+    }
+
+    class NotAllCondition implements LogEventPredicate {
+
+        private final Collection<LogEventPredicate> predicates;
+
+        public NotAllCondition(Collection<LogEventPredicate> predicates) {
+            this.predicates = predicates;
+        }
+
+        @Override
+        public boolean test() {
+            return !predicates.stream().allMatch(LogEventPredicate::test);
+        }
+
+        @Override
+        public boolean test(LogEvent logEvent) {
+            return !predicates.stream().allMatch(p -> p.test(logEvent));
+        }
+
+        @Override
+        public boolean test(Marker marker) {
+            return !predicates.stream().allMatch(p -> p.test(marker));
+        }
+
+        @Override
+        public LogEventPredicate negate() {
+            return new AllConditions(predicates);
+        }
+
+        @Override
+        public String toString() {
+            return "(NOT " + predicates.stream().map(Object::toString).collect(Collectors.joining(" AND ")) + ")";
+        }
+    }
+
+    class InheritCondition implements LogEventPredicate {
+        @Override
+        public boolean test() {
+            return false;
+        }
+
+        @Override
+        public LogEventPredicate negate() {
+            return new AlwaysCondition();
+        }
+
+        @Override
+        public boolean test(LogEvent logEvent) {
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return "Inherit";
+        }
+
+        @Override
+        public LogEventPredicate withParent(LogEventPredicate parent) {
+            return parent;
         }
     }
 }

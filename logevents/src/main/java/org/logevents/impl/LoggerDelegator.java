@@ -31,14 +31,14 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
         RootLoggerDelegator() {
             super("ROOT");
             ownObserver = new NullLogEventObserver();
-            ownFilter = new LevelThresholdFilter(Level.INFO);
+            ownFilter = new LogEventFilter(Level.INFO);
             refresh();
         }
 
         @Override
         public void reset() {
             super.reset();
-            ownFilter = new LevelThresholdFilter(Level.INFO);
+            ownFilter = new LogEventFilter(Level.INFO);
         }
 
         @Override
@@ -56,7 +56,7 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
 
     private static class CategoryLoggerDelegator extends LoggerDelegator {
 
-        private LoggerDelegator parentLogger;
+        private final LoggerDelegator parentLogger;
 
         CategoryLoggerDelegator(String name, LoggerDelegator parentLogger) {
             super(name);
@@ -85,9 +85,10 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
 
         @Override
         public void refresh() {
-            this.effectiveFilter = this.ownFilter;
-            if (effectiveFilter == null) {
+            if (ownFilter == null) {
                 this.effectiveFilter = parentLogger.effectiveFilter;
+            } else {
+                this.effectiveFilter = ownFilter.withParent(parentLogger.effectiveFilter);
             }
             observer = inheritParentObserver
                     ? CompositeLogEventObserver.combine(parentLogger.observer, ownObserver)
@@ -128,16 +129,12 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
      * otherwise set to {@link #ownObserver}.
      */
     protected LogEventObserver observer;
-    
+
     /**
      * Calculated value. If {@link #ownFilter} is set, uses this
      * otherwise uses parent's {@link #effectiveFilter}.
      */
     protected LogEventFilter effectiveFilter;
-
-    public LogEventObserver getOwnObserver() {
-        return ownObserver;
-    }
 
     @Override
     public LogEventFilter getEffectiveFilter() {
@@ -521,13 +518,13 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
                         .filter(l -> l.toInt() >= levelInt)
                         .findFirst().orElse(Level.ERROR);
     }
-    
+
     public void setFilter(LogEventFilter filter) {
         this.ownFilter = filter;
     }
 
-    public void setLevelThreshold(Level ownFilter) {
-        this.ownFilter = new LevelThresholdFilter(ownFilter);
+    public void setLevelThreshold(Level threshold) {
+        this.ownFilter = new LogEventFilter(threshold);
     }
 
     public void setOwnObserver(LogEventObserver ownObserver, boolean inheritParentObserver) {
@@ -544,7 +541,7 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
     }
 
     public abstract void refresh();
-    
+
     public LoggerDelegator withName(String name) {
         return this;
     }
@@ -560,7 +557,7 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
     private LogEventGenerator createEventGenerator(Level level) {
         return LogEventGenerator.create(getName(), level, effectiveFilter.filterObserverOnLevel(level, observer));
     }
-    
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" + name + ",filter=" + ownFilter + ",ownObserver=" + ownObserver + "}";

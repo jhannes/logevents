@@ -12,7 +12,7 @@ import org.slf4j.event.Level;
  * If the event is logged with a marker, {@link LogEventPredicate#test(Marker)} is used to check if
  * the message should be logged. MDC and Markers are the most likely things to test for.
  *
- * @see ConditionalLogEventFilter
+ * @see LogEventFilter
  */
 public class ConditionalLogEventGenerator implements LogEventGenerator {
     private final String loggerName;

@@ -68,9 +68,9 @@ public class CompositeLogEventObserver implements LogEventObserver {
     /**
      * Returns the observers which should log messages at the specified level
      */
-    public LogEventObserver filteredOn(Level level, Level loggerThreshold) {
+    public LogEventObserver filteredOn(Level level, boolean enabledByFilter) {
         List<LogEventObserver> observers = this.observers.stream()
-                .map(o -> o.filteredOn(level, loggerThreshold))
+                .map(o -> o.filteredOn(level, enabledByFilter))
                 .filter(o -> !(o instanceof NullLogEventObserver))
                 .collect(Collectors.toList());
         return combineList(observers);

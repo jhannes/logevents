@@ -56,9 +56,9 @@ public class LogEventFactoryMXBeanAdaptorTest {
         factory.setLevel(factory.getLogger("org.logevents"), Level.WARN);
         factory.setLevel(factory.getLogger("com.example"), Level.DEBUG);
 
-        assertEquals("LevelThresholdFilter{ERROR}", mBean.getEffectiveFilter("org.neworg").toString());
-        assertEquals("LevelThresholdFilter{WARN}", mBean.getEffectiveFilter("org.logevents").toString());
-        assertEquals("LevelThresholdFilter{DEBUG}", mBean.getEffectiveFilter("com.example.something").toString());
+        assertEquals("LogEventFilter{ERROR}", mBean.getEffectiveFilter("org.neworg").toString());
+        assertEquals("LogEventFilter{ERROR,WARN}", mBean.getEffectiveFilter("org.logevents").toString());
+        assertEquals("LogEventFilter{ERROR,WARN,INFO,DEBUG}", mBean.getEffectiveFilter("com.example.something").toString());
     }
 
     @Test

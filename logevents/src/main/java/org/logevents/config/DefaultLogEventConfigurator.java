@@ -4,12 +4,9 @@ import org.logevents.LogEventConfigurator;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
 import org.logevents.LoggerConfiguration;
-import org.logevents.impl.LevelThresholdFilter;
 import org.logevents.impl.LogEventFilter;
-import org.logevents.impl.NeverLogEventFilter;
 import org.logevents.jmx.LogEventsMBeanFactory;
 import org.logevents.observers.CompositeLogEventObserver;
-import org.logevents.impl.ConditionalLogEventFilter;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
 import org.logevents.observers.LevelThresholdConditionalObserver;
@@ -529,14 +526,8 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         LogEventStatus.getInstance().addConfig(this, "Logger: " + logger);
     }
 
-    private LogEventFilter getFilter(String part) {
-        if (part.contains(",")) {
-            return new ConditionalLogEventFilter(part);
-        } else if (part.trim().equals("NONE")) {
-            return new NeverLogEventFilter();
-        } else {
-            return new LevelThresholdFilter(Level.valueOf(part.trim()));
-        }
+    private LogEventFilter getFilter(String filterString) {
+        return new LogEventFilter(filterString.trim());
     }
 
     private void configureObserver(Map<String, Supplier<? extends LogEventObserver>> observers, String name, String className, Map<String, String> properties) {

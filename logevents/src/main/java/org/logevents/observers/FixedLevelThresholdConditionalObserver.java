@@ -38,7 +38,7 @@ public class FixedLevelThresholdConditionalObserver implements LogEventObserver 
         return getClass().getSimpleName() + "{" + threshold + " -> " + delegate + "}";
     }
 
-    public LogEventObserver filteredOn(Level level, Level configuredThreshold) {
+    public LogEventObserver filteredOn(Level level, boolean enabledByFilter) {
         boolean shouldLog = level.compareTo(threshold) <= 0;
         return shouldLog ? delegate : new NullLogEventObserver();
     }

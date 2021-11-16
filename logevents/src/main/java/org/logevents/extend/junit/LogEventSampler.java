@@ -9,6 +9,7 @@ import org.slf4j.event.Level;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -24,6 +25,7 @@ public class LogEventSampler {
     public static final Marker OPS = MarkerFactory.getMarker("OPS");
     public static final Marker LIFECYCLE = MarkerFactory.getMarker("LIFECYCLE");
     public static final Marker PERFORMANCE = MarkerFactory.getMarker("PERFORMANCE");
+    public static final Marker AUDIT = MarkerFactory.getMarker("AUDIT");
     static {
         HTTP_ASSET_REQUEST.add(HTTP_REQUEST);
         HTTP_ERROR.add(HTTP_REQUEST);
@@ -144,7 +146,6 @@ public class LogEventSampler {
     private StackTraceElement mainMethod = new StackTraceElement("org.logeventsdemo.MyApplication", "main", "MyApplication.java", 20);
     private StackTraceElement publicMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "publicMethod", "MyClassName.java", 31);
     private StackTraceElement internalMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "internalMethod", "MyClassName.java", 311);
-    private StackTraceElement nioApiMethod = new StackTraceElement("java.nio.file.Files", "write", "Files.java", 3292);
     private StackTraceElement nioInternalMethod = new StackTraceElement("sun.nio.fs.WindowsException", "translateToIOException", "WindowsException.java", 79);
     private StackTraceElement ioApiMethod = new StackTraceElement("java.io.FilterOutputStream", "close", "FilterOutputStream.java", 180);
     private StackTraceElement ioInternalMethod = new StackTraceElement("java.io.FileOutputStream", "close", "FileOutputStream.java", 323);
@@ -184,7 +185,7 @@ public class LogEventSampler {
     }
 
     public static Instant randomTime() {
-        return Instant.now().minusSeconds(random.nextInt(3600) + 60);
+        return Instant.now().minusSeconds(random.nextInt(3600) + 60).truncatedTo(ChronoUnit.SECONDS);
     }
 
 }

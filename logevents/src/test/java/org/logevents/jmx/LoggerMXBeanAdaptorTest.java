@@ -29,9 +29,9 @@ public class LoggerMXBeanAdaptorTest {
         assertNull(mbean.getFilter());
 
         mbean.setLevel(Level.WARN);
-        assertEquals("LevelThresholdFilter{WARN}", mbean.getFilter().toString());
-        assertEquals("LevelThresholdFilter{WARN}", logger.getOwnFilter().toString());
-        assertEquals("LevelThresholdFilter{INFO}", factory.getLogger("org").getOwnFilter().toString());
+        assertEquals("LogEventFilter{ERROR,WARN}", mbean.getFilter().toString());
+        assertEquals("LogEventFilter{ERROR,WARN}", logger.getOwnFilter().toString());
+        assertEquals("LogEventFilter{ERROR,WARN,INFO}", factory.getLogger("org").getOwnFilter().toString());
     }
 
     @Test

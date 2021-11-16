@@ -30,11 +30,8 @@ public interface LogEventObserver {
 
     void logEvent(LogEvent logEvent);
 
-    default LogEventObserver filteredOn(Level level, Level configuredThreshold) {
-        if (configuredThreshold == null || configuredThreshold.compareTo(level) < 0) {
-            return new NullLogEventObserver();
-        }
-        return this;
+    default LogEventObserver filteredOn(Level level, boolean enabledByFilter) {
+        return enabledByFilter ? this : new NullLogEventObserver();
     }
 
     default List<LogEventObserver> toList() {
