@@ -1,7 +1,5 @@
 package org.logevents.observers;
 
-import org.hamcrest.MatcherAssert;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -19,7 +17,6 @@ import org.logevents.util.JsonUtil;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -29,20 +26,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ElasticsearchLogEventObserverTest {
 
-    private ElasticsearchLogEventObserver observer = new ElasticsearchLogEventObserver(toURL("http://localhost:9200"), "logevents-unit-test");
+    private ElasticsearchLogEventObserver observer = new ElasticsearchLogEventObserver(defaultConfigurationMap(), "observer.elasticsearch");
 
-    private URL toURL(String s) {
-        try {
-            return new URL(s);
-        } catch (MalformedURLException e) {
-            throw ExceptionUtil.softenException(e);
-        }
+    private Map<String, String> defaultConfigurationMap() {
+        Map<String, String> config = new HashMap<>();
+        config.put("observer.elasticsearch.elasticsearchUrl", "http://localhost:9200");
+        config.put("observer.elasticsearch.index", "logevents-unit-test");
+        return config;
     }
 
     @Test
@@ -82,8 +77,8 @@ public class ElasticsearchLogEventObserverTest {
 
         assertEquals(payload.get("exception.class"), event.getThrowable().getClass().getName());
         assertEquals(payload.get("exception.message"), event.getThrowable().getMessage());
-        MatcherAssert.assertThat(payload.get("exception.stackTrace").toString(),
-                containsString("at org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)"));
+        assertContains("at org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)",
+            payload.get("exception.stackTrace").toString());
     }
 
     @Test
@@ -146,6 +141,11 @@ public class ElasticsearchLogEventObserverTest {
         } catch (ConnectException e) {
             Assume.assumeNoException("Elasticsearch is not running - try 'docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e \"discovery.type=single-node\" elasticsearch:7.2.0'", e);
         }
+    }
+
+    private void assertContains(String expected, String actual) {
+        assertTrue("Expected <" + actual + "> to contain <" + expected + ">",
+            actual.contains(expected));
     }
 
 }

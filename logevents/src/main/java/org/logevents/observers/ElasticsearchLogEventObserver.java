@@ -1,5 +1,7 @@
 package org.logevents.observers;
 
+import static org.logevents.util.NetUtils.NO_AUTHORIZATION_HEADER;
+
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.formatting.JsonLogEventFormatter;
@@ -12,6 +14,8 @@ import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +31,8 @@ import java.util.stream.Collectors;
  * <pre>
  * observer.elastic=ElasticSearchLogEventObserver
  * observer.elastic.elasticsearchUrl=http://localhost:9200
+ * observer.elastic.elasticsearchUrlPath=_bulk
+ * observer.elastic.elasticsearchAuthorizationHeader=repositoryId injectApiToken
  * observer.elastic.index=my-test-index
  * observer.elastic.idleThreshold=PT2S
  * observer.elastic.cooldownTime=PT1S
@@ -34,12 +40,35 @@ import java.util.stream.Collectors;
  * observer.elastic.suppressMarkers=PERSONAL_DATA
  * observer.elastic.formatter.excludedMdcKeys=secret
  * </pre>
+ *
+ * <h3>Elasticsearch configuration</h3>
+ *
+ * <ul>
+ *     <li><code>elasticsearchUrl</code> should point to where the elasticsearch API lives. It should contain an URI scheme and authority.</li>
+ *     <li><code>elasticsearchUrlPath</code> should point to the http path where the Elasticsearch Bulk API lives.</li>
+ * </ul>
+ *
+ * <h4>Authorization</h4>
+ *
+ * The configurable <code>elasitcsearchAuthorizationHeader</code> is the value the client will include as
+ * Authorization header
+ * when communicating with <code>elasticsearchUrl</code>. It is not to be confused by Basic authentication. If you
+ * need basic authentication you need to remember to provide its configuration value as '<code>Basic
+ * base64encodedValueHere</code>'.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc3986#section-3">RFC3986 #section3 about URI syntax</a>
  */
 public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObserver {
 
+    private static final String DEFAULT_ELASTICSEARCH_BULK_API_PATH = "_bulk";
+    private static final String APPLICATION_X_NDJSON = "application/x-ndjson";
     private final URL elasticsearchUrl;
+    private final String elasticsearchUrlPath;
+    private final String elasticsearchAuthorizationHeaderValue;
     private final String index;
     private final JsonLogEventFormatter formatter;
+
+    private Proxy proxy = Proxy.NO_PROXY;
 
     public ElasticsearchLogEventObserver(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
@@ -47,17 +76,29 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
 
     public ElasticsearchLogEventObserver(Configuration configuration) {
         this.elasticsearchUrl = configuration.getUrl("elasticsearchUrl");
+        this.elasticsearchUrlPath = configuration.optionalString("elasticsearchUrlPath").orElse(getDefaultPath());
+        this.elasticsearchAuthorizationHeaderValue = configuration.optionalString("elasticsearchAuthorizationHeader").orElse(NO_AUTHORIZATION_HEADER);
         this.index = configuration.getString("index");
         this.formatter = configuration.createInstanceWithDefault("formatter", JsonLogEventFormatter.class);
         this.configureBatching(configuration);
         this.configureFilter(configuration, Level.TRACE);
+        this.configureMarkers(configuration);
+        this.configureProxy(configuration);
         configuration.checkForUnknownFields();
     }
 
-    public ElasticsearchLogEventObserver(URL elasticsearchUrl, String index) {
-        this.elasticsearchUrl = elasticsearchUrl;
-        this.index = index;
-        this.formatter = new JsonLogEventFormatter();
+    protected String getDefaultPath() {
+        return DEFAULT_ELASTICSEARCH_BULK_API_PATH;
+    }
+
+
+    public void configureProxy(Configuration configuration) {
+        configuration.optionalString("proxy").ifPresent(proxyHost -> {
+            int colonPos = proxyHost.lastIndexOf(':');
+            String hostname = colonPos != -1 ? proxyHost.substring(0, colonPos) : proxyHost;
+            int proxyPort = colonPos != -1 ? Integer.parseInt(proxyHost.substring(colonPos+1)) : 80;
+            this.proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(hostname, proxyPort));
+        });
     }
 
     @Override
@@ -95,12 +136,18 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
         }
         jsons.add("");
 
-        URL url = new URL(this.elasticsearchUrl, "_bulk");
-        HttpURLConnection connection = NetUtils.post(url,
-                String.join("\n", jsons), "application/x-ndjson");
+        URL url = new URL(elasticsearchUrl, elasticsearchUrlPath);
+        HttpURLConnection connection = NetUtils.post(
+            url,
+            String.join("\n", jsons),
+            APPLICATION_X_NDJSON,
+            proxy,
+            elasticsearchAuthorizationHeaderValue);
 
-        Map<String, Object> response = JsonParser.parseObject(connection);
+        return parseBulkApiResponse(JsonParser.parseObject(connection));
+    }
 
+    protected List<String> parseBulkApiResponse(Map<String, Object> response) throws IOException {
         List<Map<String, Object>> items = JsonUtil.getObjectList(response, "items");
         return items.stream()
                 .map(o -> JsonUtil.getObject(o, "index"))
