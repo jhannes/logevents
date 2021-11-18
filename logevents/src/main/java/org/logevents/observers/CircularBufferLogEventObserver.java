@@ -5,6 +5,7 @@ import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
 import org.logevents.extend.junit.LogEventRule;
 import org.logevents.util.CircularBuffer;
+import org.slf4j.event.Level;
 
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
  *
  * @author Johannes Brodwall
  */
-public class CircularBufferLogEventObserver implements LogEventObserver {
+public class CircularBufferLogEventObserver extends AbstractFilteredLogEventObserver {
 
     private final CircularBuffer<LogEvent> circularBuffer;
 
@@ -32,6 +33,8 @@ public class CircularBufferLogEventObserver implements LogEventObserver {
 
     public CircularBufferLogEventObserver(Configuration configuration) {
         this(configuration.optionalInt("capacity").orElse(200));
+        configureFilter(configuration, Level.TRACE);
+        configuration.checkForUnknownFields();
     }
 
     public CircularBufferLogEventObserver(Map<String, String> properties, String prefix) {
@@ -39,7 +42,7 @@ public class CircularBufferLogEventObserver implements LogEventObserver {
     }
 
     @Override
-    public void logEvent(LogEvent logEvent) {
+    protected void doLogEvent(LogEvent logEvent) {
         logEvent.getCallerLocation();
         this.circularBuffer.add(logEvent);
     }

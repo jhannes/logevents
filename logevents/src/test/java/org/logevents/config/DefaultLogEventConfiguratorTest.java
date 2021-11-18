@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.logevents.extend.junit.LogEventSampler.OPS;
 
 public class DefaultLogEventConfiguratorTest {
 
@@ -144,6 +145,20 @@ public class DefaultLogEventConfiguratorTest {
                 +"FileLogEventObserver{filename=FilenameFormatter{logs/" + CWD + "-test.log}," +
                         "formatter=ConsoleLogEventFormatter,fileRotationWorker=null}]}",
                 factory.getRootLogger().getObserver());
+    }
+
+    @Test
+    public void shouldApplyFilterForThreshold() {
+        configuration.put("observer.buffer", "CircularBufferLogEventObserver");
+        configuration.put("observer.buffer.filter", "INFO,DEBUG@marker=OPS");
+        configuration.put("root", "DEBUG buffer");
+
+        configurator.applyConfigurationProperties(factory, configuration);
+        factory.getRootLogger().debug("This should NOT be logged");
+        factory.getRootLogger().debug(OPS, "This SHOULD be logged");
+
+        CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver) factory.getObserver("buffer");
+        assertEquals("This SHOULD be logged", buffer.singleMessage());
     }
 
     @Test

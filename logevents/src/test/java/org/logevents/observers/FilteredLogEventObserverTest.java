@@ -45,6 +45,7 @@ public class FilteredLogEventObserverTest {
     @Test
     public void shouldSuppressLowerLevel() {
         observer.setThreshold(Level.WARN);
+        LogEventFactory.getInstance().setObserver(logger, observer, false);
 
         logger.error("Error");
         logger.info("Suppressed");

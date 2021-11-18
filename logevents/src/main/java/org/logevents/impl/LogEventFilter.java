@@ -1,9 +1,7 @@
 package org.logevents.impl;
 
 import org.logevents.LogEventObserver;
-import org.logevents.observers.ConditionalLogEventObserver;
 import org.logevents.observers.LogEventPredicate;
-import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.event.Level;
 
 import java.util.ArrayList;
@@ -92,13 +90,11 @@ public class LogEventFilter {
     }
 
     public LogEventObserver filterObserverOnLevel(Level level, LogEventObserver observer) {
-        if (conditions.get(level) instanceof LogEventPredicate.NeverCondition || observer instanceof NullLogEventObserver) {
-            return observer.filteredOn(level, false);
-        } else if (conditions.get(level) instanceof LogEventPredicate.AlwaysCondition) {
-            return observer.filteredOn(level, true);
-        } else {
-            return new ConditionalLogEventObserver(observer, conditions.get(level));
-        }
+        return observer.filteredOn(level, getPredicate(level));
+    }
+
+    public LogEventPredicate getPredicate(Level level) {
+        return conditions.get(level);
     }
 
     /**
@@ -108,7 +104,7 @@ public class LogEventFilter {
         List<Level> levels = Arrays.asList(Level.TRACE, Level.DEBUG, Level.INFO, Level.WARN, Level.ERROR);
         Level minimumThreshold = Level.TRACE;
         for (Level level : levels) {
-            if (conditions.get(level) instanceof LogEventPredicate.NeverCondition) {
+            if (getPredicate(level) instanceof LogEventPredicate.NeverCondition) {
                 minimumThreshold = level;
             }
         }
@@ -125,7 +121,7 @@ public class LogEventFilter {
         if (threshold.equals("NONE")) {
             LogEventPredicate condition = createLogging(ruleString.substring(atPos + 1));
             for (Level level : Level.values()) {
-                conditions.put(level, conditions.get(level).and(condition.negate()));
+                conditions.put(level, getPredicate(level).and(condition.negate()));
             }
         } else {
             addLoggingCondition(Level.valueOf(threshold), ruleString.substring(atPos + 1));
@@ -177,9 +173,9 @@ public class LogEventFilter {
     public void addLoggingCondition(Level threshold, LogEventPredicate condition) {
         for (Level level : Level.values()) {
             if (level.toInt() >= threshold.toInt()) {
-                conditions.put(level, conditions.get(level).or(condition));
+                conditions.put(level, getPredicate(level).or(condition));
             } else {
-                conditions.put(level, conditions.get(level).and(condition.negate()));
+                conditions.put(level, getPredicate(level).and(condition.negate()));
             }
         }
     }
@@ -187,7 +183,7 @@ public class LogEventFilter {
     public LogEventFilter withParent(LogEventFilter parentFilter) {
         EnumMap<Level, LogEventPredicate> conditions = new EnumMap<>(Level.class);
         for (Level level : Level.values()) {
-            conditions.put(level, this.conditions.get(level).withParent(parentFilter.conditions.get(level)));
+            conditions.put(level, getPredicate(level).withParent(parentFilter.getPredicate(level)));
         }
         return new LogEventFilter(conditions);
     }

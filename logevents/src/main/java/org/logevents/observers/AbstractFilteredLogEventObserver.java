@@ -3,6 +3,7 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
+import org.logevents.impl.LogEventFilter;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
  * <h2>Example configuration</h2>
  *
  * <pre>
- * observer.foo.threshold=WARN
+ * observer.foo.filter=WARN,INFO@marker=INTERESTING
  * observer.foo.suppressMarkers=HTTP_NOT_MODIFIED
  * observer.foo.requireMarker=HTTP
  * observer.foo.requireMdc.user=tester1|tester2
@@ -28,8 +29,8 @@ import java.util.stream.Collectors;
  * </pre>
  */
 public abstract class AbstractFilteredLogEventObserver implements LogEventObserver {
-    private Level threshold = Level.TRACE;
     private LogEventPredicate condition = new LogEventPredicate.AlwaysCondition();
+    private LogEventFilter filter = new LogEventFilter(Level.TRACE);
 
     @Override
     public final void logEvent(LogEvent logEvent) {
@@ -39,7 +40,13 @@ public abstract class AbstractFilteredLogEventObserver implements LogEventObserv
     }
 
     protected void configureFilter(Configuration configuration, Level defaultThreshold) {
-        this.threshold = configuration.optionalString("threshold").map(Level::valueOf).orElse(defaultThreshold);
+        this.filter = new LogEventFilter(defaultThreshold);
+        configuration.optionalString("threshold")
+                .map(LogEventFilter::new)
+                .ifPresent(this::setFilter);
+        configuration.optionalString("filter")
+                .map(LogEventFilter::new)
+                .ifPresent(this::setFilter);
 
         List<LogEventPredicate> allConditions = new ArrayList<>();
         if (!configuration.getStringList("suppressMarkers").isEmpty()) {
@@ -65,20 +72,24 @@ public abstract class AbstractFilteredLogEventObserver implements LogEventObserv
     protected abstract void doLogEvent(LogEvent logEvent);
 
     protected boolean shouldLogEvent(LogEvent logEvent) {
-        return !logEvent.isBelowThreshold(threshold) && isEnabled(logEvent.getMarker());
+        return isEnabled(logEvent.getMarker());
+    }
+
+    public void setFilter(LogEventFilter filter) {
+        this.filter = filter;
     }
 
     public void setThreshold(Level threshold) {
-        this.threshold = threshold;
+        this.filter = new LogEventFilter(threshold);
     }
 
     public Level getThreshold() {
-        return threshold;
+        return filter.getThreshold();
     }
 
     @Override
-    public LogEventObserver filteredOn(Level level, boolean enabledByFilter) {
-        return enabledByFilter && getThreshold().toInt() <= level.toInt() ? this : new NullLogEventObserver();
+    public LogEventObserver filteredOn(Level level, LogEventPredicate predicate) {
+        return LogEventObserver.super.filteredOn(level, filter.getPredicate(level).and(predicate).and(condition));
     }
 
     @Override

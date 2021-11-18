@@ -3,6 +3,7 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.slf4j.Marker;
+import org.slf4j.event.Level;
 
 import java.util.stream.Stream;
 
@@ -13,6 +14,11 @@ import java.util.stream.Stream;
  * @author Johannes Brodwall
  */
 public class NullLogEventObserver implements LogEventObserver {
+
+    @Override
+    public LogEventObserver filteredOn(Level level, LogEventPredicate predicate) {
+        return this;
+    }
 
     @Override
     public void logEvent(LogEvent logEvent) {

@@ -3,8 +3,10 @@ package org.logevents;
 import org.logevents.observers.AbstractBatchingLogEventObserver;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.observers.ConditionalLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
+import org.logevents.observers.LogEventPredicate;
 import org.logevents.observers.NullLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
@@ -30,8 +32,14 @@ public interface LogEventObserver {
 
     void logEvent(LogEvent logEvent);
 
-    default LogEventObserver filteredOn(Level level, boolean enabledByFilter) {
-        return enabledByFilter ? this : new NullLogEventObserver();
+    default LogEventObserver filteredOn(Level level, LogEventPredicate predicate) {
+        if (predicate instanceof LogEventPredicate.NeverCondition) {
+            return new NullLogEventObserver();
+        } else if (predicate instanceof LogEventPredicate.AlwaysCondition) {
+            return this;
+        } else {
+            return new ConditionalLogEventObserver(this, predicate);
+        }
     }
 
     default List<LogEventObserver> toList() {
