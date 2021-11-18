@@ -57,17 +57,18 @@ public class CircularBufferLogEventObserver extends AbstractFilteredLogEventObse
     }
 
     public String singleMessage() {
+        return singleLogEvent().getMessage();
+    }
+
+    public LogEvent singleLogEvent() {
         if (circularBuffer.size() != 1) {
             throw new AssertionError("Expected 1 message, but was " + circularBuffer.size());
         }
-        return circularBuffer.get(0).getMessage();
+        return circularBuffer.get(0);
     }
 
     public Throwable singleException() {
-        if (circularBuffer.size() != 1) {
-            throw new AssertionError("Expected 1 message, but was " + circularBuffer.size());
-        }
-        return circularBuffer.get(0).getThrowable();
+        return singleLogEvent().getThrowable();
     }
 
     public List<String> getMessages() {
