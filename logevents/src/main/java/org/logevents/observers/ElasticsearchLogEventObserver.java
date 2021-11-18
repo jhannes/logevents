@@ -49,8 +49,8 @@ import java.util.stream.Collectors;
  * </ul>
  *
  * <h4>Authorization</h4>
- *
- * The configurable <code>elasitcsearchAuthorizationHeader</code> is the value the client will include as
+ * <p>
+ * The configurable <code>elasticsearchAuthorizationHeader</code> is the value the client will include as
  * Authorization header
  * when communicating with <code>elasticsearchUrl</code>. It is not to be confused by Basic authentication. If you
  * need basic authentication you need to remember to provide its configuration value as '<code>Basic
@@ -96,7 +96,7 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
         configuration.optionalString("proxy").ifPresent(proxyHost -> {
             int colonPos = proxyHost.lastIndexOf(':');
             String hostname = colonPos != -1 ? proxyHost.substring(0, colonPos) : proxyHost;
-            int proxyPort = colonPos != -1 ? Integer.parseInt(proxyHost.substring(colonPos+1)) : 80;
+            int proxyPort = colonPos != -1 ? Integer.parseInt(proxyHost.substring(colonPos + 1)) : 80;
             this.proxy = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(hostname, proxyPort));
         });
     }
@@ -138,11 +138,12 @@ public class ElasticsearchLogEventObserver extends AbstractBatchingLogEventObser
 
         URL url = new URL(elasticsearchUrl, elasticsearchUrlPath);
         HttpURLConnection connection = NetUtils.post(
-            url,
-            String.join("\n", jsons),
-            APPLICATION_X_NDJSON,
-            proxy,
-            elasticsearchAuthorizationHeaderValue);
+                url,
+                String.join("\n", jsons),
+                APPLICATION_X_NDJSON,
+                proxy,
+                elasticsearchAuthorizationHeaderValue
+        );
 
         return parseBulkApiResponse(JsonParser.parseObject(connection));
     }

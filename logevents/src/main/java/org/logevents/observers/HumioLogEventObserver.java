@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.logevents.util.JsonUtil;
 
 /**
@@ -32,8 +33,8 @@ import org.logevents.util.JsonUtil;
  * </ul>
  *
  * <h4>Authorization</h4>
- *
- * The configurable <code>elasitcsearchAuthorizationHeader</code> is the value the client will include as
+ * <p>
+ * The configurable <code>elasticsearchAuthorizationHeader</code> is the value the client will include as
  * Authorization header
  * when communicating with <code>elasticsearchUrl</code>. It is not to be confused by Basic authentication. If you
  * need basic authentication you need to remember to provide its configuration value as '<code>Basic
@@ -44,8 +45,6 @@ import org.logevents.util.JsonUtil;
 public class HumioLogEventObserver extends ElasticsearchLogEventObserver {
 
     private static final String DEFAULT_HUMIO_BULK_API_PATH = "api/v1/ingest/elastic-bulk";
-    private static final List<String> EMPTY_LIST_SINCE_HUMIO_API_HAS_NO_SANE_BULK_API_RESPONSE_CONTAINING_DOCUMENT_IDS_FROM_INSERT =
-        Collections.emptyList();
 
     public HumioLogEventObserver(Map<String, String> properties, String prefix) {
         super(properties, prefix);
@@ -62,11 +61,11 @@ public class HumioLogEventObserver extends ElasticsearchLogEventObserver {
         if (isAnyApiErrors) {
             List<Map<String, Object>> items = JsonUtil.getObjectList(response, "items");
             long numberOfFailedMessages = items.stream()
-                .filter(o -> !String.valueOf(JsonUtil.getField(JsonUtil.getObject(o, "create"), "status")).equals("200"))
-                .count();
+                    .filter(o -> !String.valueOf(JsonUtil.getField(JsonUtil.getObject(o, "create"), "status")).equals("200"))
+                    .count();
 
-            throw new IOException("Failed sending "+ numberOfFailedMessages + " out of " + items.size()  + " entries");
+            throw new IOException("Failed sending " + numberOfFailedMessages + " out of " + items.size() + " entries");
         }
-        return EMPTY_LIST_SINCE_HUMIO_API_HAS_NO_SANE_BULK_API_RESPONSE_CONTAINING_DOCUMENT_IDS_FROM_INSERT;
+        return Collections.emptyList();
     }
 }
