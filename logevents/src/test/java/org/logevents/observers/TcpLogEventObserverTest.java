@@ -25,6 +25,19 @@ import static org.junit.Assert.assertTrue;
 
 public class TcpLogEventObserverTest {
 
+    @Rule
+    public LogEventStatusRule statusRule = new LogEventStatusRule();
+
+    @Test
+    public void shouldShowConfiguration() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("observer.tcp.address", "logserver.example.com:8080");
+        properties.put("observer.tcp.timeout", Duration.ofMillis(100).toString());
+        TcpLogEventObserver observer = new TcpLogEventObserver(properties, "observer.tcp");
+
+        assertEquals("TcpLogEventObserver{address=logserver.example.com:8080,formatter=JsonLogEventFormatter}", observer.toString());
+    }
+
     @Test
     public void shouldLogMessageOverTcp() throws IOException, InterruptedException {
         ServerSocket serverSocket = new ServerSocket(0);
@@ -52,9 +65,6 @@ public class TcpLogEventObserverTest {
                 LogEventStatus.getInstance().lastMessage().getMessage()
         );
     }
-
-    @Rule
-    public LogEventStatusRule statusRule = new LogEventStatusRule();
 
     @Test
     public void shouldReportError() throws IOException {
