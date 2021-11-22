@@ -37,7 +37,7 @@ public class ExceptionUtil {
         };
     }
 
-    public static <T> Consumer<T> softenExceptions(ConsumerWithCheckedException<T, Exception> f) {
+    public static <T, EX extends Exception> Consumer<T> softenExceptions(ConsumerWithCheckedException<T, EX> f) throws EX {
         return o -> {
             try {
                 f.apply(o);
