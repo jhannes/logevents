@@ -102,13 +102,12 @@ public class LogEventFilter {
      */
     public Level getThreshold() {
         List<Level> levels = Arrays.asList(Level.TRACE, Level.DEBUG, Level.INFO, Level.WARN, Level.ERROR);
-        Level minimumThreshold = Level.TRACE;
         for (Level level : levels) {
-            if (getPredicate(level) instanceof LogEventPredicate.NeverCondition) {
-                minimumThreshold = level;
+            if (!(getPredicate(level) instanceof LogEventPredicate.NeverCondition)) {
+                return level;
             }
         }
-        return minimumThreshold;
+        return Level.TRACE;
     }
 
     /**
