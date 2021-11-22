@@ -11,6 +11,7 @@ import org.slf4j.event.Level;
 
 import java.io.IOException;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class ExpectedLogEventsRuleTest {
@@ -65,7 +66,7 @@ public class ExpectedLogEventsRuleTest {
             MatcherAssert.assertThat(e.getMessage(), CoreMatchers.containsString("This is a nice test"));
         }
     }
-    
+
     @Test
     public void shouldFailWhenArgumentsNotMatched() {
         rule.expectMatch(expect -> expect
@@ -102,8 +103,10 @@ public class ExpectedLogEventsRuleTest {
     public void shouldMatchException() {
         rule.expect(ExpectedLogEventsRuleTest.class, Level.WARN, "This is a nice test",
                 new IOException("Uh oh!"));
+        assertEquals("ExpectedLogEventsRule{matchers=1, events=[]}", rule.toString());
 
         logger.warn("This is a {} test", "nice", new IOException("Uh oh!"));
+        assertEquals("ExpectedLogEventsRule{matchers=1, events=[LogEvent{org.logevents.extend.junit.ExpectedLogEventsRuleTest,WARN,This is a {} test}]}", rule.toString());
         rule.verifyCompletion();
     }
 

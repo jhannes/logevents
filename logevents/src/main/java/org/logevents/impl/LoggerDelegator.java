@@ -573,8 +573,11 @@ public abstract class LoggerDelegator implements LoggerConfiguration {
         this.ownObserver = CompositeLogEventObserver.combine(observer, ownObserver);
     }
 
-    public void replaceObserver(LogEventObserver observer) {
+    @Override
+    public LogEventObserver replaceObserver(LogEventObserver observer) {
+        LogEventObserver oldObserver = this.ownObserver;
         this.ownObserver = observer;
+        return oldObserver;
     }
 
     public LoggerDelegator getChildLogger(String name) {

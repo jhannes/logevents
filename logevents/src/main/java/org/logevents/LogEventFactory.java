@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.TreeMap;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * LogEventFactory holds all active loggers and lets you set the
@@ -64,20 +65,30 @@ public class LogEventFactory implements ILoggerFactory {
     private final Map<String, LogEventObserver> observers = new HashMap<>();
 
     private final LoggerDelegator rootLogger = LoggerDelegator.rootLogger();
-    private final Map<String, LoggerDelegator> loggerCache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private final Map<String, LoggerDelegator> loggerCache = new TreeMap<>();
+    private final Map<String, LoggerDelegator> loggerAliasCache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     @Override
     public synchronized LoggerConfiguration getLogger(String name) {
         if (name == null || name.equals(Logger.ROOT_LOGGER_NAME)) {
             return rootLogger;
         }
-        if (!loggerCache.containsKey(name)) {
-            int lastPeriodPos = name.lastIndexOf('.');
-            LoggerDelegator parent = (LoggerDelegator)(lastPeriodPos < 0 ? rootLogger : getLogger(name.substring(0, lastPeriodPos)));
-            loggerCache.put(name, parent.getChildLogger(name));
+        if (loggerCache.containsKey(name)) {
+            return loggerCache.get(name);
         }
 
-        return loggerCache.get(name).withName(name);
+        if (loggerAliasCache.containsKey(name)) {
+            LoggerDelegator logger = loggerAliasCache.get(name).withName(name);
+            loggerCache.put(name, logger);
+            return logger;
+        } else {
+            int lastPeriodPos = name.lastIndexOf('.');
+            LoggerDelegator parent = (LoggerDelegator)(lastPeriodPos < 0 ? rootLogger : getLogger(name.substring(0, lastPeriodPos)));
+            LoggerDelegator logger = parent.getChildLogger(name);
+            loggerCache.put(name, logger);
+            loggerAliasCache.put(name, logger);
+            return logger;
+        }
     }
 
     /**
@@ -109,25 +120,63 @@ public class LogEventFactory implements ILoggerFactory {
         LogEventFilter oldFilter = ((LoggerDelegator)logger).getOwnFilter();
         ((LoggerDelegator)logger).setFilter(filter);
         refreshLoggers((LoggerDelegator)logger);
+        aliasLoggers(logger).forEach(alias -> {
+            alias.setFilter(filter);
+            refreshLoggers(alias);
+        });
         return oldFilter;
     }
 
-    private void refreshLoggers(LoggerDelegator logger) {
-        logger.refresh();
-        loggerCache.values().stream().filter(l -> l.hasParent(logger)).forEach(this::refreshLoggers);
+    /**
+     * Sets the observer that should be used to receive LogEvents for this logger
+     * and children.
+     *
+     * @param logger The logger to set
+     * @param observer The nullable observer. Use {@link CompositeLogEventObserver} to register more than one observer
+     * @param inheritParentObserver If true, observers set on the observers will also receive log events
+     * @return The previous observer. Useful if you want to temporarily set the observer
+     */
+    public LogEventObserver setObserver(Logger logger, LogEventObserver observer, boolean inheritParentObserver) {
+        LogEventObserver oldObserver = ((LoggerDelegator)logger).setObserver(observer, inheritParentObserver);
+        refreshLoggers((LoggerDelegator)logger);
+        aliasLoggers(logger).forEach(alias -> {
+            alias.setObserver(observer, inheritParentObserver);
+            refreshLoggers(alias);
+        });
+        return oldObserver;
     }
 
-    public void setRootObserver(LogEventObserver observer) {
-        setObserver(getRootLogger(), observer, true);
+    public LogEventObserver setRootObserver(LogEventObserver observer) {
+        return setObserver(getRootLogger(), observer, true);
     }
 
     public void setObserver(String loggerName, LogEventObserver observer) {
         setObserver(getLogger(loggerName), observer);
     }
 
-    public void setObserver(LoggerConfiguration logger, LogEventObserver observer) {
-        logger.replaceObserver(observer);
+    public LogEventObserver setObserver(LoggerConfiguration logger, LogEventObserver observer) {
+        LogEventObserver oldObserver = logger.replaceObserver(observer);
         refreshLoggers((LoggerDelegator) logger);
+        aliasLoggers(logger).forEach(alias -> {
+            alias.replaceObserver(observer);
+            refreshLoggers(alias);
+        });
+        return oldObserver;
+    }
+
+    private void refreshLoggers(LoggerDelegator logger) {
+        logger.refresh();
+        childLoggers(logger).forEach(this::refreshLoggers);
+    }
+
+    private Stream<LoggerDelegator> childLoggers(LoggerDelegator l) {
+        return loggerCache.values().stream().filter(l2 -> l2.hasParent(l));
+    }
+
+    private Stream<LoggerDelegator> aliasLoggers(Logger logger) {
+        return loggerCache.values().stream()
+                .filter(l -> l != logger)
+                .filter(l -> l.getName().equalsIgnoreCase(logger.getName()));
     }
 
     public Collection<String> getObserverNames() {
@@ -154,20 +203,6 @@ public class LogEventFactory implements ILoggerFactory {
         return observers.get(observerName);
     }
 
-    /**
-     * Sets the observer that should be used to receive LogEvents for this logger
-     * and children.
-     *
-     * @param logger The logger to set
-     * @param observer The nullable observer. Use {@link CompositeLogEventObserver} to register more than one observer
-     * @param inheritParentObserver If true, observers set on the observers will also receive log events
-     * @return The previous observer. Useful if you want to temporarily set the observer
-     */
-    public LogEventObserver setObserver(Logger logger, LogEventObserver observer, boolean inheritParentObserver) {
-        LogEventObserver oldObserver = ((LoggerDelegator)logger).setObserver(observer, inheritParentObserver);
-        refreshLoggers((LoggerDelegator)logger);
-        return oldObserver;
-    }
 
     /**
      * Adds a new nullable observer to the current observers for the root logger
@@ -186,9 +221,13 @@ public class LogEventFactory implements ILoggerFactory {
     /**
      * Adds a new nullable observer to the current observers for the specified logger
      */
-    private void addObserver(Logger logger, LogEventObserver observer) {
+    public void addObserver(Logger logger, LogEventObserver observer) {
         ((LoggerDelegator)logger).addObserver(observer);
         refreshLoggers((LoggerDelegator)logger);
+        aliasLoggers(logger).forEach(alias -> {
+            alias.addObserver(observer);
+            refreshLoggers(alias);
+        });
     }
 
     /**
