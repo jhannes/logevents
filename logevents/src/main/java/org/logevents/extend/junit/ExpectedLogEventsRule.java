@@ -63,10 +63,10 @@ import java.util.stream.Collectors;
  */
 public class ExpectedLogEventsRule implements TestRule, LogEventObserver {
 
+    protected List<LogEventMatcher> matchers = new ArrayList<>();
+    protected List<LogEvent> events = new ArrayList<>();
     private LogEventFactory loggerFactory;
     private Level threshold;
-    private List<LogEventMatcher> matchers = new ArrayList<>();
-    private List<LogEvent> events = new ArrayList<>();
     private LogEventObserver fallbackObserver;
     private boolean allowUnexpectedLogs = false;
 
@@ -207,4 +207,8 @@ public class ExpectedLogEventsRule implements TestRule, LogEventObserver {
                 + ". Close matches: " + applicableMatches.stream().map(LogEventMatcherContext::diff).collect(Collectors.joining(", "));
     }
 
+    @Override
+    public String toString() {
+        return "ExpectedLogEventsRule{matchers=" + matchers.size() + ", events=" + events + '}';
+    }
 }
