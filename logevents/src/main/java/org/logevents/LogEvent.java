@@ -7,6 +7,7 @@ import org.logevents.impl.LoggerDelegator;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.Marker;
+import org.slf4j.event.KeyValuePair;
 import org.slf4j.event.Level;
 import org.slf4j.event.LoggingEvent;
 
@@ -14,7 +15,11 @@ import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -47,6 +52,7 @@ public class LogEvent implements LoggingEvent {
 
     private StackTraceElement callerLocation;
     private StackTraceElement[] stackTrace;
+    private final List<KeyValuePair> keyValuePairs = new ArrayList<>();
 
     public LogEvent(
             String loggerName,
@@ -124,9 +130,13 @@ public class LogEvent implements LoggingEvent {
         return level;
     }
 
-    @Override
     public Marker getMarker() {
         return marker;
+    }
+
+    @Override
+    public List<Marker> getMarkers() {
+        return Collections.singletonList(marker);
     }
 
     @Override
@@ -190,6 +200,11 @@ public class LogEvent implements LoggingEvent {
     }
 
     @Override
+    public List<Object> getArguments() {
+        return Arrays.asList(args);
+    }
+
+    @Override
     public Object[] getArgumentArray() {
         return args;
     }
@@ -202,6 +217,11 @@ public class LogEvent implements LoggingEvent {
     @Override
     public Throwable getThrowable() {
         return throwable;
+    }
+
+    @Override
+    public List<KeyValuePair> getKeyValuePairs() {
+        return keyValuePairs;
     }
 
     public Instant getInstant() {

@@ -13,9 +13,9 @@ public class SLF4JServiceProviderImpl implements SLF4JServiceProvider {
     // to avoid constant folding by the compiler, this field must *not* be final
     public static String REQUESTED_API_VERSION = "1.8.99"; // !final
 
-    private ILoggerFactory loggerFactory = LogEventFactory.getInstance();
-    private IMarkerFactory markerFactory =  new BasicMarkerFactory();
-    private MDCAdapter mdcAdapter =  new BasicMDCAdapter();
+    private final ILoggerFactory loggerFactory = LogEventFactory.getInstance();
+    private final IMarkerFactory markerFactory =  new BasicMarkerFactory();
+    private final MDCAdapter mdcAdapter =  new BasicMDCAdapter();
 
     @Override
     public ILoggerFactory getLoggerFactory() {
@@ -33,6 +33,11 @@ public class SLF4JServiceProviderImpl implements SLF4JServiceProvider {
     }
 
     @Override
+    public String getRequestedApiVersion() {
+        return "2.0";
+    }
+
+    // Preserved for compatibility with slf4j-api 1.8
     public String getRequesteApiVersion() {
         return REQUESTED_API_VERSION;
     }
