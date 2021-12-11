@@ -2,9 +2,9 @@ package org.logevents.observers;
 
 import org.junit.Test;
 import org.logevents.config.Configuration;
-import org.logevents.extend.junit.LogEventSampler;
-import org.logevents.formatting.ConsoleFormatting;
-import org.logevents.formatting.ConsoleLogEventFormatter;
+import org.logevents.optional.junit.LogEventSampler;
+import org.logevents.formatters.ConsoleFormatting;
+import org.logevents.formatters.ConsoleLogEventFormatter;
 import org.slf4j.event.Level;
 
 import java.io.ByteArrayOutputStream;

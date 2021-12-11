@@ -2,8 +2,9 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.extend.servlets.LogEventsServlet;
-import org.logevents.formatting.MessageFormatter;
+import org.logevents.core.AbstractFilteredLogEventObserver;
+import org.logevents.optional.servlets.LogEventsServlet;
+import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.observers.web.CryptoVault;
 import org.logevents.observers.web.LogEventHttpServer;
 import org.logevents.util.openid.OpenIdConfiguration;

@@ -1,62 +1,111 @@
 @startuml
 
 package "slf4j" {
-  interface Logger
-  interface ILoggerFactory
+  interface ILoggerFactory {
+    getLogger()
+  }
+  interface Logger {
+    error(...)
+    warn(...)
+    info(...)
+    debug(...)
+    trace(...)
+  }
+  ILoggerFactory .right.> Logger: getLogger
 }
 
 package "org.logevents" {
 
-	class LoggerDelegator implements Logger {
-	  levelThreshold : Level|"Inherit"
+    interface LogEventLogger extends Logger {
+      /effectiveFilter
 	  ownObserver : LogEventObserver
 	  inheritParentObserver : boolean
+    }
+
+    class LogEventFilter {
+        addLoggingCondition()
+        createLogEventGenerator()
+    }
+    LogEventLogger -right-> LogEventFilter: ownFilter
+
+    interface LogEventPredicate {
+        test(:LogEvent): boolean
+    }
+    LogEventFilter "[level]" --> LogEventPredicate
+    class AlwaysPredicate implements LogEventPredicate
+    class NeverPredicate implements LogEventPredicate
+    class MarkerCondition implements LogEventPredicate {
+        markers
+    }
+    class MdcCondition implements LogEventPredicate {
+        mdcName
+        requiredValues
+    }
+
+	class LoggerDelegator implements LogEventLogger {
+	    error(...)
+	    warn(...)
+	    info(...)
+	    debug(...)
+	    trace(...)
 	}
-	
+
 	class LogEventFactory implements ILoggerFactory {
 	  setLogLevel(logger, level)
-	  setLogEventObserver(logger, observer, inheritParent)
+	  setObserver(logger, observer, inheritParent)
 	  addObserver(logger, observer)
 	}
-	
-	interface LogEventGenerator
-	LoggerDelegator ..> LogEventGenerator
-	
+	LogEventFactory -right- "*" LogEventLogger: loggers
+
+	interface LogEventGenerator {
+	    log(msg:String)
+	    log(:Marker, msg:String)
+	    log(msg:String, args:Object[])
+	}
+	LoggerDelegator --> LogEventGenerator: error
+	LoggerDelegator --> LogEventGenerator: warn
+	LoggerDelegator --> LogEventGenerator: info
+	LoggerDelegator --> LogEventGenerator: debug
+	LoggerDelegator --> LogEventGenerator: trace
+
 	class NullLogEventGenerator implements LogEventGenerator
-	class LevelLoggingEventGenerator implements LogEventGenerator
-	
+	class LevelLoggingEventGenerator implements LogEventGenerator {
+	    : Level
+	}
+	class ConditionalLogEventGenerator implements LogEventGenerator {
+	    : LogEventPredicate
+	}
+
 	interface LogEventObserver {
-	  name
-	  configure(Properties)
-	  logEvent(e)
+	  logEvent(e: LogEvent)
 	}
 	LevelLoggingEventGenerator ..> LogEventObserver
-	
+	ConditionalLogEventGenerator ..> LogEventObserver
+
 	class CompositeLogEventObserver implements LogEventObserver
 	class ConditionalLogEventObserver implements LogEventObserver
-	class BatchingLogEventObserver implements LogEventObserver {
+	abstract class BatchingLogEventObserver implements LogEventObserver {
 	  idleTime
 	  cooldownTime
 	  maximumWaitTime
+	  --
+	  # {abstract} processBatch()
 	}
-	class CircularBufferLogEventDestination implements LogEventObserver
 	class FileLogEventObserver implements LogEventObserver
 	class ConsoleLogEventObserver implements LogEventObserver
-	CompositeLogEventObserver ..> "*" LogEventObserver
-	ConditionalLogEventObserver ..> "1" LogEventObserver
-	
-	
+	CompositeLogEventObserver --> "*" LogEventObserver
+	ConditionalLogEventObserver --> "1" LogEventObserver
+
+
 	package "formatting" {
 		interface LogEventFormatter
-		FileLogEventObserver ..> LogEventFormatter
-		ConsoleLogEventObserver ..> LogEventFormatter
+		FileLogEventObserver --> LogEventFormatter
+		ConsoleLogEventObserver --> LogEventFormatter
         class PatternFormatter implements LogEventFormatter
         class TTLLFormatter implements LogEventFormatter
+        class JsonFormatter implements LogEventFormatter
 	}
-	
-	class LogEventBatchProcessor
-	BatchingLogEventObserver ..> LogEventBatchProcessor
 
 }
-	
+
 @enduml

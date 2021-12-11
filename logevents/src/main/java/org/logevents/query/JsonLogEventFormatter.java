@@ -1,9 +1,9 @@
 package org.logevents.query;
 
 import org.logevents.LogEvent;
-import org.logevents.extend.servlets.JsonExceptionFormatter;
-import org.logevents.extend.servlets.JsonMessageFormatter;
-import org.logevents.formatting.MessageFormatter;
+import org.logevents.formatters.exceptions.JsonExceptionFormatter;
+import org.logevents.formatters.messages.JsonMessageFormatter;
+import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
 import org.slf4j.Marker;
 
@@ -35,20 +35,20 @@ public class JsonLogEventFormatter implements Function<LogEvent, Map<String, Obj
     public Map<String, Object> apply(LogEvent event) {
         Map<String, Object> jsonEvent = new HashMap<>();
 
-        jsonEvent.put("thread", event.getThreadName());
         jsonEvent.put("time", event.getInstant().toString());
-        jsonEvent.put("logger", event.getLoggerName());
-        jsonEvent.put("abbreviatedLogger", event.getAbbreviatedLoggerName(0));
-        jsonEvent.put("level", event.getLevel().name());
-        jsonEvent.put("levelIcon", JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()));
+        jsonEvent.put("message", jsonFormatter.format(event.getMessage(), event.getArgumentArray()));
         jsonEvent.put("formattedMessage", event.getMessage(messageFormatter));
         jsonEvent.put("messageTemplate", event.getMessage());
-        jsonEvent.put("message", jsonFormatter.format(event.getMessage(), event.getArgumentArray()));
+        jsonEvent.put("thread", event.getThreadName());
+        jsonEvent.put("level", event.getLevel().name());
+        jsonEvent.put("levelIcon", JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()));
+        jsonEvent.put("logger", event.getLoggerName());
+        jsonEvent.put("abbreviatedLogger", event.getAbbreviatedLoggerName(0));
         jsonEvent.put("marker", Optional.ofNullable(event.getMarker()).map(Marker::getName).orElse(null));
         jsonEvent.put("arguments", Stream.of(event.getArgumentArray()).map(o -> o != null ? o.toString() : null).collect(Collectors.toList()));
-        jsonEvent.put("mdc", formatMdc(event));
-        jsonEvent.put("node", this.nodeName);
         jsonEvent.put("application", this.applicationName);
+        jsonEvent.put("node", this.nodeName);
+        jsonEvent.put("mdc", formatMdc(event));
 
         if (event.getThrowable() != null) {
             jsonEvent.put("throwable", event.getThrowable().toString());

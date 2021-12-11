@@ -3,7 +3,7 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.config.LogEventConfigurationException;
-import org.logevents.formatting.MessageFormatter;
+import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventGroup;
 import org.slf4j.event.Level;

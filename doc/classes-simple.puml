@@ -1,35 +1,59 @@
 @startuml
 
 package "slf4j" {
-  interface Logger
-  interface ILoggerFactory
+  interface ILoggerFactory {
+    getLogger()
+  }
+  interface Logger {
+    error(...)
+    warn(...)
+    info(...)
+    debug(...)
+    trace(...)
+  }
+  ILoggerFactory .right.> Logger: getLogger
 }
 
 package "org.logevents" {
 
-	class LoggerDelegator implements Logger
-	
+	interface LoggerDelegator extends Logger
+    class LogEventFilter
+    LoggerDelegator -right-> LogEventFilter: ownFilter
+
 	class LogEventFactory implements ILoggerFactory
-		
+
+	LogEventFactory -right- "*" LoggerDelegator
+
+	interface LogEventGenerator {
+	    log(msg:String)
+	    log(:Marker, msg:String)
+	    log(msg:String, args:Object[])
+	}
+	LoggerDelegator --> LogEventGenerator: error
+	LoggerDelegator --> LogEventGenerator: warn
+	LoggerDelegator --> LogEventGenerator: info
+	LoggerDelegator --> LogEventGenerator: debug
+	LoggerDelegator --> LogEventGenerator: trace
+
 	interface LogEventObserver {
 	  logEvent(e)
 	}
-	LoggerDelegator ..> LogEventObserver
-	
+	LogEventGenerator ..> LogEventObserver
+
 	class CompositeLogEventObserver implements LogEventObserver
 	class ConditionalLogEventObserver implements LogEventObserver
 	class FileLogEventObserver implements LogEventObserver
 	CompositeLogEventObserver ..> "*" LogEventObserver
 	ConditionalLogEventObserver ..> "1" LogEventObserver
-	
-	
+
+
 	package "formatting" {
 		interface LogEventFormatter
 		FileLogEventObserver ..> LogEventFormatter
 		class PatternFormatter implements LogEventFormatter
         class TTLLFormatter implements LogEventFormatter
 	}
-	
+
 }
-	
+
 @enduml

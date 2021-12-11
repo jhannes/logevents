@@ -2,8 +2,8 @@ package org.logevents.jmx;
 
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
-import org.logevents.observers.AbstractFilteredLogEventObserver;
-import org.logevents.observers.FixedLevelThresholdConditionalObserver;
+import org.logevents.core.AbstractFilteredLogEventObserver;
+import org.logevents.core.FixedLevelThresholdConditionalObserver;
 
 public class ObserverMXBeanAdaptor implements ObserverMXBean {
     private final LogEventFactory factory;

@@ -2,7 +2,7 @@ package org.logevents;
 
 import org.junit.Test;
 import org.logevents.observers.CircularBufferLogEventObserver;
-import org.logevents.observers.NullLogEventObserver;
+import org.logevents.core.NullLogEventObserver;
 import org.slf4j.Logger;
 
 import static org.junit.Assert.assertEquals;

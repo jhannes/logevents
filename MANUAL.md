@@ -517,12 +517,12 @@ observer.slack.formatter.sourceCode.3.tag=release
 
 Logevents comes with two servlets that you can add to your servlet container.
 
-`org.logevents.extend.servlets.LogEventsServlet.doGet` can list up
+`org.logevents.optional.servlets.LogEventsServlet.doGet` can list up
 log events as JSON (to be formatted by your own JavaScript). It supports
 four optional query parameters: `level` (default INFO), `category`, `offset`
 and `count`.  (TODO)
 
-`org.logevents.extend.servlets.LogEventConfigurationServlet`:
+`org.logevents.optional.servlets.LogEventConfigurationServlet`:
 `doGet` lists up all active loggers and observers as JSON.
 `doPost` allows to change the level and observer (TODO) for a single logger.
 

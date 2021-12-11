@@ -1,8 +1,8 @@
 package org.logevents.observers;
 
 import org.logevents.config.Configuration;
-import org.logevents.formatting.JsonLogEventFormatter;
-import org.logevents.formatting.LogEventFormatter;
+import org.logevents.formatters.JsonLogEventFormatter;
+import org.logevents.LogEventFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
@@ -46,7 +46,7 @@ public class TcpLogEventObserver extends AbstractBatchingLogEventObserver {
     public TcpLogEventObserver(Configuration configuration) {
         this(
                 configuration.getString("address"),
-                configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, JsonLogEventFormatter.class)
+                configuration.createFormatter("formatter", JsonLogEventFormatter.class)
         );
         this.configureBatching(configuration);
         this.configureFilter(configuration, Level.TRACE);

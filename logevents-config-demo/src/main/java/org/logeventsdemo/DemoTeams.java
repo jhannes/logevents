@@ -3,7 +3,7 @@ package org.logeventsdemo;
 import org.logevents.LogEventFactory;
 import org.logevents.config.Configuration;
 import org.logevents.config.DefaultLogEventConfigurator;
-import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.core.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.MicrosoftTeamsLogEventObserver;
 import org.slf4j.Logger;

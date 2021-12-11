@@ -7,12 +7,12 @@ import org.junit.rules.TemporaryFolder;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
-import org.logevents.LoggerConfiguration;
+import org.logevents.LogEventLogger;
 import org.logevents.config.Configuration;
-import org.logevents.extend.junit.LogEventSampler;
-import org.logevents.formatting.MessageFormatter;
-import org.logevents.formatting.PatternLogEventFormatter;
-import org.logevents.formatting.TTLLLogEventFormatter;
+import org.logevents.optional.junit.LogEventSampler;
+import org.logevents.formatters.messages.MessageFormatter;
+import org.logevents.formatters.PatternLogEventFormatter;
+import org.logevents.formatters.TTLLLogEventFormatter;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,7 +33,7 @@ public class FileLogEventObserverTest {
     private static final String CWD = Paths.get("").toAbsolutePath().getFileName().toString();
 
     private final LogEventFactory factory = new LogEventFactory();
-    private final LoggerConfiguration logger = factory.getLogger(getClass().getName());
+    private final LogEventLogger logger = factory.getLogger(getClass().getName());
     private final MessageFormatter formatter = new MessageFormatter();
 
     @Rule

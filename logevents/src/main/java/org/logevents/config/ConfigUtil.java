@@ -8,7 +8,7 @@ import java.util.Properties;
 
 public class ConfigUtil {
 
-    public static Class<?> getClass(String key, String defaultPackage, String className) {
+    static Class<?> getClass(String key, String defaultPackage, String className) {
         if (!className.contains(".")) {
             className = defaultPackage + "." + className;
         }

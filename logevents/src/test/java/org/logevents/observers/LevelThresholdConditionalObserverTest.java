@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
+import org.logevents.core.LevelThresholdConditionalObserver;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
 

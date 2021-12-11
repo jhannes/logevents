@@ -2,7 +2,7 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.formatting.MessageFormatter;
+import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventGroup;

@@ -3,11 +3,11 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
-import org.logevents.extend.servlets.LogEventsServlet;
+import org.logevents.optional.servlets.LogEventsServlet;
 import org.logevents.observers.batch.BatcherFactory;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.observers.batch.LogEventBatcherWithMdc;
-import org.logevents.observers.batch.SlackLogEventsFormatter;
+import org.logevents.observers.slack.SlackLogEventsFormatter;
 import org.logevents.observers.batch.ThrottlingBatcher;
 import org.slf4j.event.Level;
 

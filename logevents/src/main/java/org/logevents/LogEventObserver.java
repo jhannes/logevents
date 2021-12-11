@@ -2,12 +2,12 @@ package org.logevents;
 
 import org.logevents.observers.AbstractBatchingLogEventObserver;
 import org.logevents.observers.CircularBufferLogEventObserver;
-import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.core.CompositeLogEventObserver;
 import org.logevents.observers.ConditionalLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
-import org.logevents.observers.LogEventPredicate;
-import org.logevents.observers.NullLogEventObserver;
+import org.logevents.core.LogEventPredicate;
+import org.logevents.core.NullLogEventObserver;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 

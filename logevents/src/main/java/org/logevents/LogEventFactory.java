@@ -3,10 +3,10 @@ package org.logevents;
 import org.logevents.config.DefaultLogEventConfigurator;
 import org.logevents.config.DefaultTestLogEventConfigurator;
 import org.logevents.config.LogEventConfigurationException;
-import org.logevents.impl.LogEventFilter;
-import org.logevents.impl.JavaUtilLoggingAdapter;
-import org.logevents.impl.LoggerDelegator;
-import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.core.LogEventFilter;
+import org.logevents.core.JavaUtilLoggingAdapter;
+import org.logevents.core.LoggerDelegator;
+import org.logevents.core.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.ILoggerFactory;
@@ -69,7 +69,7 @@ public class LogEventFactory implements ILoggerFactory {
     private final Map<String, LoggerDelegator> loggerAliasCache = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     @Override
-    public synchronized LoggerConfiguration getLogger(String name) {
+    public synchronized LogEventLogger getLogger(String name) {
         if (name == null || name.equals(Logger.ROOT_LOGGER_NAME)) {
             return rootLogger;
         }
@@ -94,11 +94,11 @@ public class LogEventFactory implements ILoggerFactory {
     /**
      * Used to report the log configuration.
      */
-    public Map<String, LoggerConfiguration> getLoggers() {
+    public Map<String, LogEventLogger> getLoggers() {
         return Collections.unmodifiableMap(loggerCache);
     }
 
-    public LoggerConfiguration getRootLogger() {
+    public LogEventLogger getRootLogger() {
         return rootLogger;
     }
 
@@ -154,7 +154,7 @@ public class LogEventFactory implements ILoggerFactory {
         setObserver(getLogger(loggerName), observer);
     }
 
-    public LogEventObserver setObserver(LoggerConfiguration logger, LogEventObserver observer) {
+    public LogEventObserver setObserver(LogEventLogger logger, LogEventObserver observer) {
         LogEventObserver oldObserver = logger.replaceObserver(observer);
         refreshLoggers((LoggerDelegator) logger);
         aliasLoggers(logger).forEach(alias -> {

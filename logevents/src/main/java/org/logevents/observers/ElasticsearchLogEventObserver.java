@@ -4,7 +4,7 @@ import static org.logevents.util.NetUtils.NO_AUTHORIZATION_HEADER;
 
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.formatting.JsonLogEventFormatter;
+import org.logevents.formatters.JsonLogEventFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.status.LogEventStatus;
 import org.logevents.util.JsonParser;

@@ -1,9 +1,9 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
-import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
-import org.logevents.extend.junit.LogEventRule;
+import org.logevents.core.AbstractFilteredLogEventObserver;
+import org.logevents.optional.junit.LogEventRule;
 import org.logevents.util.CircularBuffer;
 import org.slf4j.event.Level;
 

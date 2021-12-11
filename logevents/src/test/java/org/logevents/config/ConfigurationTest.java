@@ -2,7 +2,6 @@ package org.logevents.config;
 
 import junit.framework.TestCase;
 import org.junit.Test;
-import org.logevents.formatting.MdcFilter;
 
 import java.nio.file.Paths;
 import java.util.Arrays;

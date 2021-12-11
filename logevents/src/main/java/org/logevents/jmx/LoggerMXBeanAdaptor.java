@@ -2,8 +2,8 @@ package org.logevents.jmx;
 
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
-import org.logevents.LoggerConfiguration;
-import org.logevents.impl.LogEventFilter;
+import org.logevents.LogEventLogger;
+import org.logevents.core.LogEventFilter;
 import org.slf4j.event.Level;
 
 import java.util.List;
@@ -11,9 +11,9 @@ import java.util.stream.Collectors;
 
 public class LoggerMXBeanAdaptor implements LoggerMXBean {
     private LogEventFactory factory;
-    private LoggerConfiguration logger;
+    private LogEventLogger logger;
 
-    public LoggerMXBeanAdaptor(LogEventFactory factory, LoggerConfiguration logger) {
+    public LoggerMXBeanAdaptor(LogEventFactory factory, LogEventLogger logger) {
         this.factory = factory;
         this.logger = logger;
     }

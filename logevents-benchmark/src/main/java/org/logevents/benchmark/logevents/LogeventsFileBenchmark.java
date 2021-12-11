@@ -2,9 +2,9 @@ package org.logevents.benchmark.logevents;
 
 import org.logevents.LogEventFactory;
 import org.logevents.config.Configuration;
-import org.logevents.formatting.PatternLogEventFormatter;
+import org.logevents.formatters.PatternLogEventFormatter;
 import org.logevents.observers.FileLogEventObserver;
-import org.logevents.observers.NullLogEventObserver;
+import org.logevents.core.NullLogEventObserver;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;

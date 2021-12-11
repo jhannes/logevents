@@ -2,9 +2,10 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.formatting.ConsoleLogEventFormatter;
-import org.logevents.formatting.LogEventFormatter;
-import org.logevents.formatting.PatternLogEventFormatter;
+import org.logevents.core.AbstractFilteredLogEventObserver;
+import org.logevents.formatters.ConsoleLogEventFormatter;
+import org.logevents.LogEventFormatter;
+import org.logevents.formatters.PatternLogEventFormatter;
 import org.slf4j.event.Level;
 
 import java.io.PrintStream;
@@ -70,7 +71,7 @@ public class ConsoleLogEventObserver extends AbstractFilteredLogEventObserver {
         if (configuration.optionalString("pattern").isPresent()) {
             return new PatternLogEventFormatter(configuration);
         }
-        return configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, ConsoleLogEventFormatter.class);
+        return configuration.createFormatter("formatter", ConsoleLogEventFormatter.class);
     }
 
     public ConsoleLogEventObserver(Map<String, String> properties, String prefix) {

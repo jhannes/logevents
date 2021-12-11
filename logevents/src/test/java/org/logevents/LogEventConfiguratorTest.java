@@ -3,7 +3,7 @@ package org.logevents;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.extend.junit.LogEventStatusRule;
+import org.logevents.optional.junit.LogEventStatusRule;
 import org.logevents.status.StatusEvent;
 import org.slf4j.event.Level;
 

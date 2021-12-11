@@ -3,10 +3,10 @@ package org.logevents.jmx;
 import org.junit.Test;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
-import org.logevents.LoggerConfiguration;
-import org.logevents.observers.CompositeLogEventObserver;
-import org.logevents.observers.FixedLevelThresholdConditionalObserver;
-import org.logevents.observers.LevelThresholdConditionalObserver;
+import org.logevents.LogEventLogger;
+import org.logevents.core.CompositeLogEventObserver;
+import org.logevents.core.FixedLevelThresholdConditionalObserver;
+import org.logevents.core.LevelThresholdConditionalObserver;
 import org.logevents.observers.TestObserver;
 import org.slf4j.event.Level;
 
@@ -20,7 +20,7 @@ public class LoggerMXBeanAdaptorTest {
 
 
     private LogEventFactory factory = new LogEventFactory();
-    private LoggerConfiguration logger = factory.getLogger("org.example");
+    private LogEventLogger logger = factory.getLogger("org.example");
     private LoggerMXBeanAdaptor mbean = new LoggerMXBeanAdaptor(factory, logger);
 
     @Test

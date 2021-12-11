@@ -1,1 +1,1 @@
-org.logevents.impl.SLF4JServiceProviderImpl
+org.logevents.core.SLF4JServiceProviderImpl

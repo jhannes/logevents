@@ -3,7 +3,7 @@ package org.logevents.observers.file;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.config.Configuration;
-import org.logevents.extend.junit.LogEventStatusRule;
+import org.logevents.optional.junit.LogEventStatusRule;
 import org.logevents.status.StatusEvent;
 
 import java.io.BufferedReader;

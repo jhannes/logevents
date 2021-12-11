@@ -3,8 +3,8 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
-import org.logevents.formatting.LogEventFormatter;
-import org.logevents.formatting.TTLLLogEventFormatter;
+import org.logevents.LogEventFormatter;
+import org.logevents.formatters.TTLLLogEventFormatter;
 import org.logevents.observers.file.FileDestination;
 import org.logevents.observers.file.FileRotationWorker;
 import org.logevents.observers.file.FilenameFormatter;
@@ -63,7 +63,7 @@ import java.util.concurrent.TimeUnit;
  *     <li><code>%node</code>: The value of {@link Configuration#getNodeName()} ()}</li>
  * </ul>
  *
- * @see org.logevents.formatting.PatternLogEventFormatter
+ * @see org.logevents.formatters.PatternLogEventFormatter
  * @see org.logevents.observers.file.FilenameFormatter
  */
 public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
@@ -74,7 +74,7 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
     private FileRotationWorker fileRotationWorker;
 
     public static LogEventFormatter createFormatter(Configuration configuration) {
-        LogEventFormatter formatter = configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLLogEventFormatter.class);
+        LogEventFormatter formatter = configuration.createFormatter("formatter", TTLLLogEventFormatter.class);
         formatter.configure(configuration);
         return formatter;
     }

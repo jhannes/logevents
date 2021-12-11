@@ -7,14 +7,14 @@ import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
-import org.logevents.LoggerConfiguration;
-import org.logevents.extend.junit.LogEventSampler;
-import org.logevents.extend.junit.LogEventStatusRule;
-import org.logevents.impl.JavaUtilLoggingAdapter;
-import org.logevents.impl.LoggerDelegator;
+import org.logevents.LogEventLogger;
+import org.logevents.optional.junit.LogEventSampler;
+import org.logevents.optional.junit.LogEventStatusRule;
+import org.logevents.core.JavaUtilLoggingAdapter;
+import org.logevents.core.LoggerDelegator;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
-import org.logevents.observers.LevelThresholdConditionalObserver;
+import org.logevents.core.LevelThresholdConditionalObserver;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.slf4j.Logger;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.logevents.extend.junit.LogEventSampler.OPS;
+import static org.logevents.optional.junit.LogEventSampler.OPS;
 
 public class DefaultLogEventConfiguratorTest {
 
@@ -188,7 +188,6 @@ public class DefaultLogEventConfiguratorTest {
         configuration.put("root", "ERROR null");
         configuration.put("logger.org", "ERROR buffer1");
         configuration.put("logger.org.example", "ERROR buffer2");
-        configuration.put("observer.null", "NullLogEventObserver");
         configuration.put("observer.buffer1", "CircularBufferLogEventObserver");
         configuration.put("observer.buffer2", "CircularBufferLogEventObserver");
 
@@ -218,7 +217,7 @@ public class DefaultLogEventConfiguratorTest {
         CircularBufferLogEventObserver buffer = (CircularBufferLogEventObserver)factory.getObserver("buffer");
         assertEquals("CircularBufferLogEventObserver{size=0,capacity=15}", buffer.toString());
 
-        LoggerConfiguration logger = factory.getLogger("org.example.demo");
+        LogEventLogger logger = factory.getLogger("org.example.demo");
         assertTrue(logger.isDebugEnabled());
         assertFalse(logger.isTraceEnabled());
         assertEquals("CircularBufferLogEventObserver{size=0,capacity=15}", logger.getObserver());
@@ -272,7 +271,7 @@ public class DefaultLogEventConfiguratorTest {
 
         configurator.applyConfigurationProperties(factory, configuration);
 
-        LoggerConfiguration logger = factory.getLogger("org.example");
+        LogEventLogger logger = factory.getLogger("org.example");
         logger.debug("only to buffer1");
         logger.info("to buffer1 and buffer2");
         logger.error("to buffer1, buffer2 and buffer3");
@@ -388,7 +387,6 @@ public class DefaultLogEventConfiguratorTest {
         configuration.put("logger.org", "ERROR buffer1");
         configuration.put("logger.org.example", "ERROR buffer2");
         configuration.put("includeParent.org.example", "false");
-        configuration.put("observer.null", "NullLogEventObserver");
         configuration.put("observer.buffer1", "CircularBufferLogEventObserver");
         configuration.put("observer.buffer2", "CircularBufferLogEventObserver");
 
@@ -486,7 +484,6 @@ public class DefaultLogEventConfiguratorTest {
         Properties defaultProperties = new Properties();
         defaultProperties.setProperty("root", "DEBUG");
         defaultProperties.setProperty("observer.console", "ConsoleLogEventObserver");
-        defaultProperties.setProperty("observer.null", "NullLogEventObserver");
         writeProps(propertiesDir.resolve("logevents.properties"), defaultProperties);
 
         Properties firstProfileProperty = new Properties();

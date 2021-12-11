@@ -3,8 +3,8 @@ package org.logevents.observers.file;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.status.LogEventStatus;
-import org.logevents.util.pattern.PatternConverterSpec;
-import org.logevents.util.pattern.StringScanner;
+import org.logevents.formatters.pattern.PatternConverterSpec;
+import org.logevents.formatters.pattern.StringScanner;
 import org.slf4j.Marker;
 
 import java.io.IOException;

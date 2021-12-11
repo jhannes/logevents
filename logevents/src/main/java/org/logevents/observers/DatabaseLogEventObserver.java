@@ -2,9 +2,9 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.extend.servlets.JsonExceptionFormatter;
-import org.logevents.extend.servlets.JsonMessageFormatter;
-import org.logevents.formatting.MessageFormatter;
+import org.logevents.formatters.exceptions.JsonExceptionFormatter;
+import org.logevents.formatters.messages.JsonMessageFormatter;
+import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.observers.batch.JsonLogEventsBatchFormatter;
 import org.logevents.observers.batch.LogEventBatch;
 import org.logevents.query.LogEventQuery;
@@ -49,7 +49,7 @@ import java.util.stream.Stream;
  * <p>{@link DatabaseLogEventObserver} is a nice compromise if you want to take a step towards centralized logging,
  * but don't want to set up Elastic search, Splunk or a similar solution quite yet.</p>
  *
- * <p>{@link DatabaseLogEventObserver} is designed to be used with {@link org.logevents.extend.servlets.LogEventsServlet}
+ * <p>{@link DatabaseLogEventObserver} is designed to be used with {@link org.logevents.optional.servlets.LogEventsServlet}
  * through {@link WebLogEventObserver}</p>
  *
  * <h3>Sample configuration</h3>

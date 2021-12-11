@@ -1,9 +1,10 @@
 package org.logevents;
 
-import org.logevents.extend.junit.LogEventSampler;
-import org.logevents.formatting.MessageFormatter;
-import org.logevents.impl.JavaUtilLoggingAdapter;
-import org.logevents.impl.LoggerDelegator;
+import org.logevents.config.MdcFilter;
+import org.logevents.optional.junit.LogEventSampler;
+import org.logevents.formatters.messages.MessageFormatter;
+import org.logevents.core.JavaUtilLoggingAdapter;
+import org.logevents.core.LoggerDelegator;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.Marker;
@@ -114,6 +115,18 @@ public class LogEvent implements LoggingEvent {
         }
         this.timestamp = timestamp.toEpochMilli();
         this.mdcProperties = mdcProperties;
+    }
+
+    public String getMdcString(MdcFilter mdcFilter) {
+        List<String> mdcValue = new ArrayList<>();
+        if (mdcFilter == null) {
+            getMdcProperties().forEach((k, v) -> mdcValue.add(k + "=" + v));
+        } else {
+            getMdcProperties().keySet()
+                    .stream().filter(mdcFilter::isKeyIncluded)
+                    .forEach(key -> mdcValue.add(key + "=" + getMdcProperties().get(key)));
+        }
+        return mdcValue.isEmpty() ? "" : " {" + String.join(", ", mdcValue) + "}";
     }
 
     /**

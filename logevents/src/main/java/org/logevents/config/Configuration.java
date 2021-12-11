@@ -1,6 +1,7 @@
 package org.logevents.config;
 
-import org.logevents.formatting.MdcFilter;
+import org.logevents.LogEventObserver;
+import org.logevents.LogEventFormatter;
 import org.logevents.status.LogEventStatus;
 
 import java.net.InetAddress;
@@ -276,13 +277,25 @@ public class Configuration {
         return ConfigUtil.create(prefixedKey(key), defaultClass, properties);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public <T> T createInstanceWithDefault(String key, Class<T> targetType, Class<? extends T> defaultClass) {
+        return createInstanceWithDefault(key, defaultClass, targetType.getPackage().getName());
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public <T> T createInstanceWithDefault(String key, Class<? extends T> defaultClass, String packageName) {
         Class<T> clazz = optionalString(key)
-                .map(c -> (Class<T>) ConfigUtil.getClass(prefixedKey(key), targetType.getPackage().getName(), c))
+                .map(c -> (Class<T>) ConfigUtil.getClass(prefixedKey(key), packageName, c))
                 .orElseGet(() -> (Class) defaultClass);
         LogEventStatus.getInstance().addDebug(this, "Creating " + key);
         return ConfigUtil.create(prefixedKey(key), clazz, properties);
+    }
+
+    public LogEventFormatter createFormatter(String key, Class<? extends LogEventFormatter> defaultClass) {
+        return createInstanceWithDefault(key, defaultClass, "org.logevents.formatters");
+    }
+
+    public LogEventObserver createObserver(String key) {
+        return createInstance(key, LogEventObserver.class, "org.logevents.observers");
     }
 
     /**

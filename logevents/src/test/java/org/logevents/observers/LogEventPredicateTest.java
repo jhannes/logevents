@@ -1,17 +1,18 @@
 package org.logevents.observers;
 
 import org.junit.Test;
-import org.logevents.extend.junit.LogEventSampler;
-import org.logevents.observers.LogEventPredicate.RequiredMarkerCondition;
-import org.logevents.observers.LogEventPredicate.SuppressedMarkerCondition;
+import org.logevents.core.LogEventPredicate;
+import org.logevents.optional.junit.LogEventSampler;
+import org.logevents.core.LogEventPredicate.RequiredMarkerCondition;
+import org.logevents.core.LogEventPredicate.SuppressedMarkerCondition;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.logevents.extend.junit.LogEventSampler.AUDIT;
-import static org.logevents.extend.junit.LogEventSampler.HTTP_REQUEST;
-import static org.logevents.extend.junit.LogEventSampler.LIFECYCLE;
-import static org.logevents.extend.junit.LogEventSampler.OPS;
+import static org.logevents.optional.junit.LogEventSampler.AUDIT;
+import static org.logevents.optional.junit.LogEventSampler.HTTP_REQUEST;
+import static org.logevents.optional.junit.LogEventSampler.LIFECYCLE;
+import static org.logevents.optional.junit.LogEventSampler.OPS;
 
 public class LogEventPredicateTest {
 

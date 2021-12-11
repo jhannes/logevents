@@ -1,7 +1,7 @@
 package org.logevents.jmx;
 
 import org.logevents.LogEventFactory;
-import org.logevents.impl.LogEventFilter;
+import org.logevents.core.LogEventFilter;
 
 import java.util.ArrayList;
 import java.util.List;

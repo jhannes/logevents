@@ -1,10 +1,11 @@
 package org.logevents.observers;
 
 import org.logevents.config.Configuration;
-import org.logevents.extend.servlets.LogEventsServlet;
+import org.logevents.core.AbstractFilteredLogEventObserver;
+import org.logevents.optional.servlets.LogEventsServlet;
 import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.observers.batch.MicrosoftTeamsMessageFormatter;
-import org.logevents.observers.batch.SlackLogEventsFormatter;
+import org.logevents.observers.teams.MicrosoftTeamsMessageFormatter;
+import org.logevents.observers.slack.SlackLogEventsFormatter;
 import org.logevents.observers.batch.ThrottlingBatcher;
 import org.slf4j.event.Level;
 

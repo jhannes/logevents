@@ -3,7 +3,7 @@ package org.logeventsdemo.servlets;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.logevents.extend.servlets.LogEventsServlet;
+import org.logevents.optional.servlets.LogEventsServlet;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.slf4j.Marker;

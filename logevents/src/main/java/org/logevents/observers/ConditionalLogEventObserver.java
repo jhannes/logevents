@@ -2,9 +2,8 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
+import org.logevents.core.LogEventPredicate;
 import org.slf4j.Marker;
-
-import java.util.List;
 
 /**
  * An observer that filters log messages by a given conditions, forwarding those

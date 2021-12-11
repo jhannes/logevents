@@ -16,7 +16,7 @@ import java.util.Set;
 
 /**
  * Supports any standards compliant OpenID Connect provider as identity provider for
- * {@link org.logevents.extend.servlets.LogEventsServlet}.
+ * {@link org.logevents.optional.servlets.LogEventsServlet}.
  *
  * <h2>To set up authorization with Azure Active Directory</h2>
  *
@@ -41,7 +41,7 @@ import java.util.Set;
  *     <li>Go to <a href="https://console.developers.google.com/apis/credentials">Google API Console</a></li>
  *     <li>From the "Select a project" dropdown, click "New project"</li>
  *     <li>Select "Credentials" from the left menu, click "Create credentials" and select "OAuth client ID"</li>
- *     <li>Select "Web application" as the type of application and enter the Redirect URI where you would access your {@link org.logevents.extend.servlets.LogEventsServlet} + "/oauth2callback"
+ *     <li>Select "Web application" as the type of application and enter the Redirect URI where you would access your {@link org.logevents.optional.servlets.LogEventsServlet} + "/oauth2callback"
  *     (e.g. <code>https://myserver.com/myapp/logs/oauth2callback</code>
  *     </li>
  *     <li>Copy the Client ID and Client secret to your <code>observer.servlet.clientId</code> and <code>observer.servlet.clientSecret</code></li>

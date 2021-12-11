@@ -3,13 +3,14 @@ package org.logevents.config;
 import org.logevents.LogEventConfigurator;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventObserver;
-import org.logevents.LoggerConfiguration;
-import org.logevents.impl.LogEventFilter;
+import org.logevents.LogEventLogger;
+import org.logevents.core.LogEventFilter;
+import org.logevents.core.NullLogEventObserver;
 import org.logevents.jmx.LogEventsMBeanFactory;
-import org.logevents.observers.CompositeLogEventObserver;
+import org.logevents.core.CompositeLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.observers.FileLogEventObserver;
-import org.logevents.observers.LevelThresholdConditionalObserver;
+import org.logevents.core.LevelThresholdConditionalObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.event.Level;
 
@@ -410,6 +411,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     }
 
     protected void installDefaultObservers(Map<String, String> configuration, Map<String, Supplier<? extends LogEventObserver>> observers, Map<String, String> environment) {
+        observers.putIfAbsent("null", NullLogEventObserver::new);
         observers.putIfAbsent(
                 "console",
                 () -> createConsoleLogEventObserver(new Configuration(configuration, "observer.console", environment))
@@ -461,7 +463,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         configureGlobalObserversFromEnvironment(globalObservers, factory, environment);
         observerSet.addAll(globalObservers.values());
 
-        LoggerConfiguration logger = factory.getRootLogger();
+        LogEventLogger logger = factory.getRootLogger();
         factory.setObserver(logger, CompositeLogEventObserver.combineList(observerSet), false);
         LogEventStatus.getInstance().addDebug(this, "Setup " + logger);
         LogEventStatus.getInstance().addConfig(this, "ROOT logger: " + logger);
@@ -508,7 +510,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    protected void configureLogger(LogEventFactory factory, LoggerConfiguration logger, String configuration, boolean includeParent) {
+    protected void configureLogger(LogEventFactory factory, LogEventLogger logger, String configuration, boolean includeParent) {
         String[] parts = configuration.split("\\s+", 2);
         LogEventFilter filter = getFilter(parts[0]);
         factory.setFilter(logger, filter);

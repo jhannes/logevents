@@ -3,7 +3,7 @@ package org.logevents.status;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.config.Configuration;
-import org.logevents.extend.junit.LogEventStatusRule;
+import org.logevents.optional.junit.LogEventStatusRule;
 
 import java.util.HashMap;
 import java.util.Map;

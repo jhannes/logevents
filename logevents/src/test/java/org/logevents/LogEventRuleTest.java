@@ -1,20 +1,20 @@
 package org.logevents;
 
-import static junit.framework.TestCase.fail;
-import static org.junit.Assert.assertTrue;
-
 import org.hamcrest.CoreMatchers;
-import org.junit.Assert;
+import org.hamcrest.MatcherAssert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.extend.junit.LogEventRule;
+import org.logevents.optional.junit.LogEventRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
+import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertTrue;
+
 public class LogEventRuleTest {
 
-    private Logger logger = LoggerFactory.getLogger("com.example.application.Service");
+    private final Logger logger = LoggerFactory.getLogger("com.example.application.Service");
 
     @Rule
     public LogEventRule logEventRule = new LogEventRule(Level.DEBUG, "com.example");
@@ -40,7 +40,7 @@ public class LogEventRuleTest {
             logEventRule.assertContainsMessage(Level.DEBUG, "Hello world");
             fail("Expected error");
         } catch (AssertionError e) {
-            Assert.assertThat(e.getMessage(), CoreMatchers.containsString("Could not find <Hello world"));
+            MatcherAssert.assertThat(e.getMessage(), CoreMatchers.containsString("Could not find <Hello world"));
         }
     }
 

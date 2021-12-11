@@ -3,6 +3,7 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
+import org.logevents.core.AbstractFilteredLogEventObserver;
 import org.logevents.observers.batch.BatcherFactory;
 import org.logevents.observers.batch.CooldownBatcher;
 import org.logevents.observers.batch.CooldownBatcherFactory;

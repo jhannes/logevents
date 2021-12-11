@@ -1,7 +1,7 @@
 package org.logevents.jmx;
 
 import org.logevents.LogEventFactory;
-import org.logevents.LoggerConfiguration;
+import org.logevents.LogEventLogger;
 import org.logevents.config.Configuration;
 import org.logevents.config.DefaultLogEventConfigurator;
 import org.logevents.observers.StatisticsLogEventsObserver;
@@ -39,7 +39,7 @@ public class LogEventsMBeanFactory {
 
                 mbeanServer.registerMBean(new LoggerMXBeanAdaptor(factory, factory.getRootLogger()), new ObjectName(JMX_DOMAIN, table));
 
-                for (Map.Entry<String, LoggerConfiguration> logger : factory.getLoggers().entrySet()) {
+                for (Map.Entry<String, LogEventLogger> logger : factory.getLoggers().entrySet()) {
                     if (logger.getValue().isConfigured()) {
                         table.put("name", logger.getKey());
                         mbeanServer.registerMBean(new LoggerMXBeanAdaptor(factory, logger.getValue()), new ObjectName(JMX_DOMAIN, table));

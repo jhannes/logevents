@@ -2,8 +2,8 @@ package org.logevents.observers;
 
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
-import org.logevents.formatting.LogEventFormatter;
-import org.logevents.formatting.TTLLLogEventFormatter;
+import org.logevents.LogEventFormatter;
+import org.logevents.formatters.TTLLLogEventFormatter;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,7 +33,7 @@ public class DateRollingLogEventObserver extends FileLogEventObserver {
         super(
                 configuration,
                 configuration.getString("filename"),
-                Optional.of(configuration.createInstanceWithDefault("formatter", LogEventFormatter.class, TTLLLogEventFormatter.class))
+                Optional.of(configuration.createFormatter("formatter", TTLLLogEventFormatter.class))
         );
         this.filename = configuration.getString("filename");
         configuration.checkForUnknownFields();

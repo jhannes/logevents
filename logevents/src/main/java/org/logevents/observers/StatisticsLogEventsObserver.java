@@ -1,6 +1,7 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
+import org.logevents.core.AbstractFilteredLogEventObserver;
 import org.logevents.util.Counter;
 import org.slf4j.event.Level;
 
