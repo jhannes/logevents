@@ -30,12 +30,13 @@ public class JsonLogEventFormatter implements LogEventFormatter {
     protected MessageFormatter messageFormatter = new MessageFormatter();
     protected ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     protected MdcFilter mdcFilter;
-    private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_INSTANT;
+    private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
     private String hostname;
     private String applicationName;
     private final Map<String, String> additionalProperties = new HashMap<>();
 
     public JsonLogEventFormatter() {
+        this(new Configuration());
     }
 
     public JsonLogEventFormatter(Map<String, String> properties, String prefix) {

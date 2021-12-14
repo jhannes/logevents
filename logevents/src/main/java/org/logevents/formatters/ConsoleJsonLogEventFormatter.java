@@ -4,6 +4,8 @@ import org.logevents.LogEvent;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.util.JsonUtil;
 
+import java.util.Map;
+
 /**
  * A JSON formatter for use with {@link ConsoleLogEventObserver}.
  * Suitable for overriding redirecting standard out to
@@ -19,6 +21,10 @@ import org.logevents.util.JsonUtil;
  * @author Johannes Brodwall
  */
 public class ConsoleJsonLogEventFormatter extends JsonLogEventFormatter {
+
+    public ConsoleJsonLogEventFormatter(Map<String, String> properties, String prefix) {
+        super(properties, prefix);
+    }
 
     public String apply(LogEvent e) {
         return JsonUtil.toCompactJson(toJsonObject(e)) + "\n";

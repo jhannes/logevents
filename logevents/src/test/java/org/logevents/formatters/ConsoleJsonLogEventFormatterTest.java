@@ -7,9 +7,9 @@ import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
-import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,12 +18,12 @@ import static org.junit.Assert.assertNull;
 
 public class ConsoleJsonLogEventFormatterTest {
 
-    private final ConsoleJsonLogEventFormatter formatter = new ConsoleJsonLogEventFormatter();
+    private final ConsoleJsonLogEventFormatter formatter = new ConsoleJsonLogEventFormatter(new HashMap<>(), "observers.console.formatter");
 
     @Test
     public void shouldLogMessage() {
         String loggerName = "com.example.LoggerName";
-        Instant time = ZonedDateTime.of(2018, 8, 1, 10, 0, 0, 0, ZoneOffset.UTC).toInstant();
+        ZonedDateTime time = ZonedDateTime.of(2018, 8, 1, 10, 0, 0, 0, ZoneId.systemDefault());
 
         String message = formatter.apply(new LogEventSampler()
                 .withLevel(Level.INFO)
@@ -32,7 +32,9 @@ public class ConsoleJsonLogEventFormatterTest {
                 .withLoggerName(loggerName)
                 .withFormat("Hello {}").withArgs("there")
                 .build());
-        assertEquals("{\"@timestamp\": \"2018-08-01T10:00:00Z\",\"messageFormat\": \"Hello {}\",\"level\": \"INFO\",\"marker\": \"HTTP_ERROR\",\"logger\": \"com.example.LoggerName\",\"levelInt\": 20,\"thread\": \"main\",\"message\": \"Hello there\"}\n",
+        String timestamp = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(time);
+        String hostname = new Configuration(new HashMap<>(), "").getNodeName();
+        assertEquals("{\"app\": \"logevents\",\"hostname\": \"" + hostname + "\",\"@timestamp\": \"" + timestamp + "\",\"messageFormat\": \"Hello {}\",\"level\": \"INFO\",\"marker\": \"HTTP_ERROR\",\"logger\": \"com.example.LoggerName\",\"levelInt\": 20,\"thread\": \"main\",\"message\": \"Hello there\"}\n",
                 message);
     }
 
