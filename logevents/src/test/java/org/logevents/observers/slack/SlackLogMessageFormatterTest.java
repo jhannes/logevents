@@ -113,7 +113,7 @@ public class SlackLogMessageFormatterTest {
 
         Map<String, Object> suppressedEventsAttachment = JsonUtil.getObject(JsonUtil.getList(slackMessage, "attachments"), 1);
         assertEquals("Stack Trace", JsonUtil.getField(suppressedEventsAttachment, "title"));
-        assertContains("org.logevents.observers.batch.SlackLogMessageFormatterTest",
+        assertContains("org.logevents.observers.slack.SlackLogMessageFormatterTest",
                 JsonUtil.getField(suppressedEventsAttachment, "text").toString());
     }
 
