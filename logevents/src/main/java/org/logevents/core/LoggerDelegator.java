@@ -559,7 +559,7 @@ public abstract class LoggerDelegator implements LogEventLogger {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + name + ",filter=" + ownFilter + ",ownObserver=" + ownObserver + "}";
+        return getClass().getSimpleName() + "{" + name + ",filter=" + effectiveFilter + ",ownObserver=" + ownObserver + "}";
     }
 
     public LogEventObserver setObserver(LogEventObserver observer, boolean inheritParentObserver) {

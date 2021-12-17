@@ -43,4 +43,9 @@ public class ConditionalLogEventObserver implements LogEventObserver {
     public LogEventObserver getObserver() {
         return delegate;
     }
+
+    @Override
+    public String toString() {
+        return "ConditionalLogEventObserver{delegate=" + delegate + ", condition=" + condition + '}';
+    }
 }
