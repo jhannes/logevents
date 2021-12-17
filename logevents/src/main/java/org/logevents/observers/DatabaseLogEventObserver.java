@@ -147,10 +147,10 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
             statement.executeUpdate("create table " + logEventsMdcTable + " (" +
                     "event_id varchar(100) not null references " + logEventsTable + "(event_id), " +
                     "name varchar(100) not null, " +
-                    "value varchar(1000)" +
+                    "mdc_value varchar(1000)" +
                     ")"
             );
-            statement.executeUpdate("create index " + logEventsMdcTable + "_idx on " + logEventsMdcTable + "(name, value)");
+            statement.executeUpdate("create index " + logEventsMdcTable + "_idx on " + logEventsMdcTable + "(name, mdc_value)");
         }
     }
 
@@ -200,7 +200,7 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
             buildFilter(query, filters, parameters);
 
             String sql = "select * from " + logEventsTable + " e left outer join " + logEventsMdcTable + "  m on e.event_id = m.event_id " +
-                    " where " + String.join(" AND ", filters) + " order by instant, m.name, m.value";
+                    " where " + String.join(" AND ", filters) + " order by instant, m.name, m.mdc_value";
             if (!noFetchFirstSupport) {
                 sql += " FETCH FIRST " + query.getLimit() + " ROWS ONLY";
             }
@@ -244,7 +244,7 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
                         if (rs.getString("name") != null) {
                             Map<String, String> jsonMdc = new HashMap<>();
                             jsonMdc.put("name", rs.getString("name"));
-                            jsonMdc.put("value", rs.getString("value"));
+                            jsonMdc.put("mdc_value", rs.getString("mdc_value"));
                             idToJsonMdc.get(id).add(jsonMdc);
                         }
                     }
@@ -288,7 +288,7 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
         query.getMdcFilter().ifPresent(mdcFilter -> {
             List<String> mdcFilters = new ArrayList<>();
             mdcFilter.forEach((name, value) -> {
-                mdcFilters.add("e.event_id in (select event_id from " + logEventsMdcTable + " where name = ? and value in (" + questionMarks(value.size()) + "))");
+                mdcFilters.add("e.event_id in (select event_id from " + logEventsMdcTable + " where name = ? and mdc_value in (" + questionMarks(value.size()) + "))");
                 parameters.add(name);
                 parameters.addAll(value);
             });
@@ -320,7 +320,7 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
         try (Connection connection = getConnection()) {
             try (
                     PreparedStatement eventStmt = connection.prepareStatement("insert into " + logEventsTable + " (event_id, logger, level, level_int, message, formatted_message, message_json, instant, thread, arguments, marker, throwable, stack_trace, node_name, application_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    PreparedStatement mdcStmt = connection.prepareStatement("insert into " + logEventsMdcTable + " (event_id, name, value) values (?, ?, ?)")
+                    PreparedStatement mdcStmt = connection.prepareStatement("insert into " + logEventsMdcTable + " (event_id, name, mdc_value) values (?, ?, ?)")
             ) {
                 for (LogEvent logEvent : batch) {
                     String id = UUID.randomUUID().toString();
@@ -452,14 +452,14 @@ public class DatabaseLogEventObserver extends AbstractBatchingLogEventObserver i
 
     private Map<String, Set<String>> getMdcMap(Connection connection, LogEventQuery query) throws SQLException {
         Map<String, Set<String>> mdcMap = new LinkedHashMap<>();
-        try (PreparedStatement statement = connection.prepareStatement("select distinct name, value from " + logEventsMdcTable + " m inner join "  + logEventsTable + " e on m.event_id = e.event_id where instant between ? and ? and level_int >= ? order by name, value")) {
+        try (PreparedStatement statement = connection.prepareStatement("select distinct name, mdc_value from " + logEventsMdcTable + " m inner join "  + logEventsTable + " e on m.event_id = e.event_id where instant between ? and ? and level_int >= ? order by name, mdc_value")) {
             statement.setLong(1, query.getStartTime().toEpochMilli());
             statement.setLong(2, query.getEndTime().toEpochMilli());
             statement.setLong(3, query.getThreshold().toInt());
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
                     String name = rs.getString("name");
-                    mdcMap.computeIfAbsent(name, k -> new HashSet<>()).add(rs.getString("value"));
+                    mdcMap.computeIfAbsent(name, k -> new HashSet<>()).add(rs.getString("mdc_value"));
                 }
             }
         }

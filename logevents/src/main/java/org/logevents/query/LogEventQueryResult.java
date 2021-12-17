@@ -47,7 +47,7 @@ public class LogEventQueryResult {
 
     private Map<String, String> parseMdc(List<Map<String, String>> mdcAsJson) {
         return mdcAsJson.stream()
-                .collect(Collectors.toMap(entry -> entry.get("name"), entry -> entry.get("value"), (a, b) -> b));
+                .collect(Collectors.toMap(entry -> entry.get("name"), entry -> entry.get("mdc_value"), (a, b) -> b));
     }
 
 }
