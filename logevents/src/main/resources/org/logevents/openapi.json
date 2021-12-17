@@ -4,7 +4,7 @@
     "description": "Log Events - a simple Java Logging library",
     "version": "1.0.0-draft",
     "title": "logevents",
-    "termsOfService": "http://logevents.org",
+    "termsOfService": "https://logevents.org",
     "contact": {
       "email": "jhannes@gmail.com"
     }

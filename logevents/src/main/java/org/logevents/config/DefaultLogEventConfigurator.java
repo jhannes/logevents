@@ -100,7 +100,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  */
 public class DefaultLogEventConfigurator implements LogEventConfigurator {
 
-    public static final String WELCOME_MESSAGE = "Logging by LogEvents (http://logevents.org). Create a file logevents.properties with the line logevents.status=INFO to suppress this message";
+    public static final String WELCOME_MESSAGE = "Logging by LogEvents (https://logevents.org). Create a file logevents.properties with the line logevents.status=INFO to suppress this message";
     private final Path propertiesDir;
     private Thread configurationWatcher;
     private boolean runningInsideJunit;
