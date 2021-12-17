@@ -60,11 +60,21 @@ public interface LogEventPredicate extends Predicate<LogEvent> {
 
     @Override
     default LogEventPredicate or(Predicate<? super LogEvent> other) {
+        if (other instanceof NeverCondition) {
+            return this;
+        } else if (other instanceof AlwaysCondition) {
+            return new AlwaysCondition();
+        }
         return new AnyCondition(Arrays.asList(this, (LogEventPredicate) other));
     }
 
     @Override
     default LogEventPredicate and(Predicate<? super LogEvent> other) {
+        if (other instanceof AlwaysCondition) {
+            return this;
+        } else if (other instanceof NeverCondition) {
+            return new NeverCondition();
+        }
         return new AllConditions(Arrays.asList(this, (LogEventPredicate) other));
     }
 
