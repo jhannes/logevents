@@ -1,13 +1,14 @@
-package org.logevents;
+package org.logevents.optional.junit;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.optional.junit.LogEventRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
+
+import java.io.IOException;
 
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertTrue;
@@ -77,5 +78,31 @@ public class LogEventRuleTest {
             assertTrue(e.toString(), e.toString().contains("Did not expect to find "));
         }
         assertTrue(threwException);
+    }
+
+    @Test
+    public void shouldReportFailureWhenMessageIsLoggedAboveThreshold() {
+        logger.warn("Something went wrong");
+        logEventRule.assertNoMessages(Level.ERROR);
+        try {
+            logEventRule.assertNoMessages(Level.WARN);
+            fail("Expected exception");
+        } catch (AssertionError e) {
+            assertTrue(e.toString(), e.toString().contains("Expected no log messages to com.example at level WARN"));
+        }
+    }
+
+    @Test
+    public void shouldFindMatchingMessage() {
+        logger.info("Something happened", new IOException("Whoa!"));
+        logEventRule.assertContainsMessage(Level.INFO, "Something happened", new IOException("Whoa!"));
+        logEventRule.clear();
+        logger.info("Nothing much happening");
+        try {
+            logEventRule.assertContainsMessage(Level.INFO, "Something happened", new IOException("Whoa!"));
+            fail("Expected exception");
+        } catch (AssertionError e) {
+            assertTrue(e.toString(), e.toString().contains("Could not find <Something happened> in logged messages"));
+        }
     }
 }

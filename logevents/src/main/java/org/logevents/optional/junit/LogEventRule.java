@@ -48,14 +48,23 @@ public class LogEventRule implements TestRule, LogEventObserver {
     }
 
     public void assertNoMessages() {
-        assertTrue("Expected no log messages to " + logger + " was " + events,
+        assertTrue("Expected no log messages to " + logger.getName() + " was " + events,
                 events.isEmpty());
     }
 
+    public void assertNoMessages(Level level) {
+        List<LogEvent> events = this.events.stream()
+                .filter(m -> !m.isBelowThreshold(level))
+                .collect(Collectors.toList());
+        assertTrue("Expected no log messages to " + logger.getName() + " at level " + level + " was " + events,
+                events.isEmpty());
+    }
+
+
     public void assertSingleMessage(Level level, String message) {
         List<LogEvent> events = this.events.stream()
-            .filter(m -> m.getLevel().equals(level))
-            .collect(Collectors.toList());
+                .filter(m -> m.getLevel().equals(level))
+                .collect(Collectors.toList());
         assertTrue("Expected only one logged message at level " + level + ", but was " + events,
                 events.size() == 1);
         assertEquals(message, formatMessage(events.get(0)));
@@ -133,5 +142,7 @@ public class LogEventRule implements TestRule, LogEventObserver {
         this.events.add(logEvent);
     }
 
-
+    public void clear() {
+        this.events.clear();
+    }
 }
