@@ -124,6 +124,7 @@ public class LogEventFactory implements ILoggerFactory {
             alias.setFilter(filter);
             refreshLoggers(alias);
         });
+        LogEventStatus.getInstance().addDebug(this, "setFilter: " + logger);
         return oldFilter;
     }
 
@@ -143,6 +144,7 @@ public class LogEventFactory implements ILoggerFactory {
             alias.setObserver(observer, inheritParentObserver);
             refreshLoggers(alias);
         });
+        LogEventStatus.getInstance().addDebug(this, "setObserver " + logger);
         return oldObserver;
     }
 
@@ -161,6 +163,7 @@ public class LogEventFactory implements ILoggerFactory {
             alias.replaceObserver(observer);
             refreshLoggers(alias);
         });
+        LogEventStatus.getInstance().addDebug(this, "setObserver " + logger);
         return oldObserver;
     }
 
@@ -228,6 +231,7 @@ public class LogEventFactory implements ILoggerFactory {
             alias.addObserver(observer);
             refreshLoggers(alias);
         });
+        LogEventStatus.getInstance().addDebug(this, "addObserver " + logger);
     }
 
     /**
