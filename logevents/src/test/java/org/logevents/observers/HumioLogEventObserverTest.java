@@ -122,7 +122,7 @@ public class HumioLogEventObserverTest {
         logEventStatusRule.setStatusLevel(StatusEvent.StatusLevel.NONE);
         observer.processBatch(new LogEventBatch().add(new LogEventSampler().build()));
 
-        List<StatusEvent> events = LogEventStatus.getInstance().getHeadMessages(observer, StatusEvent.StatusLevel.ERROR);
+        List<StatusEvent> events = LogEventStatus.getInstance().getMessages(observer, StatusEvent.StatusLevel.ERROR);
         assertTrue("Expected 1 event, was " + events
             + " (all events " + LogEventStatus.getInstance().getHeadMessages() + ")", events.size() == 1);
         assertEquals("Failed to send message to " + observer.getUrl(), events.get(0).getMessage());

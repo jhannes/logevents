@@ -61,14 +61,14 @@ public class DefaultLogEventConfiguratorTest {
 
         assertEquals(
                 Arrays.asList("Logging by LogEvents (https://logevents.org). Create a file logevents.properties with the line logevents.status=INFO to suppress this message"),
-                LogEventStatus.getInstance().getHeadMessageTexts(configurator, StatusEvent.StatusLevel.INFO));
+                LogEventStatus.getInstance().getMessageTexts(configurator, StatusEvent.StatusLevel.INFO));
     }
 
     @Test
     public void shouldNotPrintWelcomeMessageIfConfiguration() {
         configuration.put("root", "WARN");
         configurator.applyConfigurationProperties(factory, configuration);
-        assertEquals(Collections.emptyList(), LogEventStatus.getInstance().getHeadMessageTexts(configurator, StatusEvent.StatusLevel.INFO));
+        assertEquals(Collections.emptyList(), LogEventStatus.getInstance().getMessageTexts(configurator, StatusEvent.StatusLevel.INFO));
     }
 
     @Test
@@ -417,11 +417,12 @@ public class DefaultLogEventConfiguratorTest {
         configurator.configure(factory);
 
         assertEquals(
-                "RootLoggerDelegator{ROOT,filter=LogEventFilter{ERROR,WARN,INFO},ownObserver=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}}",
+                "RootLoggerDelegator{ROOT,filter=LogEventFilter{ERROR,WARN,INFO},ownObserver=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter},inheritsParent=true}",
                 factory.getRootLogger().toString());
-        assertEquals("Failed to load [logevents.properties, logevents-test.properties]", LogEventStatus.getInstance().lastMessage().getMessage());
+        StatusEvent lastMessage = LogEventStatus.getInstance().getMessages(configurator, StatusEvent.StatusLevel.FATAL).get(0);
+        assertEquals("Failed to load [logevents.properties, logevents-test.properties]", lastMessage.getMessage());
         assertEquals("Unknown configuration options: [what] for logevents. Expected options: [installExceptionHandler, jmx, status]",
-                LogEventStatus.getInstance().lastMessage().getThrowable().getMessage());
+                lastMessage.getThrowable().getMessage());
     }
 
     @Test
@@ -435,7 +436,7 @@ public class DefaultLogEventConfiguratorTest {
         configurator.applyConfigurationProperties(factory, configuration);
 
         assertEquals(Collections.singletonList("Failed to create observer.faulty"),
-                LogEventStatus.getInstance().getHeadMessages(configurator, StatusEvent.StatusLevel.ERROR)
+                LogEventStatus.getInstance().getMessages(configurator, StatusEvent.StatusLevel.ERROR)
                 .stream().map(StatusEvent::getMessage).collect(Collectors.toList()));
     }
 
@@ -455,7 +456,7 @@ public class DefaultLogEventConfiguratorTest {
                 "Failed to create observer.console2",
                 StatusEvent.StatusLevel.ERROR,
                 new LogEventConfigurationException("Missing required key <observer.console2.formatter.pattern> in <[includeParent.org.example, logger.org.example, observer.buffer, observer.console2, observer.console2.formatter]>"))
-            ), LogEventStatus.getInstance().getHeadMessages(configurator, StatusEvent.StatusLevel.ERROR));
+            ), LogEventStatus.getInstance().getMessages(configurator, StatusEvent.StatusLevel.ERROR));
 
         factory.getLogger("org.example").debug("Hello");
         assertEquals("Hello",
@@ -472,7 +473,7 @@ public class DefaultLogEventConfiguratorTest {
         configurator.applyConfigurationProperties(factory, configuration);
 
         assertEquals(Collections.emptyList(),
-                LogEventStatus.getInstance().getHeadMessages(configurator, StatusEvent.StatusLevel.ERROR));
+                LogEventStatus.getInstance().getMessages(configurator, StatusEvent.StatusLevel.ERROR));
     }
 
     @Test

@@ -7,6 +7,7 @@ import org.logevents.util.CircularBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Keeps tracks and optionally outputs internal messages from Log Events during configuration and usage.
@@ -19,14 +20,14 @@ import java.util.stream.Collectors;
  */
 public class LogEventStatus {
 
-    private static LogEventStatus instance = new LogEventStatus();
+    private static final LogEventStatus instance = new LogEventStatus();
 
     public static LogEventStatus getInstance() {
         return instance;
     }
 
-    private List<StatusEvent> headMessages = new ArrayList<>();
-    private CircularBuffer<StatusEvent> tailMessages = new CircularBuffer<>();
+    private final List<StatusEvent> headMessages = new ArrayList<>();
+    private final CircularBuffer<StatusEvent> tailMessages = new CircularBuffer<>();
 
     public void configure(Configuration configuration) {
         configuration.optionalString("status").ifPresent(s -> {
@@ -116,8 +117,12 @@ public class LogEventStatus {
         }
     }
 
-    public List<StatusEvent> getHeadMessages(Object target, StatusLevel threshold) {
-        return headMessages.stream()
+    public List<String> getMessageTexts(Object target, StatusLevel level) {
+        return getMessages(target, level).stream().map(StatusEvent::getMessage).collect(Collectors.toList());
+    }
+
+    public List<StatusEvent> getMessages(Object target, StatusLevel threshold) {
+        return Stream.concat(headMessages.stream(), tailMessages.stream())
                 .filter(event -> event.getLocation() == target && threshold.toInt() <= event.getLevel().toInt())
                 .collect(Collectors.toList());
     }
@@ -147,6 +152,7 @@ public class LogEventStatus {
     public String toString() {
         return getClass().getSimpleName() + "{" +
                 "headMessages=" + headMessages.size() + "," +
+                "tailMessages=" + tailMessages.size() + "," +
                 "threshold=" + getThreshold() +
                 '}';
     }
@@ -154,10 +160,6 @@ public class LogEventStatus {
     public void clear() {
         headMessages.clear();
         tailMessages.clear();
-    }
-
-    public List<String> getHeadMessageTexts(Object target, StatusLevel level) {
-        return getHeadMessages(target, level).stream().map(StatusEvent::getMessage).collect(Collectors.toList());
     }
 
 }

@@ -98,7 +98,7 @@ public class SlackLogEventObserverTest {
         LogEvent logEvent = new LogEventSampler().build();
         observer.processBatch(new LogEventBatch().add(logEvent));
 
-        List<StatusEvent> events = LogEventStatus.getInstance().getHeadMessages(observer, StatusLevel.ERROR);
+        List<StatusEvent> events = LogEventStatus.getInstance().getMessages(observer, StatusLevel.ERROR);
         assertTrue("Expected 1 event, was " + events, events.size() == 1);
         assertEquals("Failed to send message to " + url, events.get(0).getMessage());
         assertEquals("Failed to POST to " + url + ", status code: 400: A detailed error message",

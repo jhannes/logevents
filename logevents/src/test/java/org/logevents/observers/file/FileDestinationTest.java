@@ -126,7 +126,7 @@ public class FileDestinationTest {
 
         assertEquals(Collections.emptyList(), Files.readAllLines(path));
 
-        List<StatusEvent> messages = LogEventStatus.getInstance().getHeadMessages(file, StatusLevel.ERROR);
+        List<StatusEvent> messages = LogEventStatus.getInstance().getMessages(file, StatusLevel.ERROR);
         assertEquals("The process cannot access the file because another process has locked a portion of the file",
                 messages.get(0).getMessage());
 
