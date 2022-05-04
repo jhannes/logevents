@@ -35,7 +35,7 @@ public class DemoSlackMarkers {
 
         DefaultLogEventConfigurator configurator = new DefaultLogEventConfigurator();
         Map<String, String> properties = configurator.loadConfigurationProperties();
-        properties.put("observer.slack.threshold", "INFO");
+        properties.put("observer.slack.threshold", "INFO,TRACE@marker=SERVER");
         //properties.put("observer.slack.showRepeatsIndividually", "true");
         properties.put("observer.slack.markers.LOGIN.throttle", "PT3S PT5S");
         properties.put("observer.slack.markers.LOGIN.mdc", "userId");

@@ -15,6 +15,11 @@ public class ConditionalLogEventObserver implements LogEventObserver {
     private final LogEventPredicate condition;
 
     public ConditionalLogEventObserver(LogEventObserver delegate, LogEventPredicate predicate) {
+        if (predicate instanceof LogEventPredicate.AlwaysCondition) {
+            throw new IllegalArgumentException("Should replace ConditionalLogEventObserver with delegate if predicate=Always");
+        } else if (predicate instanceof LogEventPredicate.NeverCondition) {
+            throw new IllegalArgumentException("Should replace ConditionalLogEventObserver with NullLogEventObserver if predicate=Always");
+        }
         this.delegate = delegate;
         this.condition = predicate;
     }
