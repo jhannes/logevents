@@ -34,6 +34,7 @@ import java.util.Optional;
  * observer.console.includedMdcKeys=clientIp
  * observer.console.showMarkers=true
  * observer.console.color=true
+ * observer.console.logFilenameForPackages=com.example.myapp
  * </pre>
  *
  * @author Johannes Brodwall

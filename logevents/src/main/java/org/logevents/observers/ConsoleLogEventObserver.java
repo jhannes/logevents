@@ -25,6 +25,7 @@ import java.util.Map;
  * observer.console.includedMdcKeys=clientIp
  * observer.console.suppressMarkers=UNINTERESTING, PERSONAL_DATA
  * observer.console.packageFilter=sun.www, com.example.uninteresting
+ * observer.console.logFilenameForPackages=com.example.myapp
  * </pre>
  *
  * To add custom pattern format to the observer (shorthand for ...formatter=PatternLogEventFormatter

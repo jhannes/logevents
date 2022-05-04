@@ -53,6 +53,7 @@ observer.slack.formatter.sourceCode.1.package=org.logevents
 observer.slack.formatter.sourceCode.1.maven=org.logevents/logevents
 
 observer.console.threshold=WARN
+observer.console.logFilenameForPackages=org.example.myapp
 # If you want LogEvents to output to standard error instead of standard out
 observer.console.outputToSyserr=true
 
