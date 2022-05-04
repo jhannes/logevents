@@ -12,6 +12,9 @@ import org.logevents.util.StringUtil;
 import org.slf4j.event.Level;
 
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -43,6 +46,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     protected final DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     protected MdcFilter mdcFilter;
     private boolean showMarkers;
+    private List<String> logFilenameForPackages = new ArrayList<>();
 
     @Override
     public Optional<ExceptionFormatter> getExceptionFormatter() {
@@ -56,11 +60,22 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 e.getZonedDateTime().format(timeOnlyFormatter),
                 e.getThreadName(),
                 colorizedLevel(e),
-                format.bold(e.getSimpleCallerLocation()),
+                format.bold(logger(e)),
                 showMarkers && e.getMarker() != null ? " {" + e.getMarker() + "}" : "",
                 e.getMdcString(mdcFilter),
                 e.getMessage(messageFormatter))
                 + exceptionFormatter.format(e.getThrowable());
+    }
+
+    private String logger(LogEvent e) {
+        if (logFilenameForPackages.isEmpty()) {
+            return e.getLoggerName();
+        }
+        String className = e.getCallerLocation().getClassName();
+        if (logFilenameForPackages.stream().anyMatch(className::startsWith)) {
+            return e.getSimpleCallerLocation();
+        }
+        return e.getLoggerName();
     }
 
     /**
@@ -89,6 +104,14 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
         );
         mdcFilter = configuration.getMdcFilter();
         showMarkers = configuration.getBoolean("showMarkers");
+        if (configuration.containsKey("logFilenameForPackages")) {
+            logFilenameForPackages = configuration.getStringList("logFilenameForPackages");
+        } else {
+            logFilenameForPackages = Configuration.getMainClassName().map(c -> {
+                int lastDotPos = c.lastIndexOf(".");
+                return lastDotPos != -1 ? c.substring(0, lastDotPos) : c;
+            }).map(Arrays::asList).orElse(new ArrayList<>());
+        }
 
         if (configuration.optionalString("color").isPresent()) {
             format = configuration.getBoolean("color") ? ConsoleFormatting.ANSI_FORMATTING : ConsoleFormatting.NULL_FORMATTING;

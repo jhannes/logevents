@@ -275,6 +275,10 @@ public class LogEvent implements LoggingEvent {
         return callerLocation;
     }
 
+    void setCallerLocation(StackTraceElement callerLocation) {
+        this.callerLocation = callerLocation;
+    }
+
     /**
      * Returns the first non-logger element of the argument stackTrace.
      * Will lock for a LogEvents entrypoint and then scan until first class

@@ -37,7 +37,7 @@ public class ConsoleLogEventObserverTest {
                 .withLoggerName(loggerName)
                 .withFormat("Hello {}").withArgs("there")
                 .build());
-        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;mConsoleLogEventObserverTest.shouldLogMessage(ConsoleLogEventObserverTest.java:39)\033[m]: Hello \033[4;mthere\033[m\n",
+        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;m" + loggerName + "\033[m]: Hello \033[4;mthere\033[m\n",
                 buffer.toString());
     }
 
@@ -53,6 +53,7 @@ public class ConsoleLogEventObserverTest {
     public void shouldTurnOffAnsiLogging() {
         Map<String, String> properties = new HashMap<>();
         properties.put("observer.console.color", "false");
+        properties.put("observer.console.logFilenameForPackages", this.getClass().getPackage().getName());
         formatter.configure(new Configuration(properties, "observer.console"));
 
         String message = formatter.apply(new LogEventSampler()
@@ -62,7 +63,7 @@ public class ConsoleLogEventObserverTest {
                 .withLoggerName(loggerName)
                 .withFormat("Test")
                 .build());
-        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:64)]: Test\n",
+        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:65)]: Test\n",
                 message);
     }
 

@@ -1,11 +1,18 @@
 package org.logevents;
 
 import org.junit.Test;
-import org.logevents.optional.junit.LogEventSampler;
-import org.logevents.formatters.ConsoleLogEventFormatter;
-import org.logevents.core.LoggerDelegator;
+import org.logevents.config.Configuration;
 import org.logevents.core.AbstractFilteredLogEventObserver;
 import org.logevents.core.CompositeLogEventObserver;
+import org.logevents.core.LoggerDelegator;
+import org.logevents.formatters.ConsoleLogEventFormatter;
+import org.logevents.optional.junit.LogEventSampler;
+import org.slf4j.event.Level;
+
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
@@ -53,5 +60,29 @@ public class LogEventTest {
         });
         assertEquals("sun.net.www.protocol.http.HttpURLConnection", callerLocation.getClassName());
         assertEquals("getInputStream0", callerLocation.getMethodName());
+    }
+
+
+    private final Instant time = ZonedDateTime.of(2018, 8, 1, 10, 0, 0, 0, ZoneId.systemDefault()).toInstant();
+
+    @Test
+    public void shouldLogMainClassWithClassnameInsteadOfLogger() {
+        ConsoleLogEventFormatter formatter = new ConsoleLogEventFormatter();
+        formatter.configure(new Configuration(new Properties(), ""));
+        LogEvent logEvent = new LogEventSampler()
+                .withLevel(Level.INFO)
+                .withTime(time)
+                .withThread("main")
+                .withFormat("Hello there")
+                .build();
+        String mainClassName = Configuration.getMainClassName().orElseThrow(AssertionError::new);
+        int lastDotPos = mainClassName.lastIndexOf('.');
+        String simpleMainClass = mainClassName.substring(lastDotPos+1);
+
+        logEvent.setCallerLocation(new StackTraceElement(mainClassName, "theCallingMethod", "MyFile.java", 213));
+        String formatted = formatter.apply(logEvent);
+        assertEquals("10:00:00.000 [main] [\033[34mINFO \033[m] [\033[1;m" + simpleMainClass + ".theCallingMethod(MyFile.java:213)\033[m]: Hello there\n",
+                formatted);
+
     }
 }

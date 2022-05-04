@@ -38,7 +38,8 @@ import java.util.stream.Stream;
  */
 public class Configuration {
 
-    private static final String defaultApplicationName = calculateApplicationName();
+    private static final Optional<String> mainClassName = calculateMainClassName();
+    private static final String defaultApplicationName = calculateApplicationName(mainClassName);
     private static final String defaultNodeName = calculateNodeName();
     static final String[] DEFAULT_PACKAGE_FILTER = {
             "sun.net.www", "java.util.stream", "sun.net.www.protocol.https",
@@ -56,7 +57,7 @@ public class Configuration {
     }
 
     public Configuration(Properties properties, String prefix) {
-        this((Map<String, String>)(Map<?, ?>)properties, prefix, System.getenv());
+        this((Map<String, String>) (Map<?, ?>) properties, prefix, System.getenv());
     }
 
     public Configuration(Map<String, String> properties, String prefix, Map<String, String> environment) {
@@ -89,6 +90,16 @@ public class Configuration {
         }
 
     }
+
+    /**
+     * Returns true if this key (prefixed with the current context) is either in the configuration properties
+     * or an environment variable
+     */
+    public boolean containsKey(String key) {
+        expectedFields.add(key);
+        return properties.containsKey(prefixedKey(key)) || environment.containsKey(getEnvironmentKey(prefixedKey(key)));
+    }
+
 
     /**
      * List all direct property names under the specified key. For example,
@@ -196,8 +207,7 @@ public class Configuration {
     }
 
     private Optional<String> getPropertyFromEnvironment(String key) {
-        String environmentVariable = (key.startsWith("logevents.") ? "" : "LOGEVENTS_") + key.toUpperCase().replace('.', '_');
-        return Optional.ofNullable(environment.get(environmentVariable));
+        return Optional.ofNullable(environment.get(getEnvironmentKey(key)));
     }
 
     private String globalKey(String key) {
@@ -206,6 +216,10 @@ public class Configuration {
 
     public String prefixedKey(String key) {
         return prefix + "." + key;
+    }
+
+    private String getEnvironmentKey(String key) {
+        return (key.startsWith("logevents.") ? "" : "LOGEVENTS_") + key.toUpperCase().replace('.', '_');
     }
 
     /**
@@ -366,14 +380,27 @@ public class Configuration {
      * Calculates the name of the application based on the JAR-file of the main class.
      * If run from a directory classpath, use the name of the current working directory instead
      */
-    private static String calculateApplicationName() {
+    private static Optional<String> calculateMainClassName() {
         return Thread.getAllStackTraces().entrySet().stream()
                 .filter(pair -> pair.getKey().getName().equals("main"))
                 .map(Map.Entry::getValue)
                 .findAny()
-                .filter(stackTrace -> (!isRunningInTest(stackTrace)))
-                .map(stackTrace -> determineJarName(stackTrace[stackTrace.length - 1].getClassName()))
-                .orElseGet(Configuration::currentWorkingDirectory);
+                .map(stackTrace -> stackTrace[stackTrace.length - 1].getClassName());
+    }
+
+    /**
+     * Calculates the name of the application based on the JAR-file of the main class.
+     * If run from a directory classpath, use the name of the current working directory instead
+     */
+    private static String calculateApplicationName(Optional<String> mainClassName) {
+        if (isRunningInTest()) {
+            return currentWorkingDirectory();
+        }
+        return mainClassName.map(Configuration::determineJarName).orElseGet(Configuration::currentWorkingDirectory);
+    }
+
+    public static Optional<String> getMainClassName() {
+        return mainClassName;
     }
 
     public static boolean isRunningInTest() {
