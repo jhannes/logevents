@@ -25,7 +25,7 @@ public class LogEventRule implements TestRule, LogEventObserver {
 
     private final Logger logger;
     private Level level;
-    private List<LogEvent> events = new ArrayList<>();
+    private final List<LogEvent> events = new ArrayList<>();
 
     public LogEventRule(Level level, Logger logger) {
         this.level = level;
@@ -76,6 +76,18 @@ public class LogEventRule implements TestRule, LogEventObserver {
                 events.isEmpty());
         for (LogEvent event : events) {
             if (formatMessage(event).equals(message)) {
+                assertEquals("Log level for " + message, level, event.getLevel());
+                return;
+            }
+        }
+        fail("Could not find <" + message + "> in logged messages: " + events);
+    }
+
+    public void assertContainsMessagePattern(Level level, String message) {
+        assertFalse("Expected <" + message + "> but no messages were logged",
+                events.isEmpty());
+        for (LogEvent event : events) {
+            if (event.getMessage().equals(message)) {
                 assertEquals("Log level for " + message, level, event.getLevel());
                 return;
             }

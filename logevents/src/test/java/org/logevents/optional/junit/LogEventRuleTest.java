@@ -27,6 +27,12 @@ public class LogEventRuleTest {
     }
 
     @Test
+    public void shouldMatchEventOnPattern() {
+        logger.debug("Hello {}", "there");
+        logEventRule.assertContainsMessagePattern(Level.DEBUG, "Hello {}");
+    }
+
+    @Test
     public void shouldCaptureMultipleLogEvent() {
         logger.debug("Not this one");
         logger.debug("Hello world");
