@@ -74,7 +74,15 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         Map<String, Object> payload = new HashMap<>(additionalProperties);
 
         payload.put("@timestamp", event.getZonedDateTime().format(dateTimeFormatter));
-        payload.put("message", event.getMessage(messageFormatter));
+        if (event.getThrowable() != null) {
+            payload.put("message", event.getMessage(messageFormatter) + " " + event.getThrowable());
+            payload.put("exception.class", event.getThrowable().getClass().getName());
+            payload.put("exception.message", event.getThrowable().getMessage());
+            payload.put("exception.stackTrace", exceptionFormatter.format(event.getThrowable()));
+        } else {
+            payload.put("message", event.getMessage(messageFormatter));
+        }
+
         payload.put("messageFormat", event.getMessage());
         payload.put("thread", event.getThreadName());
         payload.put("level", event.getLevel().toString());
@@ -85,11 +93,6 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         payload.put("hostname", hostname);
         payload.put("mdc", getMdc(event));
 
-        if (event.getThrowable() != null) {
-            payload.put("exception.class", event.getThrowable().getClass().getName());
-            payload.put("exception.message", event.getThrowable().getMessage());
-            payload.put("exception.stackTrace", exceptionFormatter.format(event.getThrowable()));
-        }
 
         return payload;
     }

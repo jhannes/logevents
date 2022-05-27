@@ -7,6 +7,7 @@ import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
 import org.slf4j.event.Level;
 
+import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -36,6 +37,21 @@ public class ConsoleJsonLogEventFormatterTest {
         String hostname = new Configuration(new HashMap<>(), "").getNodeName();
         assertEquals("{\"app\": \"logevents\",\"hostname\": \"" + hostname + "\",\"@timestamp\": \"" + timestamp + "\",\"messageFormat\": \"Hello {}\",\"level\": \"INFO\",\"marker\": \"HTTP_ERROR\",\"logger\": \"com.example.LoggerName\",\"levelInt\": 20,\"thread\": \"main\",\"message\": \"Hello there\"}\n",
                 message);
+    }
+
+
+    @Test
+    public void shouldDisplayException() {
+        IOException throwable = new IOException("The error");
+        Map<String, Object> log = JsonParser.parseObject(formatter.apply(
+                new LogEventSampler()
+                        .withFormat("Log message")
+                        .withThrowable(throwable)
+                        .build())
+        );
+        assertEquals("Log message " + throwable, log.get("message"));
+        assertEquals(IOException.class.getName(), log.get("exception.class"));
+        assertEquals(throwable.getMessage(), log.get("exception.message"));
     }
 
     @Test
@@ -86,7 +102,7 @@ public class ConsoleJsonLogEventFormatterTest {
         configuration.checkForUnknownFields();
 
         Map<String, Object> json = JsonParser.parseObject(formatter.apply(new LogEventSampler().build()));
-       assertEquals("staging", json.get("environment"));
-       assertEquals("norway-east", json.get("dataCenter"));
+        assertEquals("staging", json.get("environment"));
+        assertEquals("norway-east", json.get("dataCenter"));
     }
 }
