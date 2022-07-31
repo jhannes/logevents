@@ -6,6 +6,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
+import org.logevents.LogEventFormatter;
 import org.logevents.LogEventObserver;
 import org.logevents.LogEventLogger;
 import org.logevents.optional.junit.LogEventSampler;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -584,6 +586,36 @@ public class DefaultLogEventConfiguratorTest {
                 .apply(logEvent);
         assertTrue(formattedMessage + " should start with test name",
                 formattedMessage.contains("TEST(DefaultLogEventConfiguratorTest.shouldFindTestMethod(DefaultLogEventConfiguratorTest.java:"));
+    }
+
+    @Test
+    public void shouldFindTestMethodFromOtherThread() throws InterruptedException {
+        AtomicReference<String> formattedMessage = new AtomicReference<>();
+        LogEventFormatter formatter = new DefaultTestLogEventConfigurator()
+                .createConsoleLogEventObserver(new Configuration())
+                .getFormatter();
+        Thread thread = new Thread(() -> formattedMessage.set(formatter.apply(new LogEventSampler().build())));
+        thread.start();
+        thread.join();
+
+        assertTrue(formattedMessage.get() + " should start with test name",
+                formattedMessage.get().contains("TEST(DefaultLogEventConfiguratorTest.shouldFindTestMethodFromOtherThread(DefaultLogEventConfiguratorTest.java:"));
+    }
+
+    @Test
+    public void shouldLogNullWhenTestThreadIsNotFound() throws InterruptedException {
+        AtomicReference<String> formattedMessage = new AtomicReference<>();
+        HashMap<String, String> properties = new HashMap<>();
+        properties.put("observer.testThreadName", "non-existing");
+        LogEventFormatter formatter = new DefaultTestLogEventConfigurator()
+                .createConsoleLogEventObserver(new Configuration(properties, "observer"))
+                .getFormatter();
+        Thread thread = new Thread(() -> formattedMessage.set(formatter.apply(new LogEventSampler().build())));
+        thread.start();
+        thread.join();
+
+        assertTrue(formattedMessage.get() + " should not find test name",
+                formattedMessage.get().contains("TEST(null)"));
     }
 
     @Test
