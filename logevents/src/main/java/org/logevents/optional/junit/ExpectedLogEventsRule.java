@@ -65,8 +65,8 @@ public class ExpectedLogEventsRule implements TestRule, LogEventObserver {
 
     protected List<LogEventMatcher> matchers = new ArrayList<>();
     protected List<LogEvent> events = new ArrayList<>();
-    private LogEventFactory loggerFactory;
-    private Level threshold;
+    private final LogEventFactory loggerFactory;
+    private final Level threshold;
     private LogEventObserver fallbackObserver;
     private boolean allowUnexpectedLogs = false;
 
@@ -209,6 +209,6 @@ public class ExpectedLogEventsRule implements TestRule, LogEventObserver {
 
     @Override
     public String toString() {
-        return "ExpectedLogEventsRule{matchers=" + matchers.size() + ", events=" + events + '}';
+        return "ExpectedLogEventsRule{matchers=" + matchers.size() + ", events=" + new ArrayList<>(events) + '}';
     }
 }
