@@ -32,6 +32,7 @@ import java.util.function.Consumer;
  * observer.slack.slackLogEventsFormatter={@link SlackLogEventsFormatter}
  * observer.slack.showRepeatsIndividually=false
  * observer.slack.channel=alertChannel
+ * observer.slack.username=applicationNode
  * observer.slack.iconEmoji=:ant:
  * observer.slack.cooldownTime=PT10S
  * observer.slack.maximumWaitTime=PT5M

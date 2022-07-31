@@ -10,6 +10,7 @@ import org.logevents.util.JsonUtil;
 
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -71,9 +72,13 @@ public class JsonLogEventFormatter implements LogEventFormatter {
     }
 
     public Map<String, Object> toJsonObject(LogEvent event) {
-        Map<String, Object> payload = new HashMap<>(additionalProperties);
+        Map<String, Object> payload = new LinkedHashMap<>(additionalProperties);
 
+        payload.put("level", event.getLevel().toString());
+        payload.put("logger", event.getLoggerName());
         payload.put("@timestamp", event.getZonedDateTime().format(dateTimeFormatter));
+        payload.put("messageFormat", event.getMessage());
+        payload.put("thread", event.getThreadName());
         if (event.getThrowable() != null) {
             payload.put("message", event.getMessage(messageFormatter) + " " + event.getThrowable());
             payload.put("exception.class", event.getThrowable().getClass().getName());
@@ -83,16 +88,11 @@ public class JsonLogEventFormatter implements LogEventFormatter {
             payload.put("message", event.getMessage(messageFormatter));
         }
 
-        payload.put("messageFormat", event.getMessage());
-        payload.put("thread", event.getThreadName());
-        payload.put("level", event.getLevel().toString());
-        payload.put("levelInt", event.getLevel().toInt());
-        payload.put("logger", event.getLoggerName());
         payload.put("marker", event.getMarker() == null ? null : event.getMarker().getName());
+        payload.put("mdc", getMdc(event));
         payload.put("app", applicationName);
         payload.put("hostname", hostname);
-        payload.put("mdc", getMdc(event));
-
+        payload.put("levelInt", event.getLevel().toInt());
 
         return payload;
     }
