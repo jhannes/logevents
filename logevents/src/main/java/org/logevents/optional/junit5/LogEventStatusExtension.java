@@ -1,4 +1,4 @@
-package org.logevents.optional.junit;
+package org.logevents.optional.junit5;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -28,7 +28,7 @@ public class LogEventStatusExtension implements BeforeEachCallback, AfterEachCal
     }
 
     @Override
-    public void afterEach(ExtensionContext extensionContext) throws Exception {
+    public void afterEach(ExtensionContext extensionContext) {
         LogEventStatus.getInstance().setThreshold(oldThreshold);
     }
 

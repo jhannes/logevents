@@ -1,4 +1,4 @@
-package org.logevents.optional.junit;
+package org.logevents.optional.junit5;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
@@ -13,6 +13,8 @@ import org.logevents.LogEventFactory;
 import org.logevents.LogEventLogger;
 import org.logevents.LogEventObserver;
 import org.logevents.core.LogEventFilter;
+import org.logevents.optional.junit.LogEventMatcher;
+import org.logevents.optional.junit.LogEventMatcherContext;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
@@ -137,7 +139,7 @@ public class ExpectedLogEventsExtension implements BeforeEachCallback, AfterEach
     }
 
     @Override
-    public void beforeEach(ExtensionContext extensionContext) throws Exception {
+    public void beforeEach(ExtensionContext extensionContext) {
         logger = loggerFactory.getRootLogger();
 
         oldFilter = loggerFactory.setLevel(logger, Level.TRACE);
@@ -146,7 +148,7 @@ public class ExpectedLogEventsExtension implements BeforeEachCallback, AfterEach
     }
 
     @Override
-    public void afterEach(ExtensionContext extensionContext) throws Exception {
+    public void afterEach(ExtensionContext extensionContext) {
         try {
             verifyCompletion();
         } finally {

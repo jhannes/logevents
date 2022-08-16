@@ -1,15 +1,18 @@
-package org.logevents.optional.junit;
+package org.logevents.optional.junit5;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import java.io.IOException;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.logevents.config.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
+
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class LogEventExtensionTest {
 
@@ -17,6 +20,11 @@ public class LogEventExtensionTest {
 
     @RegisterExtension
     public LogEventExtension logEventExtension = new LogEventExtension(Level.DEBUG, "com.example");
+
+    @Test
+    public void shouldReportAsRunningInTest() {
+        assertTrue(Configuration.isRunningInTest());
+    }
 
     @Test
     public void shouldCaptureSingleLogEvent() {

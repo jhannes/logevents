@@ -414,7 +414,8 @@ public class Configuration {
 
     private static boolean isRunningInTest(StackTraceElement[] stackTrace) {
         return Arrays.stream(stackTrace)
-                .anyMatch(ste -> ste.getClassName().startsWith("org.junit.runners."));
+                .map(StackTraceElement::getClassName)
+                .anyMatch(className -> className.startsWith("org.junit.runners.") || className.startsWith("org.junit.jupiter.engine.execution"));
     }
 
     static String determineJarName(String className) {

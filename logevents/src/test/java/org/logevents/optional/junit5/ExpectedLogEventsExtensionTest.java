@@ -1,4 +1,4 @@
-package org.logevents.optional.junit;
+package org.logevents.optional.junit5;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,9 +14,9 @@ import org.slf4j.event.Level;
 
 public class ExpectedLogEventsExtensionTest {
 
-    private LogEventFactory factory = new LogEventFactory();
+    private final LogEventFactory factory = new LogEventFactory();
 
-    private Logger logger = factory.getLogger(getClass().getName());
+    private final Logger logger = factory.getLogger(getClass().getName());
 
     @RegisterExtension
     public ExpectedLogEventsExtension extension = new ExpectedLogEventsExtension(Level.WARN, factory);
@@ -157,8 +157,8 @@ public class ExpectedLogEventsExtensionTest {
     }
 
     @Test
-    public void shouldAllowUnexpectedEventsIfToldExcplicitly() {
-        logger.warn("This is a {} test for {}", "controversal", "the LogEvents author");
+    public void shouldAllowUnexpectedEventsIfToldExplicitly() {
+        logger.warn("This is a {} test for {}", "controversial", "the LogEvents author");
         extension.setAllowUnexpectedLogs(true);
 
         try {
@@ -169,7 +169,7 @@ public class ExpectedLogEventsExtensionTest {
     }
 
     @Test
-    public void shouldSucceedWhenLoggingAsExpectedEvenIfThereAreUnexpectedEventsIfToldExcplicitly() {
+    public void shouldSucceedWhenLoggingAsExpectedEvenIfThereAreUnexpectedEventsIfToldExplicitly() {
         extension.setAllowUnexpectedLogs(true);
         extension.expectMatch(expect -> expect
                 .level(Level.WARN).logger(ExpectedLogEventsExtensionTest.class)

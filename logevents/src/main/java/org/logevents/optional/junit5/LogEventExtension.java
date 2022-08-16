@@ -1,4 +1,4 @@
-package org.logevents.optional.junit;
+package org.logevents.optional.junit5;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -113,7 +113,7 @@ public class LogEventExtension implements BeforeEachCallback, AfterEachCallback,
     }
 
     @Override
-    public void beforeEach(ExtensionContext extensionContext) throws Exception {
+    public void beforeEach(ExtensionContext extensionContext) {
         loggerFactory = (LogEventFactory) LoggerFactory.getILoggerFactory();
 
         oldFilter = loggerFactory.setLevel(logger, level);
@@ -121,7 +121,7 @@ public class LogEventExtension implements BeforeEachCallback, AfterEachCallback,
     }
 
     @Override
-    public void afterEach(ExtensionContext extensionContext) throws Exception {
+    public void afterEach(ExtensionContext extensionContext) {
         loggerFactory.setFilter(logger, oldFilter);
         loggerFactory.setObserver(logger, oldObserver, true);
     }
