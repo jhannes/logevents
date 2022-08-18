@@ -1,9 +1,9 @@
 package org.logevents.observers;
 
 import org.logevents.LogEvent;
+import org.logevents.LogEventFormatter;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
-import org.logevents.LogEventFormatter;
 import org.logevents.formatters.TTLLLogEventFormatter;
 import org.logevents.observers.file.FileDestination;
 import org.logevents.observers.file.FileRotationWorker;
@@ -68,7 +68,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
 
-    private final FilenameFormatter filenameGenerator;
+    private final FilenameFormatter filenameFormatter;
     private final LogEventFormatter formatter;
     private final FileDestination destination;
     private FileRotationWorker fileRotationWorker;
@@ -99,11 +99,11 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
 
     public FileLogEventObserver(Configuration configuration) {
         String filenamePattern = configuration.optionalString("filename").orElse(defaultFilename(configuration));
-        this.filenameGenerator = new FilenameFormatter(filenamePattern.replaceAll("\\\\", "/"), configuration);
+        this.filenameFormatter = new FilenameFormatter(filenamePattern.replaceAll("\\\\", "/"), configuration);
         this.destination = new FileDestination(configuration.getBoolean("lockOnWrite"));
 
         configuration.optionalString("archivedFilename").ifPresent(archivedFilename -> {
-            fileRotationWorker = new FileRotationWorker(filenameGenerator, new FilenameFormatter(archivedFilename, configuration));
+            fileRotationWorker = new FileRotationWorker(filenameFormatter, new FilenameFormatter(archivedFilename, configuration));
 
             configuration.optionalString("retention").map(Period::parse).ifPresent(fileRotationWorker::setRetention);
             configuration.optionalString("compressAfter").map(Period::parse).ifPresent(fileRotationWorker::setCompressAfter);
@@ -118,7 +118,7 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
 
     public FileLogEventObserver(Configuration configuration, String filenamePattern, Optional<LogEventFormatter> formatter) {
         this.formatter = formatter.orElse(new TTLLLogEventFormatter());
-        this.filenameGenerator = new FilenameFormatter(filenamePattern.replaceAll("\\\\", "/"), configuration);
+        this.filenameFormatter = new FilenameFormatter(filenamePattern.replaceAll("\\\\", "/"), configuration);
         this.destination = new FileDestination(configuration.getBoolean("lockOnWrite"));
     }
 
@@ -128,7 +128,7 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
 
     public FileLogEventObserver(FileRotationWorker fileRotationWorker, LogEventFormatter formatter) {
         this.fileRotationWorker = fileRotationWorker;
-        this.filenameGenerator = fileRotationWorker.getActiveLogFilenameFormatter();
+        this.filenameFormatter = fileRotationWorker.getActiveLogFilenameFormatter();
         this.formatter = formatter;
         this.destination = new FileDestination(false);
         executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("FileLogEventObserver", 3));
@@ -150,15 +150,15 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
     }
 
     protected Path getFilename(LogEvent logEvent) {
-        return Paths.get(filenameGenerator.format(logEvent));
+        return Paths.get(filenameFormatter.format(logEvent));
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName()
-                + "{filename=" + filenameGenerator
-                + ",formatter=" + formatter
-                + ",fileRotationWorker=" + fileRotationWorker + "}";
+               + "{filename=" + filenameFormatter
+               + ",formatter=" + formatter
+               + ",fileRotationWorker=" + fileRotationWorker + "}";
     }
 
     @Override
