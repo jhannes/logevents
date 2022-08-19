@@ -26,6 +26,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -327,16 +328,16 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
      * (e.g. <code>observer.slack=SlackLogEventObserver</code>).
      *
      * @param factory The LogEventFactory that this configurator should configure
-     * @param properties The merged configuration that should be applied to the factory
+     * @param configuration The merged configuration that should be applied to the factory
      */
-    public void applyConfigurationProperties(LogEventFactory factory, Map<String, String> properties) {
-        Configuration logeventsConfig = new Configuration(properties, "logevents", environment);
+    public void applyConfigurationProperties(LogEventFactory factory, Map<String, String> configuration) {
+        Configuration logeventsConfig = new Configuration(configuration, "logevents", environment);
         LogEventStatus.getInstance().configure(logeventsConfig);
-        showWelcomeMessage(properties);
+        showWelcomeMessage(configuration);
 
-        factory.setObservers(configureObservers(properties, environment));
-        configureRootLogger(factory, properties, environment);
-        configureLoggers(factory, properties, environment);
+        factory.setObservers(createObservers(configuration, environment));
+        configureRootLogger(factory, configuration, environment);
+        configureLoggers(factory, configuration, environment);
         installUncaughtExceptionHandler(factory, logeventsConfig);
         installJmxAdaptor(factory, logeventsConfig);
         logeventsConfig.checkForUnknownFields();
@@ -353,9 +354,9 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         mbeanFactory.setup(factory, this, config);
     }
 
-    private Map<String, Supplier<? extends LogEventObserver>> configureObservers(Map<String, String> configuration, Map<String, String> environment) {
+    protected Map<String, Supplier<? extends LogEventObserver>> createObservers(Map<String, String> configuration, Map<String, String> environment) {
         Map<String, Supplier<? extends LogEventObserver>> observers = new HashMap<>();
-        readObservers(configuration, observers, environment);
+        createObservers(observers, configuration, environment);
         installDefaultObservers(configuration, observers, environment);
         return observers;
     }
@@ -372,17 +373,17 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    private void readObservers(Map<String, String> properties, Map<String, Supplier<? extends LogEventObserver>> observers, Map<String, String> environment) {
-        for (Object key : properties.keySet()) {
+    protected void createObservers(Map<String, Supplier<? extends LogEventObserver>> observers, Map<String, String> configuration, Map<String, String> environment) {
+        for (Object key : configuration.keySet()) {
             if (key.toString().matches("observer\\.\\w+")) {
                 String name = key.toString().substring("observer.".length());
-                configureObserver(observers, name, properties.get(key.toString()), properties);
+                createObserver(observers, name, configuration.get(key.toString()), configuration);
             }
         }
         for (String key : environment.keySet()) {
             if (key.matches("LOGEVENTS_OBSERVER_[A-Z]+")) {
                 String name = key.substring("LOGEVENTS_OBSERVER_".length());
-                configureObserver(observers, name, environment.get(key), properties);
+                createObserver(observers, name, environment.get(key), configuration);
             }
         }
     }
@@ -442,10 +443,10 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         return observer;
     }
 
-    protected void configureRootLogger(LogEventFactory factory, Map<String, String> properties, Map<String, String> environment) {
+    protected void configureRootLogger(LogEventFactory factory, Map<String, String> configuration, Map<String, String> environment) {
         LinkedHashSet<LogEventObserver> observerSet = new LinkedHashSet<>();
 
-        String rootConfiguration = properties.get("root");
+        String rootConfiguration = configuration.get("root");
         if (rootConfiguration != null) {
             configureRootLogger(factory, observerSet, rootConfiguration);
         } else if (environment.containsKey("LOGEVENTS_ROOT")) {
@@ -457,11 +458,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         if (observerSet.isEmpty()) {
             observerSet.add(factory.getObserver("console"));
         }
-
-        HashMap<String, LogEventObserver> globalObservers = new HashMap<>();
-        configureGlobalObserversFromProperties(globalObservers, factory, properties);
-        configureGlobalObserversFromEnvironment(globalObservers, factory, environment);
-        observerSet.addAll(globalObservers.values());
+        observerSet.addAll(createGlobalObservers(factory, configuration, environment));
 
         LogEventLogger logger = factory.getRootLogger();
         factory.setObserver(logger, CompositeLogEventObserver.combineList(observerSet), false);
@@ -469,7 +466,14 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         LogEventStatus.getInstance().addConfig(this, "ROOT logger: " + logger);
     }
 
-    protected void configureGlobalObserversFromEnvironment(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Map<String, String> environment) {
+    protected Collection<LogEventObserver> createGlobalObservers(LogEventFactory factory, Map<String, String> configuration, Map<String, String> environment) {
+        HashMap<String, LogEventObserver> globalObservers = new HashMap<>();
+        createGlobalObserversFromProperties(globalObservers, factory, configuration);
+        createGlobalObserversFromEnvironment(globalObservers, factory, environment);
+        return globalObservers.values();
+    }
+
+    protected void createGlobalObserversFromEnvironment(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Map<String, String> environment) {
         for (Map.Entry<String, String> env : environment.entrySet()) {
             if (env.getKey().startsWith("LOGEVENTS_ROOT_OBSERVER_")) {
                 String observerName = env.getKey().substring("LOGEVENTS_ROOT_OBSERVER_".length()).toLowerCase();
@@ -478,7 +482,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    protected void configureGlobalObserversFromProperties(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Map<String, String> configuration) {
+    protected void createGlobalObserversFromProperties(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, Map<String, String> configuration) {
         for (Object key : configuration.keySet()) {
             if (key.toString().startsWith("root.observer.")) {
                 String observerName = key.toString().substring("root.observer.".length());
@@ -488,7 +492,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         }
     }
 
-    private void addGlobalObserver(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, String observerName, Level observerThreshold) {
+    protected final void addGlobalObserver(Map<String, LogEventObserver> globalObservers, LogEventFactory factory, String observerName, Level observerThreshold) {
         LogEventObserver observer = factory.getObserver(observerName);
         if (observer != null) {
             globalObservers.put(observerName, new LevelThresholdConditionalObserver(observerThreshold, observer));
@@ -532,13 +536,13 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
         return new LogEventFilter(filterString.trim());
     }
 
-    private void configureObserver(Map<String, Supplier<? extends LogEventObserver>> observers, String name, String className, Map<String, String> properties) {
+    protected final void createObserver(Map<String, Supplier<? extends LogEventObserver>> observers, String name, String className, Map<String, String> configuration) {
         if (!observers.containsKey(name)) {
             observers.put(name, () -> {
                 String prefix = "observer." + name;
                 try {
                     LogEventStatus.getInstance().addDebug(this, "Configuring " + prefix);
-                    LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", Optional.of(className), properties);
+                    LogEventObserver observer = ConfigUtil.create(prefix, "org.logevents.observers", Optional.of(className), configuration);
                     LogEventStatus.getInstance().addDebug(this, "Configured " + observer);
                     return observer;
                 } catch (RuntimeException e) {

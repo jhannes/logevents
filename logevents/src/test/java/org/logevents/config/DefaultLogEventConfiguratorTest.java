@@ -294,7 +294,7 @@ public class DefaultLogEventConfiguratorTest {
         HashMap<String, LogEventObserver> globalObservers = new HashMap<>();
         Map<String, String> environment = new HashMap<>();
         environment.put("LOGEVENTS_ROOT_OBSERVER_BUFFER1", "ERROR");
-        configurator.configureGlobalObserversFromEnvironment(globalObservers, factory, environment);
+        configurator.createGlobalObserversFromEnvironment(globalObservers, factory, environment);
         assertEquals(Collections.singleton("buffer1"), globalObservers.keySet());
         assertEquals(Level.ERROR,
                 ((LevelThresholdConditionalObserver) globalObservers.get("buffer1")).getThreshold());
