@@ -104,8 +104,10 @@ public class ExpectedLogEventsExtensionTest {
         assertEquals("ExpectedLogEventsExtension{matchers=1, events=[]}", extension.toString());
 
         logger.warn("This is a {} test", "nice", new IOException("Uh oh!"));
-        assertEquals("ExpectedLogEventsExtension{matchers=1, events=[LogEvent{org.logevents.optional.junit"
-                + ".ExpectedLogEventsExtensionTest,WARN,This is a {} test}]}", extension.toString());
+        assertEquals(
+                "ExpectedLogEventsExtension{matchers=1, events=[LogEvent{org.logevents.optional.junit5.ExpectedLogEventsExtensionTest,WARN,This is a {} test}]}",
+                extension.toString()
+        );
         extension.verifyCompletion();
     }
 
