@@ -14,6 +14,7 @@ org.logevents.observers.teams
 org.logevents.observers.web
 org.logevents.optional.azure
 org.logevents.optional.junit
+org.logevents.optional.junit5
 org.logevents.optional.servlets
 org.logevents.query
 org.logevents.status
