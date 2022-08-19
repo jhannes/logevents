@@ -66,9 +66,7 @@ public class LogEventsConfigurationServlet extends HttpServlet {
         Level level = levelName == null || levelName.equals("null") ? null : Level.valueOf(levelName);
         logger.info("Changing log level for {} to {}", loggerName, level);
 
-        LogEventLogger loggerConfiguration = LogEventFactory.getInstance().getLogger(loggerName);
-        LogEventFactory.getInstance().setLevel(loggerConfiguration,
-                level);
+        LogEventFactory.getInstance().setLevel(loggerName, level);
     }
 
 }

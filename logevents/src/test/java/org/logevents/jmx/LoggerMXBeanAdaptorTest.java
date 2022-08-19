@@ -25,7 +25,7 @@ public class LoggerMXBeanAdaptorTest {
 
     @Test
     public void shouldManipulateLogger() {
-        factory.setLevel(factory.getLogger("org"), Level.INFO);
+        factory.setLevel("org", Level.INFO);
         assertNull(mbean.getFilter());
 
         mbean.setLevel(Level.WARN);

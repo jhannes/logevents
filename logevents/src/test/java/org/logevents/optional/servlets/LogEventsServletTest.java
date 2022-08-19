@@ -330,8 +330,8 @@ public class LogEventsServletTest extends LogEventsServlet {
                 new LevelThresholdConditionalObserver(Level.ERROR, new TestObserver("error"))
         );
         factory.setObserver(factory.getLogger("org.example"), observers);
-        factory.setLevel(factory.getLogger("org.example"), Level.WARN);
-        factory.setLevel(factory.getLogger("org.example.subexample"), Level.INFO);
+        factory.setLevel("org.example", Level.WARN);
+        factory.setLevel("org.example.subexample", Level.INFO);
 
         Map<String, Object> loggers = servlet.loggersAsJson(factory);
 

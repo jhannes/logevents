@@ -56,7 +56,7 @@ public class LogEventFactoryTest {
     @Test
     public void shouldPropagateLevelToAliasLoggers() {
         LogEventLogger logger = factory.getLogger("org.example.app");
-        factory.setLevel(logger, Level.ERROR);
+        factory.setLevel("org.example.app", Level.ERROR);
 
         LogEventLogger aliasLogger = factory.getLogger("org.example.App");
         assertEquals(logger.getEffectiveFilter().getThreshold(), aliasLogger.getEffectiveFilter().getThreshold());

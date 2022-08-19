@@ -116,6 +116,28 @@ public class LogEventFactory implements ILoggerFactory {
         return setFilter(logger, level != null ? new LogEventFilter(level) : null);
     }
 
+    /**
+     * Sets the threshold to log at. All messages lower than the threshold will be ignored.
+     *
+     * @param loggerName The non-nullable logger
+     * @param level The nullable name of the threshold. If null, inherit from parent
+     */
+    public LogEventFilter setLevel(String loggerName, Level level) {
+        return setLevel(getLogger(loggerName), level);
+    }
+
+    /**
+     * See {@link #setFilter(Logger, LogEventFilter)}
+     */
+    public LogEventFilter setFilter(String loggerName, LogEventFilter filter) {
+       return setFilter(getLogger(loggerName), filter);
+    }
+
+    /**
+     * Sets a filter where only log events that fulfil the criteria will be
+     * forwarded to observers. LogEvents optimizes filtering at configuration
+     * time so evaluation is as quick as possible
+     */
     public LogEventFilter setFilter(Logger logger, LogEventFilter filter) {
         LogEventFilter oldFilter = ((LoggerDelegator)logger).getOwnFilter();
         ((LoggerDelegator)logger).setFilter(filter);
