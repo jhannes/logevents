@@ -8,6 +8,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
@@ -393,10 +394,11 @@ public class Configuration {
      * If run from a directory classpath, use the name of the current working directory instead
      */
     private static String calculateApplicationName(Optional<String> mainClassName) {
+        Optional<Path> workingDir = Optional.ofNullable(Paths.get("").toAbsolutePath().getFileName());
         if (isRunningInTest()) {
-            return currentWorkingDirectory();
+            return workingDir.map(Object::toString).orElse("junit");
         }
-        return mainClassName.map(Configuration::determineJarName).orElseGet(Configuration::currentWorkingDirectory);
+        return calculateApplicationName(mainClassName, workingDir);
     }
 
     public static Optional<String> getMainClassName() {
@@ -418,22 +420,21 @@ public class Configuration {
                 .anyMatch(className -> className.startsWith("org.junit.runners.") || className.startsWith("org.junit.jupiter.engine.execution"));
     }
 
-    static String determineJarName(String className) {
+    static String calculateApplicationName(Optional<String> mainClassName, Optional<Path> workingDir) {
+        if (!mainClassName.isPresent()) {
+            return workingDir.map(Object::toString).orElse("(unknown app)");
+        }
+        String defaultAppName = workingDir.map(Object::toString).orElse(mainClassName.get());
         try {
-            return Optional.ofNullable(Class.forName(className).getProtectionDomain().getCodeSource())
+            return Optional.ofNullable(Class.forName(mainClassName.get()).getProtectionDomain().getCodeSource())
                     .map(codeSource -> codeSource.getLocation().getPath())
                     .filter(path -> !path.endsWith("/"))
                     .map(Configuration::toApplicationName)
-                    .orElseGet(Configuration::currentWorkingDirectory);
+                    .orElse(defaultAppName);
         } catch (ClassNotFoundException e) {
-            return currentWorkingDirectory();
+            return defaultAppName;
         }
     }
-
-    private static String currentWorkingDirectory() {
-        return Paths.get("").toAbsolutePath().getFileName().toString();
-    }
-
     /**
      * Remove directory name, .jar suffix and semver version from file path
      */

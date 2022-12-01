@@ -3,6 +3,7 @@ package org.logevents.config;
 import junit.framework.TestCase;
 import org.junit.Test;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -127,9 +128,12 @@ public class ConfigurationTest {
 
     @Test
     public void shouldDetermineJarName() {
-        assertEquals("junit", Configuration.determineJarName(TestCase.class.getName()));
-        assertEquals(currentWorkingDirectory(), Configuration.determineJarName(String.class.getName()));
-        assertEquals(currentWorkingDirectory(), Configuration.determineJarName(getClass().getName()));
+        Optional<Path> workingDir = Optional.of(Paths.get("").toAbsolutePath().getFileName());
+        assertEquals("junit", Configuration.calculateApplicationName(Optional.of(TestCase.class.getName()), Optional.empty()));
+        assertEquals(currentWorkingDirectory(), Configuration.calculateApplicationName(Optional.of(String.class.getName()), workingDir));
+        assertEquals(currentWorkingDirectory(), Configuration.calculateApplicationName(Optional.of(getClass().getName()), workingDir));
+        assertEquals(getClass().getName(), Configuration.calculateApplicationName(Optional.of(getClass().getName()), Optional.empty()));
+        assertEquals("(unknown app)", Configuration.calculateApplicationName(Optional.empty(), Optional.empty()));
     }
 
     @Test
