@@ -1,5 +1,6 @@
 package org.logevents.observers.file;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.config.Configuration;
@@ -38,6 +39,17 @@ public class FileRotationWorkerTest {
 
     @Rule
     public LogEventStatusRule logEventStatusRule = new LogEventStatusRule();
+    private Configuration configuration;
+
+    @Before
+    public void setUp() {
+        configuration = new Configuration() {
+            @Override
+            public Locale getLocale() {
+                return Locale.US;
+            }
+        };
+    }
 
     @Test
     public void shouldCalculateArchivedFileByDate() {
@@ -46,21 +58,21 @@ public class FileRotationWorkerTest {
         ZonedDateTime fileTime = ZonedDateTime.of(2018, 11, 21, 11, 30, 0, 0, ZoneOffset.systemDefault());
 
         assertEquals("logs/2018-11/" + getApplicationName() + "-2018-11-21.log",
-                new FileRotationWorker("application.log", archiveFilenamePattern).getArchiveName("application.log", fileTime));
+                new FileRotationWorker("application.log", archiveFilenamePattern, configuration).getArchiveName("application.log", fileTime));
     }
 
     private String getApplicationName() {
-        return new Configuration().getApplicationName();
+        return configuration.getApplicationName();
     }
 
     @Test
     public void shouldDetermineArchiveName() {
         FileRotationWorker fileRotationWorker = new FileRotationWorker(
                 "%application-%mdc{function:-core}-%marker-%date{EEE}.log",
-                "logs-%mdc{function:-core}/%marker/%date{yyyy-MM}/%application-%date.log"
+                "logs-%mdc{function:-core}/%marker/%date{yyyy-MM}/%application-%date.log",
+                configuration
         );
 
-        Configuration configuration = new Configuration();
         String filename = configuration.getApplicationName() + "-myFunc.A2-SECURITY-Tue.log";
         ZonedDateTime date = ZonedDateTime.of(2019, 10, 11, 13, 37, 0, 0, ZoneId.systemDefault());
 
@@ -71,7 +83,7 @@ public class FileRotationWorkerTest {
     @Test
     public void shouldArchiveOldActive() throws IOException {
         deleteRecursively(Paths.get("target/logs/0"));
-        FileRotationWorker worker = new FileRotationWorker("target/logs/0/application-%mdc{A}.log", "target/logs/0/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker worker = new FileRotationWorker("target/logs/0/application-%mdc{A}.log", "target/logs/0/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log", configuration);
 
         Path path = Paths.get("target/logs/0/application-core.log");
         Files.createDirectories(path.getParent());
@@ -94,7 +106,7 @@ public class FileRotationWorkerTest {
     @Test
     public void shouldDeleteOldArchives() throws IOException {
         deleteRecursively(Paths.get("target/logs/1"));
-        FileRotationWorker worker = new FileRotationWorker("target/logs/1/application.log", "target/logs/1/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker worker = new FileRotationWorker("target/logs/1/application.log", "target/logs/1/%date{YYYY-'W'ww}/application-%date{EEE}.log", configuration);
         worker.setRetention(Period.ofDays(7));
         ZonedDateTime fileTime = ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(2);
         String archiveName = worker.getArchiveName(fileTime);
@@ -108,7 +120,7 @@ public class FileRotationWorkerTest {
     @Test
     public void shouldContinueScanningAfterIOException() throws IOException {
         deleteRecursively(Paths.get("target/logs/2"));
-        FileRotationWorker worker = new FileRotationWorker("target/logs/2/application.log", "target/logs/2/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker worker = new FileRotationWorker("target/logs/2/application.log", "target/logs/2/%date{YYYY-'W'ww}/application-%date{EEE}.log", configuration);
         worker.setRetention(Period.ofDays(7));
 
         String invalidArchiveName = worker.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(3).minusWeeks(2));
@@ -129,7 +141,7 @@ public class FileRotationWorkerTest {
     @Test
     public void shouldRetainNewArchives() throws IOException {
         deleteRecursively(Paths.get("target/logs/3"));
-        FileRotationWorker worker = new FileRotationWorker("logs/application.log", "target/logs/3/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker worker = new FileRotationWorker("logs/application.log", "target/logs/3/%date{YYYY-'W'ww}/application-%date{EEE}.log", configuration);
         worker.setRetention(Period.ofDays(7));
         String archiveName = worker.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(7)).plusDays(1));
         Path archive = Paths.get(archiveName);
@@ -142,7 +154,7 @@ public class FileRotationWorkerTest {
     @Test
     public void shouldCompressOldArchives() throws IOException {
         deleteRecursively(Paths.get("target/logs/4"));
-        FileRotationWorker worker = new FileRotationWorker("logs/application.log", "target/logs/4/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker worker = new FileRotationWorker("logs/application.log", "target/logs/4/%date{YYYY-'W'ww}/application-%date{EEE}.log", configuration);
         worker.setCompressAfter(Period.ofDays(3));
         String archiveName = worker.getArchiveName(ZonedDateTime.now().minus(Period.ofDays(3)).minusDays(1));
         Path archive = Paths.get(archiveName);
@@ -166,7 +178,7 @@ public class FileRotationWorkerTest {
     @Test
     public void shouldUseFallbackNameIfTargetArchiveAlreadyExists() throws IOException {
         deleteRecursively(Paths.get("target/logs/5"));
-        FileRotationWorker worker = new FileRotationWorker("target/logs/5/application-%mdc{A}.log", "target/logs/5/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker worker = new FileRotationWorker("target/logs/5/application-%mdc{A}.log", "target/logs/5/logs-%mdc{A}/%date{YYYY-'W'ww}/application-%date{EEE}.log", configuration);
 
         String activeFilename = "target/logs/5/application-utils.log";
         Path activeFile = Paths.get(activeFilename);
@@ -196,7 +208,7 @@ public class FileRotationWorkerTest {
     public void shouldExpireCompressedFiles() throws IOException {
         deleteRecursively(Paths.get("target/logs/6"));
 
-        FileRotationWorker worker = new FileRotationWorker("target/logs/6/application.log", "target/logs/6/%date{YYYY-'W'ww}/application-%date{EEE}.log");
+        FileRotationWorker worker = new FileRotationWorker("target/logs/6/application.log", "target/logs/6/%date{YYYY-'W'ww}/application-%date{EEE}.log", configuration);
         deleteRecursively(Paths.get("target/logs/6"));
         worker.setRetention(Period.ofDays(7));
         ZonedDateTime fileTime = ZonedDateTime.now().minus(Period.ofDays(7)).minusDays(2);

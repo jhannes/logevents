@@ -61,9 +61,9 @@ public class FileRotationWorker {
         this.archiveFilenameFormatter = archiveFilenameFormatter;
     }
 
-    public FileRotationWorker(String filenamePattern, String archiveFilenamePattern) {
-        this.activeLogFilenameFormatter = new FilenameFormatter(filenamePattern, new Configuration());
-        this.archiveFilenameFormatter = new FilenameFormatter(archiveFilenamePattern, new Configuration());
+    public FileRotationWorker(String filenamePattern, String archiveFilenamePattern, Configuration configuration) {
+        this.activeLogFilenameFormatter = new FilenameFormatter(filenamePattern, configuration);
+        this.archiveFilenameFormatter = new FilenameFormatter(archiveFilenamePattern, configuration);
     }
 
     public FilenameFormatter getActiveLogFilenameFormatter() {

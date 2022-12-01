@@ -1,5 +1,6 @@
 package org.logevents.observers.file;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.logevents.config.Configuration;
 
@@ -18,6 +19,18 @@ import static org.junit.Assert.assertEquals;
 
 public class FilenameFormatterTest {
 
+    private Configuration configuration;
+
+    @Before
+    public void setUp() {
+        configuration = new Configuration() {
+            @Override
+            public Locale getLocale() {
+                return Locale.US;
+            }
+        };
+    }
+
     @Test
     public void shouldRetrieveMdcValuesFromCurrentFilename() {
         String filenamePattern = "logs-%mdc{function:-core}/%application-%mdc{ip:-unknown}.log";
@@ -29,7 +42,7 @@ public class FilenameFormatterTest {
     }
 
     private String getApplicationName() {
-        return new Configuration().getApplicationName();
+        return configuration.getApplicationName();
     }
 
     @Test
@@ -44,7 +57,7 @@ public class FilenameFormatterTest {
     @Test
     public void shouldRetrieveDateFromInexact() {
         String archiveFilenamePattern = "logs/%date{yyyy-MMM}/application.log";
-        ZonedDateTime date = new FilenameFormatter(archiveFilenamePattern).parseDate("logs/2018-Nov/application.log");
+        ZonedDateTime date = new FilenameFormatter(archiveFilenamePattern, configuration).parseDate("logs/2018-Nov/application.log");
         assertEquals(date.toLocalDate(), LocalDate.of(2018, 11, 30));
         assertEquals(date.toLocalTime(), LocalTime.of(0, 0));
     }
@@ -60,7 +73,7 @@ public class FilenameFormatterTest {
     @Test
     public void shouldCombineFromWeek() {
         String archiveFilenamePattern = "logs/%date{YYYY-'W'ww}/application-%date{EEE}.log";
-        FilenameFormatter filenameFormatter = new FilenameFormatter(archiveFilenamePattern, new Configuration());
+        FilenameFormatter filenameFormatter = new FilenameFormatter(archiveFilenamePattern, configuration);
         ZonedDateTime date = filenameFormatter.parseDate("logs/2020-W01/application-Tue.log");
         assertEquals(LocalDate.of(2019, 12, 31), date.toLocalDate());
         assertEquals(LocalTime.of(0, 0), date.toLocalTime());
@@ -82,7 +95,7 @@ public class FilenameFormatterTest {
 
     private void calculateDayFromWeekdayAndWeek(Locale locale) {
         String filenamePattern = "logs/%date{YYYY-'W'ww}-%date{EE}.log";
-        FilenameFormatter filenameFormatter = new FilenameFormatter(filenamePattern, new Configuration(), locale);
+        FilenameFormatter filenameFormatter = new FilenameFormatter(filenamePattern, configuration);
 
         LocalDate startDate = LocalDate.of(2020, 1, 6);
         for (LocalDate date = startDate; date.isBefore(startDate.plusWeeks(1)); date = date.plusDays(1)) {

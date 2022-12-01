@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -126,14 +127,13 @@ public class FileDestinationTest {
 
         assertEquals(Collections.emptyList(), Files.readAllLines(path));
 
+        file.writeEvent(path, "Test message\n");
+        assertEquals(Arrays.asList("Test message"), Files.readAllLines(path));
+
+        Assume.assumeTrue("Error message is localized", Locale.getDefault().toLanguageTag().startsWith("en"));
         List<StatusEvent> messages = LogEventStatus.getInstance().getMessages(file, StatusLevel.ERROR);
         assertEquals("The process cannot access the file because another process has locked a portion of the file",
                 messages.get(0).getMessage());
-
-        assertEquals(Collections.emptyList(), Files.readAllLines(path));
-
-        file.writeEvent(path, "Test message\n");
-        assertEquals(Arrays.asList("Test message"), Files.readAllLines(path));
     }
 
     @Before

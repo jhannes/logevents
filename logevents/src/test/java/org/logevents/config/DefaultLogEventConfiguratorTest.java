@@ -504,7 +504,7 @@ public class DefaultLogEventConfiguratorTest {
 
         firstProfileProperty.setProperty("root", "TRACE null");
         writeProps(propertiesDir.resolve("logevents-profile1.properties"), firstProfileProperty);
-        Thread.sleep(70);
+        Thread.sleep(120);
 
         assertEquals("LogEventFilter{ERROR,WARN,INFO,DEBUG,TRACE}", factory.getRootLogger().getOwnFilter().toString());
         assertEquals("NullLogEventObserver", factory.getRootLogger().getObserver());

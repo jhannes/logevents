@@ -64,12 +64,8 @@ public class FilenameFormatter {
     }
 
     public FilenameFormatter(String filenamePattern, Configuration configuration) {
-        this(filenamePattern, configuration, configuration.getLocale());
-    }
-
-    public FilenameFormatter(String filenamePattern, Configuration configuration, Locale locale) {
         this.filenamePattern = filenamePattern;
-        this.locale = locale;
+        this.locale = configuration.getLocale();
         StringScanner scanner = new StringScanner(filenamePattern);
 
         List<Function<FileInfo, String>> filenameGenerators = new ArrayList<>();
