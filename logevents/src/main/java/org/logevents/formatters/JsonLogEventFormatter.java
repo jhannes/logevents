@@ -9,6 +9,7 @@ import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.util.JsonUtil;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -74,24 +75,26 @@ public class JsonLogEventFormatter implements LogEventFormatter {
     public Map<String, Object> toJsonObject(LogEvent event) {
         Map<String, Object> payload = new LinkedHashMap<>(additionalProperties);
 
-        payload.put("level", event.getLevel().toString());
-        payload.put("logger", event.getLoggerName());
+        payload.put("log.level", event.getLevel().toString());
+        payload.put("log.logger", event.getLoggerName());
         payload.put("@timestamp", event.getZonedDateTime().format(dateTimeFormatter));
         payload.put("messageFormat", event.getMessage());
-        payload.put("thread", event.getThreadName());
+        payload.put("process.thread.name", event.getThreadName());
         if (event.getThrowable() != null) {
             payload.put("message", event.getMessage(messageFormatter) + " " + event.getThrowable());
-            payload.put("exception.class", event.getThrowable().getClass().getName());
-            payload.put("exception.message", event.getThrowable().getMessage());
-            payload.put("exception.stackTrace", exceptionFormatter.format(event.getThrowable()));
+            payload.put("error.class", event.getThrowable().getClass().getName());
+            payload.put("error.message", event.getThrowable().getMessage());
+            payload.put("error.stack_trace", exceptionFormatter.format(event.getThrowable()));
         } else {
             payload.put("message", event.getMessage(messageFormatter));
         }
 
-        payload.put("marker", event.getMarker() == null ? null : event.getMarker().getName());
+        if (event.getMarker() != null) {
+            payload.put("tags", Arrays.asList(event.getMarker().getName()));
+        }
         payload.put("mdc", getMdc(event));
-        payload.put("app", applicationName);
-        payload.put("hostname", hostname);
+        payload.put("service.name", applicationName);
+        payload.put("host.name", hostname);
         payload.put("levelInt", event.getLevel().toInt());
 
         return payload;

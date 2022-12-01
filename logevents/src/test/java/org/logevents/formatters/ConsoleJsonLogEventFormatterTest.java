@@ -35,7 +35,7 @@ public class ConsoleJsonLogEventFormatterTest {
                 .build());
         String timestamp = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(time);
         String hostname = new Configuration(new HashMap<>(), "").getNodeName();
-        assertEquals("{\"level\": \"INFO\",\"logger\": \"com.example.LoggerName\",\"@timestamp\": \"" + timestamp + "\",\"messageFormat\": \"Hello {}\",\"thread\": \"main\",\"message\": \"Hello there\",\"marker\": \"HTTP_ERROR\",\"app\": \"logevents\",\"hostname\": \"" + hostname + "\",\"levelInt\": 20}\n",
+        assertEquals("{\"log.level\": \"INFO\",\"log.logger\": \"com.example.LoggerName\",\"@timestamp\": \"" + timestamp + "\",\"messageFormat\": \"Hello {}\",\"process.thread.name\": \"main\",\"message\": \"Hello there\",\"tags\": [\"HTTP_ERROR\"],\"service.name\": \"logevents\",\"host.name\": \"" + hostname + "\",\"levelInt\": 20}\n",
                 message);
     }
 
@@ -50,8 +50,8 @@ public class ConsoleJsonLogEventFormatterTest {
                         .build())
         );
         assertEquals("Log message " + throwable, log.get("message"));
-        assertEquals(IOException.class.getName(), log.get("exception.class"));
-        assertEquals(throwable.getMessage(), log.get("exception.message"));
+        assertEquals(IOException.class.getName(), log.get("error.class"));
+        assertEquals(throwable.getMessage(), log.get("error.message"));
     }
 
     @Test

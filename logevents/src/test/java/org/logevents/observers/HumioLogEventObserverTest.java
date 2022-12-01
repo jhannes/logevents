@@ -14,12 +14,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,11 +59,11 @@ public class HumioLogEventObserverTest {
         Map<String, Object> payload = observer.formatMessage(event);
 
         assertEquals(event.getInstant(), ZonedDateTime.parse(payload.get("@timestamp").toString()).toInstant());
-        assertEquals(event.getLoggerName(), payload.get("logger"));
-        assertEquals(event.getLevel().name(), payload.get("level"));
+        assertEquals(event.getLoggerName(), payload.get("log.logger"));
+        assertEquals(event.getLevel().name(), payload.get("log.level"));
         assertEquals(event.getMessage(), payload.get("message"));
-        assertEquals(event.getThreadName(), payload.get("thread"));
-        assertEquals(event.getMarker().getName(), payload.get("marker"));
+        assertEquals(event.getThreadName(), payload.get("process.thread.name"));
+        assertEquals(Arrays.asList(event.getMarker().getName()), payload.get("tags"));
     }
 
     @Test
@@ -93,10 +88,10 @@ public class HumioLogEventObserverTest {
         LogEvent event = new LogEventSampler().withThrowable().build();
         Map<String, Object> payload = observer.formatMessage(event);
 
-        assertEquals(payload.get("exception.class"), event.getThrowable().getClass().getName());
-        assertEquals(payload.get("exception.message"), event.getThrowable().getMessage());
+        assertEquals(payload.get("error.class"), event.getThrowable().getClass().getName());
+        assertEquals(payload.get("error.message"), event.getThrowable().getMessage());
         assertContains("at org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)",
-            payload.get("exception.stackTrace").toString());
+            payload.get("error.stack_trace").toString());
     }
 
     @Test
