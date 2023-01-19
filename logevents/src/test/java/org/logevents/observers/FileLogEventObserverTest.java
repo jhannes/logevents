@@ -140,6 +140,26 @@ public class FileLogEventObserverTest {
     }
 
     @Test
+    public void shouldSupportThreshold() throws IOException {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("observer.*.applicationName", "myApp");
+        properties.put("observer.file.filename", logDirectory.toString() + "/%application-%node-%date.log");
+        properties.put("observer.file.formatter", PatternLogEventFormatter.class.getSimpleName());
+        properties.put("observer.file.formatter.pattern", "%message");
+        properties.put("observer.file.threshold", "WARN");
+        LogEventObserver observer = new FileLogEventObserver(properties, "observer.file");
+        factory.setObserver(logger, observer, false);
+        logger.warn("A warning message");
+        logger.info("This message should be ignored due to below threshold on observer");
+
+        Path path = logDirectory.resolve("myApp-" + new Configuration().getNodeName() + "-" + LocalDate.now() + ".log");
+
+        assertEquals(Arrays.asList(path),
+            Files.walk(logDirectory).filter(Files::isRegularFile).collect(Collectors.toList()));
+        assertEquals(Arrays.asList("A warning message"), Files.readAllLines(path));
+    }
+
+    @Test
     public void shouldIncludeMarkerInFilename() throws IOException {
         Map<String, String> properties = new HashMap<>();
         properties.put("observer.file.filename", logDirectory.toString() + "/log-%marker.log");
