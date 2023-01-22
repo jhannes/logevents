@@ -1,10 +1,7 @@
-name: Java CI
+name: Test coverage on main branch delivery
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
 
@@ -30,4 +27,3 @@ jobs:
       run: |
         git checkout
         mvn -X jacoco:report coveralls:report -DrepoToken=${{ secrets.coveralls }}
-
