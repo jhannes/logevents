@@ -4,6 +4,7 @@ import org.logevents.LogEvent;
 import org.logevents.LogEventFormatter;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
+import org.logevents.core.AbstractFilteredLogEventObserver;
 import org.logevents.formatters.TTLLLogEventFormatter;
 import org.logevents.observers.file.FileDestination;
 import org.logevents.observers.file.FileRotationWorker;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.event.Level;
 
 /**
  * Logs events to file. By default, FileLogEventObserver will log to the file
@@ -43,6 +45,7 @@ import java.util.concurrent.TimeUnit;
  * observer.file.formatter.pattern=%date %coloredLevel: %msg
  * observer.file.formatter.exceptionFormatter=CauseFirstExceptionFormatter
  * observer.file.formatter.exceptionFormatter.packageFilter=sun.www,uninterestingPackage
+ * observer.file.threshold=WARN
  * </pre>
  *
  * <h3>File name pattern</h3>
@@ -66,7 +69,7 @@ import java.util.concurrent.TimeUnit;
  * @see org.logevents.formatters.PatternLogEventFormatter
  * @see org.logevents.observers.file.FilenameFormatter
  */
-public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
+public class FileLogEventObserver extends AbstractFilteredLogEventObserver implements AutoCloseable {
 
     private final FilenameFormatter filenameFormatter;
     private final LogEventFormatter formatter;
@@ -111,7 +114,7 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
             executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("FileLogEventObserver", 3));
             startFileRotation(fileRotationWorker);
         });
-
+        this.configureFilter(configuration, Level.TRACE);
         this.formatter = createFormatter(configuration);
         configuration.checkForUnknownFields();
     }
@@ -145,7 +148,7 @@ public class FileLogEventObserver implements LogEventObserver, AutoCloseable {
     }
 
     @Override
-    public void logEvent(LogEvent logEvent) {
+    protected void doLogEvent(LogEvent logEvent) {
         destination.writeEvent(getFilename(logEvent), formatter.apply(logEvent));
     }
 
