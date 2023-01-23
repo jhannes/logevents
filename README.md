@@ -3,7 +3,7 @@
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents)
 [![Javadoc](https://img.shields.io/badge/javadoc-logevents-blue)](https://jhannes.github.io/logevents/apidocs/)
-[![Build Status](https://github.com/jhannes/logevents/workflows/Java%20CI/badge.svg)](https://github.com/jhannes/logevents/actions/workflows/maven.yml)
+[![Build Status](https://github.com/jhannes/logevents/workflows/Java%20CI/badge.svg)(https://github.com/jhannes/logevents/actions/workflows/delivery.yml)
 [![Coverage Status](https://coveralls.io/repos/github/jhannes/logevents/badge.svg?branch=main)](https://coveralls.io/github/jhannes/logevents?branch=main)
 [![Vulnerability scan](https://snyk.io/test/github/jhannes/logevents/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/jhannes/logevents?targetFile=pom.xml)
 
