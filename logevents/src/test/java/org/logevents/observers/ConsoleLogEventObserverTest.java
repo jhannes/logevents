@@ -27,7 +27,13 @@ public class ConsoleLogEventObserverTest {
     private final Instant time = ZonedDateTime.of(2018, 8, 1, 10, 0, 0, 0, ZoneId.systemDefault()).toInstant();
 
     @Test
-    public void shouldLogMessage() {
+    public void shouldLogMessageWithoutMarker() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("observer.console.showMarkers", "false");
+        Configuration configuration = new Configuration(properties, "observer.console");
+        formatter.configure(configuration);
+        configuration.checkForUnknownFields();
+
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         ConsoleLogEventObserver observer = new ConsoleLogEventObserver(formatter, new PrintStream(buffer));
         observer.logEvent(new LogEventSampler()
@@ -63,7 +69,7 @@ public class ConsoleLogEventObserverTest {
                 .withLoggerName(loggerName)
                 .withFormat("Test")
                 .build());
-        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:65)]: Test\n",
+        assertEquals("10:00:00.000 [main] [INFO ] [ConsoleLogEventObserverTest.shouldTurnOffAnsiLogging(ConsoleLogEventObserverTest.java:71)]: Test\n",
                 message);
     }
 
@@ -115,15 +121,9 @@ public class ConsoleLogEventObserverTest {
     }
 
     @Test
-    public void shouldDisplayMarker() {
-        Map<String, String> properties = new HashMap<>();
-        properties.put("observer.console.showMarkers", "true");
-        Configuration configuration = new Configuration(properties, "observer.console");
-        formatter.configure(configuration);
-        configuration.checkForUnknownFields();
-
+    public void shouldDisplayMarkerByDefault() {
         String message = formatter.apply(new LogEventSampler().withMarker(LogEventSampler.HTTP_ASSET_REQUEST).build());
-        assertContains("{" + LogEventSampler.HTTP_ASSET_REQUEST + "}", message);
+        assertContains("{" + LogEventSampler.HTTP_ASSET_REQUEST.getName() + "}", message);
     }
 
     private void assertContains(String substring, String fullString) {

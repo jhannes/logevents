@@ -32,6 +32,7 @@ public class ConsoleJsonLogEventFormatterTest {
                 .withThread("main")
                 .withLoggerName(loggerName)
                 .withFormat("Hello {}").withArgs("there")
+                .withMarker(LogEventSampler.HTTP_ERROR)
                 .build());
         String timestamp = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(time);
         String hostname = new Configuration(new HashMap<>(), "").getNodeName();

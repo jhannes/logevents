@@ -46,7 +46,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     protected final DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     protected MdcFilter mdcFilter;
-    private boolean showMarkers;
+    private boolean showMarkers = true;
     private List<String> logFilenameForPackages = new ArrayList<>();
 
     @Override
@@ -62,7 +62,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 e.getThreadName(),
                 colorizedLevel(e),
                 format.bold(logger(e)),
-                showMarkers && e.getMarker() != null ? " {" + e.getMarker() + "}" : "",
+                showMarkers && e.getMarker() != null ? " {" + e.getMarker().getName() + "}" : "",
                 e.getMdcString(mdcFilter),
                 e.getMessage(messageFormatter))
                 + exceptionFormatter.format(e.getThrowable());
@@ -104,7 +104,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 exceptionFormatter.setPackageFilter(configuration.getPackageFilter())
         );
         mdcFilter = configuration.getMdcFilter();
-        showMarkers = configuration.getBoolean("showMarkers");
+        showMarkers = configuration.getBoolean("showMarkers", true);
         if (configuration.containsKey("logFilenameForPackages")) {
             logFilenameForPackages = configuration.getStringList("logFilenameForPackages");
         } else {

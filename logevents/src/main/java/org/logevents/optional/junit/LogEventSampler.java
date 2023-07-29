@@ -36,7 +36,7 @@ public class LogEventSampler {
             HTTP_ERROR, HTTP_ASSET_REQUEST, HTTP_REQUEST, LIFECYCLE, OPS
     };
 
-    private static Random random = new Random();
+    private static final Random random = new Random();
 
     public static String sampleLoggerName() {
         return pickOne("com", "org", "net")
@@ -50,10 +50,10 @@ public class LogEventSampler {
     private Optional<String> loggerName = Optional.empty();
     private Optional<Level> level = Optional.empty();
     private Instant timestamp = Instant.now();
-    private Marker marker = sampleMarker();
+    private Marker marker = null;
     private Optional<String> format = Optional.empty();
     private Object[] args = sampleArgs();
-    private Map<String, String> mdc = new LinkedHashMap<>();
+    private final Map<String, String> mdc = new LinkedHashMap<>();
 
     public LogEvent build() {
         LogEvent logEvent = new LogEvent(
@@ -143,12 +143,12 @@ public class LogEventSampler {
         return withThrowable(createThrowable());
     }
 
-    private StackTraceElement mainMethod = new StackTraceElement("org.logeventsdemo.MyApplication", "main", "MyApplication.java", 20);
-    private StackTraceElement publicMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "publicMethod", "MyClassName.java", 31);
-    private StackTraceElement internalMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "internalMethod", "MyClassName.java", 311);
-    private StackTraceElement nioInternalMethod = new StackTraceElement("sun.nio.fs.WindowsException", "translateToIOException", "WindowsException.java", 79);
-    private StackTraceElement ioApiMethod = new StackTraceElement("java.io.FilterOutputStream", "close", "FilterOutputStream.java", 180);
-    private StackTraceElement ioInternalMethod = new StackTraceElement("java.io.FileOutputStream", "close", "FileOutputStream.java", 323);
+    private final StackTraceElement mainMethod = new StackTraceElement("org.logeventsdemo.MyApplication", "main", "MyApplication.java", 20);
+    private final StackTraceElement publicMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "publicMethod", "MyClassName.java", 31);
+    private final StackTraceElement internalMethod = new StackTraceElement("org.logeventsdemo.internal.MyClassName", "internalMethod", "MyClassName.java", 311);
+    private final StackTraceElement nioInternalMethod = new StackTraceElement("sun.nio.fs.WindowsException", "translateToIOException", "WindowsException.java", 79);
+    private final StackTraceElement ioApiMethod = new StackTraceElement("java.io.FilterOutputStream", "close", "FilterOutputStream.java", 180);
+    private final StackTraceElement ioInternalMethod = new StackTraceElement("java.io.FileOutputStream", "close", "FileOutputStream.java", 323);
 
     private Throwable createThrowable() {
         IOException exception = new IOException("Something went wrong");

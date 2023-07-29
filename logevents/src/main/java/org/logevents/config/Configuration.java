@@ -58,6 +58,7 @@ public class Configuration {
     }
 
     public Configuration(Properties properties, String prefix) {
+        //noinspection unchecked
         this((Map<String, String>) (Map<?, ?>) properties, prefix, System.getenv());
     }
 
@@ -159,7 +160,11 @@ public class Configuration {
     }
 
     public boolean getBoolean(String key) {
-        return optionalString(key).map(Boolean::valueOf).orElse(false);
+        return getBoolean(key, false);
+    }
+
+    public boolean getBoolean(String key, boolean other) {
+        return optionalString(key).map(Boolean::valueOf).orElse(other);
     }
 
     public URL getUrl(String key) {
