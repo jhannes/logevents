@@ -26,7 +26,7 @@ class DemoServerTest {
         URL url = new URL(server.getURI() + "./swagger/swagger-ui-bundle.js");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         assertEquals(200, connection.getResponseCode());
-        assertEquals("application/javascript", connection.getHeaderField("Content-type"));
+        assertEquals("text/javascript", connection.getHeaderField("Content-type"));
     }
 
     @Test

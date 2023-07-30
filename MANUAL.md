@@ -163,7 +163,7 @@ In order to log to SLF4J, include the `slf4j-api` dependency with Maven (or grad
 <dependency>
     <groupId>org.slf4j</groupId>
     <artifactId>slf4j-api</artifactId>
-    <version>1.7.32</version>
+    <version>2.0.7</version>
 </dependency>
 ```
 
