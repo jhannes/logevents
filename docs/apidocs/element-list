@@ -6,6 +6,7 @@ org.logevents.formatters.exceptions
 org.logevents.formatters.messages
 org.logevents.formatters.pattern
 org.logevents.jmx
+org.logevents.mdc
 org.logevents.observers
 org.logevents.observers.batch
 org.logevents.observers.file

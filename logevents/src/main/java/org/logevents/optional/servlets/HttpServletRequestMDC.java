@@ -17,11 +17,11 @@ import java.util.function.Supplier;
  * Common Schema</a> guidelines:
  *
  * <ul>
- *     <li><strong></strong>url.original:</strong> The URL as the user entered it</li>
- *     <li><strong></strong>http.request.method:</strong> GET, PUT, POST, DELETE etc</li>
- *     <li><strong></strong>user.name:</strong> {@link HttpServletRequest#getRemoteUser()}</li>
- *     <li><strong></strong>client.address:</strong> {@link HttpServletRequest#getRemoteAddr()}</li>
- *     <li><strong></strong>event.time:</strong> The number of seconds since the request started</li>
+ *     <li><strong>url.original:</strong> The URL as the user entered it</li>
+ *     <li><strong>http.request.method:</strong> GET, PUT, POST, DELETE etc</li>
+ *     <li><strong>user.name:</strong> {@link HttpServletRequest#getRemoteUser()}</li>
+ *     <li><strong>client.address:</strong> {@link HttpServletRequest#getRemoteAddr()}</li>
+ *     <li><strong>event.time:</strong> The number of seconds since the request started</li>
  *     <li>
  *         <strong>error.{class, message, stack_trace} (only JSON, not MDC)</strong>:
  *          The exception in <code>"javax.servlet.error.exception"</code> (if any)
