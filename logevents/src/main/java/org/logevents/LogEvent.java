@@ -4,6 +4,7 @@ import org.logevents.config.MdcFilter;
 import org.logevents.core.JavaUtilLoggingAdapter;
 import org.logevents.core.LoggerDelegator;
 import org.logevents.formatters.messages.MessageFormatter;
+import org.logevents.mdc.DynamicMDC;
 import org.logevents.optional.junit.LogEventSampler;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
@@ -19,7 +20,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,6 +51,8 @@ public class LogEvent implements LoggingEvent {
     private final long timestamp;
     private final Map<String, String> mdcProperties;
 
+    private final Map<String, DynamicMDC> dynamicMdcProperties;
+
     private StackTraceElement callerLocation;
     private StackTraceElement[] stackTrace;
     private final List<KeyValuePair> keyValuePairs = new ArrayList<>();
@@ -57,12 +60,13 @@ public class LogEvent implements LoggingEvent {
     public LogEvent(
             String loggerName,
             Level level,
-            String threadName,
-            Instant timestamp,
             Marker marker,
             String messageFormat,
             Object[] args,
-            Map<String, String> mdcProperties
+            String threadName,
+            Instant timestamp,
+            Map<String, String> mdcProperties,
+            Map<String, DynamicMDC> dynamicMdcProperties
     ) {
         this.loggerName = loggerName;
         this.level = level;
@@ -78,19 +82,21 @@ public class LogEvent implements LoggingEvent {
         }
         this.threadName = threadName;
         this.timestamp = timestamp.toEpochMilli();
-        this.mdcProperties = mdcProperties;
+        this.mdcProperties = mdcProperties == null ? Collections.emptyMap() : mdcProperties;
+        this.dynamicMdcProperties = dynamicMdcProperties == null ? Collections.emptyMap() : dynamicMdcProperties;
     }
 
     public LogEvent(String loggerName, Level level, Marker marker, String messageFormat, Object[] args) {
         this(
                 loggerName,
                 level,
-                Thread.currentThread().getName(),
-                Instant.now(),
                 marker,
                 messageFormat,
                 args,
-                Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>())
+                Thread.currentThread().getName(),
+                Instant.now(),
+                DynamicMDC.getCopyOfStaticContext(),
+                DynamicMDC.getCopyOfDynamicContext()
         );
     }
 
@@ -108,7 +114,17 @@ public class LogEvent implements LoggingEvent {
      * returns.
      */
     public Map<String, String> getMdcProperties() {
+        LinkedHashMap<String, String> result = new LinkedHashMap<>(mdcProperties);
+        DynamicMDC.collect(result, dynamicMdcProperties);
+        return result;
+    }
+
+    public Map<String, String> getStaticMdcProperties() {
         return mdcProperties;
+    }
+
+    public Map<String, DynamicMDC> getDynamicMdcProperties() {
+        return dynamicMdcProperties;
     }
 
     @Override
@@ -373,5 +389,11 @@ public class LogEvent implements LoggingEvent {
 
     public boolean isBelowThreshold(Level threshold) {
         return getLevel().compareTo(threshold) > 0;
+    }
+
+    public void populateJson(Map<String, Object> json) {
+        for (DynamicMDC dynamicMDC : dynamicMdcProperties.values()) {
+            dynamicMDC.populateJsonEvent(json, MdcFilter.INCLUDE_ALL, null);
+        }
     }
 }

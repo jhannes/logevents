@@ -4,10 +4,10 @@ import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEvent;
-import org.logevents.optional.junit.LogEventSampler;
-import org.logevents.optional.junit.LogEventStatusRule;
 import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.observers.batch.LogEventBatch;
+import org.logevents.optional.junit.LogEventSampler;
+import org.logevents.optional.junit.LogEventStatusRule;
 import org.logevents.status.LogEventStatus;
 import org.logevents.status.StatusEvent;
 import org.logevents.util.ExceptionUtil;
@@ -21,6 +21,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class ElasticsearchLogEventObserverTest {
         assertEquals(event.getLevel().name(), payload.get("log.level"));
         assertEquals(event.getMessage(), payload.get("message"));
         assertEquals(event.getThreadName(), payload.get("process.thread.name"));
-        assertEquals(Arrays.asList(event.getMarker().getName()), payload.get("tags"));
+        assertEquals(Collections.singletonList(event.getMarker().getName()), payload.get("tags"));
     }
 
     @Test
@@ -75,10 +76,11 @@ public class ElasticsearchLogEventObserverTest {
         LogEvent event = new LogEventSampler().withThrowable().build();
         Map<String, Object> payload = observer.formatMessage(event);
 
-        assertEquals(payload.get("error.class"), event.getThrowable().getClass().getName());
-        assertEquals(payload.get("error.message"), event.getThrowable().getMessage());
+        Map<String, Object> error = JsonUtil.getObject(payload, "error");
+        assertEquals(event.getThrowable().getClass().getName(), error.get("class"));
+        assertEquals(event.getThrowable().getMessage(), error.get("message"));
         assertContains("at org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)",
-            payload.get("error.stack_trace").toString());
+                error.get("stack_trace").toString());
     }
 
     @Test
@@ -105,8 +107,8 @@ public class ElasticsearchLogEventObserverTest {
         observer.processBatch(new LogEventBatch().add(new LogEventSampler().build()));
 
         List<StatusEvent> events = LogEventStatus.getInstance().getMessages(observer, StatusEvent.StatusLevel.ERROR);
-        assertTrue("Expected 1 event, was " + events
-                + " (all events " + LogEventStatus.getInstance().getHeadMessages() + ")", events.size() == 1);
+        assertEquals("Expected 1 event, was " + events
+                     + " (all events " + LogEventStatus.getInstance().getHeadMessages() + ")", 1, events.size());
         assertEquals("Failed to send message to " + observer.getUrl(), events.get(0).getMessage());
     }
 
@@ -145,7 +147,7 @@ public class ElasticsearchLogEventObserverTest {
 
     private void assertContains(String expected, String actual) {
         assertTrue("Expected <" + actual + "> to contain <" + expected + ">",
-            actual.contains(expected));
+                actual.contains(expected));
     }
 
 }

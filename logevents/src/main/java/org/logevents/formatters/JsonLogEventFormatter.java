@@ -6,6 +6,7 @@ import org.logevents.config.Configuration;
 import org.logevents.config.MdcFilter;
 import org.logevents.formatters.exceptions.ExceptionFormatter;
 import org.logevents.formatters.messages.MessageFormatter;
+import org.logevents.mdc.DynamicMDC;
 import org.logevents.util.JsonUtil;
 
 import java.time.format.DateTimeFormatter;
@@ -82,9 +83,7 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         payload.put("process.thread.name", event.getThreadName());
         if (event.getThrowable() != null) {
             payload.put("message", event.getMessage(messageFormatter) + " " + event.getThrowable());
-            payload.put("error.class", event.getThrowable().getClass().getName());
-            payload.put("error.message", event.getThrowable().getMessage());
-            payload.put("error.stack_trace", exceptionFormatter.format(event.getThrowable()));
+            payload.put("error", toJsonObject(event.getThrowable(), exceptionFormatter));
         } else {
             payload.put("message", event.getMessage(messageFormatter));
         }
@@ -92,23 +91,39 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         if (event.getMarker() != null) {
             payload.put("tags", Collections.singletonList(event.getMarker().getName()));
         }
-        payload.put("mdc", getMdc(event));
         payload.put("service.name", applicationName);
         payload.put("host.name", hostname);
         payload.put("levelInt", event.getLevel().toInt());
+        updateMdc(event, payload);
 
         return payload;
     }
 
-    private Map<String, Object> getMdc(LogEvent event) {
-        Map<String, Object> mdc = new HashMap<>();
+    public static Map<String, Object> toJsonObject(Throwable throwable, ExceptionFormatter exceptionFormatter) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("class", throwable.getClass().getName());
+        payload.put("message", throwable.getMessage());
+        payload.put("stack_trace", exceptionFormatter.format(throwable));
+        return payload;
+    }
 
-        for (Map.Entry<String, String> mdcEntry : event.getMdcProperties().entrySet()) {
+    private void updateMdc(LogEvent event, Map<String, Object> payload) {
+        Map<String, Object> mdc = new HashMap<>();
+        payload.put("mdc", mdc);
+
+        for (Map.Entry<String, String> mdcEntry : event.getStaticMdcProperties().entrySet()) {
             if (mdcFilter.isKeyIncluded(mdcEntry.getKey())) {
                 mdc.put(mdcEntry.getKey(), mdcEntry.getValue());
             }
         }
-        return mdc.isEmpty() ? null : mdc;
+
+        for (DynamicMDC dynamicMDC : event.getDynamicMdcProperties().values()) {
+            dynamicMDC.populateJsonEvent(payload, mdcFilter, exceptionFormatter);
+        }
+
+        if (mdc.isEmpty()) {
+            payload.remove("mdc");
+        }
     }
 
     @Override

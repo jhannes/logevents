@@ -1,6 +1,7 @@
 package org.logevents.query;
 
 import org.logevents.LogEvent;
+import org.logevents.mdc.DynamicMDC;
 import org.logevents.util.JsonUtil;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -36,13 +37,13 @@ public class LogEventQueryResult {
         return new LogEvent(
                 json.get("logger").toString(),
                 Level.valueOf(json.get("level").toString()),
-                json.get("thread").toString(),
-                Instant.parse(json.get("time").toString()),
                 json.get("marker") != null ? MarkerFactory.getMarker(json.get("marker").toString()) : null,
                 json.get("messageTemplate").toString(),
                 JsonUtil.getList(json, "arguments").toArray(),
-                parseMdc(json.get("mdc"))
-        );
+                json.get("thread").toString(),
+                Instant.parse(json.get("time").toString()),
+                parseMdc(json.get("mdc")),
+                DynamicMDC.getCopyOfDynamicContext());
     }
 
     @SuppressWarnings("unchecked")

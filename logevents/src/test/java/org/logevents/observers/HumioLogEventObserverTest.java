@@ -1,11 +1,20 @@
 package org.logevents.observers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.junit.Rule;
+import org.junit.Test;
+import org.logevents.LogEvent;
+import org.logevents.formatters.messages.MessageFormatter;
+import org.logevents.observers.batch.LogEventBatch;
+import org.logevents.optional.junit.LogEventSampler;
+import org.logevents.optional.junit.LogEventStatusRule;
+import org.logevents.status.LogEventStatus;
+import org.logevents.status.StatusEvent;
+import org.logevents.util.ExceptionUtil;
+import org.logevents.util.JsonUtil;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,19 +23,17 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import org.junit.Rule;
-import org.junit.Test;
-import org.logevents.LogEvent;
-import org.logevents.optional.junit.LogEventSampler;
-import org.logevents.optional.junit.LogEventStatusRule;
-import org.logevents.formatters.messages.MessageFormatter;
-import org.logevents.observers.batch.LogEventBatch;
-import org.logevents.status.LogEventStatus;
-import org.logevents.status.StatusEvent;
-import org.logevents.util.ExceptionUtil;
-import org.logevents.util.JsonUtil;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class HumioLogEventObserverTest {
 
@@ -38,7 +45,7 @@ public class HumioLogEventObserverTest {
     private final List<Headers> requestHeaderBuffer = new ArrayList<>();
 
     private HumioLogEventObserver observer = new HumioLogEventObserver(defaultConfigurationMap(
-        extractPortNumberForMockHumioServer(successfulHumioResponse())), EXAMPLE_CONFIG_PREFIX);
+            extractPortNumberForMockHumioServer(successfulHumioResponse())), EXAMPLE_CONFIG_PREFIX);
 
     private Map<String, String> defaultConfigurationMap(int portNumberForElasticsearchUrl) {
         Map<String, String> config = new HashMap<>();
@@ -63,7 +70,7 @@ public class HumioLogEventObserverTest {
         assertEquals(event.getLevel().name(), payload.get("log.level"));
         assertEquals(event.getMessage(), payload.get("message"));
         assertEquals(event.getThreadName(), payload.get("process.thread.name"));
-        assertEquals(Arrays.asList(event.getMarker().getName()), payload.get("tags"));
+        assertEquals(Collections.singletonList(event.getMarker().getName()), payload.get("tags"));
     }
 
     @Test
@@ -88,10 +95,11 @@ public class HumioLogEventObserverTest {
         LogEvent event = new LogEventSampler().withThrowable().build();
         Map<String, Object> payload = observer.formatMessage(event);
 
-        assertEquals(payload.get("error.class"), event.getThrowable().getClass().getName());
-        assertEquals(payload.get("error.message"), event.getThrowable().getMessage());
+        Map<String, Object> error = JsonUtil.getObject(payload, "error");
+        assertEquals(event.getThrowable().getClass().getName(), error.get("class"));
+        assertEquals(event.getThrowable().getMessage(), error.get("message"));
         assertContains("at org.logeventsdemo.internal.MyClassName.internalMethod(MyClassName.java:311)",
-            payload.get("error.stack_trace").toString());
+                error.get("stack_trace").toString());
     }
 
     @Test
@@ -118,8 +126,8 @@ public class HumioLogEventObserverTest {
         observer.processBatch(new LogEventBatch().add(new LogEventSampler().build()));
 
         List<StatusEvent> events = LogEventStatus.getInstance().getMessages(observer, StatusEvent.StatusLevel.ERROR);
-        assertTrue("Expected 1 event, was " + events
-            + " (all events " + LogEventStatus.getInstance().getHeadMessages() + ")", events.size() == 1);
+        assertEquals("Expected 1 event, was " + events
+                     + " (all events " + LogEventStatus.getInstance().getHeadMessages() + ")", 1, events.size());
         assertEquals("Failed to send message to " + observer.getUrl(), events.get(0).getMessage());
     }
 
@@ -145,34 +153,34 @@ public class HumioLogEventObserverTest {
         observer.indexDocuments(new LogEventBatch().add(logEvent1).add(logEvent2));
 
         Optional<String> expectedAuthorizationHeader = requestHeaderBuffer.stream()
-            .filter(h -> h.containsKey("Authorization"))
-            .map(h -> h.getFirst("Authorization"))
-            .findFirst();
+                .filter(h -> h.containsKey("Authorization"))
+                .map(h -> h.getFirst("Authorization"))
+                .findFirst();
         assertTrue("Authorization header to be present in the request", expectedAuthorizationHeader.isPresent());
         assertEquals(EXAMPLE_AUTHORIZATION_HEADER_VALUE, expectedAuthorizationHeader.get());
     }
 
-    private HumioLogEventObserver setupMockServerAndSystemUnderTest(byte[] response) throws IOException {
+    private HumioLogEventObserver setupMockServerAndSystemUnderTest(byte[] response) {
         return new HumioLogEventObserver(
-            defaultConfigurationWithAuthorization(extractPortNumberForMockHumioServer(response),
-                EXAMPLE_AUTHORIZATION_HEADER_VALUE), EXAMPLE_CONFIG_PREFIX);
+                defaultConfigurationWithAuthorization(extractPortNumberForMockHumioServer(response),
+                        EXAMPLE_AUTHORIZATION_HEADER_VALUE), EXAMPLE_CONFIG_PREFIX);
     }
 
     @Test
-    public void indexDocumentShouldLogErrorsWhenHumioResponseContainingErrors() throws IOException {
+    public void indexDocumentShouldLogErrorsWhenHumioResponseContainingErrors() {
         observer = setupMockServerAndSystemUnderTest(partlyErronousHumioResponse());
 
         LogEvent logEvent1 = new LogEventSampler().withRandomTime().build();
         LogEvent logEvent2 = new LogEventSampler().withRandomTime().build();
 
         IOException e = assertThrows(IOException.class, () ->
-            observer.indexDocuments(new LogEventBatch().add(logEvent1).add(logEvent2)));
+                observer.indexDocuments(new LogEventBatch().add(logEvent1).add(logEvent2)));
         assertEquals(e.getMessage(), "Failed sending 1 out of 4 entries");
     }
 
     private void assertContains(String expected, String actual) {
         assertTrue("Expected <" + actual + "> to contain <" + expected + ">",
-            actual.contains(expected));
+                actual.contains(expected));
     }
 
     private int extractPortNumberForMockHumioServer(byte[] response) {
@@ -215,7 +223,6 @@ public class HumioLogEventObserverTest {
     }
 
 
-
     private byte[] partlyErronousHumioResponse() {
         Map<String, Object> humioResponse = new HashMap<>();
 
@@ -243,6 +250,6 @@ public class HumioLogEventObserverTest {
 
     private String toString(InputStream input) {
         return new BufferedReader(new InputStreamReader(input))
-            .lines().collect(Collectors.joining("\n"));
+                .lines().collect(Collectors.joining("\n"));
     }
 }

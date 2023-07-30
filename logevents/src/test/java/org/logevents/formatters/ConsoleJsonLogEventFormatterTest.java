@@ -1,7 +1,12 @@
 package org.logevents.formatters;
 
 import org.junit.Test;
+import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
+import org.logevents.mdc.DynamicMDC;
+import org.logevents.mdc.DynamicMDCAdapter;
+import org.logevents.mdc.DynamicMDCAdapterImplementation;
+import org.logevents.mdc.ExceptionMDC;
 import org.logevents.optional.junit.LogEventSampler;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
@@ -11,6 +16,7 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,8 +57,9 @@ public class ConsoleJsonLogEventFormatterTest {
                         .build())
         );
         assertEquals("Log message " + throwable, log.get("message"));
-        assertEquals(IOException.class.getName(), log.get("error.class"));
-        assertEquals(throwable.getMessage(), log.get("error.message"));
+        Map<String, Object> error = JsonUtil.getObject(log, "error");
+        assertEquals(IOException.class.getName(), error.get("class"));
+        assertEquals(throwable.getMessage(), error.get("message"));
     }
 
     @Test
@@ -106,4 +113,30 @@ public class ConsoleJsonLogEventFormatterTest {
         assertEquals("staging", json.get("environment"));
         assertEquals("norway-east", json.get("dataCenter"));
     }
+
+    @Test
+    public void shouldFormatExceptionInDynamicMDC() {
+        IOException throwable = new IOException("The error");
+        DynamicMDCAdapter mdcAdapter = new DynamicMDCAdapterImplementation();
+        try (DynamicMDCAdapter.Cleanup ignored = mdcAdapter.putDynamic("exception", () -> new ExceptionMDC(throwable))) {
+            LogEvent event = new LogEventSampler().build(mdcAdapter);
+            Map<String, Object> jsonLogEvent = formatter.toJsonObject(event);
+            assertNull(jsonLogEvent.get("mdc"));
+            Map<String, Object> jsonError = JsonUtil.getObject(jsonLogEvent, "error");
+            assertEquals(throwable.getClass().getName(), JsonUtil.getField(jsonError, "class"));
+            assertEquals(throwable.getMessage(), JsonUtil.getField(jsonError, "message"));
+        }
+    }
+
+    @Test
+    public void shouldFormatDynamicMdcVariables() {
+        DynamicMDCAdapter mdcAdapter = new DynamicMDCAdapterImplementation();
+        try (DynamicMDCAdapter.Cleanup ignored = mdcAdapter.putDynamic("test", () -> DynamicMDC.ofMap(() -> Collections.singletonMap("key", "value")))) {
+            LogEvent event = new LogEventSampler().build(mdcAdapter);
+            Map<String, Object> jsonLogEvent = formatter.toJsonObject(event);
+            assertEquals("value", JsonUtil.getObject(jsonLogEvent, "mdc").get("key"));
+        }
+
+    }
+
 }

@@ -2,6 +2,8 @@ package org.logevents.optional.junit;
 
 import org.logevents.LogEvent;
 import org.logevents.config.DefaultTestLogEventConfigurator;
+import org.logevents.mdc.DynamicMDC;
+import org.logevents.mdc.DynamicMDCAdapter;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
@@ -26,24 +28,21 @@ public class LogEventSampler {
     public static final Marker LIFECYCLE = MarkerFactory.getMarker("LIFECYCLE");
     public static final Marker PERFORMANCE = MarkerFactory.getMarker("PERFORMANCE");
     public static final Marker AUDIT = MarkerFactory.getMarker("AUDIT");
+
     static {
         HTTP_ASSET_REQUEST.add(HTTP_REQUEST);
         HTTP_ERROR.add(HTTP_REQUEST);
         LIFECYCLE.add(OPS);
     }
 
-    private static final Marker[] SAMPLE_MARKERS = new Marker[] {
-            HTTP_ERROR, HTTP_ASSET_REQUEST, HTTP_REQUEST, LIFECYCLE, OPS
-    };
-
     private static final Random random = new Random();
 
     public static String sampleLoggerName() {
         return pickOne("com", "org", "net")
-                + ".example."
-                + pickOne("myapp", "app", "superapp")
-                + "."
-                + pickOne("Customer", "Order", "Person") + pickOne("Controller", "Service", "Repository");
+               + ".example."
+               + pickOne("myapp", "app", "superapp")
+               + "."
+               + pickOne("Customer", "Order", "Person") + pickOne("Controller", "Service", "Repository");
     }
 
     private Optional<String> threadName = Optional.empty();
@@ -55,22 +54,37 @@ public class LogEventSampler {
     private Object[] args = sampleArgs();
     private final Map<String, String> mdc = new LinkedHashMap<>();
 
-    public LogEvent build() {
-        LogEvent logEvent = new LogEvent(
-                loggerName.orElseGet(LogEventSampler::sampleLoggerName),
-                level.orElseGet(() -> pickOne(Level.INFO, Level.WARN, Level.ERROR)),
-                threadName.orElseGet(LogEventSampler::sampleThreadName),
-                timestamp,
-                marker,
-                this.format.orElseGet(() -> sampleMessage(args)),
-                args,
-                new HashMap<>(mdc));
+    public LogEvent build(DynamicMDCAdapter mdcAdapter) {
+        LogEvent logEvent = createEvent(mdcAdapter.getCopyOfStaticContextMap(), mdcAdapter.getCopyOfDynamicContext());
         logEvent.getCallerLocation();
         return logEvent;
     }
 
-    public static Marker sampleMarker() {
-        return SAMPLE_MARKERS[0];
+    public LogEvent build() {
+        Map<String, DynamicMDC> dynamicMdc = DynamicMDC.getCopyOfDynamicContext();
+        LogEvent logEvent = createEvent(new HashMap<>(mdc), dynamicMdc);
+        logEvent.getCallerLocation();
+        return logEvent;
+    }
+
+    public LogEvent build(Map<String, String> mdcProperties, Map<String, DynamicMDC> dynamicMdc) {
+        LogEvent logEvent = createEvent(mdcProperties, dynamicMdc);
+        logEvent.getCallerLocation();
+        return logEvent;
+    }
+
+    private LogEvent createEvent(Map<String, String> mdcProperties, Map<String, DynamicMDC> dynamicMdc) {
+        return new LogEvent(
+                loggerName.orElseGet(LogEventSampler::sampleLoggerName),
+                level.orElseGet(() -> pickOne(Level.INFO, Level.WARN, Level.ERROR)),
+                marker,
+                this.format.orElseGet(() -> sampleMessage(args)),
+                args,
+                threadName.orElseGet(LogEventSampler::sampleThreadName),
+                timestamp,
+                mdcProperties,
+                dynamicMdc
+        );
     }
 
     private Object[] sampleArgs() {
@@ -92,7 +106,7 @@ public class LogEventSampler {
 
     private String sampleMessage(Object[] args) {
         int length = args.length;
-        if (length > 0 && args[length-1] instanceof Throwable) length--;
+        if (length > 0 && args[length - 1] instanceof Throwable) length--;
         String ending = IntStream.range(0, length).mapToObj(i -> "{}").collect(Collectors.joining(" "));
         return "Here is a " + level + " test message from " + DefaultTestLogEventConfigurator.getTestMethodName(new Exception().getStackTrace()) + " of " + random.nextInt(10000) + " with " + ending;
     }
@@ -132,7 +146,7 @@ public class LogEventSampler {
     }
 
     public LogEventSampler withThrowable(Throwable throwable) {
-        this.args = new Object[] { throwable };
+        this.args = new Object[]{throwable};
         if (!this.level.isPresent()) {
             this.level = Optional.of(Level.WARN);
         }
@@ -152,7 +166,7 @@ public class LogEventSampler {
 
     private Throwable createThrowable() {
         IOException exception = new IOException("Something went wrong");
-        exception.setStackTrace(new StackTraceElement[] {
+        exception.setStackTrace(new StackTraceElement[]{
                 ioInternalMethod, ioApiMethod,
                 nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod, nioInternalMethod,
                 internalMethod, publicMethod, mainMethod
