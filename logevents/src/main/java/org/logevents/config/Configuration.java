@@ -1,7 +1,7 @@
 package org.logevents.config;
 
-import org.logevents.LogEventObserver;
 import org.logevents.LogEventFormatter;
+import org.logevents.LogEventObserver;
 import org.logevents.status.LogEventStatus;
 
 import java.net.InetAddress;
@@ -15,6 +15,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -328,11 +329,11 @@ public class Configuration {
         List<String> includedMdcKeys = getStringListOrGlobal("includedMdcKeys");
         List<String> excludedMdcKeys = getStringListOrGlobal("excludedMdcKeys");
         if (includedMdcKeys != null) {
-            return includedMdcKeys::contains;
+            return new MdcFilter.IncludedMdcKeys(new HashSet<>(includedMdcKeys));
         } else if (excludedMdcKeys != null) {
-            return key -> !excludedMdcKeys.contains(key);
+            return new MdcFilter.ExcludedMdcKeys(new HashSet<>(excludedMdcKeys));
         } else {
-            return key -> true;
+            return MdcFilter.INCLUDE_ALL;
         }
     }
 
@@ -354,6 +355,7 @@ public class Configuration {
         return Locale.getDefault(Locale.Category.FORMAT);
     }
 
+    @SuppressWarnings("unused")
     public String getServerUser() {
         return System.getProperty("user.name") + "@" + getNodeName();
     }
@@ -440,6 +442,7 @@ public class Configuration {
             return defaultAppName;
         }
     }
+
     /**
      * Remove directory name, .jar suffix and semver version from file path
      */

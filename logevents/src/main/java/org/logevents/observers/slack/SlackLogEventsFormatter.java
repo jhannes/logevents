@@ -33,7 +33,7 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
     private boolean showRepeatsIndividually;
     protected Optional<String> detailUrl = Optional.empty();
     private final String nodeName;
-    private MdcFilter mdcFilter = null;
+    private MdcFilter mdcFilter = MdcFilter.INCLUDE_ALL;
 
     public SlackLogEventsFormatter() {
         this(Optional.empty(), Optional.empty());
@@ -45,18 +45,19 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         this.channel = channel;
     }
 
+    @SuppressWarnings("unused")
     public SlackLogEventsFormatter(Map<String, String> properties, String prefix) {
         this(new Configuration(properties, prefix));
     }
 
     public SlackLogEventsFormatter(Configuration configuration) {
         this.username = Optional.ofNullable(configuration.optionalString("username")
-                        .orElseGet(configuration::getApplicationNode));
+                .orElseGet(configuration::getApplicationNode));
         this.nodeName = configuration.getNodeName();
         setMdcFilter(configuration.getMdcFilter());
         exceptionFormatter = new SlackExceptionFormatter(configuration);
-        exceptionFormatter.configureSourceCode(configuration);
         exceptionFormatter.setPackageFilter(configuration.getPackageFilter());
+        configureSourceCode(configuration);
     }
 
     @Override
@@ -86,10 +87,10 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
                 .map(url -> "<" + detailLink(event, url) + "|" + formatMessage(event) + ">")
                 .orElseGet(() -> formatMessage(event));
         return JsonLogEventsBatchFormatter.emojiiForLevel(event.getLevel()) + " "
-            + exceptionInfo
-            + formattedMessage
-            + " [" + event.getAbbreviatedLoggerName(10) + "]"
-            + (event.getLevel() == Level.ERROR ? " <!channel>" : "");
+               + exceptionInfo
+               + formattedMessage
+               + " [" + event.getAbbreviatedLoggerName(10) + "]"
+               + (event.getLevel() == Level.ERROR ? " <!channel>" : "");
     }
 
     /**
@@ -117,14 +118,14 @@ public class SlackLogEventsFormatter implements JsonLogEventsBatchFormatter {
         List<Map<String, Object>> fields = new ArrayList<>();
         int longestMdc = 0;
         for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
-            if (mdcFilter == null || mdcFilter.isKeyIncluded(entry.getKey())) {
+            if (mdcFilter.isKeyIncluded(entry.getKey())) {
                 if (entry.getValue() != null) {
                     longestMdc = Math.max(longestMdc, entry.getValue().length());
                 }
             }
         }
         for (Map.Entry<String, String> entry : event.getMdcProperties().entrySet()) {
-            if (mdcFilter == null || mdcFilter.isKeyIncluded(entry.getKey())) {
+            if (mdcFilter.isKeyIncluded(entry.getKey())) {
                 fields.add(slackMessageField(entry.getKey(), entry.getValue(), longestMdc > 20));
             }
         }

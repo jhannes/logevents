@@ -1,9 +1,9 @@
 package org.logevents.formatters;
 
 import org.logevents.LogEvent;
+import org.logevents.LogEventFormatter;
 import org.logevents.config.Configuration;
 import org.logevents.config.MdcFilter;
-import org.logevents.LogEventFormatter;
 import org.logevents.formatters.exceptions.ExceptionFormatter;
 import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.util.StringUtil;
@@ -11,7 +11,6 @@ import org.logevents.util.StringUtil;
 /**
  * A simple and convenient {@link LogEventFormatter} which outputs
  * Time, Thread, Level, Logger as well as the log message and stack trace.
- *
  * This is equivalent to:
  *
  * <pre>
@@ -26,7 +25,7 @@ public final class TTLLLogEventFormatter implements LogEventFormatter {
     private final MessageFormatter messageFormatter = new MessageFormatter();
     private final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
 
-    private MdcFilter mdcFilter = null;
+    private MdcFilter mdcFilter = MdcFilter.INCLUDE_ALL;
     private boolean showMarkers;
 
     @Override
@@ -38,8 +37,8 @@ public final class TTLLLogEventFormatter implements LogEventFormatter {
                 e.getLoggerName(),
                 showMarkers && e.getMarker() != null ? " {" + e.getMarker() + "}" : "",
                 e.getMdcString(mdcFilter),
-                e.getMessage(messageFormatter))
-                + exceptionFormatter.format(e.getThrowable());
+                e.getMessage(messageFormatter)
+        ) + exceptionFormatter.format(e.getThrowable());
     }
 
     @Override

@@ -1,22 +1,21 @@
 package org.logevents.formatters;
 
 import org.logevents.LogEvent;
+import org.logevents.LogEventFormatter;
 import org.logevents.config.Configuration;
 import org.logevents.config.MdcFilter;
-import org.logevents.LogEventFormatter;
 import org.logevents.formatters.exceptions.ExceptionFormatter;
 import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.util.JsonUtil;
 
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * Used to format a LogEvent as JSON for stdout or network observers.
- *
  * Example configuration:
  *
  * <pre>
@@ -31,12 +30,13 @@ public class JsonLogEventFormatter implements LogEventFormatter {
 
     protected MessageFormatter messageFormatter = new MessageFormatter();
     protected ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
-    protected MdcFilter mdcFilter;
+    protected MdcFilter mdcFilter = MdcFilter.INCLUDE_ALL;
     private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
     private String hostname;
     private String applicationName;
     private final Map<String, String> additionalProperties = new HashMap<>();
 
+    @SuppressWarnings("unused")
     public JsonLogEventFormatter() {
         this(new Configuration());
     }
@@ -90,7 +90,7 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         }
 
         if (event.getMarker() != null) {
-            payload.put("tags", Arrays.asList(event.getMarker().getName()));
+            payload.put("tags", Collections.singletonList(event.getMarker().getName()));
         }
         payload.put("mdc", getMdc(event));
         payload.put("service.name", applicationName);
@@ -104,7 +104,7 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         Map<String, Object> mdc = new HashMap<>();
 
         for (Map.Entry<String, String> mdcEntry : event.getMdcProperties().entrySet()) {
-            if (mdcFilter == null || mdcFilter.isKeyIncluded(mdcEntry.getKey())) {
+            if (mdcFilter.isKeyIncluded(mdcEntry.getKey())) {
                 mdc.put(mdcEntry.getKey(), mdcEntry.getValue());
             }
         }

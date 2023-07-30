@@ -1,9 +1,9 @@
 package org.logevents.formatters;
 
 import org.logevents.LogEvent;
+import org.logevents.LogEventFormatter;
 import org.logevents.config.Configuration;
 import org.logevents.config.MdcFilter;
-import org.logevents.LogEventFormatter;
 import org.logevents.formatters.exceptions.ExceptionFormatter;
 import org.logevents.formatters.messages.ConsoleMessageFormatter;
 import org.logevents.formatters.messages.MessageFormatter;
@@ -20,13 +20,12 @@ import java.util.Optional;
 /**
  * A simple formatter used by {@link ConsoleLogEventObserver} by default.
  * Suitable for overriding {@link #apply(LogEvent)}
- *
  * This is equivalent to
  * <pre>
  * observer...formatter=PatternLogEventFormatter
  * observer...formatter.pattern=%time [%thread] [%coloredLevel] [%bold(%location)]%mdc: %message
  * </pre>
- *
+ * <p>
  * Example configuration
  *
  * <pre>
@@ -45,7 +44,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     protected MessageFormatter messageFormatter = new ConsoleMessageFormatter(format);
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     protected final DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
-    protected MdcFilter mdcFilter;
+    protected MdcFilter mdcFilter = MdcFilter.INCLUDE_ALL;
     private boolean showMarkers = true;
     private List<String> logFilenameForPackages = new ArrayList<>();
 
@@ -64,8 +63,8 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
                 format.bold(logger(e)),
                 showMarkers && e.getMarker() != null ? " {" + e.getMarker().getName() + "}" : "",
                 e.getMdcString(mdcFilter),
-                e.getMessage(messageFormatter))
-                + exceptionFormatter.format(e.getThrowable());
+                e.getMessage(messageFormatter)
+        ) + exceptionFormatter.format(e.getThrowable());
     }
 
     private String logger(LogEvent e) {

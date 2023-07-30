@@ -19,13 +19,13 @@ import java.util.Optional;
 /**
  * Format log events to Microsoft Teams. See <a href="https://messagecardplayground.azurewebsites.net/">to
  * experiment with content</a>.
-*/
+ */
 public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatter {
 
     private final MessageFormatter messageFormatter;
     private final Optional<String> detailUrl;
     private final String applicationNode;
-    private MdcFilter mdcFilter = null;
+    private MdcFilter mdcFilter = MdcFilter.INCLUDE_ALL;
     private final MicrosoftTeamsExceptionFormatter exceptionFormatter;
 
     static String getLevelColor(Level level) {
@@ -58,7 +58,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
         Map<String, String> mdcProperties = batch.firstHighestLevelLogEventGroup().headMessage().getMdcProperties();
         List<Map<String, Object>> facts = new ArrayList<>();
         for (Map.Entry<String, String> entry : mdcProperties.entrySet()) {
-            if (mdcFilter == null || mdcFilter.isKeyIncluded(entry.getKey())) {
+            if (mdcFilter.isKeyIncluded(entry.getKey())) {
                 facts.add(createSingleFact(entry.getKey(), entry.getValue()));
             }
         }
@@ -128,6 +128,7 @@ public class MicrosoftTeamsMessageFormatter implements JsonLogEventsBatchFormatt
     }
 
     protected static Map<Level, String> colors = new HashMap<>();
+
     static {
         colors.put(Level.ERROR, "fd6a02");
         colors.put(Level.WARN, "f8a502");
