@@ -2,12 +2,12 @@ package org.logevents.core;
 
 import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
-import org.logevents.LogEventObserver;
 import org.logevents.LogEventLogger;
-import org.logevents.observers.ConditionalLogEventObserver;
+import org.logevents.LogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
+import org.slf4j.spi.LoggingEventBuilder;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -190,6 +190,11 @@ public abstract class LoggerDelegator implements LogEventLogger {
     }
 
     @Override
+    public LoggingEventBuilder atTrace() {
+        return this.traceEventGenerator.atLevel();
+    }
+
+    @Override
     public void trace(String msg) {
         traceEventGenerator.log(msg);
     }
@@ -247,6 +252,11 @@ public abstract class LoggerDelegator implements LogEventLogger {
     @Override
     public boolean isDebugEnabled() {
         return this.debugEventGenerator.isEnabled();
+    }
+
+    @Override
+    public LoggingEventBuilder atDebug() {
+        return this.debugEventGenerator.atLevel();
     }
 
     @Override
@@ -310,6 +320,11 @@ public abstract class LoggerDelegator implements LogEventLogger {
     }
 
     @Override
+    public LoggingEventBuilder atInfo() {
+        return this.infoEventGenerator.atLevel();
+    }
+
+    @Override
     public void info(String msg) {
         infoEventGenerator.log(msg);
     }
@@ -370,6 +385,11 @@ public abstract class LoggerDelegator implements LogEventLogger {
     }
 
     @Override
+    public LoggingEventBuilder atWarn() {
+        return this.warnEventGenerator.atLevel();
+    }
+
+    @Override
     public void warn(String msg) {
         warnEventGenerator.log(msg);
     }
@@ -427,6 +447,11 @@ public abstract class LoggerDelegator implements LogEventLogger {
     @Override
     public boolean isErrorEnabled() {
         return this.errorEventGenerator.isEnabled();
+    }
+
+    @Override
+    public LoggingEventBuilder atError() {
+        return this.errorEventGenerator.atLevel();
     }
 
     @Override
@@ -498,6 +523,18 @@ public abstract class LoggerDelegator implements LogEventLogger {
     public void log(Marker marker, String fqcn, int levelInt, String message, Object[] argArray, Throwable t) {
         Level level = getLevel(levelInt);
         getLogger(level).log(marker, message, argArray, t);
+    }
+
+    @Override
+    public LoggingEventBuilder atLevel(Level level) {
+        switch (level) {
+            case ERROR: return atError();
+            case WARN: return atWarn();
+            case INFO: return atInfo();
+            case DEBUG: return atDebug();
+            case TRACE: return atTrace();
+        }
+        throw new IllegalArgumentException("Illegal level " + level);
     }
 
     @Override

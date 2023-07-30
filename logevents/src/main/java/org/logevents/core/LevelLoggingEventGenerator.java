@@ -5,6 +5,7 @@ import org.logevents.LogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
+import org.slf4j.spi.LoggingEventBuilder;
 
 public class LevelLoggingEventGenerator implements LogEventGenerator {
 
@@ -21,6 +22,11 @@ public class LevelLoggingEventGenerator implements LogEventGenerator {
     @Override
     public boolean isEnabled() {
         return observer.isEnabled();
+    }
+
+    @Override
+    public LoggingEventBuilder atLevel() {
+        return new LogEventBuilder(loggerName, level, observer);
     }
 
     @Override

@@ -2,6 +2,8 @@ package org.logevents.core;
 
 import org.logevents.LogEventObserver;
 import org.slf4j.Marker;
+import org.slf4j.spi.LoggingEventBuilder;
+import org.slf4j.spi.NOPLoggingEventBuilder;
 
 /**
  * Log generator which does nothing. Saves if-checks when logging to levels that have been turned off
@@ -11,6 +13,11 @@ public class NullLoggingEventGenerator implements LogEventGenerator {
     @Override
     public boolean isEnabled() {
         return false;
+    }
+
+    @Override
+    public LoggingEventBuilder atLevel() {
+        return NOPLoggingEventBuilder.singleton();
     }
 
     @Override

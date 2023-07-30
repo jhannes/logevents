@@ -5,6 +5,8 @@ import org.logevents.LogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
+import org.slf4j.spi.LoggingEventBuilder;
+import org.slf4j.spi.NOPLoggingEventBuilder;
 
 /**
  * Forwards the log event to it's {@link #observer} if {@link LogEventPredicate#test()} returns true.
@@ -29,6 +31,11 @@ public class ConditionalLogEventGenerator implements LogEventGenerator {
     @Override
     public boolean isEnabled() {
         return condition.test() && observer.isEnabled();
+    }
+
+    @Override
+    public LoggingEventBuilder atLevel() {
+        return isEnabled() ? new LogEventBuilder(loggerName, level, observer) : NOPLoggingEventBuilder.singleton();
     }
 
     @Override

@@ -74,4 +74,8 @@ public class CircularBufferLogEventObserver extends AbstractFilteredLogEventObse
     public List<String> getMessages() {
         return circularBuffer.stream().map(LogEvent::getMessage).collect(Collectors.toList());
     }
+
+    public void clear() {
+        circularBuffer.clear();
+    }
 }

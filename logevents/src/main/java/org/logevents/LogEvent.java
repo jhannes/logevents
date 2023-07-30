@@ -284,6 +284,8 @@ public class LogEvent implements LoggingEvent {
                 }
 
                 return stackTrace[i + 1];
+            } else if (stackTraceElement.getClassName().equals("org.logevents.core.LogEventBuilder")) {
+                return stackTrace[i + 1];
             } else if (stackTraceElement.getClassName().equals(LogEventSampler.class.getName())) {
                 return stackTrace[i + 1];
             } else if (stackTraceElement.getClassName().equals(JavaUtilLoggingAdapter.class.getName())) {
@@ -357,6 +359,10 @@ public class LogEvent implements LoggingEvent {
         return this.getMdcProperties()
                 .entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
                 .collect(Collectors.joining(", "));
+    }
+
+    public String getKeyValuePairsString() {
+        return getKeyValuePairs().stream().map(KeyValuePair::toString).collect(Collectors.joining(" "));
     }
 
     public String getMdc(String key, String defaultValue) {

@@ -1,10 +1,8 @@
 package org.logevents.core;
 
 import org.logevents.LogEventObserver;
-import org.logevents.core.ConditionalLogEventGenerator;
-import org.logevents.core.LevelLoggingEventGenerator;
-import org.logevents.core.NullLoggingEventGenerator;
 import org.slf4j.Marker;
+import org.slf4j.spi.LoggingEventBuilder;
 
 /**
  * Internal interface that is used by all calls to {@link org.slf4j.Logger#error}, {@link org.slf4j.Logger#warn},
@@ -38,4 +36,6 @@ public interface LogEventGenerator {
     void log(Marker marker, String format, Object... args);
 
     LogEventObserver getObservers();
+
+    LoggingEventBuilder atLevel();
 }
