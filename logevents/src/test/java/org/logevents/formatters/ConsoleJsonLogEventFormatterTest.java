@@ -10,6 +10,7 @@ import org.logevents.mdc.ExceptionMDC;
 import org.logevents.optional.junit.LogEventSampler;
 import org.logevents.util.JsonParser;
 import org.logevents.util.JsonUtil;
+import org.slf4j.event.KeyValuePair;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
@@ -136,7 +137,17 @@ public class ConsoleJsonLogEventFormatterTest {
             Map<String, Object> jsonLogEvent = formatter.toJsonObject(event);
             assertEquals("value", JsonUtil.getObject(jsonLogEvent, "mdc").get("key"));
         }
+    }
 
+    @Test
+    public void shouldOutputKeyValuePairs() {
+        LogEvent event = new LogEventSampler().build();
+        event.getKeyValuePairs().add(new KeyValuePair("k1", "v1"));
+        event.getKeyValuePairs().add(new KeyValuePair("k2", "v2"));
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("k1", "v1");
+        expected.put("k2", "v2");
+        assertEquals(expected, JsonUtil.getObject(formatter.toJsonObject(event), "keyValuePairs"));
     }
 
 }

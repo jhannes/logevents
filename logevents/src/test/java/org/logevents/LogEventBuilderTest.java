@@ -2,15 +2,17 @@ package org.logevents;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.logevents.formatters.PatternLogEventFormatter;
 import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.optional.junit.LogEventSampler;
+import org.slf4j.event.KeyValuePair;
 import org.slf4j.event.Level;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class LogEventBuilderTest {
 
@@ -68,4 +70,19 @@ public class LogEventBuilderTest {
             buffer.clear();
         }
     }
+
+    @Test
+    public void shouldLogKeyValuePairs() {
+        logger.atTrace()
+                .addKeyValue("first", "value 1")
+                .addKeyValue("second", () -> "value 2")
+                .log("keyValueTesting");
+        LogEvent event = buffer.singleLogEvent();
+        assertEquals(new KeyValuePair("first", "value 1").toString(), event.getKeyValuePairs().get(0).toString());
+        assertEquals(new KeyValuePair("second", "value 2").toString(), event.getKeyValuePairs().get(1).toString());
+
+        PatternLogEventFormatter formatter = new PatternLogEventFormatter("[%msg] (%kvp)");
+        assertEquals("[keyValueTesting] (first=\"value 1\" second=\"value 2\")\n", formatter.apply(event));
+    }
+
 }

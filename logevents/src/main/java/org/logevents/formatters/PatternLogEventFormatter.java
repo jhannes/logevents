@@ -1,9 +1,9 @@
 package org.logevents.formatters;
 
 import org.logevents.LogEvent;
+import org.logevents.LogEventFormatter;
 import org.logevents.config.Configuration;
 import org.logevents.config.MdcFilter;
-import org.logevents.LogEventFormatter;
 import org.logevents.formatters.exceptions.ExceptionFormatter;
 import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.formatters.pattern.PatternConverterSpecWithSubpattern;
@@ -48,6 +48,10 @@ import java.util.Optional;
  *          Use %mdc{key:-default} to display a single mdc variable, or with {@link Configuration#getMdcFilter()}.
  *          <strong>If MDC values are printed, the MDC string is prefixed with a space</strong>
  *     </li>
+ *     <li>
+ *         <code>%kvp</code>: The values of {@link LogEvent#getKeyValuePairs()}}. The value part is surrounded by
+ *          double quotes and each pair is separated by space, for example <code>k1="v1" k2="v2" k3="v3"</code>
+ *     </li>
  *     <li><code>%application</code>: The value of {@link Configuration#getApplicationName()}</li>
  *     <li><code>%node</code>: The value of {@link Configuration#getNodeName()} ()}</li>
  *     <li>
@@ -64,7 +68,7 @@ import java.util.Optional;
  *          <code>%bold<em>color</em>(...)</code> for all colors
  *     </li>
  * </ul>
- *
+ * <p>
  * Ansi colors will be used if running on a non-Windows shell or if
  * <a href="https://github.com/fusesource/jansi">JANSI</a> is in class path.
  * (Color on Windows is supported in IntelliJ, Cygwin and Ubuntu for Windows)
@@ -82,19 +86,19 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             Optional<Integer> length = spec.getIntParameter(0);
             return e -> e.getLoggerName(length);
         });
-        factory.putAliases("logger", new String[] { "c", "lo" });
+        factory.putAliases("logger", new String[]{"c", "lo"});
 
         factory.put("class", spec -> LogEvent::getCallerClassName); // TODO: int parameter
-        factory.putAliases("class", new String[] { "C" });
+        factory.putAliases("class", new String[]{"C"});
 
         factory.put("method", spec -> LogEvent::getCallerMethodName);
-        factory.putAliases("method", new String[] { "M" });
+        factory.putAliases("method", new String[]{"M"});
 
         factory.put("file", spec -> LogEvent::getCallerFileName);
-        factory.putAliases("file", new String[] { "F" });
+        factory.putAliases("file", new String[]{"F"});
 
         factory.put("line", spec -> e -> String.valueOf(e.getCallerLine()));
-        factory.putAliases("line", new String[] { "L" });
+        factory.putAliases("line", new String[]{"L"});
 
         factory.put("location", spec -> LogEvent::getSimpleCallerLocation);
 
@@ -107,7 +111,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
                     .orElse(ZoneId.systemDefault());
             return e -> formatter.format(e.getInstant().atZone(zone));
         });
-        factory.putAliases("date", new String[] { "d" });
+        factory.putAliases("date", new String[]{"d"});
 
         factory.put("time", spec -> {
             DateTimeFormatter formatter = spec.getParameter(0)
@@ -126,10 +130,11 @@ public class PatternLogEventFormatter implements LogEventFormatter {
             MessageFormatter formatter = spec.getConfiguration().createInstanceWithDefault("messageFormatter", MessageFormatter.class);
             return event -> event.getMessage(formatter);
         });
-        factory.putAliases("message", new String[] { "m", "msg" });
+        factory.putAliases("message", new String[]{"m", "msg"});
         factory.put("thread", spec -> LogEvent::getThreadName);
-        factory.putAliases("thread", new String[] { "t" });
+        factory.putAliases("thread", new String[]{"t"});
         factory.put("marker", spec -> e -> Optional.ofNullable(e.getMarker()).map(Marker::toString).orElse(""));
+        factory.put("kvp", spec -> LogEvent::getKeyValuePairsString);
 
         factory.put("mdc", spec -> {
             if (spec.getParameters().isEmpty()) {
@@ -142,7 +147,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
                 return e -> e.getMdc(key, defaultValue);
             }
         });
-        factory.putAliases("mdc", new String[] { "X" });
+        factory.putAliases("mdc", new String[]{"X"});
 
         factory.putTransformer("replace", spec -> {
             String regex = spec.getParameters().get(0);
@@ -241,7 +246,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
 
     @Override
     public String apply(LogEvent event) {
-        return converter.apply(event) + "\n" +exceptionFormatter.format(event.getThrowable());
+        return converter.apply(event) + "\n" + exceptionFormatter.format(event.getThrowable());
     }
 
     @Override

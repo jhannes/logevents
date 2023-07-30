@@ -8,11 +8,13 @@ import org.logevents.formatters.exceptions.ExceptionFormatter;
 import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.mdc.DynamicMDC;
 import org.logevents.util.JsonUtil;
+import org.slf4j.event.KeyValuePair;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -91,12 +93,24 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         if (event.getMarker() != null) {
             payload.put("tags", Collections.singletonList(event.getMarker().getName()));
         }
+        if (!event.getKeyValuePairs().isEmpty()) {
+            payload.put("keyValuePairs", toJsonObject(event.getKeyValuePairs()));
+        }
+
         payload.put("service.name", applicationName);
         payload.put("host.name", hostname);
         payload.put("levelInt", event.getLevel().toInt());
         updateMdc(event, payload);
 
         return payload;
+    }
+
+    protected Map<String, String> toJsonObject(List<KeyValuePair> keyValuePairs) {
+        HashMap<String, String> result = new LinkedHashMap<>();
+        for (KeyValuePair keyValuePair : keyValuePairs) {
+            result.put(keyValuePair.key, keyValuePair.value.toString());
+        }
+        return result;
     }
 
     public static Map<String, Object> toJsonObject(Throwable throwable, ExceptionFormatter exceptionFormatter) {
