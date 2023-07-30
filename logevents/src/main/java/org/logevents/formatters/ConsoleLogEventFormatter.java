@@ -32,6 +32,7 @@ import java.util.Optional;
  * observer.*.packageFilter=sun.www, com.example.uninteresting
  * observer.console.includedMdcKeys=clientIp
  * observer.console.showMarkers=true
+ * observer.console.multipleLines=false
  * observer.console.color=true
  * observer.console.logFilenameForPackages=com.example.myapp
  * </pre>
@@ -46,6 +47,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     protected final DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     protected MdcFilter mdcFilter = MdcFilter.INCLUDE_ALL;
     private boolean showMarkers = true;
+    private boolean multipleLines = false;
     private List<String> logFilenameForPackages = new ArrayList<>();
 
     @Override
@@ -55,16 +57,30 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
 
     @Override
     public String apply(LogEvent e) {
-        // TODO: MARKER
-        return String.format("%s [%s] [%s] [%s]%s%s: %s\n",
-                e.getZonedDateTime().format(timeOnlyFormatter),
-                e.getThreadName(),
-                colorizedLevel(e),
-                format.bold(logger(e)),
-                showMarkers && e.getMarker() != null ? " {" + e.getMarker().getName() + "}" : "",
-                e.getMdcString(mdcFilter),
-                e.getMessage(messageFormatter)
-        ) + exceptionFormatter.format(e.getThrowable());
+        if (multipleLines) {
+            String mdcString = e.getMdcString(mdcFilter);
+            return String.format("%s [%s] [%s] [%s]%s: %s\n",
+                    e.getZonedDateTime().format(timeOnlyFormatter),
+                    e.getThreadName(),
+                    colorizedLevel(e),
+                    format.bold(logger(e)),
+                    showMarkers && e.getMarker() != null ? " {" + e.getMarker().getName() + "}" : "",
+                    e.getMessage(messageFormatter)
+            )
+                   + (mdcString.isEmpty() ? "" : "\n" + mdcString)
+                   + exceptionFormatter.format(e.getThrowable());
+        } else {
+            return String.format("%s [%s] [%s] [%s]%s%s: %s\n",
+                    e.getZonedDateTime().format(timeOnlyFormatter),
+                    e.getThreadName(),
+                    colorizedLevel(e),
+                    format.bold(logger(e)),
+                    showMarkers && e.getMarker() != null ? " {" + e.getMarker().getName() + "}" : "",
+                    e.getMdcString(mdcFilter),
+                    e.getMessage(messageFormatter)
+            )
+                   + exceptionFormatter.format(e.getThrowable());
+        }
     }
 
     private String logger(LogEvent e) {
@@ -117,6 +133,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
             format = configuration.getBoolean("color") ? ConsoleFormatting.ANSI_FORMATTING : ConsoleFormatting.NULL_FORMATTING;
             messageFormatter = new ConsoleMessageFormatter(format);
         }
+        multipleLines = configuration.getBoolean("multipleLines");
     }
 
 }

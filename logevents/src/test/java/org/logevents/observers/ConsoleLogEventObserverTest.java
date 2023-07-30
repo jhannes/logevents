@@ -2,9 +2,9 @@ package org.logevents.observers;
 
 import org.junit.Test;
 import org.logevents.config.Configuration;
-import org.logevents.optional.junit.LogEventSampler;
 import org.logevents.formatters.ConsoleFormatting;
 import org.logevents.formatters.ConsoleLogEventFormatter;
+import org.logevents.optional.junit.LogEventSampler;
 import org.slf4j.event.Level;
 
 import java.io.ByteArrayOutputStream;
@@ -118,6 +118,18 @@ public class ConsoleLogEventObserverTest {
                 .withMdc("uid", "userFive")
                 .build());
         assertContains("{op=read, uid=userFive}", message);
+    }
+
+    @Test
+    public void shouldDisplayMdcOnSeparateLine() {
+        HashMap<String, String> properties = new HashMap<>();
+        properties.put("observer.console.multipleLines", "true");
+        formatter.configure(new Configuration(properties, "observer.console"));
+        String message = formatter.apply(new LogEventSampler()
+                .withMdc("op", "read")
+                .withMdc("uid", "userFive")
+                .build());
+        assertContains("\n {op=read, uid=userFive}", message);
     }
 
     @Test
