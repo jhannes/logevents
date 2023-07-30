@@ -11,12 +11,14 @@ import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 import org.slf4j.spi.LocationAwareLogger;
 
+import javax.servlet.DispatcherType;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.util.EnumSet;
 import java.util.Random;
 
 public class DemoServer {
@@ -29,12 +31,13 @@ public class DemoServer {
         OPS.add(LIFECYCLE); OPS.add(HTTP);
     }
 
-    private static LocationAwareLogger logger = (LocationAwareLogger) LoggerFactory.getLogger(DemoServer.class);
-    private Server server;
+    private static final LocationAwareLogger logger = (LocationAwareLogger) LoggerFactory.getLogger(DemoServer.class);
+    private final Server server;
 
     public DemoServer(int httpPort) {
         server = new Server(httpPort);
         server.setHandler(demoContext());
+        server.setRequestLog(new Slf4RequestLog());
     }
 
     public static void main(String[] args) throws Exception {
@@ -109,6 +112,9 @@ public class DemoServer {
     private static class ApplicationContext implements ServletContextListener {
         @Override
         public void contextInitialized(ServletContextEvent sce) {
+            sce.getServletContext().addFilter("logFilter", new LogEventServletFilter())
+                    .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "/*");
+            sce.getServletContext().addServlet("test", new TestServlet()).addMapping("/test/*");
             sce.getServletContext().addServlet("logs", new LogEventsServlet()).addMapping("/logs/*");
 
             sce.getServletContext().addServlet("swagger", new WebJarServlet("swagger-ui"))
