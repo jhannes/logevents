@@ -6,6 +6,7 @@ import org.logevents.config.MdcFilter;
 import org.logevents.formatters.exceptions.ExceptionFormatter;
 import org.logevents.optional.junit.LogEventSampler;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -20,12 +21,11 @@ public class DynamicMDCTest {
 
     @Test
     public void shouldPutDynamicVariables() {
-        //List<String> values = new ArrayList<>();
-        List<String> values = Collections.singletonList("test");
+        List<String> values = new ArrayList<>();
         try (DynamicMDCAdapter.Cleanup ignored = DynamicMDC.putEntry("mdcTest", values::toString)) {
-            //LogEvent logEvent = new LogEvent(null, null, null, null, new Object[0]);
-            //assertEquals("[]", logEvent.getMdc("mdcTest", null));
-            //values.add("test");
+            LogEvent logEvent = new LogEvent(null, null, null, null, new Object[0]);
+            assertEquals("[]", logEvent.getMdc("mdcTest", null));
+            values.add("test");
             LogEvent newEvent = new LogEvent(null, null, null, null, new Object[0]);
             assertEquals("[test]", newEvent.getMdc("mdcTest", null));
         }

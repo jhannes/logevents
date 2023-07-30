@@ -1,9 +1,9 @@
 package org.logevents.core;
 
 import org.logevents.LogEventFactory;
+import org.logevents.mdc.DynamicMDCAdapterImplementation;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.IMarkerFactory;
-import org.slf4j.helpers.BasicMDCAdapter;
 import org.slf4j.helpers.BasicMarkerFactory;
 import org.slf4j.spi.MDCAdapter;
 import org.slf4j.spi.SLF4JServiceProvider;
@@ -15,7 +15,7 @@ public class SLF4JServiceProviderImpl implements SLF4JServiceProvider {
 
     private final ILoggerFactory loggerFactory = LogEventFactory.getInstance();
     private final IMarkerFactory markerFactory =  new BasicMarkerFactory();
-    private final MDCAdapter mdcAdapter =  new BasicMDCAdapter();
+    private final MDCAdapter mdcAdapter =  new DynamicMDCAdapterImplementation();
 
     @Override
     public ILoggerFactory getLoggerFactory() {
