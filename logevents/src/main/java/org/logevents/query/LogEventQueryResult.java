@@ -1,6 +1,7 @@
 package org.logevents.query;
 
 import org.logevents.LogEvent;
+import org.logevents.util.JsonUtil;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
 
@@ -39,13 +40,14 @@ public class LogEventQueryResult {
                 Instant.parse(json.get("time").toString()),
                 json.get("marker") != null ? MarkerFactory.getMarker(json.get("marker").toString()) : null,
                 json.get("messageTemplate").toString(),
-                ((List)json.get("arguments")).toArray(),
-                null,
-                parseMdc((List<Map<String, String>>) json.get("mdc"))
+                JsonUtil.getList(json, "arguments").toArray(),
+                parseMdc(json.get("mdc"))
         );
     }
 
-    private Map<String, String> parseMdc(List<Map<String, String>> mdcAsJson) {
+    @SuppressWarnings("unchecked")
+    private Map<String, String> parseMdc(Object mdcAsObject) {
+        List<Map<String, String>> mdcAsJson = (List<Map<String, String>>) mdcAsObject;
         return mdcAsJson.stream()
                 .collect(Collectors.toMap(entry -> entry.get("name"), entry -> entry.get("mdc_value"), (a, b) -> b));
     }

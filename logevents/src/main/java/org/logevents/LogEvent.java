@@ -1,10 +1,10 @@
 package org.logevents;
 
 import org.logevents.config.MdcFilter;
-import org.logevents.optional.junit.LogEventSampler;
-import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.core.JavaUtilLoggingAdapter;
 import org.logevents.core.LoggerDelegator;
+import org.logevents.formatters.messages.MessageFormatter;
+import org.logevents.optional.junit.LogEventSampler;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.Marker;
@@ -33,10 +33,9 @@ import java.util.stream.Collectors;
  * When using LogEvent, be aware that {@link #getCallerLocation()} is initialized lazily.
  * This will fail it's not accessed the first time inside a call to {@link LogEventObserver}
  * (for example, if accessed in another thread or after {@link LogEventObserver#logEvent(LogEvent)}
- * returned.
+ * returned).
  *
  * @author Johannes Brodwall
- *
  */
 public class LogEvent implements LoggingEvent {
 
@@ -63,15 +62,20 @@ public class LogEvent implements LoggingEvent {
             Marker marker,
             String messageFormat,
             Object[] args,
-            Throwable throwable,
             Map<String, String> mdcProperties
     ) {
         this.loggerName = loggerName;
         this.level = level;
         this.marker = marker;
         this.messageFormat = messageFormat;
-        this.args = args != null ? args : new Object[0];
-        this.throwable = throwable;
+        if (args.length > 0 && args[args.length - 1] instanceof Throwable) {
+            this.args = new Object[args.length - 1];
+            System.arraycopy(args, 0, this.args, 0, this.args.length);
+            this.throwable = (Throwable) args[args.length - 1];
+        } else {
+            this.args = args;
+            this.throwable = null;
+        }
         this.threadName = threadName;
         this.timestamp = timestamp.toEpochMilli();
         this.mdcProperties = mdcProperties;
@@ -79,53 +83,22 @@ public class LogEvent implements LoggingEvent {
 
     public LogEvent(String loggerName, Level level, Marker marker, String messageFormat, Object[] args) {
         this(
-            loggerName,
-            level,
-            Thread.currentThread().getName(),
-            Instant.now(),
-            marker,
-            messageFormat,
-            args,
-            Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>())
+                loggerName,
+                level,
+                Thread.currentThread().getName(),
+                Instant.now(),
+                marker,
+                messageFormat,
+                args,
+                Optional.ofNullable(MDC.getCopyOfContextMap()).orElse(new HashMap<>())
         );
-    }
-
-    public LogEvent(
-            String loggerName,
-            Level level,
-            String threadName,
-            Instant timestamp,
-            Marker marker,
-            String messageFormat,
-            Object[] args,
-            Map<String, String> mdcProperties
-    ) {
-        this.loggerName = loggerName;
-        this.level = level;
-        this.threadName = threadName;
-        this.marker = marker;
-        this.messageFormat = messageFormat;
-        if (args.length > 0 && args[args.length-1] instanceof Throwable) {
-            this.args = new Object[args.length-1];
-            System.arraycopy(args, 0, this.args, 0, this.args.length);
-            this.throwable = (Throwable) args[args.length-1];
-        } else {
-            this.args = args;
-            this.throwable = null;
-        }
-        this.timestamp = timestamp.toEpochMilli();
-        this.mdcProperties = mdcProperties;
     }
 
     public String getMdcString(MdcFilter mdcFilter) {
         List<String> mdcValue = new ArrayList<>();
-        if (mdcFilter == null) {
-            getMdcProperties().forEach((k, v) -> mdcValue.add(k + "=" + v));
-        } else {
-            getMdcProperties().keySet()
-                    .stream().filter(mdcFilter::isKeyIncluded)
-                    .forEach(key -> mdcValue.add(key + "=" + getMdcProperties().get(key)));
-        }
+        getMdcProperties().keySet()
+                .stream().filter(mdcFilter::isKeyIncluded)
+                .forEach(key -> mdcValue.add(key + "=" + getMdcProperties().get(key)));
         return mdcValue.isEmpty() ? "" : " {" + String.join(", ", mdcValue) + "}";
     }
 
@@ -181,16 +154,16 @@ public class LogEvent implements LoggingEvent {
      */
     public static String getAbbreviatedClassName(String className, int maxLength) {
         String[] parts = className.split("\\.");
-        String lastPartName = parts[parts.length-1];
-        int remainder = maxLength - lastPartName.length() - ((parts.length-1) * 2);
+        String lastPartName = parts[parts.length - 1];
+        int remainder = maxLength - lastPartName.length() - ((parts.length - 1) * 2);
 
         StringBuilder result = new StringBuilder();
-        for (int i=0; i<parts.length-1; i++) {
+        for (int i = 0; i < parts.length - 1; i++) {
             if (parts[i].length() > remainder) {
                 remainder = 0;
                 result.append(parts[i].charAt(0)).append(".");
             } else {
-                remainder -= parts[i].length()+1;
+                remainder -= parts[i].length() + 1;
                 result.append(parts[i]).append(".");
             }
         }
@@ -285,23 +258,23 @@ public class LogEvent implements LoggingEvent {
      * that's not in a known logging package
      */
     StackTraceElement extractCallerLocation(StackTraceElement[] stackTrace) {
-        for (int i = 0; i < stackTrace.length-1; i++) {
+        for (int i = 0; i < stackTrace.length - 1; i++) {
             StackTraceElement stackTraceElement = stackTrace[i];
             if (stackTraceElement.getClassName().equals(LoggerDelegator.class.getName())) {
-                assert !stackTrace[i+1].getClassName().startsWith("org.slf4j.");
+                assert !stackTrace[i + 1].getClassName().startsWith("org.slf4j.");
 
-                while (isLoggingClass(stackTrace[i+1])) {
+                while (isLoggingClass(stackTrace[i + 1])) {
                     i++;
                 }
 
-                return stackTrace[i+1];
+                return stackTrace[i + 1];
             } else if (stackTraceElement.getClassName().equals(LogEventSampler.class.getName())) {
-                return stackTrace[i+1];
+                return stackTrace[i + 1];
             } else if (stackTraceElement.getClassName().equals(JavaUtilLoggingAdapter.class.getName())) {
-                while (isLoggingClass(stackTrace[i+1])) {
+                while (isLoggingClass(stackTrace[i + 1])) {
                     i++;
                 }
-                return stackTrace[i+1];
+                return stackTrace[i + 1];
             }
         }
         throw new RuntimeException("Could not find calling stack trace element!");
@@ -314,26 +287,26 @@ public class LogEvent implements LoggingEvent {
     public String getSimpleCallerLocation() {
         StackTraceElement callerLocation = getCallerLocation();
         String className = callerLocation.getClassName();
-        className = className.substring(className.lastIndexOf(".")+1);
+        className = className.substring(className.lastIndexOf(".") + 1);
         return className + "." + callerLocation.getMethodName()
-                + "(" + callerLocation.getFileName() + ":" + callerLocation.getLineNumber() + ")";
+               + "(" + callerLocation.getFileName() + ":" + callerLocation.getLineNumber() + ")";
     }
 
     private boolean isLoggingClass(StackTraceElement stackTraceElement) {
         String className = stackTraceElement.getClassName();
         return className.startsWith("org.logevents.")
-                || className.startsWith("sun.reflect.")
-                || className.startsWith("jdk.internal.reflect.")
-                || className.startsWith("java.lang.reflect.")
-                || className.startsWith("org.apache.commons.logging.")
-                || className.startsWith("org.flywaydb.core.internal.util.logging.")
-                || className.startsWith("org.flywaydb.core.internal.logging.")
-                || className.startsWith("org.eclipse.jetty.util.log")
-                || className.startsWith("java.util.logging.")
-                || className.startsWith("sun.util.logging.")
-                || className.startsWith("sun.rmi.runtime.Log")
-                || className.startsWith("sun.security.ssl.SSLLogger")
-                || className.startsWith("org.log4j.");
+               || className.startsWith("sun.reflect.")
+               || className.startsWith("jdk.internal.reflect.")
+               || className.startsWith("java.lang.reflect.")
+               || className.startsWith("org.apache.commons.logging.")
+               || className.startsWith("org.flywaydb.core.internal.util.logging.")
+               || className.startsWith("org.flywaydb.core.internal.logging.")
+               || className.startsWith("org.eclipse.jetty.util.log")
+               || className.startsWith("java.util.logging.")
+               || className.startsWith("sun.util.logging.")
+               || className.startsWith("sun.rmi.runtime.Log")
+               || className.startsWith("sun.security.ssl.SSLLogger")
+               || className.startsWith("org.log4j.");
     }
 
     public StackTraceElement[] getStackTrace() {
@@ -366,8 +339,8 @@ public class LogEvent implements LoggingEvent {
 
     public String getMdc() {
         return this.getMdcProperties()
-            .entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
-            .collect(Collectors.joining(", "));
+                .entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining(", "));
     }
 
     public String getMdc(String key, String defaultValue) {
@@ -385,12 +358,12 @@ public class LogEvent implements LoggingEvent {
         if (o == null || getClass() != o.getClass()) return false;
         LogEvent logEvent = (LogEvent) o;
         return threadId == logEvent.threadId &&
-                timestamp == logEvent.timestamp &&
-                Objects.equals(loggerName, logEvent.loggerName) &&
-                level == logEvent.level &&
-                Objects.equals(marker, logEvent.marker) &&
-                Objects.equals(messageFormat, logEvent.messageFormat) &&
-                Objects.equals(threadName, logEvent.threadName);
+               timestamp == logEvent.timestamp &&
+               Objects.equals(loggerName, logEvent.loggerName) &&
+               level == logEvent.level &&
+               Objects.equals(marker, logEvent.marker) &&
+               Objects.equals(messageFormat, logEvent.messageFormat) &&
+               Objects.equals(threadName, logEvent.threadName);
     }
 
     @Override
