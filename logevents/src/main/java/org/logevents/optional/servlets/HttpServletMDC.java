@@ -3,7 +3,10 @@ package org.logevents.optional.servlets;
 import org.logevents.config.MdcFilter;
 import org.logevents.formatters.exceptions.ExceptionFormatter;
 import org.logevents.mdc.DynamicMDC;
+import org.logevents.mdc.DynamicMDCAdapter;
 
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
@@ -34,15 +37,19 @@ public class HttpServletMDC implements DynamicMDC {
     private final HttpServletResponse response;
     private final long duration;
 
-    public HttpServletMDC(HttpServletRequest request, HttpServletResponse response, long duration) {
-        this.request = request;
-        this.response = response;
+    public HttpServletMDC(ServletRequest request, ServletResponse response, long duration) {
+        this.request = (HttpServletRequest) request;
+        this.response = (HttpServletResponse) response;
         this.duration = duration;
     }
 
-    public static Supplier<DynamicMDC> supplier(HttpServletRequest request, HttpServletResponse response) {
+    public static Supplier<DynamicMDC> supplier(ServletRequest request, ServletResponse response) {
         long start = System.currentTimeMillis();
         return () -> new HttpServletMDC(request, response, System.currentTimeMillis() - start);
+    }
+
+    public static DynamicMDCAdapter.Cleanup put(ServletRequest request, ServletResponse response) {
+        return DynamicMDC.putDynamic("servlet", supplier(request, response));
     }
 
     @Override

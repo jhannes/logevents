@@ -51,6 +51,28 @@ public class HttpServletResponseMDCTest {
         }
     }
 
+    @Test
+    public void shouldClassifyMarkerBasedOnResponseCode() {
+        HttpServletResponse mockResponse = Mockito.mock(HttpServletResponse.class);
+        Mockito.when(mockResponse.getStatus()).thenReturn(500);
+        assertEquals(HttpServletResponseMDC.HTTP_ERROR, HttpServletResponseMDC.getMarker(mockResponse));
+        Mockito.when(mockResponse.getStatus()).thenReturn(307);
+        assertEquals(HttpServletResponseMDC.REDIRECT, HttpServletResponseMDC.getMarker(mockResponse));
+        Mockito.when(mockResponse.getStatus()).thenReturn(304);
+        assertEquals(HttpServletResponseMDC.NOT_MODIFIED, HttpServletResponseMDC.getMarker(mockResponse));
+    }
+
+    @Test
+    public void shouldClassifyMarkerBasedOnContentType() {
+        HttpServletResponse mockResponse = Mockito.mock(HttpServletResponse.class);
+        Mockito.when(mockResponse.getStatus()).thenReturn(200);
+        assertEquals(HttpServletResponseMDC.HTTP, HttpServletResponseMDC.getMarker(mockResponse));
+        Mockito.when(mockResponse.getContentType()).thenReturn("image/png");
+        assertEquals(HttpServletResponseMDC.ASSET, HttpServletResponseMDC.getMarker(mockResponse));
+        Mockito.when(mockResponse.getContentType()).thenReturn("application/json");
+        assertEquals(HttpServletResponseMDC.JSON, HttpServletResponseMDC.getMarker(mockResponse));
+    }
+
     static HttpServletResponse createMockResponse() {
         HttpServletResponse mockResponse = Mockito.mock(HttpServletResponse.class);
         Mockito.when(mockResponse.getStatus()).thenReturn(401);

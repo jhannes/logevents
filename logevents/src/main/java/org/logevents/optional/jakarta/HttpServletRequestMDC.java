@@ -57,18 +57,18 @@ public class HttpServletRequestMDC implements DynamicMDC {
     private final HttpServletRequest request;
     private final long duration;
 
-    private HttpServletRequestMDC(HttpServletRequest request, long duration) {
-        this.request = request;
+    private HttpServletRequestMDC(ServletRequest request, long duration) {
+        this.request = (HttpServletRequest) request;
         this.duration = duration;
     }
 
-    public static Supplier<DynamicMDC> supplier(HttpServletRequest request) {
+    public static Supplier<DynamicMDC> supplier(ServletRequest request) {
         long start = System.currentTimeMillis();
         return () -> new HttpServletRequestMDC(request, System.currentTimeMillis() - start);
     }
 
     public static DynamicMDCAdapter.Cleanup put(ServletRequest request) {
-        return DynamicMDC.putDynamic("request", supplier((HttpServletRequest) request));
+        return DynamicMDC.putDynamic("request", supplier(request));
     }
 
     @Override
