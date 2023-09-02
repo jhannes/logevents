@@ -620,6 +620,7 @@ public class DefaultLogEventConfiguratorTest {
 
     @Test
     public void shouldInstallDefaultExceptionHandler() throws InterruptedException {
+        Thread.setDefaultUncaughtExceptionHandler(null);
         configuration.put("logevents.installExceptionHandler", "true");
         configurator.applyConfigurationProperties(factory, configuration);
         CircularBufferLogEventObserver rootObserver = new CircularBufferLogEventObserver();

@@ -299,7 +299,7 @@ public class LogEventFactory implements ILoggerFactory {
      * Detects whether we are currently running in a unit test. Used to set default log level.
      */
     public boolean isRunningInsideJunit() {
-        for (StackTraceElement stackTraceElement : new Throwable().getStackTrace()) {
+        for (StackTraceElement stackTraceElement : Thread.currentThread().getStackTrace()) {
             if (stackTraceElement.getClassName().matches("^org.junit.(runners|platform.engine).*")) {
                 return true;
             }

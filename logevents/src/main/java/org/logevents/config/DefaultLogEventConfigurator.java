@@ -362,7 +362,7 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
     }
 
     private void installUncaughtExceptionHandler(LogEventFactory factory, Configuration logeventsConfig) {
-        if (logeventsConfig.getBoolean("installExceptionHandler")) {
+        if (getShouldInstallExceptionHandler(logeventsConfig)) {
             if (Thread.getDefaultUncaughtExceptionHandler() == null) {
                 Thread.setDefaultUncaughtExceptionHandler((thread, e) ->
                         factory.getRootLogger().error("Thread {} terminated with unhandled exception", thread.getName(), e));
@@ -371,6 +371,10 @@ public class DefaultLogEventConfigurator implements LogEventConfigurator {
                 LogEventStatus.getInstance().addDebug(this, "Uncaught exception handler already set to " + Thread.getDefaultUncaughtExceptionHandler());
             }
         }
+    }
+
+    protected boolean getShouldInstallExceptionHandler(Configuration logeventsConfig) {
+        return logeventsConfig.getBoolean("installExceptionHandler", true);
     }
 
     protected void createObservers(Map<String, Supplier<? extends LogEventObserver>> observers, Map<String, String> configuration, Map<String, String> environment) {

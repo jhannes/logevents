@@ -74,6 +74,11 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
         return Level.WARN;
     }
 
+    @Override
+    protected boolean getShouldInstallExceptionHandler(Configuration logeventsConfig) {
+        return logeventsConfig.getBoolean("installExceptionHandler", false);
+    }
+
     public static String getTestMethodName(StackTraceElement[] stackTrace) {
         return getMethodRef(getTestMethod(stackTrace));
     }

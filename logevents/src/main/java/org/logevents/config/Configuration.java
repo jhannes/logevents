@@ -164,8 +164,8 @@ public class Configuration {
         return getBoolean(key, false);
     }
 
-    public boolean getBoolean(String key, boolean other) {
-        return optionalString(key).map(Boolean::valueOf).orElse(other);
+    public boolean getBoolean(String key, boolean defaultValue) {
+        return optionalString(key).map(Boolean::valueOf).orElse(defaultValue);
     }
 
     public URL getUrl(String key) {
