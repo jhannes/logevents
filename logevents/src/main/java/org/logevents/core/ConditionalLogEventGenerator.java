@@ -18,19 +18,17 @@ import org.slf4j.spi.NOPLoggingEventBuilder;
 public class ConditionalLogEventGenerator implements LogEventGenerator {
     private final String loggerName;
     private final Level level;
-    private final LogEventPredicate condition;
     private final LogEventObserver observer;
 
     public ConditionalLogEventGenerator(String loggerName, Level level, LogEventPredicate condition, LogEventObserver observer) {
         this.loggerName = loggerName;
         this.level = level;
-        this.condition = condition;
-        this.observer = observer;
+        this.observer = observer.filteredOn(level, condition);
     }
 
     @Override
     public boolean isEnabled() {
-        return condition.test() && observer.isEnabled();
+        return observer.isEnabled();
     }
 
     @Override
@@ -40,7 +38,7 @@ public class ConditionalLogEventGenerator implements LogEventGenerator {
 
     @Override
     public boolean isEnabled(Marker marker) {
-        return condition.test(marker) && observer.isEnabled(marker);
+        return observer.isEnabled(marker);
     }
 
     @Override
