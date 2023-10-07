@@ -43,13 +43,13 @@ public class HttpServletMDC implements DynamicMDC {
         this.duration = duration;
     }
 
+    public static DynamicMDCAdapter.Cleanup put(ServletRequest request, ServletResponse response) {
+        return DynamicMDC.putDynamic("servlet", supplier(request, response));
+    }
+
     public static Supplier<DynamicMDC> supplier(ServletRequest request, ServletResponse response) {
         long start = System.currentTimeMillis();
         return () -> new HttpServletMDC(request, response, System.currentTimeMillis() - start);
-    }
-
-    public static DynamicMDCAdapter.Cleanup put(ServletRequest request, ServletResponse response) {
-        return DynamicMDC.putDynamic("servlet", supplier(request, response));
     }
 
     @Override

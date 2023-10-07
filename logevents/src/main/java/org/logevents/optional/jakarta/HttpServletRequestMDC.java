@@ -33,13 +33,17 @@ public class HttpServletRequestMDC implements DynamicMDC {
     public static void addMdcVariables(Map<String, String> result, HttpServletRequest request) {
         result.put("http.request.method", request.getMethod());
         result.put("url.original", request.getRequestURL().toString());
-        result.put("user.name", request.getRemoteUser());
+        if (request.getRemoteUser() != null) {
+            result.put("user.name", request.getRemoteUser());
+        }
         result.put("client.address", request.getRemoteHost());
     }
 
     public static void populateJson(Map<String, Object> jsonPayload, ExceptionFormatter exceptionFormatter, HttpServletRequest request) {
         jsonPayload.put("url.original", request.getRequestURL().toString());
-        jsonPayload.put("user.name", request.getRemoteUser());
+        if (request.getRemoteUser() != null) {
+            jsonPayload.put("user.name", request.getRemoteUser());
+        }
         jsonPayload.put("client.address", request.getRemoteHost());
 
         if (jsonPayload.containsKey("http")) {

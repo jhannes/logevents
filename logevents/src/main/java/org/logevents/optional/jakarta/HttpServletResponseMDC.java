@@ -58,8 +58,12 @@ public class HttpServletResponseMDC implements DynamicMDC {
 
     public static void addMdcVariables(Map<String, String> result, HttpServletResponse response) {
         result.put("http.response.status_code", String.valueOf(response.getStatus()));
-        result.put("http.response.mime_type", response.getContentType());
-        result.put("http.response.redirect", response.getHeader("Location"));
+        if (response.getContentType() != null) {
+            result.put("http.response.mime_type", response.getContentType());
+        }
+        if (response.getHeader("Location") != null) {
+            result.put("http.response.redirect", response.getHeader("Location"));
+        }
     }
 
     private final HttpServletResponse response;

@@ -39,7 +39,9 @@ public class HttpServletRequestMDC implements DynamicMDC {
 
     public static void populateJson(Map<String, Object> jsonPayload, ExceptionFormatter exceptionFormatter, HttpServletRequest request) {
         jsonPayload.put("url.original", request.getRequestURL().toString());
-        jsonPayload.put("user.name", request.getRemoteUser());
+        if (request.getRemoteUser() != null) {
+            jsonPayload.put("user.name", request.getRemoteUser());
+        }
         jsonPayload.put("client.address", request.getRemoteHost());
 
         if (jsonPayload.containsKey("http")) {
