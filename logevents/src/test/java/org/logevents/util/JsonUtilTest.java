@@ -51,6 +51,17 @@ public class JsonUtilTest {
     }
 
     @Test
+    public void shouldOutputArrays() {
+        Map<String, Object> jsonObject = new LinkedHashMap<>();
+        jsonObject.put("numbers", new Long[] { 1L, 2L, 3L });
+        assertJsonOutput("{\"numbers\": [1,2,3]}", jsonObject);
+
+        String s = toCompactJson(jsonObject);
+        Map<String, Object> parsed = JsonParser.parseObject(s);
+        assertEquals(Arrays.asList(1L, 2L, 3L), parsed.get("numbers"));
+    }
+
+    @Test
     public void shouldIndentOutput() {
         Map<String, Object> jsonObject = new LinkedHashMap<>();
         jsonObject.put("numbers", Arrays.asList(1, 2));

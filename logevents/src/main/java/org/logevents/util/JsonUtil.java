@@ -1,5 +1,7 @@
 package org.logevents.util;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +90,12 @@ public class JsonUtil {
             result.append(value.toString());
         } else if (value == null) {
             result.append("null");
+        } else if (value.getClass().isArray()) {
+            List<Object> list = new ArrayList<>();
+            for (int i = 0; i < Array.getLength(value); i++) {
+                list.add(Array.get(value, i));
+            }
+            toJson(list, result, currentIndent);
         } else {
             throw new IllegalArgumentException("Unsupported JSON element " + value.getClass().getName());
         }
