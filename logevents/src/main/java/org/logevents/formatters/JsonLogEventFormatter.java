@@ -37,7 +37,7 @@ public class JsonLogEventFormatter implements LogEventFormatter {
     private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
     private String hostname;
     private String applicationName;
-    private final Map<String, String> additionalProperties = new HashMap<>();
+    protected final Map<String, String> additionalProperties = new HashMap<>();
 
     @SuppressWarnings("unused")
     public JsonLogEventFormatter() {
@@ -77,7 +77,11 @@ public class JsonLogEventFormatter implements LogEventFormatter {
 
     public Map<String, Object> toJsonObject(LogEvent event) {
         Map<String, Object> payload = new LinkedHashMap<>(additionalProperties);
+        writeJsonObject(event, payload);
+        return payload;
+    }
 
+    protected void writeJsonObject(LogEvent event, Map<String, Object> payload) {
         payload.put("log.level", event.getLevel().toString());
         payload.put("log.logger", event.getLoggerName());
         payload.put("@timestamp", event.getZonedDateTime().format(dateTimeFormatter));
@@ -101,11 +105,9 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         payload.put("host.name", hostname);
         payload.put("levelInt", event.getLevel().toInt());
         updateMdc(event, payload);
-
-        return payload;
     }
 
-    protected Map<String, String> toJsonObject(List<KeyValuePair> keyValuePairs) {
+    protected final Map<String, String> toJsonObject(List<KeyValuePair> keyValuePairs) {
         HashMap<String, String> result = new LinkedHashMap<>();
         for (KeyValuePair keyValuePair : keyValuePairs) {
             result.put(keyValuePair.key, keyValuePair.value.toString());
