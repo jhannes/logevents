@@ -26,14 +26,14 @@ import java.util.function.Supplier;
  */
 public class HttpServletResponseMDC implements DynamicMDC {
 
-    protected static final Marker HTTP = MarkerFactory.getMarker("HTTP");
-    protected static final Marker HTTP_ERROR = MarkerFactory.getMarker("HTTP_ERROR");
-    protected static final Marker ASSET = MarkerFactory.getMarker("HTTP_ASSET");
-    protected static final Marker JSON = MarkerFactory.getMarker("HTTP_JSON");
-    protected static final Marker XML = MarkerFactory.getMarker("HTTP_XML");
-    protected static final Marker REDIRECT = MarkerFactory.getMarker("HTTP_REDIRECT");
-    protected static final Marker NOT_MODIFIED = MarkerFactory.getMarker("HTTP_NOT_MODIFIED");
-    protected static final Marker STATUS = MarkerFactory.getMarker("HTTP_STATUS_REQUEST");
+    public static final Marker HTTP = MarkerFactory.getMarker("HTTP");
+    public static final Marker HTTP_ERROR = MarkerFactory.getMarker("HTTP_ERROR");
+    public static final Marker ASSET = MarkerFactory.getMarker("HTTP_ASSET");
+    public static final Marker JSON = MarkerFactory.getMarker("HTTP_JSON");
+    public static final Marker XML = MarkerFactory.getMarker("HTTP_XML");
+    public static final Marker REDIRECT = MarkerFactory.getMarker("HTTP_REDIRECT");
+    public static final Marker NOT_MODIFIED = MarkerFactory.getMarker("HTTP_NOT_MODIFIED");
+    public static final Marker STATUS = MarkerFactory.getMarker("HTTP_STATUS_REQUEST");
     static {
         HTTP_ERROR.add(HTTP);
         ASSET.add(HTTP);
@@ -91,17 +91,17 @@ public class HttpServletResponseMDC implements DynamicMDC {
         // 300 = MULTIPLE CHOICES
         // 305 = USE PROXY
         // 306 = SWITCH PROXY
-        return getMarker(response.getContentType());
+        return getMarkerFromContentType(response);
     }
 
-    private static Marker getMarker(String contentType) {
+    private static Marker getMarkerFromContentType(HttpServletResponse response) {
+        String contentType = response.getContentType();
         if (contentType == null) {
             return HTTP;
         }
-        boolean isAsset = contentType.startsWith("image/") || contentType.startsWith("font/") || contentType.startsWith("text/html") || contentType.startsWith("text/css") || contentType.startsWith("application/javascript");
         boolean isJson = contentType.startsWith("application/json");
         boolean isXml = contentType.startsWith("application/xml");
-        if (isAsset) {
+        if (isAsset(response)) {
             return ASSET;
         } else if (isJson) {
             return JSON;
@@ -109,6 +109,11 @@ public class HttpServletResponseMDC implements DynamicMDC {
             return XML;
         }
         return HTTP;
+    }
+
+    public static boolean isAsset(HttpServletResponse response) {
+        String contentType = response.getContentType();
+        return (contentType.startsWith("image/") || contentType.startsWith("font/") || contentType.startsWith("text/html") || contentType.startsWith("text/css") || contentType.startsWith("text/javascript"));
     }
 
     protected static boolean isRedirect(int status) {

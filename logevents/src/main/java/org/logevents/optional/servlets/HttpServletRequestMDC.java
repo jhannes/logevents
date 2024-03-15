@@ -33,7 +33,9 @@ public class HttpServletRequestMDC implements DynamicMDC {
     public static void addMdcVariables(Map<String, String> result, HttpServletRequest request) {
         result.put("http.request.method", request.getMethod());
         result.put("url.original", request.getRequestURL().toString());
-        result.put("user.name", request.getRemoteUser());
+        if (request.getRemoteUser() != null) {
+            result.put("user.name", request.getRemoteUser());
+        }
         result.put("client.address", request.getRemoteHost());
     }
 
@@ -59,7 +61,7 @@ public class HttpServletRequestMDC implements DynamicMDC {
     private final HttpServletRequest request;
     private final long duration;
 
-    private HttpServletRequestMDC(ServletRequest request, long duration) {
+    protected HttpServletRequestMDC(ServletRequest request, long duration) {
         this.request = (HttpServletRequest) request;
         this.duration = duration;
     }

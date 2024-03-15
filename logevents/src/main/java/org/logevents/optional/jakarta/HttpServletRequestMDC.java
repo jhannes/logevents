@@ -61,7 +61,7 @@ public class HttpServletRequestMDC implements DynamicMDC {
     private final HttpServletRequest request;
     private final long duration;
 
-    private HttpServletRequestMDC(ServletRequest request, long duration) {
+    protected HttpServletRequestMDC(ServletRequest request, long duration) {
         this.request = (HttpServletRequest) request;
         this.duration = duration;
     }
