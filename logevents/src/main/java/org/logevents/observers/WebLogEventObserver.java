@@ -3,14 +3,13 @@ package org.logevents.observers;
 import org.logevents.LogEvent;
 import org.logevents.config.Configuration;
 import org.logevents.core.AbstractFilteredLogEventObserver;
-import org.logevents.optional.servlets.LogEventsServlet;
 import org.logevents.formatters.messages.MessageFormatter;
 import org.logevents.observers.web.CryptoVault;
 import org.logevents.observers.web.LogEventHttpServer;
+import org.logevents.optional.servlets.LogEventsServlet;
 import org.logevents.util.openid.OpenIdConfiguration;
 import org.slf4j.event.Level;
 
-import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -34,7 +33,6 @@ import java.util.Optional;
  * If you have direct http or https-access to your application, WebLogEventObserver can start an embedded
  * web server at a port you specify with <code>observer.servlet.httpPort</code> or
  * <code>observer.servlet.httpsPort</code>. See {@link LogEventHttpServer} for more info.
- *
  * You can even include a link to the web dashboard for Logevents in {@link SlackLogEventObserver} by setting the <code>observer.slack.detailUrl</code> configuration parameter to point to your {@link LogEventsServlet}.
  *
  * <h2>Sample configuration</h2>
@@ -79,9 +77,8 @@ public class WebLogEventObserver extends AbstractFilteredLogEventObserver {
         cookieVault = new CryptoVault(configuration.optionalString("cookieEncryptionKey")
                 .orElseGet(() -> CryptoVault.randomString(40)));
         Optional<Integer> httpPort = configuration.optionalInt("httpPort");
-        Optional<Integer> httpsPort = configuration.optionalInt("httpsPort");
-        if (httpPort.isPresent() || httpsPort.isPresent()) {
-            logEventServer = createHttpServer(configuration, httpPort, httpsPort);
+        if (httpPort.isPresent()) {
+            logEventServer = createHttpServer(configuration, httpPort);
             logEventServer.start();
         }
         configuration.checkForUnknownFields();
@@ -101,18 +98,14 @@ public class WebLogEventObserver extends AbstractFilteredLogEventObserver {
         cookieVault = new CryptoVault(CryptoVault.randomString(40));
     }
 
-    protected LogEventHttpServer createHttpServer(Configuration configuration, Optional<Integer> httpPort, Optional<Integer> httpsPort) {
+    protected LogEventHttpServer createHttpServer(Configuration configuration, Optional<Integer> httpPort) {
         LogEventHttpServer logEventServer = new LogEventHttpServer();
         logEventServer.setHostname(configuration.optionalString("hostname").orElse(null));
         logEventServer.setHttpPort(httpPort);
-        logEventServer.setHttpsPort(httpsPort);
         logEventServer.setLogEventsHtml(logEventsHtml);
         logEventServer.setOpenIdConfiguration(openIdConfiguration);
         logEventServer.setLogEventSource(source);
         logEventServer.setCookieVault(cookieVault);
-        logEventServer.setKeyStore(configuration.optionalString("keyStore"));
-        logEventServer.setKeyStorePassword(configuration.optionalString("keyStorePassword"));
-        logEventServer.setHostKeyPassword(configuration.optionalString("hostKeyPassword"));
         return logEventServer;
     }
 
@@ -154,10 +147,6 @@ public class WebLogEventObserver extends AbstractFilteredLogEventObserver {
 
     public String getServerUrl() {
         return logEventServer.getUrl();
-    }
-
-    public X509Certificate getCertificate() {
-        return logEventServer.getCertificate();
     }
 
     protected String createSessionCookie(String subject) {

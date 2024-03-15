@@ -2,7 +2,6 @@ package org.logevents.observers.web;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsExchange;
 import com.sun.net.httpserver.HttpsServer;
 import org.logevents.observers.LogEventSource;
@@ -18,13 +17,9 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import javax.net.ssl.SSLContext;
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,7 +36,7 @@ import java.util.Optional;
  *
  * <h2>Running with http (unencrypted)</h2>
  *
- * The simplest way to get {@link LogEventHttpServer} up an running is to use <code>http</code>. However
+ * The simplest way to get {@link LogEventHttpServer} up a running is to use <code>http</code>. However,
  * this will probably only work for localhost, because OpenID Connect providers generally only allow
  * apps to use http for localhost.
  *
@@ -58,32 +53,8 @@ import java.util.Optional;
  *     with your Open ID Connect provider and the see your logs</li>
  * </ol>
  *
- * This allows your to access you log from localhost. If you want remote access, you either have to put your
- * application behind an https reverse proxy or use the method below to enable https.
- *
- * <h2>Running with https</h2>
- *
- * In order to use an https-server, the server needs a certificate (and private key) that is trusted by
- * you web browser. This makes it a bit trickier than http.
- *
- * <ol>
- *     <li><code>observer.web=WebLogEventServer</code></li>
- *     <li>Register a {@link WebLogEventObserver} with an <code>httpsPort</code>.
- *     (E.g. <code>observer.web.httpsPort=8443</code>)
- *     </li>
- *     <li>Setup a {@link OpenIdConfiguration} (e.g. <code>observer.web.openIdIssuer=https://login.microsoft.com</code>,
- *     <code>observer.web.clientId=...</code>, <code>observer.web.clientSecret=...</code>)
- *     </li>
- *     <li>Start your application with the configuration</li>
- *     <li>LogEvents will produce a file named <code>key-<em>hostname</em>.crt</code>. You will need to
- *     install this as a Trusted CA Root in you operating system. Normally, you can do this by double clicking
- *     on the file, select Import and make sure you import it into "Trusted Root Certificates Authorities".
- *     Alternatively to trusting a new CA, you can procure a P12 certificate and key file from a CA and
- *     get LogEvents to use this (<code>observer.web.keyStore=my-certificate.p12</code>
- *     </li>
- *     <li>Open a web browser to e.g. <code>https://localhost:8443/logs</code>. You will now be logged in
- *     with your Open ID Connect provider and the see your logs</li>
- * </ol>
+ * This allows you to access you log from localhost. If you want remote access, you should put your
+ * application behind a https reverse proxy.
  *
  * <h2>Sample config</h2>
  *
@@ -108,16 +79,11 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
 
     private String hostname = null;
     private Optional<Integer> httpPort = Optional.empty();
-    private Optional<Integer> httpsPort = Optional.empty();
     private HttpServer httpServer;
     private String logEventsHtml = "/org/logevents/logevents.html";
     private OpenIdConfiguration openIdConfiguration;
     private LogEventSource logEventSource;
     private CryptoVault cookieVault;
-    private Optional<String> keyStore = Optional.empty();
-    private Optional<String> keyStorePassword = Optional.empty();
-    private Optional<String> hostKeyPassword = Optional.empty();
-    private X509Certificate certificate;
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
@@ -145,16 +111,7 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
             if (hostname == null) {
                 hostname = InetAddress.getLocalHost().getHostName();
             }
-            if (httpsPort.isPresent()) {
-                HttpsServer httpsServer = HttpsServer.create(new InetSocketAddress(hostname, httpsPort.get()), 0);
-                try {
-                    httpsServer.setHttpsConfigurator(new HttpsConfigurator(createSslContext(hostname)));
-                } catch (GeneralSecurityException e) {
-                    LogEventStatus.getInstance().addError(this, "Failed to start SSLContext", e);
-                    return;
-                }
-                this.httpServer = httpsServer;
-            } else if (httpPort.isPresent()) {
+            if (httpPort.isPresent()) {
                 this.httpServer = HttpServer.create(new InetSocketAddress(hostname, httpPort.get()), 0);
             } else {
                 LogEventStatus.getInstance().addError(this, "httpPort or httpsPort must be configured", null);
@@ -172,34 +129,6 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
     public String getUrl() {
         String scheme = httpServer instanceof HttpsServer ? "https" : "http";
         return scheme + "://" + hostname + ":" + httpServer.getAddress().getPort() + "/logs";
-    }
-
-    public SSLContext createSslContext(String hostName) throws GeneralSecurityException, IOException {
-        HostKeyStore hostKeyStore = createHostKeyStore(hostName);
-        this.certificate = hostKeyStore.getCertificate();
-
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(hostKeyStore.getKeyManagers(), null, null);
-        return sslContext;
-    }
-
-    protected HostKeyStore createHostKeyStore(String hostName) throws GeneralSecurityException, IOException {
-        HostKeyStore hostKeyStore = new HostKeyStore(
-                new File(keyStore.orElse("key-" + hostName + ".p12")),
-                keyStorePassword.orElse("")
-        );
-        hostKeyStore.setHostName(hostName);
-        hostKeyStore.setKeyPassword(hostKeyPassword.orElse(""));
-        if (!hostKeyStore.isKeyPresent()) {
-            hostKeyStore.generateKey();
-        }
-        File crtFile = new File("key-" + hostName + ".crt");
-        if (!crtFile.exists()) {
-            LogEventStatus.getInstance().addConfig(this, "Please import " + crtFile.getAbsolutePath()
-                + " as a root CA to access logevents console with your browser over https");
-            hostKeyStore.writeCertificate(crtFile);
-        }
-        return hostKeyStore;
     }
 
     protected void httpHandler(HttpExchange exchange) throws IOException {
@@ -319,10 +248,6 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
                 '}';
     }
 
-    public void setHttpsPort(Optional<Integer> httpsPort) {
-        this.httpsPort = httpsPort;
-    }
-
     public CryptoVault getCookieVault() {
         return cookieVault;
     }
@@ -331,19 +256,4 @@ public class LogEventHttpServer extends AbstractLogEventHttpServer {
         this.cookieVault = cookieVault;
     }
 
-    public void setKeyStore(Optional<String> keyStore) {
-        this.keyStore = keyStore;
-    }
-
-    public void setKeyStorePassword(Optional<String> keyStorePassword) {
-        this.keyStorePassword = keyStorePassword;
-    }
-
-    public void setHostKeyPassword(Optional<String> hostKeyPassword) {
-        this.hostKeyPassword = hostKeyPassword;
-    }
-
-    public X509Certificate getCertificate() {
-        return certificate;
-    }
 }
