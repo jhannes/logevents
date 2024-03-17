@@ -12,7 +12,7 @@ import org.slf4j.event.Level;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class LogEventBuilderTest {
 
@@ -59,6 +59,16 @@ public class LogEventBuilderTest {
     public void shouldLogWithSupplier() {
         logger.atDebug().log(() -> "something");
         assertEquals("something", buffer.singleLogEvent().getMessage());
+    }
+
+    @Test
+    public void shouldRecordLogLocation() {
+        logger.atLevel(Level.INFO).log("Some message");
+        StackTraceElement callerLocation = buffer.singleLogEvent().getCallerLocation();
+        assertEquals("FrameworkMethod.java", callerLocation.getFileName());
+        assertEquals("org.junit.runners.model.FrameworkMethod$1", callerLocation.getClassName());
+        assertEquals("runReflectiveCall", callerLocation.getMethodName());
+        assertEquals(59, callerLocation.getLineNumber());
     }
 
     @Test

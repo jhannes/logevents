@@ -20,11 +20,13 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -268,6 +270,12 @@ public class LogEvent implements LoggingEvent {
         this.callerLocation = callerLocation;
     }
 
+    private static final Set<String> LOGGING_CLASSES = new HashSet<>(Arrays.asList(
+            LoggerDelegator.class.getName(),
+            JavaUtilLoggingAdapter.class.getName(),
+            "org.logevents.core.LogEventBuilder"
+    ));
+
     /**
      * Returns the first non-logger element of the argument stackTrace.
      * Will lock for a LogEvents entrypoint and then scan until first class
@@ -276,7 +284,8 @@ public class LogEvent implements LoggingEvent {
     StackTraceElement extractCallerLocation(StackTraceElement[] stackTrace) {
         for (int i = 0; i < stackTrace.length - 1; i++) {
             StackTraceElement stackTraceElement = stackTrace[i];
-            if (stackTraceElement.getClassName().equals(LoggerDelegator.class.getName())) {
+            String className = stackTraceElement.getClassName();
+            if (LOGGING_CLASSES.contains(className)) {
                 assert !stackTrace[i + 1].getClassName().startsWith("org.slf4j.");
 
                 while (isLoggingClass(stackTrace[i + 1])) {
@@ -284,14 +293,7 @@ public class LogEvent implements LoggingEvent {
                 }
 
                 return stackTrace[i + 1];
-            } else if (stackTraceElement.getClassName().equals("org.logevents.core.LogEventBuilder")) {
-                return stackTrace[i + 1];
-            } else if (stackTraceElement.getClassName().equals(LogEventSampler.class.getName())) {
-                return stackTrace[i + 1];
-            } else if (stackTraceElement.getClassName().equals(JavaUtilLoggingAdapter.class.getName())) {
-                while (isLoggingClass(stackTrace[i + 1])) {
-                    i++;
-                }
+            } else if (className.equals(LogEventSampler.class.getName())) {
                 return stackTrace[i + 1];
             }
         }
