@@ -3,10 +3,10 @@ package org.logevents;
 import org.logevents.config.DefaultLogEventConfigurator;
 import org.logevents.config.DefaultTestLogEventConfigurator;
 import org.logevents.config.LogEventConfigurationException;
-import org.logevents.core.LogEventFilter;
-import org.logevents.core.JavaUtilLoggingAdapter;
-import org.logevents.core.LoggerDelegator;
 import org.logevents.core.CompositeLogEventObserver;
+import org.logevents.core.JavaUtilLoggingAdapter;
+import org.logevents.core.LogEventFilter;
+import org.logevents.core.LoggerDelegator;
 import org.logevents.observers.ConsoleLogEventObserver;
 import org.logevents.status.LogEventStatus;
 import org.slf4j.ILoggerFactory;
@@ -56,7 +56,6 @@ public class LogEventFactory implements ILoggerFactory {
         if (instance == null) {
             instance = new LogEventFactory();
             instance.configure();
-            JavaUtilLoggingAdapter.install(instance);
         }
         return instance;
     }
@@ -191,6 +190,7 @@ public class LogEventFactory implements ILoggerFactory {
 
     private void refreshLoggers(LoggerDelegator logger) {
         logger.refresh();
+        JavaUtilLoggingAdapter.installHandler(logger);
         childLoggers(logger).forEach(this::refreshLoggers);
     }
 

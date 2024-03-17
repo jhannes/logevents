@@ -1,6 +1,5 @@
 package org.logevents.core;
 
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.LogEventFactory;
@@ -13,14 +12,9 @@ import java.util.logging.Logger;
 public class JavaUtilLoggingAdapterTest {
 
     @Rule
-    public LogEventRule rule = new LogEventRule(Level.TRACE, getClass());
+    public LogEventRule rule = new LogEventRule(Level.TRACE, "org.example");
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
-
-    @Before
-    public void setUp() {
-        JavaUtilLoggingAdapter.install(LogEventFactory.getInstance());
-    }
+    private final Logger logger = Logger.getLogger("org.example.TestLogger");
 
     @Test
     public void shouldLogFinestLevelToTrace() {
@@ -54,4 +48,17 @@ public class JavaUtilLoggingAdapterTest {
         logger.log(extremelyFine, "A very very minor message");
         rule.assertContainsMessage(Level.TRACE, "A very very minor message");
     }
+
+    @Test
+    public void shouldInheritLogLevel() {
+        LogEventFactory.getInstance().setLevel("org.example", Level.INFO);
+        String loggerName = "org.example.MyExampleOrg";
+        Logger logger = Logger.getLogger(loggerName);
+        logger.log(java.util.logging.Level.FINE, "Should not be logged");
+        rule.assertNoMessages();
+        LogEventFactory.getInstance().setLevel(loggerName, Level.DEBUG);
+        logger.log(java.util.logging.Level.FINE, "Should be logged", "");
+        rule.assertSingleMessage(Level.DEBUG, "Should be logged");
+    }
+
 }

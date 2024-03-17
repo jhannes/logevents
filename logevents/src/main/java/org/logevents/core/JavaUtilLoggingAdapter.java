@@ -5,7 +5,6 @@ import org.slf4j.spi.LocationAwareLogger;
 
 import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 import java.util.stream.Stream;
@@ -14,22 +13,23 @@ import java.util.stream.Stream;
  * An adapter from java.util.logging to LogEvents. Automatically installed by {@link LogEventFactory}
  */
 public class JavaUtilLoggingAdapter extends Handler {
-    private final LogEventFactory factory;
+    private final LoggerDelegator loggerDelegator;
     private final SimpleFormatter simpleFormatter = new SimpleFormatter();
 
-    public JavaUtilLoggingAdapter(LogEventFactory factory) {
-        this.factory = factory;
+    public JavaUtilLoggingAdapter(LoggerDelegator loggerDelegator) {
+        this.loggerDelegator = loggerDelegator;
     }
 
     /**
      * Ensures that logging to {@link java.util.logging.Logger} is intercepted. Removes existing java.util.logging
      * handlers and adds a new {@link JavaUtilLoggingAdapter}
      */
-    public static void install(LogEventFactory factory) {
-        java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
-        Stream.of(rootLogger.getHandlers()).forEach(rootLogger::removeHandler);
-        rootLogger.addHandler(new JavaUtilLoggingAdapter(factory));
-        rootLogger.setLevel(toJavaUtilLoggingLevel(factory.getRootLogger().getOwnFilter().getThreshold()));
+    public static void installHandler(LoggerDelegator logger) {
+        java.util.logging.Logger julLogger = java.util.logging.Logger.getLogger(logger.getName());
+        Stream.of(julLogger.getHandlers()).forEach(julLogger::removeHandler);
+        julLogger.addHandler(new JavaUtilLoggingAdapter(logger));
+        julLogger.setLevel(toJavaUtilLoggingLevel(logger.getEffectiveFilter().getThreshold()));
+        julLogger.setUseParentHandlers(false);
     }
 
     private static Level toJavaUtilLoggingLevel(org.slf4j.event.Level level) {
@@ -50,20 +50,20 @@ public class JavaUtilLoggingAdapter extends Handler {
     @Override
     public void publish(LogRecord record) {
         if (record != null) {
-            org.slf4j.event.Level level = getLevel(record);
-            LogEventGenerator logger = factory.getLogger(record.getLoggerName()).getLogger(level);
-            if (logger.isEnabled()) {
+            LogEventGenerator generator = getLogEventGenerator(record);
+            if (generator.isEnabled()) {
                 if (record.getThrown() != null) {
-                    logger.log(simpleFormatter.formatMessage(record), record.getThrown());
+                    generator.log(simpleFormatter.formatMessage(record), record.getThrown());
                 } else {
-                    logger.log(simpleFormatter.formatMessage(record));
+                    generator.log(simpleFormatter.formatMessage(record));
                 }
             }
         }
     }
 
-    private org.slf4j.event.Level getLevel(LogRecord record) {
-        return LoggerDelegator.getLevel(fromJavaUtilLoggingLevel(record.getLevel()));
+    private LogEventGenerator getLogEventGenerator(LogRecord record) {
+        org.slf4j.event.Level level = LoggerDelegator.getLevel(fromJavaUtilLoggingLevel(record.getLevel()));
+        return loggerDelegator.getLogger(level);
     }
 
     private int fromJavaUtilLoggingLevel(Level level) {

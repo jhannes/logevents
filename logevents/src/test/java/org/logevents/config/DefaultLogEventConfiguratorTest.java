@@ -11,7 +11,6 @@ import org.logevents.LogEventObserver;
 import org.logevents.LogEventLogger;
 import org.logevents.optional.junit.LogEventSampler;
 import org.logevents.optional.junit.LogEventStatusRule;
-import org.logevents.core.JavaUtilLoggingAdapter;
 import org.logevents.core.LoggerDelegator;
 import org.logevents.observers.CircularBufferLogEventObserver;
 import org.logevents.observers.ConsoleLogEventObserver;
@@ -176,7 +175,6 @@ public class DefaultLogEventConfiguratorTest {
         factory.getLogger("org.example").error("This SHOULD be logged");
         factory.getLogger("org.example.hush").error("This should also NOT be logged");
 
-        JavaUtilLoggingAdapter.install(factory);
         java.util.logging.Logger.getLogger("org")
                 .severe("This message to java.util.logging should NOT be logged");
 
