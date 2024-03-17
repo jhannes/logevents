@@ -20,10 +20,20 @@ public class ConditionalLogEventGenerator implements LogEventGenerator {
     private final Level level;
     private final LogEventObserver observer;
 
-    public ConditionalLogEventGenerator(String loggerName, Level level, LogEventPredicate condition, LogEventObserver observer) {
+    private ConditionalLogEventGenerator(String loggerName, Level level, LogEventPredicate condition, LogEventObserver observer) {
         this.loggerName = loggerName;
         this.level = level;
         this.observer = observer.filteredOn(level, condition);
+    }
+
+    static LogEventGenerator create(String loggerName, Level level, LogEventObserver observer, LogEventPredicate condition) {
+        if (condition instanceof LogEventPredicate.AlwaysCondition) {
+            return new LevelLoggingEventGenerator(loggerName, level, observer);
+        }
+        if (condition instanceof LogEventPredicate.NeverCondition) {
+            return new NullLoggingEventGenerator();
+        }
+        return new ConditionalLogEventGenerator(loggerName, level, condition, observer);
     }
 
     @Override

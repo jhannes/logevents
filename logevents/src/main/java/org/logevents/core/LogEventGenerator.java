@@ -1,7 +1,9 @@
 package org.logevents.core;
 
 import org.logevents.LogEventObserver;
+import org.logevents.observers.ConditionalLogEventObserver;
 import org.slf4j.Marker;
+import org.slf4j.event.Level;
 import org.slf4j.spi.LoggingEventBuilder;
 
 /**
@@ -12,6 +14,20 @@ import org.slf4j.spi.LoggingEventBuilder;
  *  to be logged and {@link ConditionalLogEventGenerator} is used when there is a more complex condition
  */
 public interface LogEventGenerator {
+
+    static LogEventGenerator create(String loggerName, Level level, LogEventObserver observer) {
+        if (observer instanceof NullLogEventObserver) {
+            return new NullLoggingEventGenerator();
+        } else if (observer instanceof AbstractFilteredLogEventObserver) {
+            LogEventPredicate condition = ((AbstractFilteredLogEventObserver) observer).getCondition();
+            return ConditionalLogEventGenerator.create(loggerName, level, observer, condition);
+        } else if (observer instanceof ConditionalLogEventObserver) {
+            LogEventPredicate condition = ((ConditionalLogEventObserver) observer).getCondition();
+            return ConditionalLogEventGenerator.create(loggerName, level, observer, condition);
+        } else {
+            return new LevelLoggingEventGenerator(loggerName, level, observer);
+        }
+    }
 
     boolean isEnabled();
 

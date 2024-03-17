@@ -1,7 +1,6 @@
 package org.logevents.core;
 
 import org.logevents.LogEventObserver;
-import org.logevents.observers.ConditionalLogEventObserver;
 import org.slf4j.event.Level;
 
 import java.util.ArrayList;
@@ -89,22 +88,8 @@ public class LogEventFilter {
         }
     }
 
-    public LogEventGenerator createEventGenerator(String loggerName, Level level, LogEventObserver observer) {
-        return createLogEventGenerator(loggerName, level, filterObserverOnLevel(level, observer));
-
-    }
-
-    private LogEventGenerator createLogEventGenerator(String loggerName, Level level, LogEventObserver observer) {
-        if (observer instanceof NullLogEventObserver) {
-            return new NullLoggingEventGenerator();
-        } else if (observer instanceof AbstractFilteredLogEventObserver) {
-            return new ConditionalLogEventGenerator(loggerName, level, ((AbstractFilteredLogEventObserver) observer).getCondition(), observer);
-        } else if (observer instanceof ConditionalLogEventObserver) {
-            ConditionalLogEventObserver conditionalObserver = (ConditionalLogEventObserver) observer;
-            return new ConditionalLogEventGenerator(loggerName, level, conditionalObserver.getCondition(), conditionalObserver.getObserver());
-        } else {
-            return new LevelLoggingEventGenerator(loggerName, level, observer);
-        }
+    public LogEventGenerator create(String loggerName, Level level, LogEventObserver observer) {
+        return LogEventGenerator.create(loggerName, level, filterObserverOnLevel(level, observer));
     }
 
     private LogEventObserver filterObserverOnLevel(Level level, LogEventObserver observer) {

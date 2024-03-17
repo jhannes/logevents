@@ -591,7 +591,7 @@ public abstract class LoggerDelegator implements LogEventLogger {
     }
 
     private LogEventGenerator createEventGenerator(Level level) {
-        return effectiveFilter.createEventGenerator(getName(), level, this.observer);
+        return effectiveFilter.create(getName(), level, this.observer);
     }
 
     @Override
