@@ -6,6 +6,7 @@ import org.slf4j.spi.LocationAwareLogger;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.stream.Stream;
 
@@ -14,10 +15,17 @@ import java.util.stream.Stream;
  */
 public class JavaUtilLoggingAdapter extends Handler {
     private final LoggerDelegator loggerDelegator;
+
+    // Ensure that the weak reference is not finalized
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
+    private final Logger julLogger;
     private final SimpleFormatter simpleFormatter = new SimpleFormatter();
 
-    public JavaUtilLoggingAdapter(LoggerDelegator loggerDelegator) {
+    public JavaUtilLoggingAdapter(LoggerDelegator loggerDelegator, Logger julLogger) {
         this.loggerDelegator = loggerDelegator;
+        this.julLogger = julLogger;
+        julLogger.setLevel(toJavaUtilLoggingLevel(loggerDelegator.getEffectiveFilter().getThreshold()));
+        julLogger.setUseParentHandlers(false);
     }
 
     /**
@@ -25,11 +33,13 @@ public class JavaUtilLoggingAdapter extends Handler {
      * handlers and adds a new {@link JavaUtilLoggingAdapter}
      */
     public static void installHandler(LoggerDelegator logger) {
-        java.util.logging.Logger julLogger = java.util.logging.Logger.getLogger(logger.getName());
+        java.util.logging.Logger julLogger = java.util.logging.Logger.getLogger(getName(logger));
         Stream.of(julLogger.getHandlers()).forEach(julLogger::removeHandler);
-        julLogger.addHandler(new JavaUtilLoggingAdapter(logger));
-        julLogger.setLevel(toJavaUtilLoggingLevel(logger.getEffectiveFilter().getThreshold()));
-        julLogger.setUseParentHandlers(false);
+        julLogger.addHandler(new JavaUtilLoggingAdapter(logger, julLogger));
+    }
+
+    private static String getName(LoggerDelegator logger) {
+        return logger.getName().equals("ROOT") ? "" : logger.getName();
     }
 
     private static Level toJavaUtilLoggingLevel(org.slf4j.event.Level level) {

@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 public class JavaUtilLoggingAdapterTest {
 
     @Rule
-    public LogEventRule rule = new LogEventRule(Level.TRACE, "org.example");
+    public LogEventRule rule = new LogEventRule(Level.TRACE, LogEventFactory.getInstance().getRootLogger());
 
     private final Logger logger = Logger.getLogger("org.example.TestLogger");
 
@@ -41,10 +41,10 @@ public class JavaUtilLoggingAdapterTest {
 
     @Test
     public void shouldLogCustomLowLevelToTrace() {
+        LogEventFactory.getInstance().setLevel(logger.getName(), Level.TRACE);
         java.util.logging.Level extremelyFine = new java.util.logging.Level("MINISCULE", java.util.logging.Level.FINEST.intValue()-100) {
 
         };
-        logger.setLevel(extremelyFine);
         logger.log(extremelyFine, "A very very minor message");
         rule.assertContainsMessage(Level.TRACE, "A very very minor message");
     }

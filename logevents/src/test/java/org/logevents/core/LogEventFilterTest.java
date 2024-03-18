@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.logevents.LogEventFactory;
 import org.logevents.LogEventLogger;
 import org.logevents.observers.CircularBufferLogEventObserver;
+import org.logevents.observers.ConsoleLogEventObserver;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
@@ -222,5 +223,17 @@ public class LogEventFilterTest {
         assertFalse(childLogger.isErrorEnabled(PERFORMANCE));
         assertFalse(logger.isInfoEnabled());
         assertTrue(logger.isInfoEnabled(OPS));
+    }
+
+    @Test
+    public void shouldCollapseFilters() {
+        LogEventLogger logger = LogEventFactory.getInstance().getLogger("org.example");
+        ConsoleLogEventObserver observer = new ConsoleLogEventObserver();
+        observer.setCondition(new LogEventPredicate.RequiredMdcCondition("user", "johannes"));
+
+        factory.setFilter(logger, new LogEventFilter("INFO,WARN@marker=TODO"));
+        factory.setObserver(logger, observer, false);
+
+        assertEquals("ConditionalLogEventObserver{delegate=ConsoleLogEventObserver{formatter=ConsoleLogEventFormatter}, condition=SuppressedMarkerCondition{TODO} AND RequiredMdcCondition{user in [johannes]}}", logger.getInfoObservers().toString());
     }
 }
