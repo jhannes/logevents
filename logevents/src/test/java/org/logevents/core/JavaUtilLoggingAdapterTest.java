@@ -18,7 +18,7 @@ public class JavaUtilLoggingAdapterTest {
 
     @Test
     public void shouldLogFinestLevelToTrace() {
-        logger.setLevel(java.util.logging.Level.FINEST);
+        LogEventFactory.getInstance().setLevel(logger.getName(), Level.TRACE);
         logger.finest("Very very fine message");
         rule.assertContainsMessage(Level.TRACE, "Very very fine message");
     }
