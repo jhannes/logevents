@@ -190,7 +190,7 @@ public class LogEventFactory implements ILoggerFactory {
 
     private void refreshLoggers(LoggerDelegator logger) {
         logger.refresh();
-        JavaUtilLoggingAdapter.installHandler(logger);
+        JavaUtilLoggingAdapter.installHandler(this, logger);
         childLoggers(logger).forEach(this::refreshLoggers);
     }
 

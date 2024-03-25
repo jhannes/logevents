@@ -1,13 +1,17 @@
 package org.logevents.core;
 
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.logevents.LogEvent;
 import org.logevents.LogEventFactory;
 import org.logevents.optional.junit.LogEventRule;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
 
 public class JavaUtilLoggingAdapterTest {
 
@@ -56,9 +60,12 @@ public class JavaUtilLoggingAdapterTest {
         Logger logger = Logger.getLogger(loggerName);
         logger.log(java.util.logging.Level.FINE, "Should not be logged");
         rule.assertNoMessages();
-        LogEventFactory.getInstance().setLevel(loggerName, Level.DEBUG);
+        LogEventFactory.getInstance().setLevel("org.example", Level.DEBUG);
         logger.log(java.util.logging.Level.FINE, "Should be logged", "");
-        rule.assertSingleMessage(Level.DEBUG, "Should be logged");
+
+        LogEvent event = rule.getSingleEvent(Level.DEBUG);
+        Assert.assertEquals("Should be logged", event.getMessage());
+        assertEquals(loggerName, event.getLoggerName());
     }
 
 }

@@ -53,22 +53,16 @@ public class LogEventRule implements TestRule, LogEventObserver {
     }
 
     public void assertNoMessages(Level level) {
-        List<LogEvent> events = this.events.stream()
-                .filter(m -> !m.isBelowThreshold(level))
-                .collect(Collectors.toList());
+        List<LogEvent> events = getLogEvents(level);
         assertTrue("Expected no log messages to " + logger.getName() + " at level " + level + " was " + events,
                 events.isEmpty());
     }
 
 
     public void assertSingleMessage(Level level, String message) {
-        List<LogEvent> events = this.events.stream()
-                .filter(m -> m.getLevel().equals(level))
-                .collect(Collectors.toList());
-        assertTrue("Expected only one logged message at level " + level + ", but was " + events,
-                events.size() == 1);
-        assertEquals(message, formatMessage(events.get(0)));
-        assertEquals(level, events.get(0).getLevel());
+        LogEvent event = getSingleEvent(level);
+        assertEquals(message, formatMessage(event));
+        assertEquals(level, event.getLevel());
     }
 
     public void assertContainsMessage(Level level, String message) {
@@ -127,6 +121,20 @@ public class LogEventRule implements TestRule, LogEventObserver {
             }
         }
     }
+
+    private List<LogEvent> getLogEvents(Level level) {
+        return this.events.stream()
+                .filter(m -> !m.isBelowThreshold(level))
+                .collect(Collectors.toList());
+    }
+
+    public LogEvent getSingleEvent(Level level) {
+        List<LogEvent> events = getLogEvents(level);
+        assertTrue("Expected only one logged message at level " + level + ", but was " + events,
+                events.size() == 1);
+        return events.get(0);
+    }
+
 
     @Override
     public Statement apply(Statement base, Description description) {
