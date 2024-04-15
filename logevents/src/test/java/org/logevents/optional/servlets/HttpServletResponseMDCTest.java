@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -72,6 +73,17 @@ public class HttpServletResponseMDCTest {
         assertEquals(HttpServletResponseMDC.ASSET, HttpServletResponseMDC.getMarker(mockResponse));
         Mockito.when(mockResponse.getContentType()).thenReturn("application/json");
         assertEquals(HttpServletResponseMDC.JSON, HttpServletResponseMDC.getMarker(mockResponse));
+    }
+
+    @Test
+    public void shouldIdentifyAssetContent() {
+        HttpServletResponse mockResponse = Mockito.mock(HttpServletResponse.class);
+        Mockito.when(mockResponse.getContentType()).thenReturn("image/png");
+        assertTrue(HttpServletResponseMDC.isAsset(mockResponse));
+        Mockito.when(mockResponse.getContentType()).thenReturn("application/json");
+        assertFalse(HttpServletResponseMDC.isAsset(mockResponse));
+        Mockito.when(mockResponse.getContentType()).thenReturn(null);
+        assertFalse(HttpServletResponseMDC.isAsset(mockResponse));
     }
 
 

@@ -112,7 +112,7 @@ public class HttpServletResponseMDC implements DynamicMDC {
 
     public static boolean isAsset(HttpServletResponse response) {
         String contentType = response.getContentType();
-        return (contentType.startsWith("image/") || contentType.startsWith("font/") || contentType.startsWith("text/html") || contentType.startsWith("text/css") || contentType.startsWith("text/javascript"));
+        return contentType != null && (contentType.startsWith("image/") || contentType.startsWith("font/") || contentType.startsWith("text/html") || contentType.startsWith("text/css") || contentType.startsWith("text/javascript"));
     }
 
     protected static boolean isRedirect(int status) {
