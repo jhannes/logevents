@@ -39,14 +39,17 @@ public class DefaultTestLogEventConfigurator extends DefaultLogEventConfigurator
 
         @Override
         public String apply(LogEvent e) {
-            return String.format("%s %s [%s] [%s] [%s]: %s\n",
+            return String.format("%s %s [%s] [%s] [%s]%s%s: %s\n",
                     format.underline("TEST(" + getTestName(e) + ")"),
                     e.getLocalTime(),
                     e.getThreadName(),
                     colorizedLevel(e),
-                    format.bold(e.getLoggerName()),
-                    e.getMessage(messageFormatter))
-                    + exceptionFormatter.format(e.getThrowable());
+                    format.bold(logger(e)),
+                    showMarkers && e.getMarker() != null ? " {" + e.getMarker().getName() + "}" : "",
+                    e.getMdcString(mdcFilter),
+                    e.getMessage(messageFormatter)
+            )
+                   + exceptionFormatter.format(e.getThrowable());
         }
 
         private String getTestName(LogEvent event) {

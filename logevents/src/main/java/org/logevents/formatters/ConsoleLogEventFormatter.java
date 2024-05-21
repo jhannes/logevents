@@ -46,7 +46,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
     protected final ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     protected final DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     protected MdcFilter mdcFilter = MdcFilter.INCLUDE_ALL;
-    private boolean showMarkers = true;
+    protected boolean showMarkers = true;
     private boolean multipleLines = false;
     private List<String> logFilenameForPackages = new ArrayList<>();
 
@@ -83,7 +83,7 @@ public class ConsoleLogEventFormatter implements LogEventFormatter {
         }
     }
 
-    private String logger(LogEvent e) {
+    protected String logger(LogEvent e) {
         if (logFilenameForPackages.isEmpty()) {
             return e.getLoggerName();
         }
