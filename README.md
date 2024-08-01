@@ -84,7 +84,7 @@ LOGEVENTS_LOGGER_COM_EXAMPLE=DEBUG,TRACE@mdc:user=superuser|admin|tester
   single-line JSON logs, suitable for log parsing
 * [File logging](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/FileLogEventObserver.html) with
   reasonable defaults
-* [JUnit support](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/junit/ExpectedLogEventsRule.html) to
+* [JUnit support](https://jhannes.github.io/logevents/apidocs/org/logevents/optional/junit/ExpectedLogEventsRule.html) to
   easy assert on what is logged
 * [Email logging](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/SmtpLogEventObserver.html),
   including throttling to reduce spamming when get lots of log messages
@@ -97,11 +97,11 @@ LOGEVENTS_LOGGER_COM_EXAMPLE=DEBUG,TRACE@mdc:user=superuser|admin|tester
   . Logging directly to Elastic search Index API avoids edge cases when writing and parsing log files
 * [Humio](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/HumioLogEventObserver.html)
     . Logging directly to Humio via their [Elastic search Bulk API](https://library.humio.com/stable/docs/ingesting-data/log-shippers/other-log-shippers/#elasticsearch-bulk-api).
-* [Azure Application Insights](https://jhannes.github.io/logevents/apidocs/org/logevents/extend/azure/ApplicationInsightsLogEventObserver.html) (
+* [Azure Application Insights](https://jhannes.github.io/logevents/apidocs/org/logevents/optional/azure/ApplicationInsightsLogEventObserver.html) (
   requires optional com.microsoft.azure:applicationinsights-core dependency)
 * [JMX integration](https://jhannes.github.io/logevents/apidocs/org/logevents/jmx/LogEventsMBeanFactory.html) to view
   the configuration and tweak log levels
-* [Filter loggers](https://jhannes.github.io/logevents/apidocs/org/logevents/impl/LogEventFilter.html) on
+* [Filter loggers](https://jhannes.github.io/logevents/apidocs/org/logevents/core/LogEventFilter.html) on
   markers and MDC values (e.g. `logger.org.example.app=INFO,DEBUG@mdc:user=superuser|admin`)
-* [Filter observers](https://jhannes.github.io/logevents/apidocs/org/logevents/observers/AbstractFilteredLogEventObserver.html)
+* [Filter observers](https://jhannes.github.io/logevents/apidocs/org/logevents/core/AbstractFilteredLogEventObserver.html)
   on markers and MDC values

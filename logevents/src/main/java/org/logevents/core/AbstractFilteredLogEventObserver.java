@@ -3,8 +3,6 @@ package org.logevents.core;
 import org.logevents.LogEvent;
 import org.logevents.LogEventObserver;
 import org.logevents.config.Configuration;
-import org.logevents.core.LogEventFilter;
-import org.logevents.core.LogEventPredicate;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.event.Level;
