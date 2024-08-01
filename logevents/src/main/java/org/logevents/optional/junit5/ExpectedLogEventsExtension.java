@@ -83,8 +83,9 @@ public class ExpectedLogEventsExtension implements BeforeEachCallback, AfterEach
         this.loggerFactory = loggerFactory;
     }
 
-    public void setAllowUnexpectedLogs(boolean allowUnexpectedLogs){
+    public ExpectedLogEventsExtension setAllowUnexpectedLogs(boolean allowUnexpectedLogs){
         this.allowUnexpectedLogs = allowUnexpectedLogs;
+        return this;
     }
 
     @Override
