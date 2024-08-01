@@ -17,8 +17,20 @@ import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 import java.util.Map;
 
+/**
+ * Installs {@link LogEventFactoryMXBean}, {@link LogEventConfiguratorMXBean}, {@link LogEventStatusMXBean}
+ * plus one {@link LoggerMXBean} for each logger and on {@link ObserverMXBean} for each observer. If
+ * there is a {@link StatisticsLogEventsObserver}, a {@link StatisticsMXBean} is also installed.
+ *
+ * <h2>Configuration</h2>
+ *
+ * <pre>
+ * logevents.jmx=true|false
+ * logevents.jmx.name=&lt;name of the {@link LogEventFactoryMXBean} (default "LogEventFactory")&gt;
+ * </pre>
+ */
 public class LogEventsMBeanFactory {
-    private MBeanServer mbeanServer = ManagementFactory.getPlatformMBeanServer();
+    private final MBeanServer mbeanServer = ManagementFactory.getPlatformMBeanServer();
     public static final String JMX_DOMAIN = "org.logevents";
 
     public void setup(LogEventFactory factory, DefaultLogEventConfigurator configurator, Configuration config) {
