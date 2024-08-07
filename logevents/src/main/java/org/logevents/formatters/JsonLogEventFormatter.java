@@ -35,8 +35,6 @@ public class JsonLogEventFormatter implements LogEventFormatter {
     protected ExceptionFormatter exceptionFormatter = new ExceptionFormatter();
     protected MdcFilter mdcFilter = MdcFilter.INCLUDE_ALL;
     private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-    private String hostname;
-    private String applicationName;
     protected final Map<String, String> additionalProperties = new HashMap<>();
 
     @SuppressWarnings("unused")
@@ -59,8 +57,6 @@ public class JsonLogEventFormatter implements LogEventFormatter {
      */
     @Override
     public void configure(Configuration configuration) {
-        applicationName = configuration.getApplicationName();
-        hostname = configuration.getNodeName();
         messageFormatter = configuration.createInstanceWithDefault("messageFormatter", MessageFormatter.class);
         mdcFilter = configuration.getMdcFilter();
         dateTimeFormatter = configuration
@@ -86,7 +82,6 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         payload.put("log.logger", event.getLoggerName());
         payload.put("@timestamp", event.getZonedDateTime().format(dateTimeFormatter));
         payload.put("messageFormat", event.getMessage());
-        payload.put("process.thread.name", event.getThreadName());
         if (event.getThrowable() != null) {
             payload.put("message", event.getMessage(messageFormatter) + " " + event.getThrowable());
             payload.put("error", toJsonObject(event.getThrowable(), exceptionFormatter));
@@ -100,10 +95,7 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         if (!event.getKeyValuePairs().isEmpty()) {
             payload.put("keyValuePairs", toJsonObject(event.getKeyValuePairs()));
         }
-
-        payload.put("service.name", applicationName);
-        payload.put("host.name", hostname);
-        payload.put("levelInt", event.getLevel().toInt());
+        payload.put("process.thread.name", event.getThreadName());
         updateMdc(event, payload);
     }
 
@@ -123,7 +115,7 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         return payload;
     }
 
-    private void updateMdc(LogEvent event, Map<String, Object> payload) {
+    protected void updateMdc(LogEvent event, Map<String, Object> payload) {
         Map<String, Object> mdc = new HashMap<>();
         payload.put("mdc", mdc);
 

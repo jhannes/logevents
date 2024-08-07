@@ -42,8 +42,7 @@ public class ConsoleJsonLogEventFormatterTest {
                 .withMarker(LogEventSampler.HTTP_ERROR)
                 .build());
         String timestamp = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(time);
-        String hostname = new Configuration(new HashMap<>(), "").getNodeName();
-        assertEquals("{\"log.level\": \"INFO\",\"log.logger\": \"com.example.LoggerName\",\"@timestamp\": \"" + timestamp + "\",\"messageFormat\": \"Hello {}\",\"process.thread.name\": \"main\",\"message\": \"Hello there\",\"tags\": [\"HTTP_ERROR\"],\"service.name\": \"logevents\",\"host.name\": \"" + hostname + "\",\"levelInt\": 20}\n",
+        assertEquals("{\"log.level\": \"INFO\",\"log.logger\": \"com.example.LoggerName\",\"@timestamp\": \"" + timestamp + "\",\"messageFormat\": \"Hello {}\",\"message\": \"Hello there\",\"tags\": [\"HTTP_ERROR\"],\"process.thread.name\": \"main\"}\n",
                 message);
     }
 
