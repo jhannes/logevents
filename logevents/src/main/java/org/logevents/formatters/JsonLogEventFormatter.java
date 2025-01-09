@@ -96,6 +96,7 @@ public class JsonLogEventFormatter implements LogEventFormatter {
             payload.put("keyValuePairs", toJsonObject(event.getKeyValuePairs()));
         }
         payload.put("process.thread.name", event.getThreadName());
+        payload.put("process.thread.group", event.getThreadGroupName());
         updateMdc(event, payload);
     }
 

@@ -81,6 +81,7 @@ public class LogEventSampler {
                 this.format.orElseGet(() -> sampleMessage(args)),
                 args,
                 threadName.orElseGet(LogEventSampler::sampleThreadName),
+                "main",
                 timestamp,
                 mdcProperties,
                 dynamicMdc

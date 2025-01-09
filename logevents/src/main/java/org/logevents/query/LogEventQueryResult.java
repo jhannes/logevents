@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class LogEventQueryResult {
@@ -41,6 +42,7 @@ public class LogEventQueryResult {
                 json.get("messageTemplate").toString(),
                 JsonUtil.getList(json, "arguments").toArray(),
                 json.get("thread").toString(),
+                Objects.toString(json.get("threadGroup"), null),
                 Instant.parse(json.get("time").toString()),
                 parseMdc(json.get("mdc")),
                 DynamicMDC.getCopyOfDynamicContext());

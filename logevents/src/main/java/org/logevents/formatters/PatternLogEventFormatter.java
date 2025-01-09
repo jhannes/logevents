@@ -132,6 +132,7 @@ public class PatternLogEventFormatter implements LogEventFormatter {
         });
         factory.putAliases("message", new String[]{"m", "msg"});
         factory.put("thread", spec -> LogEvent::getThreadName);
+        factory.put("threadGroup", spec -> LogEvent::getThreadGroupName);
         factory.putAliases("thread", new String[]{"t"});
         factory.put("marker", spec -> e -> Optional.ofNullable(e.getMarker()).map(Marker::toString).orElse(""));
         factory.put("kvp", spec -> LogEvent::getKeyValuePairsString);

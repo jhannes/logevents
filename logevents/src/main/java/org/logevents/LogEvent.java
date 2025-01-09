@@ -50,6 +50,7 @@ public class LogEvent implements LoggingEvent {
     private final Throwable throwable;
     private final long threadId = Thread.currentThread().getId();
     private final String threadName;
+    private final String threadGroupName;
     private final long timestamp;
     private final Map<String, String> mdcProperties;
 
@@ -66,6 +67,7 @@ public class LogEvent implements LoggingEvent {
             String messageFormat,
             Object[] args,
             String threadName,
+            String threadGroupName,
             Instant timestamp,
             Map<String, String> mdcProperties,
             Map<String, DynamicMDC> dynamicMdcProperties
@@ -83,6 +85,7 @@ public class LogEvent implements LoggingEvent {
             this.throwable = null;
         }
         this.threadName = threadName;
+        this.threadGroupName = threadGroupName;
         this.timestamp = timestamp.toEpochMilli();
         this.mdcProperties = mdcProperties == null ? Collections.emptyMap() : mdcProperties;
         this.dynamicMdcProperties = dynamicMdcProperties == null ? Collections.emptyMap() : dynamicMdcProperties;
@@ -96,6 +99,7 @@ public class LogEvent implements LoggingEvent {
                 messageFormat,
                 args,
                 Thread.currentThread().getName(),
+                Thread.currentThread().getThreadGroup() != null ? Thread.currentThread().getThreadGroup().getName() : null,
                 Instant.now(),
                 DynamicMDC.getCopyOfStaticContext(),
                 DynamicMDC.getCopyOfDynamicContext()
@@ -201,6 +205,10 @@ public class LogEvent implements LoggingEvent {
     @Override
     public String getThreadName() {
         return threadName;
+    }
+
+    public String getThreadGroupName() {
+        return threadGroupName;
     }
 
     @Override
