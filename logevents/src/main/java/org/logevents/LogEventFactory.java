@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.TreeMap;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 /**
  * LogEventFactory holds all active loggers and lets you set the
@@ -191,17 +191,16 @@ public class LogEventFactory implements ILoggerFactory {
     private void refreshLoggers(LoggerDelegator logger) {
         logger.refresh();
         JavaUtilLoggingAdapter.installHandler(this, logger);
-        childLoggers(logger).forEach(this::refreshLoggers);
+        loggerCache.values().stream().filter(l2 -> l2.hasParent(logger))
+                .collect(Collectors.toList())
+                .forEach(this::refreshLoggers);
     }
-
-    private Stream<LoggerDelegator> childLoggers(LoggerDelegator l) {
-        return loggerCache.values().stream().filter(l2 -> l2.hasParent(l));
-    }
-
-    private Stream<LoggerDelegator> aliasLoggers(Logger logger) {
+    
+    private List<LoggerDelegator> aliasLoggers(Logger logger) {
         return loggerCache.values().stream()
                 .filter(l -> l != logger)
-                .filter(l -> l.getName().equalsIgnoreCase(logger.getName()));
+                .filter(l -> l.getName().equalsIgnoreCase(logger.getName()))
+                .collect(Collectors.toList());
     }
 
     public Collection<String> getObserverNames() {
