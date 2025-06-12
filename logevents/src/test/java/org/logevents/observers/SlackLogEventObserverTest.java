@@ -70,12 +70,12 @@ public class SlackLogEventObserverTest {
         observer.processBatch(new LogEventBatch().add(logEvent));
 
         assertEquals(singletonList("{\n" +
-                        "  \"username\": \"loguser\",\n" +
-                        "  \"channel\": \"general\",\n" +
-                        "  \"attachments\": [\n" +
+                        "  \"username\":\"loguser\",\n" +
+                        "  \"channel\":\"general\",\n" +
+                        "  \"attachments\":[\n" +
                         "    {\n" +
-                        "      \"color\": \"warning\",\n" +
-                        "      \"text\": \"Nothing\"\n" +
+                        "      \"color\":\"warning\",\n" +
+                        "      \"text\":\"Nothing\"\n" +
                         "    }\n" +
                         "  ]\n" +
                         "}"),

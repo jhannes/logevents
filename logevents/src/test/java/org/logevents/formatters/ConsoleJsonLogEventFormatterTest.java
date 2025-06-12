@@ -42,7 +42,7 @@ public class ConsoleJsonLogEventFormatterTest {
                 .withMarker(LogEventSampler.HTTP_ERROR)
                 .build());
         String timestamp = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(time);
-        assertEquals("{\"log.level\": \"INFO\",\"log.logger\": \"com.example.LoggerName\",\"@timestamp\": \"" + timestamp + "\",\"messageFormat\": \"Hello {}\",\"message\": \"Hello there\",\"tags\": [\"HTTP_ERROR\"],\"process.thread.name\": \"main\",\"process.thread.group\": \"main\"}\n",
+        assertEquals("{\"log.level\":\"INFO\",\"log.logger\":\"com.example.LoggerName\",\"@timestamp\":\"" + timestamp + "\",\"messageFormat\":\"Hello {}\",\"message\":\"Hello there\",\"tags\":[\"HTTP_ERROR\"],\"process.thread.name\":\"main\",\"process.thread.group\":\"main\"}\n",
                 message);
     }
 

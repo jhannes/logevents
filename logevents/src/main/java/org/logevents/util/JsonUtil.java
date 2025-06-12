@@ -57,7 +57,7 @@ public class JsonUtil {
         for (Map.Entry<String, Object> entry : json.entrySet()) {
             if (entry.getValue() == null) continue;
             if (!first) result.append(",").append(newline);
-            result.append(currentIndent).append(indent).append("\"").append(jsonEscape(entry.getKey())).append("\": ");
+            result.append(currentIndent).append(indent).append("\"").append(jsonEscape(entry.getKey())).append("\":");
             objectToJson(entry.getValue(), result, currentIndent + indent);
             first = false;
         }
@@ -135,7 +135,8 @@ public class JsonUtil {
     private static String jsonEscape(CharSequence key) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < key.length(); i++) {
-            switch (key.charAt(i)) {
+            char c = key.charAt(i);
+            switch (c) {
             case '\\':
                 result.append("\\\\");
                 break;
@@ -161,7 +162,11 @@ public class JsonUtil {
                 result.append("\\\"");
                 break;
             default:
-                result.append(key.charAt(i));
+                if (c < 0x20 || c == '\u2028' || c == '\u2029') {
+                    result.append(String.format("\\u%04x", (int) c));
+                } else {
+                    result.append(c);
+                }
                 break;
             }
         }

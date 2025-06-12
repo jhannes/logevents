@@ -26,7 +26,7 @@ public class JsonUtilTest {
         jsonObject.put("age", 29L);
         jsonObject.put("sith", true);
         jsonObject.put("weakness", null);
-        assertJsonOutput("{\"firstName\": \"Darth\",\"lastName\": \"Vader\",\"age\": 29,\"sith\": true}", jsonObject);
+        assertJsonOutput("{\"firstName\":\"Darth\",\"lastName\":\"Vader\",\"age\":29,\"sith\":true}", jsonObject);
 
         jsonObject.remove("weakness");
         String s = toCompactJson(jsonObject);
@@ -37,14 +37,14 @@ public class JsonUtilTest {
     public void shouldEscapeStrings() {
         Map<String, Object> jsonObject = new LinkedHashMap<>();
         jsonObject.put("string", "newline\n, carriage return \r, tab\t, bell\b, quote\", backslash \\");
-        assertJsonOutput("{\"string\": \"newline\\n, carriage return \\r, tab\\t, bell\\b, quote\\\", backslash \\\\\"}", jsonObject);
+        assertJsonOutput("{\"string\":\"newline\\n, carriage return \\r, tab\\t, bell\\b, quote\\\", backslash \\\\\"}", jsonObject);
     }
 
     @Test
     public void shouldOutputLists() throws IOException {
         Map<String, Object> jsonObject = new LinkedHashMap<>();
         jsonObject.put("numbers", Arrays.asList(1L, 2L, 3L));
-        assertJsonOutput("{\"numbers\": [1,2,3]}", jsonObject);
+        assertJsonOutput("{\"numbers\":[1,2,3]}", jsonObject);
 
         String s = toCompactJson(jsonObject);
         assertEquals(JsonParser.parse(s), new HashMap<>(jsonObject));
@@ -54,7 +54,7 @@ public class JsonUtilTest {
     public void shouldOutputArrays() {
         Map<String, Object> jsonObject = new LinkedHashMap<>();
         jsonObject.put("numbers", new Long[] { 1L, 2L, 3L });
-        assertJsonOutput("{\"numbers\": [1,2,3]}", jsonObject);
+        assertJsonOutput("{\"numbers\":[1,2,3]}", jsonObject);
 
         String s = toCompactJson(jsonObject);
         Map<String, Object> parsed = JsonParser.parseObject(s);
@@ -65,7 +65,7 @@ public class JsonUtilTest {
     public void shouldIndentOutput() {
         Map<String, Object> jsonObject = new LinkedHashMap<>();
         jsonObject.put("numbers", Arrays.asList(1, 2));
-        assertEquals("{\n  \"numbers\": [\n    1,\n    2\n  ]\n}",
+        assertEquals("{\n  \"numbers\":[\n    1,\n    2\n  ]\n}",
                 JsonUtil.toIndentedJson(jsonObject));
     }
 
@@ -94,6 +94,13 @@ public class JsonUtilTest {
         jsonObject.put("longNumber", 123L);
         jsonObject.put("floatNumber", 123.25);
         assertEquals(jsonObject, JsonParser.parseObject(JsonUtil.toIndentedJson(jsonObject)));
+    }
+    
+    @Test
+    public void shouldEscapeUnicode() {
+        Map<String, Object> jsonObject = new HashMap<>();
+        jsonObject.put("stringValue", "EMBEDDED NULL \u0000 WAS HERE");
+        assertEquals("{\"stringValue\":\"EMBEDDED NULL \\u0000 WAS HERE\"}", JsonUtil.toCompactJson(jsonObject));
     }
 
     private void assertJsonOutput(String expected, Map<String, Object> jsonObject) {
