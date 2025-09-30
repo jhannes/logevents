@@ -6,6 +6,7 @@
         <version>0.5.9-SNAPSHOT</version>
     </parent>
     <artifactId>logevents-servlets-demo</artifactId>
+    <name>logevents-servlets-demo</name>
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>

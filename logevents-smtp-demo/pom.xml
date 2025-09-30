@@ -8,6 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>logevents-smtp-demo</artifactId>
+    <name>logevents-smtp-demo</name>
     <dependencies>
         <dependency>
             <groupId>org.logevents</groupId>

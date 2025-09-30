@@ -6,6 +6,7 @@
         <version>0.5.9-SNAPSHOT</version>
     </parent>
     <artifactId>logevents-config-demo</artifactId>
+    <name>logevents-config-demo</name>
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
