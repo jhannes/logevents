@@ -22,13 +22,13 @@ For detailed instructions, see [the manual](MANUAL.md).
     <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>2.0.7</version>
+        <version>2.0.17</version>
     </dependency>
 
     <dependency>
         <groupId>org.logevents</groupId>
         <artifactId>logevents</artifactId>
-        <version>0.5.0</version>
+        <version>0.5.9</version>
         <scope>runtime</scope>
     </dependency>
 </dependencies>
