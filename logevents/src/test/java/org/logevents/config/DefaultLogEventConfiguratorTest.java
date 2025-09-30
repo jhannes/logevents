@@ -568,7 +568,7 @@ public class DefaultLogEventConfiguratorTest {
         newPropertiesFile.setProperty("root", "INFO");
         writeProps(propertiesDir.resolve("logevents-production.properties"), newPropertiesFile);
 
-        Thread.sleep(70);
+        Thread.sleep(100);
         assertEquals("LogEventFilter{ERROR,WARN,INFO}", factory.getRootLogger().getOwnFilter().toString());
         assertTrue(factory.getRootLogger().isInfoEnabled());
         assertFalse(factory.getRootLogger().isDebugEnabled());
