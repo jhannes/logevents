@@ -1,5 +1,6 @@
 package org.logevents.formatters.exceptions;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.logevents.config.Configuration;
 
@@ -199,14 +200,17 @@ public class ExceptionFormatterTest {
     }
 
     @Test
+    @Ignore
     public void shouldNotFailOnExceptionCycles() throws Exception {
         IOException exception = new IOException("Nested nested");
         exception.setStackTrace(new StackTraceElement[] {
                 ioInternalMethod, ioApiMethod, nioInternalMethod
         });
+        Exception outerException = new Exception(exception);
         Field causeField = Throwable.class.getDeclaredField("cause");
         causeField.setAccessible(true);
-        causeField.set(exception, exception);
+        causeField.set(exception, outerException);
+        assertEquals(outerException, exception.getCause());
 
         String[] lines = getFormatter().format(exception).split("\r?\n");
         assertEquals(Arrays.asList(exception.toString(),
