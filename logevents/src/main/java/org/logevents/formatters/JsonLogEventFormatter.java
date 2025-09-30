@@ -100,10 +100,14 @@ public class JsonLogEventFormatter implements LogEventFormatter {
         updateMdc(event, payload);
     }
 
-    protected final Map<String, String> toJsonObject(List<KeyValuePair> keyValuePairs) {
-        HashMap<String, String> result = new LinkedHashMap<>();
+    protected final Map<String, Object> toJsonObject(List<KeyValuePair> keyValuePairs) {
+        HashMap<String, Object> result = new LinkedHashMap<>();
         for (KeyValuePair keyValuePair : keyValuePairs) {
-            result.put(keyValuePair.key, keyValuePair.value.toString());
+            if (keyValuePair.value instanceof Number || keyValuePair.value instanceof Boolean) {
+                result.put(keyValuePair.key, keyValuePair.value);
+            } else {
+                result.put(keyValuePair.key, keyValuePair.value.toString());
+            }
         }
         return result;
     }

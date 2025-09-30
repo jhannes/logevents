@@ -14,6 +14,7 @@ import org.slf4j.event.KeyValuePair;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -142,11 +143,13 @@ public class ConsoleJsonLogEventFormatterTest {
     public void shouldOutputKeyValuePairs() {
         LogEvent event = new LogEventSampler().build();
         event.getKeyValuePairs().add(new KeyValuePair("k1", "v1"));
-        event.getKeyValuePairs().add(new KeyValuePair("k2", "v2"));
-        Map<String, Object> expected = new HashMap<>();
-        expected.put("k1", "v1");
-        expected.put("k2", "v2");
-        assertEquals(expected, JsonUtil.getObject(formatter.toJsonObject(event), "keyValuePairs"));
+        event.getKeyValuePairs().add(new KeyValuePair("k2", 200));
+        event.getKeyValuePairs().add(new KeyValuePair("k3", false));
+        event.getKeyValuePairs().add(new KeyValuePair("k4", LocalDate.of(2025, 9, 30)));
+        assertEquals(
+                "{\"k1\":\"v1\",\"k2\":200,\"k3\":false,\"k4\":\"2025-09-30\"}",
+                JsonUtil.toCompactJson(JsonUtil.getObject(formatter.toJsonObject(event), "keyValuePairs"))
+        );
     }
 
 }

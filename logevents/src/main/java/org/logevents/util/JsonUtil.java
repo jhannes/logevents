@@ -85,9 +85,9 @@ public class JsonUtil {
         } else if (value instanceof CharSequence) {
             toJson((CharSequence)value, result);
         } else if (value instanceof Number) {
-            result.append(value.toString());
+            result.append(value);
         } else if (value instanceof Boolean) {
-            result.append(value.toString());
+            result.append(value);
         } else if (value == null) {
             result.append("null");
         } else if (value.getClass().isArray()) {
