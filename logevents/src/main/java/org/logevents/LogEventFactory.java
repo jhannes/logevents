@@ -191,11 +191,11 @@ public class LogEventFactory implements ILoggerFactory {
     private void refreshLoggers(LoggerDelegator logger) {
         logger.refresh();
         JavaUtilLoggingAdapter.installHandler(this, logger);
-        loggerCache.values().stream().filter(l2 -> l2.hasParent(logger))
+        new ArrayList<>(loggerCache.values()).stream().filter(l -> l.hasParent(logger))
                 .collect(Collectors.toList())
                 .forEach(this::refreshLoggers);
     }
-    
+
     private List<LoggerDelegator> aliasLoggers(Logger logger) {
         return loggerCache.values().stream()
                 .filter(l -> l != logger)
