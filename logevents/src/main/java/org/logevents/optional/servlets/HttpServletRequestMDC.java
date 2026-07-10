@@ -18,6 +18,8 @@ import java.util.function.Supplier;
  *
  * <ul>
  *     <li><strong>url.original:</strong> The URL as the user entered it</li>
+ *     <li><strong>url.path:</strong> The path part of the URL</li>
+ *     <li><strong>url.query:</strong> The query part of the URL</li>
  *     <li><strong>http.request.method:</strong> GET, PUT, POST, DELETE etc</li>
  *     <li><strong>user.name:</strong> {@link HttpServletRequest#getRemoteUser()}</li>
  *     <li><strong>client.address:</strong> {@link HttpServletRequest#getRemoteAddr()}</li>
@@ -37,10 +39,18 @@ public class HttpServletRequestMDC implements DynamicMDC {
             result.put("user.name", request.getRemoteUser());
         }
         result.put("client.address", request.getRemoteHost());
+        result.put("url.path", request.getPathInContext());
+        if (request.getQueryString() != null) {
+            result.put("url.query", request.getQueryString());
+        }
     }
 
     public static void populateJson(Map<String, Object> jsonPayload, ExceptionFormatter exceptionFormatter, HttpServletRequest request) {
         jsonPayload.put("url.original", request.getRequestURL().toString());
+        jsonPayload.put("url.path", request.getPathInContext());
+        if (request.getQueryString() != null) {
+            jsonPayload.put("url.query", request.getQueryString());
+        }
         if (request.getRemoteUser() != null) {
             jsonPayload.put("user.name", request.getRemoteUser());
         }
@@ -58,8 +68,8 @@ public class HttpServletRequestMDC implements DynamicMDC {
         }
     }
 
-    private final HttpServletRequest request;
-    private final long duration;
+    protected final HttpServletRequest request;
+    protected final long duration;
 
     protected HttpServletRequestMDC(ServletRequest request, long duration) {
         this.request = (HttpServletRequest) request;
@@ -78,13 +88,21 @@ public class HttpServletRequestMDC implements DynamicMDC {
     @Override
     public Iterable<? extends Map.Entry<String, String>> entrySet() {
         Map<String, String> result = new java.util.LinkedHashMap<>();
+        addMdcVariables(result);
+        return result.entrySet();
+    }
+
+    protected void addMdcVariables(Map<String, String> result) {
         addMdcVariables(result, request);
         result.put("event.time", String.format("%.04f", duration / 1000.0));
-        return result.entrySet();
     }
 
     @Override
     public void populateJsonEvent(Map<String, Object> jsonPayload, MdcFilter mdcFilter, ExceptionFormatter exceptionFormatter) {
+        populateJson(jsonPayload, exceptionFormatter);
+    }
+
+    protected void populateJson(Map<String, Object> jsonPayload, ExceptionFormatter exceptionFormatter) {
         populateJson(jsonPayload, exceptionFormatter, request);
         jsonPayload.put("event.time", String.format("%.04f", duration / 1000.0));
     }

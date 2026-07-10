@@ -305,6 +305,7 @@ public class Configuration {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public <T> T createInstanceWithDefault(String key, Class<? extends T> defaultClass, String packageName) {
         Class<T> clazz = optionalString(key)
+                .filter(s -> !s.isBlank())
                 .map(c -> (Class<T>) ConfigUtil.getClass(prefixedKey(key), packageName, c))
                 .orElseGet(() -> (Class) defaultClass);
         LogEventStatus.getInstance().addDebug(this, "Creating " + key);
