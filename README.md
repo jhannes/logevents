@@ -1,7 +1,7 @@
 # Logevents - a simple SLF4J implementation
 
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.logevents/logevents)
+[![Sonatype Central](https://maven-badges.sml.io/sonatype-central/org.logevents/logevents/badge.svg)](https://maven-badges.sml.io/sonatype-central/org.logevents/logevents/)
 [![Javadoc](https://img.shields.io/badge/javadoc-logevents-blue)](https://jhannes.github.io/logevents/apidocs/)
 [![Build Status](https://github.com/jhannes/logevents/workflows/Java%20CI/badge.svg)](https://github.com/jhannes/logevents/actions/workflows/delivery.yml)
 [![Coverage Status](https://coveralls.io/repos/github/jhannes/logevents/badge.svg?branch=main)](https://coveralls.io/github/jhannes/logevents?branch=main)
@@ -22,13 +22,13 @@ For detailed instructions, see [the manual](MANUAL.md).
     <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>2.0.17</version>
+        <version>2.0.20</version>
     </dependency>
 
     <dependency>
         <groupId>org.logevents</groupId>
         <artifactId>logevents</artifactId>
-        <version>0.5.9</version>
+        <version>0.5.11</version>
         <scope>runtime</scope>
     </dependency>
 </dependencies>
