@@ -90,7 +90,9 @@ public class ExpectedLogEventsExtension implements BeforeEachCallback, AfterEach
 
     @Override
     public synchronized void logEvent(LogEvent logEvent) {
-        events.add(logEvent);
+        if (!logEvent.isBelowThreshold(threshold)) {
+            events.add(logEvent);
+        }
         if (!logEvent.isBelowThreshold(threshold) && matchers.stream().noneMatch(f -> partialMatch(f, logEvent))) {
             fallbackObserver.logEvent(logEvent);
         }
